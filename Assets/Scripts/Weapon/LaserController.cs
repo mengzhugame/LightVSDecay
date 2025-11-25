@@ -28,7 +28,7 @@ namespace LightVsDecay.Weapon
         [Tooltip("基础DPS")]
         [SerializeField] private float baseDPS = GameConstants.BASE_DPS;
         
-        [Tooltip("基础击退力")]
+        [Tooltip("基础击退力（持续型：每0.1s施加）")]
         [SerializeField] private float baseKnockback = GameConstants.BASE_KNOCKBACK_FORCE;
         
         [Tooltip("伤害判定间隔")]
@@ -210,7 +210,7 @@ namespace LightVsDecay.Weapon
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 伤害处理
+        // 伤害处理（高压水枪效果：持续推力）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private void ProcessDamage()
@@ -222,37 +222,45 @@ namespace LightVsDecay.Weapon
             
             // 获取激光当前击中的目标
             RaycastHit2D hit = laserBeam.GetCurrentHit();
-            if (hit.collider == null) return;
+            if (hit.collider == null)
+            {
+                // 【调试日志】
+                // Debug.Log("[LaserController] 未击中任何目标");
+                return;
+            }
+            
+            // 【调试日志】
+            Debug.Log($"[LaserController] 击中目标: {hit.collider.name}");
             
             // 计算当前伤害（考虑大招加成）
             float damage = currentDPS * damageTickRate;
             if (isUltActive)
                 damage *= ultDamageMultiplier;
             
-            // TODO: 调用敌人的受伤接口
-            // 示例：hit.collider.GetComponent<Enemy>()?.TakeDamage(damage);
-            
-            // 应用击退力
-            ApplyKnockback(hit);
-            
-            // 调试输出
-            Debug.Log($"[Laser] 造成伤害: {damage:F1} to {hit.collider.name}");
-        }
-        
-        private void ApplyKnockback(RaycastHit2D hit)
-        {
-            Rigidbody2D rb = hit.collider.GetComponent<Rigidbody2D>();
-            if (rb == null) return;
-            
-            // 计算击退方向（从塔指向敌人）
+            // 计算击退力方向（从塔指向敌人）
             Vector2 knockbackDirection = (hit.point - (Vector2)cachedTransform.position).normalized;
             
-            // 应用击退力
+            // 计算击退力大小
             float force = currentKnockback;
             if (isUltActive)
                 force *= 1.5f; // 大招期间击退力更强
             
-            rb.AddForce(knockbackDirection * force, ForceMode2D.Impulse);
+            // 【核心改动】使用持续推力（ForceMode2D.Force）而非瞬间冲击
+            Vector2 knockbackForce = knockbackDirection * force;
+            
+            // 【调试日志】
+            Debug.Log($"[LaserController] 击退力: {knockbackForce.magnitude:F2}, 方向: {knockbackDirection}");
+            
+            // 调用敌人的受伤接口
+            var enemy = hit.collider.GetComponent<Enemy.EnemyBlob>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(damage, knockbackForce);
+            }
+            else
+            {
+                Debug.LogWarning($"[LaserController] 击中的对象 {hit.collider.name} 没有EnemyBlob组件！");
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

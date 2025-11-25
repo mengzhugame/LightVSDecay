@@ -41,7 +41,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Alpha: 1
+    - _Alpha: 0.713
     - _Distortion_Strength: 0.1
     - _Flow_Speed: 0.3
     - _Noise_Scale: 0.2
