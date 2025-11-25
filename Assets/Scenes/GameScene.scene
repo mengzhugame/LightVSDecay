@@ -310,7 +310,7 @@ GameObject:
   - component: {fileID: 417370928}
   m_Layer: 0
   m_HasEditorInfo: 1
-  m_Name: MetaballsCamera
+  m_Name: FluidCamera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11064,6 +11064,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5b037580938be1f40998b30cf4c7c9e2, type: 3}
+--- !u!1 &1510775766667098373 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4354034247177685840, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+  m_PrefabInstance: {fileID: 2884073976590537246}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2037672777653042973
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11165,6 +11170,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1077009303836297066, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+      propertyPath: turretController
+      value: 
+      objectReference: {fileID: 7954656898271609136}
     - target: {fileID: 3076603227204057384, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
       propertyPath: InitialModule.startSize.scalar
       value: 1
@@ -11248,7 +11257,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4354034247177685840, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7954656898271609136}
   m_SourcePrefab: {fileID: 100100000, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
 --- !u!1001 &4997755492436217879
 PrefabInstance:
@@ -11405,6 +11417,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3203237212370406469, guid: 1dfe063fb798f044a96bb1954818233f, type: 3}
   m_PrefabInstance: {fileID: 6770794371098553969}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7954656898271609136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1510775766667098373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7790d7e24eab8346816407bc02930fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rotationSensitivity: 180
+  rotationSmoothness: 15
+  minAngle: -90
+  maxAngle: 90
+  disableInputDuringUlt: 1
+  showDebugInfo: 0
 --- !u!1001 &8695690754188575690
 PrefabInstance:
   m_ObjectHideFlags: 0

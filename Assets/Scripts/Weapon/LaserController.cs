@@ -4,8 +4,8 @@ using LightVsDecay.Core;
 namespace LightVsDecay.Weapon
 {
     /// <summary>
-    /// 激光控制器 - 负责旋转、伤害、击退
-    /// 挂载到光棱塔主体上
+    /// 激光控制器 - 只负责伤害判定和击退处理
+    /// 旋转控制由 TurretController 负责
     /// </summary>
     public class LaserController : MonoBehaviour
     {
@@ -13,22 +13,18 @@ namespace LightVsDecay.Weapon
         // Inspector 可配置参数
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("激光引用")]
-        [Tooltip("激光Beam预制体或子对象")]
+        [Header("组件引用")]
+        [Tooltip("激光Beam组件")]
         [SerializeField] private LaserBeam laserBeam;
         
-        [Header("输入设置")]
-        [Tooltip("旋转速度（度/秒）")]
-        [SerializeField] private float rotationSpeed = 180f;
-        
-        [Tooltip("正常模式角度限制（下=0, 上=180）")]
-        [SerializeField] private Vector2 angleClamp = new Vector2(0f, 180f);
+        [Tooltip("塔身控制器（用于大招控制）")]
+        [SerializeField] private TurretController turretController;
         
         [Header("伤害设置")]
         [Tooltip("基础DPS")]
         [SerializeField] private float baseDPS = GameConstants.BASE_DPS;
         
-        [Tooltip("基础击退力（持续型：每0.1s施加）")]
+        [Tooltip("基础击退力（持续型：每Tick施加）")]
         [SerializeField] private float baseKnockback = GameConstants.BASE_KNOCKBACK_FORCE;
         
         [Tooltip("伤害判定间隔")]
@@ -44,13 +40,19 @@ namespace LightVsDecay.Weapon
         [Tooltip("大招伤害倍率")]
         [SerializeField] private float ultDamageMultiplier = 2f;
         
+        [Tooltip("大招击退力倍率")]
+        [SerializeField] private float ultKnockbackMultiplier = 1.5f;
+        
+        [Header("调试")]
+        [SerializeField] private bool showDebugLog = false;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private float currentAngle = 90f; // 初始朝上
         private bool isUltActive = false;
         private float ultEndTime;
+        private float ultCurrentAngle = 0f;
         
         // 伤害计时器
         private float lastDamageTickTime;
@@ -59,8 +61,18 @@ namespace LightVsDecay.Weapon
         private float currentDPS;
         private float currentKnockback;
         
-        // 缓存
-        private Transform cachedTransform;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 事件
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>大招激活时触发</summary>
+        public event System.Action OnUltActivated;
+        
+        /// <summary>大招结束时触发</summary>
+        public event System.Action OnUltEnded;
+        
+        /// <summary>造成伤害时触发（参数：伤害值，位置）</summary>
+        public event System.Action<float, Vector2> OnDamageDealt;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -68,17 +80,26 @@ namespace LightVsDecay.Weapon
         
         private void Awake()
         {
-            cachedTransform = transform;
-            
-            // 如果没有手动赋值LaserBeam，尝试从子对象获取
+            // 自动获取组件（如果没有手动赋值）
             if (laserBeam == null)
             {
                 laserBeam = GetComponentInChildren<LaserBeam>();
             }
             
+            if (turretController == null)
+            {
+                turretController = GetComponentInChildren<TurretController>();
+            }
+            
+            // 验证必要组件
             if (laserBeam == null)
             {
                 Debug.LogError("[LaserController] 未找到 LaserBeam 组件！", this);
+            }
+            
+            if (turretController == null)
+            {
+                Debug.LogWarning("[LaserController] 未找到 TurretController，大招旋转将无法工作", this);
             }
             
             // 初始化当前属性
@@ -88,79 +109,62 @@ namespace LightVsDecay.Weapon
         
         private void Update()
         {
+            // 更新大招状态
             if (isUltActive)
             {
                 UpdateUltMode();
             }
-            else
-            {
-                UpdateNormalMode();
-            }
-            
-            // 应用旋转
-            ApplyRotation();
             
             // 处理伤害判定
             ProcessDamage();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 正常模式
+        // 大招系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void UpdateNormalMode()
+        /// <summary>
+        /// 激活大招（外部调用，如能量系统）
+        /// </summary>
+        public void ActivateUlt()
         {
-            // 获取输入（支持鼠标和触摸）
-            Vector2 inputDelta = GetRotationInput();
+            if (isUltActive) return;
             
-            if (inputDelta != Vector2.zero)
+            isUltActive = true;
+            ultEndTime = Time.time + ultDuration;
+            ultCurrentAngle = turretController != null ? turretController.GetCurrentAngle() : 0f;
+            
+            // 通知 TurretController 进入大招模式
+            if (turretController != null)
             {
-                // 根据水平输入调整角度
-                currentAngle += inputDelta.x * rotationSpeed * Time.deltaTime;
-                
-                // 限制在180度范围（左-上-右）
-                currentAngle = Mathf.Clamp(currentAngle, angleClamp.x, angleClamp.y);
+                turretController.SetUltActive(true);
             }
+            
+            // 触发事件
+            OnUltActivated?.Invoke();
+            
+            Debug.Log($"[LaserController] 大招激活！持续 {ultDuration} 秒");
         }
         
         /// <summary>
-        /// 获取旋转输入（统一鼠标和触摸）
+        /// 更新大招模式（自动360度旋转）
         /// </summary>
-        private Vector2 GetRotationInput()
-        {
-            // 移动端触摸输入
-            if (Input.touchCount > 0)
-            {
-                Touch touch = Input.GetTouch(0);
-                if (touch.phase == TouchPhase.Moved)
-                {
-                    // 归一化屏幕滑动距离
-                    return touch.deltaPosition / Screen.width;
-                }
-            }
-            
-            // PC端鼠标输入（用于编辑器测试）
-            if (Input.GetMouseButton(0))
-            {
-                float mouseDelta = Input.GetAxis("Mouse X");
-                return new Vector2(mouseDelta, 0f);
-            }
-            
-            return Vector2.zero;
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 大招模式
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
         private void UpdateUltMode()
         {
-            // 自动360度旋转
-            currentAngle += ultRotationSpeed * Time.deltaTime;
+            // 自动旋转
+            ultCurrentAngle += ultRotationSpeed * Time.deltaTime;
             
-            // 保持在0-360范围
-            if (currentAngle >= 360f)
-                currentAngle -= 360f;
+            // 保持在 -180~180 范围（可选，360度旋转可以不限制）
+            if (ultCurrentAngle > 180f)
+                ultCurrentAngle -= 360f;
+            else if (ultCurrentAngle < -180f)
+                ultCurrentAngle += 360f;
+            
+            // 强制设置 TurretController 的角度
+            if (turretController != null)
+            {
+                turretController.SetAngle(ultCurrentAngle);
+            }
             
             // 检查是否结束
             if (Time.time >= ultEndTime)
@@ -170,96 +174,84 @@ namespace LightVsDecay.Weapon
         }
         
         /// <summary>
-        /// 激活大招（外部调用）
+        /// 结束大招
         /// </summary>
-        public void ActivateUlt()
-        {
-            if (isUltActive) return;
-            
-            isUltActive = true;
-            ultEndTime = Time.time + ultDuration;
-            
-            // TODO: 塔飞到屏幕中心的动画
-            // TODO: 激光变粗2倍的视觉效果
-            
-            Debug.Log($"[LaserController] 大招激活！持续{ultDuration}秒");
-        }
-        
         private void EndUlt()
         {
             isUltActive = false;
             
-            // 重置到初始角度（朝上）
-            currentAngle = 90f;
+            // 通知 TurretController 退出大招模式
+            if (turretController != null)
+            {
+                turretController.SetUltActive(false);
+                turretController.ResetRotation(); // 重置到朝上
+            }
             
-            // TODO: 塔飞回底部的动画
+            // 触发事件
+            OnUltEnded?.Invoke();
             
             Debug.Log("[LaserController] 大招结束");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 旋转应用
+        // 伤害处理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void ApplyRotation()
-        {
-            // 将角度转换为四元数旋转（2D游戏只旋转Z轴）
-            // 0度 = 右, 90度 = 上, 180度 = 左
-            Quaternion targetRotation = Quaternion.Euler(0f, 0f, currentAngle);
-            cachedTransform.rotation = targetRotation;
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 伤害处理（高压水枪效果：持续推力）
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+        /// <summary>
+        /// 处理伤害判定（高压水枪效果）
+        /// </summary>
         private void ProcessDamage()
         {
+            // 检查 Tick 间隔
             if (Time.time - lastDamageTickTime < damageTickRate)
                 return;
             
             lastDamageTickTime = Time.time;
             
             // 获取激光当前击中的目标
+            if (laserBeam == null) return;
+            
             RaycastHit2D hit = laserBeam.GetCurrentHit();
             if (hit.collider == null)
             {
-                // 【调试日志】
-                // Debug.Log("[LaserController] 未击中任何目标");
                 return;
             }
             
-            // 【调试日志】
-            Debug.Log($"[LaserController] 击中目标: {hit.collider.name}");
+            if (showDebugLog)
+                Debug.Log($"[LaserController] 击中目标: {hit.collider.name}");
             
             // 计算当前伤害（考虑大招加成）
             float damage = currentDPS * damageTickRate;
             if (isUltActive)
                 damage *= ultDamageMultiplier;
             
-            // 计算击退力方向（从塔指向敌人）
-            Vector2 knockbackDirection = (hit.point - (Vector2)cachedTransform.position).normalized;
+            // 计算击退力方向（从激光原点指向敌人）
+            Vector2 laserOrigin = laserBeam.transform.position;
+            Vector2 knockbackDirection = (hit.point - laserOrigin).normalized;
             
             // 计算击退力大小
             float force = currentKnockback;
             if (isUltActive)
-                force *= 1.5f; // 大招期间击退力更强
+                force *= ultKnockbackMultiplier;
             
-            // 【核心改动】使用持续推力（ForceMode2D.Force）而非瞬间冲击
             Vector2 knockbackForce = knockbackDirection * force;
             
-            // 【调试日志】
-            Debug.Log($"[LaserController] 击退力: {knockbackForce.magnitude:F2}, 方向: {knockbackDirection}");
+            if (showDebugLog)
+                Debug.Log($"[LaserController] 伤害:{damage:F1} 击退力:{knockbackForce.magnitude:F2}");
             
             // 调用敌人的受伤接口
             var enemy = hit.collider.GetComponent<Enemy.EnemyBlob>();
             if (enemy != null)
             {
                 enemy.TakeDamage(damage, knockbackForce);
+                
+                // 触发事件
+                OnDamageDealt?.Invoke(damage, hit.point);
             }
             else
             {
-                Debug.LogWarning($"[LaserController] 击中的对象 {hit.collider.name} 没有EnemyBlob组件！");
+                if (showDebugLog)
+                    Debug.LogWarning($"[LaserController] 击中的对象 {hit.collider.name} 没有 EnemyBlob 组件");
             }
         }
         
@@ -268,7 +260,7 @@ namespace LightVsDecay.Weapon
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 设置DPS倍率（技能加成）
+        /// 设置 DPS 倍率（技能加成）
         /// </summary>
         public void SetDPSMultiplier(float multiplier)
         {
@@ -284,13 +276,28 @@ namespace LightVsDecay.Weapon
         }
         
         /// <summary>
-        /// 获取LaserBeam引用（用于技能直接修改）
+        /// 获取 LaserBeam 引用
         /// </summary>
         public LaserBeam GetLaserBeam() => laserBeam;
+        
+        /// <summary>
+        /// 获取 TurretController 引用
+        /// </summary>
+        public TurretController GetTurretController() => turretController;
         
         /// <summary>
         /// 检查是否在大招状态
         /// </summary>
         public bool IsUltActive() => isUltActive;
+        
+        /// <summary>
+        /// 获取当前 DPS
+        /// </summary>
+        public float GetCurrentDPS() => currentDPS;
+        
+        /// <summary>
+        /// 获取当前击退力
+        /// </summary>
+        public float GetCurrentKnockback() => currentKnockback;
     }
 }
