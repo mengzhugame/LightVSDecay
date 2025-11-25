@@ -81,7 +81,7 @@ namespace LightVsDecay.Enemy
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             
             // 平滑旋转
-            Quaternion targetRotation = Quaternion.Euler(0, 0, angle - 90); // -90因为Sprite朝上
+            Quaternion targetRotation = Quaternion.Euler(0, 0, angle + 90); // -90因为Sprite朝上
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * lookAtSmoothness);
         }
         
