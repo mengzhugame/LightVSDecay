@@ -313,15 +313,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45724bede2c9f5e47a5efae840add1e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 30
-  moveSpeed: 5
-  mass: 1
+  enemyType: 0
+  maxHealth: 10
+  moveSpeed: 1
+  mass: 0.5
   minScale: 0.3
-  shrinkRate: 0.1
-  evaporationVFX: {fileID: 0}
+  steamVFX: {fileID: 8500726050643510859, guid: 2e30567c7c3f9c24da8657b463b0aadf, type: 3}
   explosionVFX: {fileID: 0}
   bodySprite: {fileID: 6680098161851612290}
   eyesController: {fileID: 820148974556763780}
+  decorations:
+  - {fileID: 1754928097818668523}
+  - {fileID: 5754369420695981257}
+  normalFlowSpeed: 1
+  normalNoiseScale: 2
+  hitFlowSpeed: 10
+  hitNoiseScale: 5
+  wobbleReturnSpeed: 5
+  deathFadeDuration: 1
 --- !u!1 &8714887028639678598
 GameObject:
   m_ObjectHideFlags: 0

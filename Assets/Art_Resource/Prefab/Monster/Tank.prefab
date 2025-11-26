@@ -402,12 +402,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45724bede2c9f5e47a5efae840add1e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 30
-  moveSpeed: 0.1
-  mass: 1
+  enemyType: 0
+  maxHealth: 300
+  moveSpeed: 0.3
+  mass: 10
   minScale: 0.3
-  shrinkRate: 0.1
-  evaporationVFX: {fileID: 0}
+  steamVFX: {fileID: 8500726050643510859, guid: 2e30567c7c3f9c24da8657b463b0aadf, type: 3}
   explosionVFX: {fileID: 0}
   bodySprite: {fileID: 4969554391791242002}
   eyesController: {fileID: 8550763919871504157}
+  decorations:
+  - {fileID: 6126614263902724383}
+  - {fileID: 7449607628985974636}
+  normalFlowSpeed: 0.1
+  normalNoiseScale: 0.5
+  hitFlowSpeed: 10
+  hitNoiseScale: 5
+  wobbleReturnSpeed: 5
+  deathFadeDuration: 1
