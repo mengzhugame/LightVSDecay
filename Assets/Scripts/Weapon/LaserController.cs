@@ -5,6 +5,7 @@ namespace LightVsDecay.Weapon
 {
     /// <summary>
     /// 激光控制器 - 只负责伤害判定和击退处理
+    /// 【修改】优化击退力计算，与测试脚本保持一致
     /// 旋转控制由 TurretController 负责
     /// </summary>
     public class LaserController : MonoBehaviour
@@ -24,11 +25,12 @@ namespace LightVsDecay.Weapon
         [Tooltip("基础DPS")]
         [SerializeField] private float baseDPS = GameConstants.BASE_DPS;
         
-        [Tooltip("基础击退力（持续型：每Tick施加）")]
-        [SerializeField] private float baseKnockback = GameConstants.BASE_KNOCKBACK_FORCE;
-        
         [Tooltip("伤害判定间隔")]
         [SerializeField] private float damageTickRate = GameConstants.DAMAGE_TICK_RATE;
+        
+        [Header("击退设置")]
+        [Tooltip("基础击退力（每Tick施加的力）")]
+        [SerializeField] private float baseKnockback = 50f;
         
         [Header("大招设置")]
         [Tooltip("大招持续时间")]
@@ -45,6 +47,7 @@ namespace LightVsDecay.Weapon
         
         [Header("调试")]
         [SerializeField] private bool showDebugLog = false;
+        [SerializeField] private bool showDebugGizmos = true;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
@@ -60,6 +63,11 @@ namespace LightVsDecay.Weapon
         // 当前属性（考虑技能加成）
         private float currentDPS;
         private float currentKnockback;
+        
+        // 【新增】上一次击中的信息（用于 Gizmo 绘制）
+        private Vector2 lastHitPoint;
+        private Vector2 lastKnockbackDirection;
+        private bool hasLastHit;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件
@@ -198,7 +206,8 @@ namespace LightVsDecay.Weapon
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 处理伤害判定（高压水枪效果）
+        /// 处理伤害判定
+        /// 【修改】优化击退力计算方式
         /// </summary>
         private void ProcessDamage()
         {
@@ -207,6 +216,7 @@ namespace LightVsDecay.Weapon
                 return;
             
             lastDamageTickTime = Time.time;
+            hasLastHit = false;
             
             // 获取激光当前击中的目标
             if (laserBeam == null) return;
@@ -217,27 +227,34 @@ namespace LightVsDecay.Weapon
                 return;
             }
             
-            if (showDebugLog)
-                Debug.Log($"[LaserController] 击中目标: {hit.collider.name}");
-            
             // 计算当前伤害（考虑大招加成）
             float damage = currentDPS * damageTickRate;
             if (isUltActive)
                 damage *= ultDamageMultiplier;
             
-            // 计算击退力方向（从激光原点指向敌人）
+            // 【修改】计算击退力方向（从激光原点指向敌人）
             Vector2 laserOrigin = laserBeam.transform.position;
             Vector2 knockbackDirection = (hit.point - laserOrigin).normalized;
             
-            // 计算击退力大小
-            float force = currentKnockback;
+            // 【修改】计算击退力大小
+            float knockbackMagnitude = currentKnockback;
             if (isUltActive)
-                force *= ultKnockbackMultiplier;
+                knockbackMagnitude *= ultKnockbackMultiplier;
             
-            Vector2 knockbackForce = knockbackDirection * force;
+            Vector2 knockbackForce = knockbackDirection * knockbackMagnitude;
+            
+            // 保存击中信息（用于 Gizmo）
+            lastHitPoint = hit.point;
+            lastKnockbackDirection = knockbackDirection;
+            hasLastHit = true;
             
             if (showDebugLog)
-                Debug.Log($"[LaserController] 伤害:{damage:F1} 击退力:{knockbackForce.magnitude:F2}");
+            {
+                Debug.Log($"[LaserController] 击中: {hit.collider.name}" +
+                          $"\n  伤害: {damage:F1}" +
+                          $"\n  击退方向: {knockbackDirection}" +
+                          $"\n  击退力: {knockbackForce.magnitude:F2}");
+            }
             
             // 调用敌人的受伤接口
             var enemy = hit.collider.GetComponent<Enemy.EnemyBlob>();
@@ -250,8 +267,15 @@ namespace LightVsDecay.Weapon
             }
             else
             {
-                if (showDebugLog)
-                    Debug.LogWarning($"[LaserController] 击中的对象 {hit.collider.name} 没有 EnemyBlob 组件");
+                // 【新增】尝试直接操作 Rigidbody2D（兼容测试方块）
+                var rb = hit.collider.GetComponent<Rigidbody2D>();
+                if (rb != null)
+                {
+                    rb.AddForce(knockbackForce, ForceMode2D.Force);
+                    
+                    if (showDebugLog)
+                        Debug.Log($"[LaserController] 直接击退 Rigidbody2D: {rb.name}");
+                }
             }
         }
         
@@ -273,6 +297,14 @@ namespace LightVsDecay.Weapon
         public void SetKnockbackMultiplier(float multiplier)
         {
             currentKnockback = baseKnockback * multiplier;
+        }
+        
+        /// <summary>
+        /// 【新增】直接设置击退力
+        /// </summary>
+        public void SetKnockbackForce(float force)
+        {
+            currentKnockback = force;
         }
         
         /// <summary>
@@ -299,5 +331,27 @@ namespace LightVsDecay.Weapon
         /// 获取当前击退力
         /// </summary>
         public float GetCurrentKnockback() => currentKnockback;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 调试可视化
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void OnDrawGizmos()
+        {
+            if (!showDebugGizmos || !Application.isPlaying) return;
+            
+            // 绘制击中点和击退方向
+            if (hasLastHit)
+            {
+                // 击中点
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawWireSphere(lastHitPoint, 0.3f);
+                
+                // 击退方向
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawLine(lastHitPoint, lastHitPoint + lastKnockbackDirection * 2f);
+                Gizmos.DrawWireSphere(lastHitPoint + lastKnockbackDirection * 2f, 0.1f);
+            }
+        }
     }
 }

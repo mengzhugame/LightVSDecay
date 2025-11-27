@@ -317,8 +317,6 @@ MonoBehaviour:
   moveSpeed: 0.6
   mass: 1
   minScale: 0.3
-  steamVFX: {fileID: 8500726050643510859, guid: 2e30567c7c3f9c24da8657b463b0aadf, type: 3}
-  explosionVFX: {fileID: 0}
   bodySprite: {fileID: 4335784821728048696}
   eyesController: {fileID: 6691269152021299885}
   decorations:
@@ -329,3 +327,10 @@ MonoBehaviour:
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
   deathFadeDuration: 1
+  canBeKnockedBack: 1
+  knockbackMultiplier: 1.5
+  knockbackDrag: 2
+  knockbackStunDuration: 0.3
+  knockbackStunMoveMultiplier: 0.3
+  drifterDeflectionAngle: 45
+  drifterKnockbackMultiplier: 2

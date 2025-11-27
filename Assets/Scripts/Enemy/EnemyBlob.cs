@@ -7,6 +7,7 @@ namespace LightVsDecay.Enemy
 {
     /// <summary>
     /// 黑油怪物主逻辑
+    /// 【修改】添加可配置的击退系统
     /// 【修改】添加 Drifter 特殊击退行为
     /// 【修改】支持狂暴模式速度加成
     /// </summary>
@@ -46,6 +47,29 @@ namespace LightVsDecay.Enemy
         [Header("Death Fade Settings")]
         [SerializeField] private float deathFadeDuration = 1.0f;
         
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】击退系统配置
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("击退设置")]
+        [Tooltip("是否可以被击退")]
+        [SerializeField] private bool canBeKnockedBack = true;
+        
+        [Tooltip("击退力倍率（1.0=正常，0.5=难推，2.0=容易推）")]
+        [Range(0f, 5f)]
+        [SerializeField] private float knockbackMultiplier = 1.0f;
+        
+        [Tooltip("击退阻力（越大停得越快）")]
+        [Range(0f, 10f)]
+        [SerializeField] private float knockbackDrag = 2.0f;
+        
+        [Tooltip("受击后移动力减弱时间（秒）")]
+        [SerializeField] private float knockbackStunDuration = 0.3f;
+        
+        [Tooltip("受击后移动力减弱倍率")]
+        [Range(0f, 1f)]
+        [SerializeField] private float knockbackStunMoveMultiplier = 0.3f;
+        
         [Header("Drifter 特殊设置")]
         [Tooltip("Drifter被击退时的横向偏移角度（度）")]
         [SerializeField] private float drifterDeflectionAngle = 45f;
@@ -81,6 +105,9 @@ namespace LightVsDecay.Enemy
         // 狂暴模式速度加成
         private float speedMultiplier = 1.0f;
         private float baseMoveSpeed;
+        
+        // 【新增】原始阻力值（用于恢复）
+        private float originalDrag;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -137,6 +164,7 @@ namespace LightVsDecay.Enemy
                 rb.velocity = Vector2.zero;
                 rb.angularVelocity = 0f;
                 rb.simulated = true;
+                rb.drag = originalDrag; // 恢复原始阻力
             }
             
             if (circleCollider != null)
@@ -191,11 +219,14 @@ namespace LightVsDecay.Enemy
         {
             rb.gravityScale = 0;
             rb.mass = mass;
-            rb.drag = 0.5f;
+            rb.drag = knockbackDrag; // 【修改】使用配置的击退阻力
             rb.angularDrag = 0.5f;
             rb.interpolation = RigidbodyInterpolation2D.Interpolate;
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation; // 【新增】防止旋转
+            
+            originalDrag = rb.drag; // 保存原始阻力值
         }
         
         private void InitializeShaderParameters()
@@ -255,13 +286,16 @@ namespace LightVsDecay.Enemy
             float currentMoveSpeed = baseMoveSpeed * speedMultiplier;
             float moveForce = currentMoveSpeed * 10f;
             
-            if (Time.time - lastHitTime < 0.2f && rb.mass >= GameConstants.KNOCKBACK_MASS_THRESHOLD)
+            // 【修改】受击后短暂减弱移动力
+            float timeSinceHit = Time.time - lastHitTime;
+            if (timeSinceHit < knockbackStunDuration)
             {
-                moveForce *= 0.3f;
+                moveForce *= knockbackStunMoveMultiplier;
             }
             
             rb.AddForce(direction * moveForce, ForceMode2D.Force);
             
+            // 限制最大速度
             if (rb.velocity.magnitude > currentMoveSpeed * 2f)
             {
                 rb.velocity = rb.velocity.normalized * currentMoveSpeed * 2f;
@@ -279,8 +313,11 @@ namespace LightVsDecay.Enemy
             currentHealth -= damage;
             lastHitTime = Time.time;
             
-            // 【修改】根据敌人类型处理击退
-            ApplyKnockbackByType(knockbackForce);
+            // 【修改】根据敌人类型和配置处理击退
+            if (canBeKnockedBack)
+            {
+                ApplyKnockbackByType(knockbackForce);
+            }
             
             TriggerShaderWobble();
             
@@ -301,21 +338,20 @@ namespace LightVsDecay.Enemy
         
         /// <summary>
         /// 根据敌人类型应用不同的击退效果
-        /// 【新增】Drifter 特殊行为：被击退时往左后或右后漂移
+        /// 【重写】更清晰的击退逻辑
         /// </summary>
         private void ApplyKnockbackByType(Vector2 knockbackForce)
         {
-            if (rb.mass < GameConstants.KNOCKBACK_MASS_THRESHOLD)
+            // 计算基础击退力（考虑质量缩放）
+            float massScale = 1f;
+            if (rb.mass > GameConstants.KNOCKBACK_MASS_THRESHOLD)
             {
-                // 质量太小，不受击退影响（直接被秒杀）
-                return;
+                massScale = Mathf.Clamp(
+                    GameConstants.KNOCKBACK_MASS_SCALE / rb.mass,
+                    GameConstants.KNOCKBACK_SCALE_MIN,
+                    GameConstants.KNOCKBACK_SCALE_MAX
+                );
             }
-            
-            float knockbackScale = Mathf.Clamp(
-                GameConstants.KNOCKBACK_MASS_SCALE / rb.mass,
-                GameConstants.KNOCKBACK_SCALE_MIN,
-                GameConstants.KNOCKBACK_SCALE_MAX
-            );
             
             Vector2 finalForce;
             
@@ -334,14 +370,15 @@ namespace LightVsDecay.Enemy
                     knockbackForce.x * sin + knockbackForce.y * cos
                 );
                 
-                finalForce = deflectedForce * knockbackScale * drifterKnockbackMultiplier;
+                finalForce = deflectedForce * massScale * knockbackMultiplier * drifterKnockbackMultiplier;
             }
             else
             {
-                // 其他敌人正常击退
-                finalForce = knockbackForce * knockbackScale;
+                // 其他敌人：正常击退 × 质量缩放 × 击退倍率
+                finalForce = knockbackForce * massScale * knockbackMultiplier;
             }
             
+            // 应用击退力（使用 Force 模式，因为激光是持续照射）
             rb.AddForce(finalForce, ForceMode2D.Force);
         }
         
@@ -510,9 +547,35 @@ namespace LightVsDecay.Enemy
         /// </summary>
         public float GetSpeedMultiplier() => speedMultiplier;
         
+        /// <summary>
+        /// 【新增】设置是否可被击退
+        /// </summary>
+        public void SetCanBeKnockedBack(bool canKnockback)
+        {
+            canBeKnockedBack = canKnockback;
+        }
+        
+        /// <summary>
+        /// 【新增】设置击退力倍率
+        /// </summary>
+        public void SetKnockbackMultiplier(float multiplier)
+        {
+            knockbackMultiplier = multiplier;
+        }
+        
+        /// <summary>
+        /// 【新增】获取是否可被击退
+        /// </summary>
+        public bool CanBeKnockedBack => canBeKnockedBack;
+        
+        /// <summary>
+        /// 【新增】获取击退力倍率
+        /// </summary>
+        public float KnockbackMultiplier => knockbackMultiplier;
+        
         public void ApplyKnockback(Vector2 force)
         {
-            if (isDead || rb.mass < GameConstants.KNOCKBACK_MASS_THRESHOLD) return;
+            if (isDead || !canBeKnockedBack) return;
             
             float knockbackScale = Mathf.Clamp(
                 GameConstants.KNOCKBACK_MASS_SCALE / rb.mass,
@@ -520,7 +583,7 @@ namespace LightVsDecay.Enemy
                 GameConstants.KNOCKBACK_SCALE_MAX
             );
             
-            rb.AddForce(force * knockbackScale, ForceMode2D.Force);
+            rb.AddForce(force * knockbackScale * knockbackMultiplier, ForceMode2D.Force);
         }
         
         private void OnDrawGizmosSelected()
@@ -529,6 +592,13 @@ namespace LightVsDecay.Enemy
             {
                 Gizmos.color = Color.red;
                 Gizmos.DrawLine(transform.position, targetTower.position);
+            }
+            
+            // 【新增】显示当前速度向量
+            if (Application.isPlaying && rb != null)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(transform.position, transform.position + (Vector3)rb.velocity);
             }
         }
     }

@@ -418,5 +418,10 @@ MonoBehaviour:
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
   deathFadeDuration: 1
+  canBeKnockedBack: 1
+  knockbackMultiplier: 0.3
+  knockbackDrag: 3
+  knockbackStunDuration: 0.3
+  knockbackStunMoveMultiplier: 0.3
   drifterDeflectionAngle: 45
   drifterKnockbackMultiplier: 2
