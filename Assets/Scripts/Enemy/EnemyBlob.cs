@@ -7,7 +7,8 @@ namespace LightVsDecay.Enemy
 {
     /// <summary>
     /// 黑油怪物主逻辑
-    /// 【修改】使用VFX对象池播放死亡和爆炸特效
+    /// 【修改】添加 Drifter 特殊击退行为
+    /// 【修改】支持狂暴模式速度加成
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CircleCollider2D))]
@@ -45,6 +46,13 @@ namespace LightVsDecay.Enemy
         [Header("Death Fade Settings")]
         [SerializeField] private float deathFadeDuration = 1.0f;
         
+        [Header("Drifter 特殊设置")]
+        [Tooltip("Drifter被击退时的横向偏移角度（度）")]
+        [SerializeField] private float drifterDeflectionAngle = 45f;
+        
+        [Tooltip("Drifter被击退时的额外力量倍率")]
+        [SerializeField] private float drifterKnockbackMultiplier = 2.0f;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // IPoolable 实现
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -70,6 +78,10 @@ namespace LightVsDecay.Enemy
         
         private Coroutine deathCoroutine;
         
+        // 狂暴模式速度加成
+        private float speedMultiplier = 1.0f;
+        private float baseMoveSpeed;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -79,6 +91,7 @@ namespace LightVsDecay.Enemy
             rb = GetComponent<Rigidbody2D>();
             circleCollider = GetComponent<CircleCollider2D>();
             originalScale = transform.localScale;
+            baseMoveSpeed = moveSpeed;
             
             if (bodySprite != null)
             {
@@ -117,6 +130,7 @@ namespace LightVsDecay.Enemy
             isDead = false;
             currentHealth = maxHealth;
             transform.localScale = originalScale;
+            speedMultiplier = 1.0f;
             
             if (rb != null)
             {
@@ -238,7 +252,8 @@ namespace LightVsDecay.Enemy
             if (targetTower == null) return;
             
             Vector2 direction = (targetTower.position - transform.position).normalized;
-            float moveForce = moveSpeed * 10f;
+            float currentMoveSpeed = baseMoveSpeed * speedMultiplier;
+            float moveForce = currentMoveSpeed * 10f;
             
             if (Time.time - lastHitTime < 0.2f && rb.mass >= GameConstants.KNOCKBACK_MASS_THRESHOLD)
             {
@@ -247,9 +262,9 @@ namespace LightVsDecay.Enemy
             
             rb.AddForce(direction * moveForce, ForceMode2D.Force);
             
-            if (rb.velocity.magnitude > moveSpeed * 2f)
+            if (rb.velocity.magnitude > currentMoveSpeed * 2f)
             {
-                rb.velocity = rb.velocity.normalized * moveSpeed * 2f;
+                rb.velocity = rb.velocity.normalized * currentMoveSpeed * 2f;
             }
         }
         
@@ -264,16 +279,8 @@ namespace LightVsDecay.Enemy
             currentHealth -= damage;
             lastHitTime = Time.time;
             
-            if (rb.mass >= GameConstants.KNOCKBACK_MASS_THRESHOLD)
-            {
-                float knockbackScale = Mathf.Clamp(
-                    GameConstants.KNOCKBACK_MASS_SCALE / rb.mass,
-                    GameConstants.KNOCKBACK_SCALE_MIN,
-                    GameConstants.KNOCKBACK_SCALE_MAX
-                );
-                Vector2 finalForce = knockbackForce * knockbackScale;
-                rb.AddForce(finalForce, ForceMode2D.Force);
-            }
+            // 【修改】根据敌人类型处理击退
+            ApplyKnockbackByType(knockbackForce);
             
             TriggerShaderWobble();
             
@@ -290,6 +297,52 @@ namespace LightVsDecay.Enemy
             {
                 Die();
             }
+        }
+        
+        /// <summary>
+        /// 根据敌人类型应用不同的击退效果
+        /// 【新增】Drifter 特殊行为：被击退时往左后或右后漂移
+        /// </summary>
+        private void ApplyKnockbackByType(Vector2 knockbackForce)
+        {
+            if (rb.mass < GameConstants.KNOCKBACK_MASS_THRESHOLD)
+            {
+                // 质量太小，不受击退影响（直接被秒杀）
+                return;
+            }
+            
+            float knockbackScale = Mathf.Clamp(
+                GameConstants.KNOCKBACK_MASS_SCALE / rb.mass,
+                GameConstants.KNOCKBACK_SCALE_MIN,
+                GameConstants.KNOCKBACK_SCALE_MAX
+            );
+            
+            Vector2 finalForce;
+            
+            // Drifter 特殊处理：随机往左后或右后漂移
+            if (enemyType == EnemyType.Drifter)
+            {
+                // 随机选择左偏或右偏
+                float deflectionDirection = Random.value > 0.5f ? 1f : -1f;
+                float angleRad = drifterDeflectionAngle * Mathf.Deg2Rad * deflectionDirection;
+                
+                // 旋转击退向量
+                float cos = Mathf.Cos(angleRad);
+                float sin = Mathf.Sin(angleRad);
+                Vector2 deflectedForce = new Vector2(
+                    knockbackForce.x * cos - knockbackForce.y * sin,
+                    knockbackForce.x * sin + knockbackForce.y * cos
+                );
+                
+                finalForce = deflectedForce * knockbackScale * drifterKnockbackMultiplier;
+            }
+            else
+            {
+                // 其他敌人正常击退
+                finalForce = knockbackForce * knockbackScale;
+            }
+            
+            rb.AddForce(finalForce, ForceMode2D.Force);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -347,7 +400,7 @@ namespace LightVsDecay.Enemy
         
         private IEnumerator DeathFadeCoroutine()
         {
-            // 【修改】使用VFX对象池播放蒸汽特效
+            // 使用VFX对象池播放蒸汽特效
             if (VFXPoolManager.Instance != null)
             {
                 VFXPoolManager.Instance.PlayEnemySteam(transform.position);
@@ -427,7 +480,7 @@ namespace LightVsDecay.Enemy
             if (isDead) return;
             isDead = true;
             
-            // 【修改】使用VFX对象池播放爆炸特效
+            // 使用VFX对象池播放爆炸特效
             if (VFXPoolManager.Instance != null)
             {
                 VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
@@ -443,6 +496,19 @@ namespace LightVsDecay.Enemy
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         public EnemyType GetEnemyType() => enemyType;
+        
+        /// <summary>
+        /// 设置速度倍率（用于狂暴模式）
+        /// </summary>
+        public void SetSpeedMultiplier(float multiplier)
+        {
+            speedMultiplier = multiplier;
+        }
+        
+        /// <summary>
+        /// 获取当前速度倍率
+        /// </summary>
+        public float GetSpeedMultiplier() => speedMultiplier;
         
         public void ApplyKnockback(Vector2 force)
         {

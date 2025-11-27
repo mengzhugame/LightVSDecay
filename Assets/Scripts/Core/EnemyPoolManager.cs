@@ -6,12 +6,14 @@ namespace LightVsDecay.Core.Pool
 {
     /// <summary>
     /// 敌人类型枚举
+    /// 【修改】添加 Drifter 类型
     /// </summary>
     public enum EnemyType
     {
-        Slime,      // 粘液 - 基础单位
-        Tank,       // 硬壳 - 高血量
-        Rusher      // 速攻虫 - 快速小型
+        Slime,      // A - 粘液 - 基础单位
+        Tank,       // B - 硬壳 - 高血量
+        Rusher,     // C - 速攻虫 - 快速小型
+        Drifter     // D - 漂流者 - 被击退时随机左后/右后漂移
     }
     
     /// <summary>
@@ -289,6 +291,14 @@ namespace LightVsDecay.Core.Pool
                 return pool.AvailableCount;
             }
             return 0;
+        }
+        
+        /// <summary>
+        /// 检查指定类型的池是否存在
+        /// </summary>
+        public bool HasPool(EnemyType type)
+        {
+            return pools != null && pools.ContainsKey(type);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

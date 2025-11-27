@@ -231,7 +231,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8063809459187269184}
@@ -313,13 +313,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45724bede2c9f5e47a5efae840add1e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyType: 0
+  enemyType: 2
   maxHealth: 10
   moveSpeed: 1
   mass: 0.5
   minScale: 0.3
-  steamVFX: {fileID: 8500726050643510859, guid: 2e30567c7c3f9c24da8657b463b0aadf, type: 3}
-  explosionVFX: {fileID: 0}
   bodySprite: {fileID: 6680098161851612290}
   eyesController: {fileID: 820148974556763780}
   decorations:
@@ -331,6 +329,8 @@ MonoBehaviour:
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
   deathFadeDuration: 1
+  drifterDeflectionAngle: 45
+  drifterKnockbackMultiplier: 2
 --- !u!1 &8714887028639678598
 GameObject:
   m_ObjectHideFlags: 0

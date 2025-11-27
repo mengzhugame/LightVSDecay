@@ -390,7 +390,6 @@ GameObject:
   - component: {fileID: 8875329790981093609}
   - component: {fileID: 4368819993110178146}
   - component: {fileID: 2878663063999937833}
-  - component: {fileID: 4035570515444333467}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Boss
@@ -480,34 +479,3 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 2
---- !u!114 &4035570515444333467
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7651956220622171640}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 45724bede2c9f5e47a5efae840add1e5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  enemyType: 0
-  maxHealth: 30000
-  moveSpeed: 0.1
-  mass: 100
-  minScale: 0.3
-  steamVFX: {fileID: 8500726050643510859, guid: 2e30567c7c3f9c24da8657b463b0aadf, type: 3}
-  explosionVFX: {fileID: 0}
-  bodySprite: {fileID: 8360817832223585840}
-  eyesController: {fileID: 8609685334684566284}
-  decorations:
-  - {fileID: 5649553928748941591}
-  - {fileID: 1343997964473775117}
-  - {fileID: 2438999953779928413}
-  normalFlowSpeed: 1
-  normalNoiseScale: 0.5
-  hitFlowSpeed: 10
-  hitNoiseScale: 5
-  wobbleReturnSpeed: 5
-  deathFadeDuration: 1
