@@ -5725,6 +5725,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &546643836 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5479697333105954892, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+  m_PrefabInstance: {fileID: 2884073976590537246}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &931834399
 GameObject:
   m_ObjectHideFlags: 0
@@ -6542,6 +6547,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2079807230 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5321411841721762368, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+  m_PrefabInstance: {fileID: 2884073976590537246}
+  m_PrefabAsset: {fileID: 0}
+--- !u!212 &2079807231 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 142615562946338404, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+  m_PrefabInstance: {fileID: 2884073976590537246}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2079807234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2079807230}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c478d1f0a2c8d8041b39e6b2d7cfeb1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHullHP: 3
+  invincibilityDuration: 1
+  smallEnemyMassThreshold: 2
+  bounceForce: 300
+  turretRenderer: {fileID: 2079807231}
+  flashDuration: 0.1
+  flashCount: 5
+  shieldController: {fileID: 2139761578}
+  showDebugInfo: 0
 --- !u!1 &2139761574
 GameObject:
   m_ObjectHideFlags: 0
@@ -6554,10 +6590,10 @@ GameObject:
   - component: {fileID: 2139761576}
   - component: {fileID: 2139761575}
   - component: {fileID: 2139761578}
-  m_Layer: 0
+  m_Layer: 9
   m_HasEditorInfo: 1
   m_Name: Shield
-  m_TagString: Shield
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6661,13 +6697,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2139761574}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -9.5, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 5, y: 5, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 231058783}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 546643836}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2139761578
 MonoBehaviour:
@@ -6685,13 +6721,12 @@ MonoBehaviour:
   recoveryTime: 12
   invincibilityDuration: 1
   shieldRenderer: {fileID: 2139761576}
-  shieldMaterial: {fileID: 2100000, guid: 9c7dbee8348e6434b96a8f9974c089b5, type: 2}
-  fullHPColor: {r: 0, g: 0.7490197, b: 0.7490197, a: 0.3}
-  midHPColor: {r: 0.2996079, g: 0.7490197, b: 0.5992158, a: 0.3}
-  lowHPColor: {r: 0.7490197, g: 0.5243138, b: 0.2996079, a: 0.3}
-  fullHPEdgeColor: {r: 0, g: 1.1353015, b: 1.1353015, a: 1}
-  midHPEdgeColor: {r: 0.4541206, g: 1.1353015, b: 0.9082412, a: 1}
-  lowHPEdgeColor: {r: 1.304119, g: 0.9128833, b: 0.52164763, a: 1}
+  fullHP_BaseColor: {r: 0, g: 1, b: 1, a: 0.3}
+  fullHP_EdgeColor: {r: 0, g: 1, b: 1, a: 1}
+  midHP_BaseColor: {r: 0.4, g: 1, b: 0.8, a: 0.3}
+  midHP_EdgeColor: {r: 0.4, g: 1, b: 0.8, a: 1}
+  lowHP_BaseColor: {r: 1, g: 0.7, b: 0.4, a: 0.3}
+  lowHP_EdgeColor: {r: 1, g: 0.7, b: 0.4, a: 1}
   hitFlashDuration: 0.15
   breakFadeDuration: 0.5
   recoverFadeDuration: 0.8
@@ -6699,6 +6734,7 @@ MonoBehaviour:
   shockwaveMaxRadius: 5
   shockwaveDuration: 0.4
   shockwaveForce: 500
+  smallEnemyMassThreshold: 2
   shieldCollider: {fileID: 2139761575}
   showDebugInfo: 0
 --- !u!1 &1510775766667098373 stripped
@@ -6762,6 +6798,14 @@ PrefabInstance:
       propertyPath: InitialModule.startLifetime.minScalar
       value: 0.1
       objectReference: {fileID: 0}
+    - target: {fileID: 5321411841721762368, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 5321411841721762368, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+      propertyPath: m_TagString
+      value: Tower
+      objectReference: {fileID: 0}
     - target: {fileID: 5479697333105954892, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -6804,11 +6848,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 5479697333105954892, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+      insertIndex: 0
+      addedObject: {fileID: 2139761577}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4354034247177685840, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7954656898271609136}
+    - targetCorrespondingSourceObject: {fileID: 5321411841721762368, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2079807234}
   m_SourcePrefab: {fileID: 100100000, guid: fa79ace9abd9a974b892271c14f9431d, type: 3}
 --- !u!114 &7954656898271609136
 MonoBehaviour:
@@ -6847,4 +6897,3 @@ SceneRoots:
   - {fileID: 2884073976590537246}
   - {fileID: 332149005}
   - {fileID: 440327505}
-  - {fileID: 2139761577}

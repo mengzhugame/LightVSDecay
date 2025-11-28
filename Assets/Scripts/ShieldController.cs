@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Enemy;
 
 namespace LightVsDecay.Shield
 {
@@ -16,8 +17,17 @@ namespace LightVsDecay.Shield
     }
     
     /// <summary>
+    /// 冲击波类型
+    /// </summary>
+    public enum ShockwaveType
+    {
+        OnHit,      // 受击时：只弹开
+        OnRecover   // 恢复时：杀死小怪 + 弹开大怪
+    }
+    
+    /// <summary>
     /// 能量护盾控制器
-    /// 负责：血量管理、视觉效果、动画控制、碰撞交互
+    /// 适配 EnergyShield2D / EnergyShield2D_URP Shader
     /// </summary>
     public class ShieldController : MonoBehaviour
     {
@@ -26,68 +36,41 @@ namespace LightVsDecay.Shield
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("护盾属性")]
-        [Tooltip("护盾最大血量")]
         [SerializeField] private int maxShieldHP = 3;
-        
-        [Tooltip("护盾恢复时间（秒）")]
         [SerializeField] private float recoveryTime = 12f;
-        
-        [Tooltip("受击后无敌时间（秒）")]
         [SerializeField] private float invincibilityDuration = 1.0f;
         
         [Header("视觉组件")]
-        [Tooltip("护盾渲染器")]
         [SerializeField] private SpriteRenderer shieldRenderer;
         
-        [Tooltip("护盾材质（如果为空，自动获取）")]
-        [SerializeField] private Material shieldMaterial;
+        [Header("颜色配置 - 满血 (3 HP)")]
+        [SerializeField] private Color fullHP_BaseColor = new Color(0f, 1f, 1f, 0.3f);
+        [SerializeField] private Color fullHP_EdgeColor = new Color(0f, 1f, 1f, 1f);
         
-        [Header("颜色配置")]
-        [Tooltip("满血颜色 (青色)")]
-        [ColorUsage(true,true)]
-        [SerializeField] private Color fullHPColor = new Color(0f, 1f, 1f, 0.3f);
+        [Header("颜色配置 - 中血 (2 HP)")]
+        [SerializeField] private Color midHP_BaseColor = new Color(0.4f, 1f, 0.8f, 0.3f);
+        [SerializeField] private Color midHP_EdgeColor = new Color(0.4f, 1f, 0.8f, 1f);
         
-        [Tooltip("2血颜色 (黄绿色)")]
-        [ColorUsage(true,true)]
-        [SerializeField] private Color midHPColor = new Color(0.4f, 1f, 0.8f, 0.3f);
-        
-        [Tooltip("1血颜色 (橙色)")]
-        [ColorUsage(true,true)]
-        [SerializeField] private Color lowHPColor = new Color(1f, 0.7f, 0.4f, 0.3f);
-        
-        [Tooltip("边缘发光颜色（跟随血量变化）")]
-        [ColorUsage(true,true)]
-        [SerializeField] private Color fullHPEdgeColor = new Color(0f, 1f, 1f, 1f);
-        [ColorUsage(true,true)]
-        [SerializeField] private Color midHPEdgeColor = new Color(0.4f, 1f, 0.8f, 1f);
-        [ColorUsage(true,true)]
-        [SerializeField] private Color lowHPEdgeColor = new Color(1f, 0.7f, 0.4f, 1f);
+        [Header("颜色配置 - 低血 (1 HP)")]
+        [SerializeField] private Color lowHP_BaseColor = new Color(1f, 0.7f, 0.4f, 0.3f);
+        [SerializeField] private Color lowHP_EdgeColor = new Color(1f, 0.7f, 0.4f, 1f);
         
         [Header("动画设置")]
-        [Tooltip("撞击闪烁持续时间")]
         [SerializeField] private float hitFlashDuration = 0.15f;
-        
-        [Tooltip("破碎渐隐时间")]
         [SerializeField] private float breakFadeDuration = 0.5f;
-        
-        [Tooltip("恢复渐显时间")]
         [SerializeField] private float recoverFadeDuration = 0.8f;
         
         [Header("冲击波设置")]
-        [Tooltip("冲击波预制体")]
         [SerializeField] private GameObject shockwavePrefab;
-        
-        [Tooltip("冲击波最大半径")]
         [SerializeField] private float shockwaveMaxRadius = 5f;
-        
-        [Tooltip("冲击波扩展时间")]
         [SerializeField] private float shockwaveDuration = 0.4f;
-        
-        [Tooltip("冲击波击退力")]
         [SerializeField] private float shockwaveForce = 500f;
         
+        [Header("大小怪判定")]
+        [Tooltip("质量小于此值判定为小怪")]
+        [SerializeField] private float smallEnemyMassThreshold = 2.0f;
+        
         [Header("碰撞设置")]
-        [Tooltip("护盾碰撞器")]
         [SerializeField] private CircleCollider2D shieldCollider;
         
         [Header("调试")]
@@ -97,17 +80,19 @@ namespace LightVsDecay.Shield
         // 事件
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>护盾受击时触发（参数：剩余血量）</summary>
         public event System.Action<int> OnShieldHit;
-        
-        /// <summary>护盾破碎时触发</summary>
         public event System.Action OnShieldBroken;
-        
-        /// <summary>护盾恢复时触发</summary>
         public event System.Action OnShieldRecovered;
-        
-        /// <summary>护盾血量变化时触发（参数：当前血量，最大血量）</summary>
         public event System.Action<int, int> OnShieldHPChanged;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Shader 属性 ID 缓存
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
+        private static readonly int EdgeColorID = Shader.PropertyToID("_EdgeColor");
+        private static readonly int HitFlashID = Shader.PropertyToID("_HitFlash");
+        private static readonly int ShieldAlphaID = Shader.PropertyToID("_ShieldAlpha");
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
@@ -119,35 +104,24 @@ namespace LightVsDecay.Shield
         private float lastHitTime;
         private float recoveryTimer;
         
-        // 材质属性ID缓存
-        private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
-        private static readonly int EdgeColorID = Shader.PropertyToID("_EdgeColor");
-        private static readonly int HitFlashID = Shader.PropertyToID("_HitFlash");
-        private static readonly int ShieldAlphaID = Shader.PropertyToID("_ShieldAlpha");
-        
-        // 协程引用
+        private Material shieldMaterial;
         private Coroutine hitFlashCoroutine;
         private Coroutine fadeCoroutine;
-        private Coroutine recoveryCoroutine;
+        private Coroutine invincibilityCoroutine;
+        
+        // 缓存 Enemy Layer
+        private int enemyLayerMask;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>当前护盾血量</summary>
         public int CurrentHP => currentShieldHP;
-        
-        /// <summary>护盾最大血量</summary>
         public int MaxHP => maxShieldHP;
-        
-        /// <summary>当前状态</summary>
         public ShieldState State => currentState;
-        
-        /// <summary>护盾是否激活</summary>
         public bool IsActive => currentState == ShieldState.Active;
-        
-        /// <summary>是否处于无敌状态</summary>
         public bool IsInvincible => isInvincible;
+        public float SmallEnemyMassThreshold => smallEnemyMassThreshold;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -155,7 +129,6 @@ namespace LightVsDecay.Shield
         
         private void Awake()
         {
-            // 自动获取组件
             if (shieldRenderer == null)
             {
                 shieldRenderer = GetComponent<SpriteRenderer>();
@@ -166,27 +139,29 @@ namespace LightVsDecay.Shield
                 shieldCollider = GetComponent<CircleCollider2D>();
             }
             
-            // 创建材质实例（避免修改共享材质）
+            // 创建材质实例
             if (shieldRenderer != null)
             {
                 shieldMaterial = shieldRenderer.material;
             }
             
-            // 初始化血量
+            // 缓存 Layer
+            enemyLayerMask = LayerMask.GetMask("Enemy");
+            
             currentShieldHP = maxShieldHP;
             currentState = ShieldState.Active;
         }
         
         private void Start()
         {
-            // 初始化视觉状态
             UpdateShieldVisuals();
             SetShieldAlpha(1f);
+            SetHitFlash(0f);
         }
         
         private void Update()
         {
-            // 更新恢复计时器
+            // 恢复计时
             if (currentState == ShieldState.Broken)
             {
                 recoveryTimer += Time.deltaTime;
@@ -196,17 +171,10 @@ namespace LightVsDecay.Shield
                     StartRecovery();
                 }
             }
-            
-            // 更新无敌状态
-            if (isInvincible && Time.time - lastHitTime >= invincibilityDuration)
-            {
-                isInvincible = false;
-            }
         }
         
         private void OnDestroy()
         {
-            // 销毁材质实例
             if (shieldMaterial != null)
             {
                 Destroy(shieldMaterial);
@@ -218,28 +186,30 @@ namespace LightVsDecay.Shield
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 护盾受到伤害
+        /// 护盾受到伤害（由 EnemyBlob 调用）
         /// </summary>
-        /// <param name="damage">伤害值（默认1）</param>
-        /// <returns>是否造成了伤害</returns>
+        /// <returns>是否成功造成伤害</returns>
         public bool TakeDamage(int damage = 1)
         {
-            // 检查是否可以受伤
             if (currentState != ShieldState.Active || isInvincible)
             {
                 return false;
             }
             
-            // 扣血
             currentShieldHP = Mathf.Max(0, currentShieldHP - damage);
             lastHitTime = Time.time;
-            isInvincible = true;
+            
+            // 触发无敌帧
+            StartInvincibility();
             
             // 触发闪烁效果
             TriggerHitFlash();
             
-            // 更新视觉
+            // 更新颜色
             UpdateShieldVisuals();
+            
+            // 播放受击冲击波（只弹开）
+            SpawnShockwave(ShockwaveType.OnHit);
             
             // 触发事件
             OnShieldHit?.Invoke(currentShieldHP);
@@ -247,7 +217,7 @@ namespace LightVsDecay.Shield
             
             if (showDebugInfo)
             {
-                Debug.Log($"[ShieldController] 受击! 剩余血量: {currentShieldHP}/{maxShieldHP}");
+                Debug.Log($"[Shield] 受击! HP: {currentShieldHP}/{maxShieldHP}");
             }
             
             // 检查是否破碎
@@ -260,7 +230,7 @@ namespace LightVsDecay.Shield
         }
         
         /// <summary>
-        /// 触发撞击效果（不造成伤害，仅视觉反馈）
+        /// 触发撞击效果（仅视觉，不扣血）
         /// </summary>
         public void TriggerHitEffect()
         {
@@ -271,7 +241,7 @@ namespace LightVsDecay.Shield
         }
         
         /// <summary>
-        /// 强制破碎护盾
+        /// 强制破碎
         /// </summary>
         public void ForceBreak()
         {
@@ -283,7 +253,7 @@ namespace LightVsDecay.Shield
         }
         
         /// <summary>
-        /// 强制恢复护盾
+        /// 强制恢复
         /// </summary>
         public void ForceRecover()
         {
@@ -294,33 +264,64 @@ namespace LightVsDecay.Shield
         }
         
         /// <summary>
-        /// 重置护盾到满血状态
+        /// 重置护盾
         /// </summary>
         public void Reset()
         {
-            // 停止所有协程
             StopAllCoroutines();
             
-            // 重置状态
             currentShieldHP = maxShieldHP;
             currentState = ShieldState.Active;
             isInvincible = false;
             recoveryTimer = 0f;
             
-            // 重置视觉
             SetShieldAlpha(1f);
             SetHitFlash(0f);
             UpdateShieldVisuals();
             
-            // 启用碰撞
             if (shieldCollider != null)
             {
                 shieldCollider.enabled = true;
             }
+        }
+        
+        /// <summary>
+        /// 判断质量是否为小怪
+        /// </summary>
+        public bool IsSmallEnemy(float mass)
+        {
+            return mass < smallEnemyMassThreshold;
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 无敌帧
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void StartInvincibility()
+        {
+            if (invincibilityCoroutine != null)
+            {
+                StopCoroutine(invincibilityCoroutine);
+            }
+            invincibilityCoroutine = StartCoroutine(InvincibilityCoroutine());
+        }
+        
+        private IEnumerator InvincibilityCoroutine()
+        {
+            isInvincible = true;
             
             if (showDebugInfo)
             {
-                Debug.Log("[ShieldController] 护盾已重置");
+                Debug.Log("[Shield] 无敌帧开始");
+            }
+            
+            yield return new WaitForSeconds(invincibilityDuration);
+            
+            isInvincible = false;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[Shield] 无敌帧结束");
             }
         }
         
@@ -328,14 +329,10 @@ namespace LightVsDecay.Shield
         // 状态转换
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>
-        /// 开始破碎动画
-        /// </summary>
         private void StartBreaking()
         {
             currentState = ShieldState.Breaking;
             
-            // 停止之前的淡入淡出协程
             if (fadeCoroutine != null)
             {
                 StopCoroutine(fadeCoroutine);
@@ -344,18 +341,12 @@ namespace LightVsDecay.Shield
             fadeCoroutine = StartCoroutine(BreakingCoroutine());
         }
         
-        /// <summary>
-        /// 开始恢复动画
-        /// </summary>
         private void StartRecovery()
         {
             currentState = ShieldState.Recovering;
             recoveryTimer = 0f;
-            
-            // 恢复血量
             currentShieldHP = maxShieldHP;
             
-            // 停止之前的淡入淡出协程
             if (fadeCoroutine != null)
             {
                 StopCoroutine(fadeCoroutine);
@@ -368,9 +359,6 @@ namespace LightVsDecay.Shield
         // 动画协程
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>
-        /// 破碎渐隐动画
-        /// </summary>
         private IEnumerator BreakingCoroutine()
         {
             float elapsed = 0f;
@@ -383,10 +371,8 @@ namespace LightVsDecay.Shield
                 yield return null;
             }
             
-            // 完全隐藏
             SetShieldAlpha(0f);
             
-            // 禁用碰撞
             if (shieldCollider != null)
             {
                 shieldCollider.enabled = false;
@@ -395,20 +381,19 @@ namespace LightVsDecay.Shield
             currentState = ShieldState.Broken;
             recoveryTimer = 0f;
             
-            // 触发事件
             OnShieldBroken?.Invoke();
             
             if (showDebugInfo)
             {
-                Debug.Log("[ShieldController] 护盾已破碎");
+                Debug.Log("[Shield] 破碎!");
             }
         }
         
-        /// <summary>
-        /// 恢复渐显动画
-        /// </summary>
         private IEnumerator RecoveryCoroutine()
         {
+            // 先播放恢复冲击波（杀死小怪 + 弹开大怪）
+            SpawnShockwave(ShockwaveType.OnRecover);
+            
             // 更新颜色到满血状态
             UpdateShieldVisuals();
             
@@ -417,9 +402,6 @@ namespace LightVsDecay.Shield
             {
                 shieldCollider.enabled = true;
             }
-            
-            // 播放冲击波
-            SpawnShockwave();
             
             // 渐显动画
             float elapsed = 0f;
@@ -435,25 +417,19 @@ namespace LightVsDecay.Shield
             SetShieldAlpha(1f);
             currentState = ShieldState.Active;
             
-            // 触发事件
             OnShieldRecovered?.Invoke();
             OnShieldHPChanged?.Invoke(currentShieldHP, maxShieldHP);
             
             if (showDebugInfo)
             {
-                Debug.Log("[ShieldController] 护盾已恢复");
+                Debug.Log("[Shield] 恢复!");
             }
         }
         
-        /// <summary>
-        /// 撞击闪烁动画
-        /// </summary>
         private IEnumerator HitFlashCoroutine()
         {
-            // 快速闪亮
             SetHitFlash(1f);
             
-            // 渐变消退
             float elapsed = 0f;
             while (elapsed < hitFlashDuration)
             {
@@ -467,45 +443,43 @@ namespace LightVsDecay.Shield
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 冲击波
+        // 冲击波系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 生成冲击波效果
+        /// 生成冲击波
         /// </summary>
-        private void SpawnShockwave()
+        /// <param name="type">冲击波类型</param>
+        private void SpawnShockwave(ShockwaveType type)
         {
-            // 使用VFX池或创建临时对象
             if (shockwavePrefab != null)
             {
                 GameObject shockwave = Instantiate(shockwavePrefab, transform.position, Quaternion.identity);
-                StartCoroutine(AnimateShockwave(shockwave));
+                StartCoroutine(AnimateShockwave(shockwave, type));
             }
             else
             {
-                // 没有预制体时，直接执行击退逻辑
-                ApplyShockwaveForce();
+                // 没有预制体，直接执行效果
+                ApplyShockwaveEffect(type);
             }
         }
         
-        /// <summary>
-        /// 冲击波动画
-        /// </summary>
-        private IEnumerator AnimateShockwave(GameObject shockwave)
+        private IEnumerator AnimateShockwave(GameObject shockwave, ShockwaveType type)
         {
             SpriteRenderer sr = shockwave.GetComponent<SpriteRenderer>();
             float elapsed = 0f;
+            bool effectApplied = false;
             
             while (elapsed < shockwaveDuration)
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / shockwaveDuration;
                 
-                // 扩展半径
+                // 从小到大扩展
                 float radius = Mathf.Lerp(0f, shockwaveMaxRadius, t);
                 shockwave.transform.localScale = Vector3.one * radius * 2f;
                 
-                // 淡出
+                // 渐隐
                 if (sr != null)
                 {
                     Color c = sr.color;
@@ -513,46 +487,78 @@ namespace LightVsDecay.Shield
                     sr.color = c;
                 }
                 
+                // 在50%时执行效果
+                if (!effectApplied && t >= 0.5f)
+                {
+                    ApplyShockwaveEffect(type);
+                    effectApplied = true;
+                }
+                
                 yield return null;
             }
             
             Destroy(shockwave);
-            
-            // 在冲击波扩展到一半时执行击退
-            ApplyShockwaveForce();
         }
         
         /// <summary>
-        /// 应用冲击波击退力
+        /// 应用冲击波效果
         /// </summary>
-        private void ApplyShockwaveForce()
+        /// <param name="type">冲击波类型</param>
+        private void ApplyShockwaveEffect(ShockwaveType type)
         {
-            // 获取范围内的所有敌人
             Collider2D[] enemies = Physics2D.OverlapCircleAll(
                 transform.position, 
                 shockwaveMaxRadius, 
-                LayerMask.GetMask("Enemy")
+                enemyLayerMask
             );
             
             foreach (var enemyCollider in enemies)
             {
+                EnemyBlob enemy = enemyCollider.GetComponent<EnemyBlob>();
                 Rigidbody2D rb = enemyCollider.GetComponent<Rigidbody2D>();
-                if (rb != null)
+                
+                if (enemy == null || rb == null) continue;
+                
+                // 计算方向和距离衰减
+                Vector2 direction = (enemyCollider.transform.position - transform.position).normalized;
+                float distance = Vector2.Distance(transform.position, enemyCollider.transform.position);
+                float falloff = 1f - (distance / shockwaveMaxRadius);
+                falloff = Mathf.Max(0.3f, falloff);
+                
+                bool isSmall = IsSmallEnemy(rb.mass);
+                
+                if (type == ShockwaveType.OnRecover)
                 {
-                    // 计算击退方向
-                    Vector2 direction = (enemyCollider.transform.position - transform.position).normalized;
-                    
-                    // 距离衰减
-                    float distance = Vector2.Distance(transform.position, enemyCollider.transform.position);
-                    float falloff = 1f - (distance / shockwaveMaxRadius);
-                    falloff = Mathf.Max(0.3f, falloff); // 最小30%力量
-                    
-                    // 应用力
+                    // 恢复冲击波：杀死小怪，弹开大怪
+                    if (isSmall)
+                    {
+                        // 小怪直接杀死
+                        enemy.KillByShockwave();
+                        
+                        if (showDebugInfo)
+                        {
+                            Debug.Log($"[Shield] 恢复冲击波杀死小怪: {enemy.name}");
+                        }
+                    }
+                    else
+                    {
+                        // 大怪弹开
+                        rb.AddForce(direction * shockwaveForce * falloff, ForceMode2D.Impulse);
+                        
+                        if (showDebugInfo)
+                        {
+                            Debug.Log($"[Shield] 恢复冲击波弹开大怪: {enemy.name}");
+                        }
+                    }
+                }
+                else // ShockwaveType.OnHit
+                {
+                    // 受击冲击波：只弹开所有怪
                     rb.AddForce(direction * shockwaveForce * falloff, ForceMode2D.Impulse);
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[ShieldController] 冲击波击退: {enemyCollider.name}, 力量: {shockwaveForce * falloff:F1}");
+                        Debug.Log($"[Shield] 受击冲击波弹开: {enemy.name}");
                     }
                 }
             }
@@ -562,9 +568,6 @@ namespace LightVsDecay.Shield
         // 视觉效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>
-        /// 更新护盾视觉（根据血量）
-        /// </summary>
         private void UpdateShieldVisuals()
         {
             if (shieldMaterial == null) return;
@@ -574,20 +577,21 @@ namespace LightVsDecay.Shield
             switch (currentShieldHP)
             {
                 case 3:
-                    baseColor = fullHPColor;
-                    edgeColor = fullHPEdgeColor;
+                default:
+                    baseColor = fullHP_BaseColor;
+                    edgeColor = fullHP_EdgeColor;
                     break;
                 case 2:
-                    baseColor = midHPColor;
-                    edgeColor = midHPEdgeColor;
+                    baseColor = midHP_BaseColor;
+                    edgeColor = midHP_EdgeColor;
                     break;
                 case 1:
-                    baseColor = lowHPColor;
-                    edgeColor = lowHPEdgeColor;
+                    baseColor = lowHP_BaseColor;
+                    edgeColor = lowHP_EdgeColor;
                     break;
-                default:
-                    baseColor = lowHPColor;
-                    edgeColor = lowHPEdgeColor;
+                case 0:
+                    baseColor = lowHP_BaseColor;
+                    edgeColor = lowHP_EdgeColor;
                     break;
             }
             
@@ -595,9 +599,6 @@ namespace LightVsDecay.Shield
             shieldMaterial.SetColor(EdgeColorID, edgeColor);
         }
         
-        /// <summary>
-        /// 设置护盾总透明度
-        /// </summary>
         private void SetShieldAlpha(float alpha)
         {
             if (shieldMaterial != null)
@@ -606,9 +607,6 @@ namespace LightVsDecay.Shield
             }
         }
         
-        /// <summary>
-        /// 设置撞击闪烁强度
-        /// </summary>
         private void SetHitFlash(float flash)
         {
             if (shieldMaterial != null)
@@ -617,9 +615,6 @@ namespace LightVsDecay.Shield
             }
         }
         
-        /// <summary>
-        /// 触发撞击闪烁
-        /// </summary>
         private void TriggerHitFlash()
         {
             if (hitFlashCoroutine != null)
@@ -627,28 +622,6 @@ namespace LightVsDecay.Shield
                 StopCoroutine(hitFlashCoroutine);
             }
             hitFlashCoroutine = StartCoroutine(HitFlashCoroutine());
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 碰撞处理
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private void OnCollisionEnter2D(Collision2D collision)
-        {
-            // 使用 Layer 检测而不是 Tag
-            if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
-            {
-                TakeDamage(1);
-            }
-        }
-        
-        private void OnTriggerEnter2D(Collider2D other)
-        {
-            // 使用 Layer 检测而不是 Tag
-            if (other.gameObject.layer == LayerMask.NameToLayer("Enemy"))
-            {
-                TakeDamage(1);
-            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -660,8 +633,8 @@ namespace LightVsDecay.Shield
         {
             if (!showDebugInfo || !Application.isPlaying) return;
             
-            GUILayout.BeginArea(new Rect(10, Screen.height - 150, 200, 140));
-            GUILayout.Label($"=== Shield Debug ===");
+            GUILayout.BeginArea(new Rect(10, Screen.height - 180, 200, 170));
+            GUILayout.Label("=== Shield Debug ===");
             GUILayout.Label($"HP: {currentShieldHP}/{maxShieldHP}");
             GUILayout.Label($"State: {currentState}");
             GUILayout.Label($"Invincible: {isInvincible}");
@@ -678,9 +651,19 @@ namespace LightVsDecay.Shield
                 TakeDamage(1);
             }
             
+            if (GUILayout.Button("Trigger Flash"))
+            {
+                TriggerHitEffect();
+            }
+            
             if (currentState == ShieldState.Broken && GUILayout.Button("Force Recover"))
             {
                 ForceRecover();
+            }
+            
+            if (GUILayout.Button("Reset"))
+            {
+                Reset();
             }
             
             GUILayout.EndArea();
@@ -688,7 +671,6 @@ namespace LightVsDecay.Shield
         
         private void OnDrawGizmosSelected()
         {
-            // 绘制冲击波范围
             Gizmos.color = new Color(0f, 1f, 1f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, shockwaveMaxRadius);
         }

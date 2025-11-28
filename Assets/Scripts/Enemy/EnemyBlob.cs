@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Shield;
 
 namespace LightVsDecay.Enemy
 {
@@ -381,7 +382,30 @@ namespace LightVsDecay.Enemy
             // 应用击退力（使用 Force 模式，因为激光是持续照射）
             rb.AddForce(finalForce, ForceMode2D.Force);
         }
-        
+        /// <summary>
+        /// 被冲击波杀死（由 ShieldController 调用）
+        /// </summary>
+        public void KillByShockwave()
+        {
+            if (isDead) return;
+            isDead = true;
+    
+            rb.velocity = Vector2.zero;
+    
+            if (circleCollider != null)
+            {
+                circleCollider.enabled = false;
+            }
+    
+            deathCoroutine = StartCoroutine(DeathFadeCoroutine());
+        }
+        /// <summary>
+        /// 获取质量（供外部判断大小怪）
+        /// </summary>
+        public float GetMass()
+        {
+            return rb != null ? rb.mass : mass;
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Shader抖动
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -504,14 +528,96 @@ namespace LightVsDecay.Enemy
         
         private void OnCollisionEnter2D(Collision2D collision)
         {
+            // 【调试】打印所有碰撞
+            //Debug.Log($"[EnemyBlob] 碰撞到: {collision.gameObject.name}, Layer: {LayerMask.LayerToName(collision.gameObject.layer)}");
             if (isDead) return;
-            
-            if (collision.gameObject.CompareTag("Tower") || collision.gameObject.CompareTag("Shield"))
+    
+            int otherLayer = collision.gameObject.layer;
+    
+            // 碰到护盾
+            if (otherLayer == LayerMask.NameToLayer("Shield"))
             {
-                Explode();
+                HandleShieldCollision(collision.gameObject);
+                return;
+            }
+    
+            // 碰到塔本体
+            if (otherLayer == LayerMask.NameToLayer("Tower"))
+            {
+                HandleTowerCollision(collision.gameObject);
+                return;
             }
         }
-        
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            Debug.Log($"[EnemyBlob] Trigger进入: {other.gameObject.name}, Layer: {LayerMask.LayerToName(other.gameObject.layer)}");
+            if (isDead) return;
+    
+            int otherLayer = other.gameObject.layer;
+    
+            // 护盾碰撞（Trigger模式）
+            if (otherLayer == LayerMask.NameToLayer("Shield"))
+            {
+                HandleShieldCollision(other.gameObject);
+            }
+        }
+        /// <summary>
+        /// 处理与护盾的碰撞
+        /// </summary>
+        private void HandleShieldCollision(GameObject shieldObj)
+        {
+            var shield = shieldObj.GetComponent<ShieldController>();
+            if (shield == null) return;
+    
+            // 尝试对护盾造成伤害
+            bool damaged = shield.TakeDamage(1);
+    
+            if (damaged)
+            {
+                // 小怪：自爆
+                if (IsSmallEnemy())
+                {
+                    Explode();
+                }
+                // 大怪会被冲击波弹开，不需要额外处理
+            }
+            // 如果护盾无敌中，什么都不发生
+        }
+        /// <summary>
+        /// 判断是否为小怪（根据质量）
+        /// </summary>
+        private bool IsSmallEnemy()
+        {
+            return rb.mass < 2.0f;
+        }
+        /// <summary>
+        /// 处理与塔本体的碰撞
+        /// </summary>
+        private void HandleTowerCollision(GameObject towerObj)
+        {
+            //Explode();
+            var turretHealth = towerObj.GetComponent<TurretHealth>();
+            if (turretHealth == null) return;
+            
+            // 尝试对塔造成伤害
+            bool damaged = turretHealth.TakeDamage(1);
+            
+            if (damaged)
+            {
+                // 判断大小怪
+                if (turretHealth.IsSmallEnemy(GetMass()))
+                {
+                    // 小怪自爆
+                    Explode();
+                }
+                else
+                {
+                    // 大怪被弹开
+                    Vector2 direction = (transform.position - towerObj.transform.position).normalized;
+                    rb.AddForce(direction * turretHealth.GetBounceForce(), ForceMode2D.Impulse);
+                }
+            }
+        }
         private void Explode()
         {
             if (isDead) return;
