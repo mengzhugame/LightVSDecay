@@ -550,7 +550,7 @@ namespace LightVsDecay.Enemy
         }
         private void OnTriggerEnter2D(Collider2D other)
         {
-            Debug.Log($"[EnemyBlob] Trigger进入: {other.gameObject.name}, Layer: {LayerMask.LayerToName(other.gameObject.layer)}");
+           // Debug.Log($"[EnemyBlob] Trigger进入: {other.gameObject.name}, Layer: {LayerMask.LayerToName(other.gameObject.layer)}");
             if (isDead) return;
     
             int otherLayer = other.gameObject.layer;

@@ -28,6 +28,7 @@ namespace LightVsDecay.Shield
     /// <summary>
     /// 能量护盾控制器
     /// 适配 EnergyShield2D / EnergyShield2D_URP Shader
+    /// 【修复】冲击波改为子物体引用，增大力度，正确透明消失
     /// </summary>
     public class ShieldController : MonoBehaviour
     {
@@ -61,10 +62,13 @@ namespace LightVsDecay.Shield
         [SerializeField] private float recoverFadeDuration = 0.8f;
         
         [Header("冲击波设置")]
-        [SerializeField] private GameObject shockwavePrefab;
+        [Tooltip("冲击波子物体（不是预制体，是场景中的子物体）")]
+        [SerializeField] private Transform shockwaveTransform;
+        [SerializeField] private SpriteRenderer shockwaveRenderer;
         [SerializeField] private float shockwaveMaxRadius = 5f;
         [SerializeField] private float shockwaveDuration = 0.4f;
-        [SerializeField] private float shockwaveForce = 500f;
+        [Tooltip("冲击波力度（增大到2000-5000）")]
+        [SerializeField] private float shockwaveForce = 3000f;
         
         [Header("大小怪判定")]
         [Tooltip("质量小于此值判定为小怪")]
@@ -108,9 +112,14 @@ namespace LightVsDecay.Shield
         private Coroutine hitFlashCoroutine;
         private Coroutine fadeCoroutine;
         private Coroutine invincibilityCoroutine;
+        private Coroutine shockwaveCoroutine;
         
         // 缓存 Enemy Layer
         private int enemyLayerMask;
+        
+        // 冲击波初始缩放（用于重置）
+        private Vector3 shockwaveOriginalScale;
+        private Color shockwaveOriginalColor;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
@@ -150,6 +159,9 @@ namespace LightVsDecay.Shield
             
             currentShieldHP = maxShieldHP;
             currentState = ShieldState.Active;
+            
+            // 初始化冲击波
+            InitializeShockwave();
         }
         
         private void Start()
@@ -182,6 +194,46 @@ namespace LightVsDecay.Shield
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 冲击波初始化
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void InitializeShockwave()
+        {
+            // 自动查找子物体
+            if (shockwaveTransform == null)
+            {
+                shockwaveTransform = transform.Find("Shield_Shockwave");
+            }
+            
+            if (shockwaveTransform != null)
+            {
+                if (shockwaveRenderer == null)
+                {
+                    shockwaveRenderer = shockwaveTransform.GetComponent<SpriteRenderer>();
+                }
+                
+                // 记录初始状态
+                shockwaveOriginalScale = shockwaveTransform.localScale;
+                if (shockwaveRenderer != null)
+                {
+                    shockwaveOriginalColor = shockwaveRenderer.color;
+                }
+                
+                // 初始隐藏
+                shockwaveTransform.gameObject.SetActive(false);
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log("[Shield] 冲击波子物体初始化完成");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[Shield] 未找到冲击波子物体 Shield_Shockwave！");
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
@@ -193,6 +245,10 @@ namespace LightVsDecay.Shield
         {
             if (currentState != ShieldState.Active || isInvincible)
             {
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[Shield] 伤害无效 - State:{currentState}, Invincible:{isInvincible}");
+                }
                 return false;
             }
             
@@ -209,7 +265,7 @@ namespace LightVsDecay.Shield
             UpdateShieldVisuals();
             
             // 播放受击冲击波（只弹开）
-            SpawnShockwave(ShockwaveType.OnHit);
+            PlayShockwave(ShockwaveType.OnHit);
             
             // 触发事件
             OnShieldHit?.Invoke(currentShieldHP);
@@ -283,6 +339,9 @@ namespace LightVsDecay.Shield
             {
                 shieldCollider.enabled = true;
             }
+            
+            // 重置冲击波
+            ResetShockwave();
         }
         
         /// <summary>
@@ -392,7 +451,7 @@ namespace LightVsDecay.Shield
         private IEnumerator RecoveryCoroutine()
         {
             // 先播放恢复冲击波（杀死小怪 + 弹开大怪）
-            SpawnShockwave(ShockwaveType.OnRecover);
+            PlayShockwave(ShockwaveType.OnRecover);
             
             // 更新颜色到满血状态
             UpdateShieldVisuals();
@@ -443,30 +502,48 @@ namespace LightVsDecay.Shield
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 冲击波系统
+        // 冲击波系统（修复版：使用子物体）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 生成冲击波
+        /// 播放冲击波（使用子物体）
         /// </summary>
-        /// <param name="type">冲击波类型</param>
-        private void SpawnShockwave(ShockwaveType type)
+        private void PlayShockwave(ShockwaveType type)
         {
-            if (shockwavePrefab != null)
+            if (shockwaveTransform == null)
             {
-                GameObject shockwave = Instantiate(shockwavePrefab, transform.position, Quaternion.identity);
-                StartCoroutine(AnimateShockwave(shockwave, type));
-            }
-            else
-            {
-                // 没有预制体，直接执行效果
+                // 没有冲击波子物体，直接执行效果
                 ApplyShockwaveEffect(type);
+                return;
             }
+            
+            // 停止之前的冲击波动画
+            if (shockwaveCoroutine != null)
+            {
+                StopCoroutine(shockwaveCoroutine);
+                ResetShockwave();
+            }
+            
+            shockwaveCoroutine = StartCoroutine(AnimateShockwaveCoroutine(type));
         }
         
-        private IEnumerator AnimateShockwave(GameObject shockwave, ShockwaveType type)
+        /// <summary>
+        /// 冲击波动画协程
+        /// </summary>
+        private IEnumerator AnimateShockwaveCoroutine(ShockwaveType type)
         {
-            SpriteRenderer sr = shockwave.GetComponent<SpriteRenderer>();
+            // 显示冲击波
+            shockwaveTransform.gameObject.SetActive(true);
+            
+            // 重置到初始状态
+            shockwaveTransform.localScale = Vector3.zero;
+            if (shockwaveRenderer != null)
+            {
+                Color c = shockwaveOriginalColor;
+                c.a = 1f;
+                shockwaveRenderer.color = c;
+            }
+            
             float elapsed = 0f;
             bool effectApplied = false;
             
@@ -477,18 +554,18 @@ namespace LightVsDecay.Shield
                 
                 // 从小到大扩展
                 float radius = Mathf.Lerp(0f, shockwaveMaxRadius, t);
-                shockwave.transform.localScale = Vector3.one * radius * 2f;
+                shockwaveTransform.localScale = Vector3.one * radius * 2f;
                 
                 // 渐隐
-                if (sr != null)
+                if (shockwaveRenderer != null)
                 {
-                    Color c = sr.color;
+                    Color c = shockwaveOriginalColor;
                     c.a = Mathf.Lerp(1f, 0f, t);
-                    sr.color = c;
+                    shockwaveRenderer.color = c;
                 }
                 
-                // 在50%时执行效果
-                if (!effectApplied && t >= 0.5f)
+                // 在30%时执行物理效果（更早一点，让玩家感觉更及时）
+                if (!effectApplied && t >= 0.3f)
                 {
                     ApplyShockwaveEffect(type);
                     effectApplied = true;
@@ -497,20 +574,50 @@ namespace LightVsDecay.Shield
                 yield return null;
             }
             
-            Destroy(shockwave);
+            // 动画结束，隐藏冲击波
+            ResetShockwave();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[Shield] 冲击波动画完成 - Type:{type}");
+            }
         }
         
         /// <summary>
-        /// 应用冲击波效果
+        /// 重置冲击波到初始状态
         /// </summary>
-        /// <param name="type">冲击波类型</param>
+        private void ResetShockwave()
+        {
+            if (shockwaveTransform != null)
+            {
+                shockwaveTransform.localScale = shockwaveOriginalScale;
+                shockwaveTransform.gameObject.SetActive(false);
+                
+                if (shockwaveRenderer != null)
+                {
+                    shockwaveRenderer.color = shockwaveOriginalColor;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 应用冲击波物理效果
+        /// </summary>
         private void ApplyShockwaveEffect(ShockwaveType type)
         {
+            // 使用世界坐标位置检测
+            Vector2 center = transform.position;
+            
             Collider2D[] enemies = Physics2D.OverlapCircleAll(
-                transform.position, 
+                center, 
                 shockwaveMaxRadius, 
                 enemyLayerMask
             );
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[Shield] 冲击波检测到 {enemies.Length} 个敌人");
+            }
             
             foreach (var enemyCollider in enemies)
             {
@@ -519,11 +626,13 @@ namespace LightVsDecay.Shield
                 
                 if (enemy == null || rb == null) continue;
                 
-                // 计算方向和距离衰减
-                Vector2 direction = (enemyCollider.transform.position - transform.position).normalized;
-                float distance = Vector2.Distance(transform.position, enemyCollider.transform.position);
+                // 计算方向（从护盾中心指向敌人）
+                Vector2 direction = ((Vector2)enemyCollider.transform.position - center).normalized;
+                
+                // 距离衰减
+                float distance = Vector2.Distance(center, enemyCollider.transform.position);
                 float falloff = 1f - (distance / shockwaveMaxRadius);
-                falloff = Mathf.Max(0.3f, falloff);
+                falloff = Mathf.Max(0.3f, falloff); // 最小保持30%力度
                 
                 bool isSmall = IsSmallEnemy(rb.mass);
                 
@@ -532,7 +641,6 @@ namespace LightVsDecay.Shield
                     // 恢复冲击波：杀死小怪，弹开大怪
                     if (isSmall)
                     {
-                        // 小怪直接杀死
                         enemy.KillByShockwave();
                         
                         if (showDebugInfo)
@@ -542,23 +650,32 @@ namespace LightVsDecay.Shield
                     }
                     else
                     {
-                        // 大怪弹开
-                        rb.AddForce(direction * shockwaveForce * falloff, ForceMode2D.Impulse);
+                        // 大怪用 Impulse 模式，瞬间施加力
+                        float actualForce = shockwaveForce * falloff;
+                        rb.AddForce(direction * actualForce, ForceMode2D.Impulse);
                         
                         if (showDebugInfo)
                         {
-                            Debug.Log($"[Shield] 恢复冲击波弹开大怪: {enemy.name}");
+                            Debug.Log($"[Shield] 恢复冲击波弹开大怪: {enemy.name}, Force:{actualForce}");
                         }
                     }
                 }
                 else // ShockwaveType.OnHit
                 {
-                    // 受击冲击波：只弹开所有怪
-                    rb.AddForce(direction * shockwaveForce * falloff, ForceMode2D.Impulse);
+                    // 受击冲击波：弹开所有怪
+                    float actualForce = shockwaveForce * falloff;
+                    
+                    // 小怪用更大的力（因为质量小）
+                    if (isSmall)
+                    {
+                        actualForce *= 0.5f; // 小怪力度减半（因为质量小，同样的力会飞更远）
+                    }
+                    
+                    rb.AddForce(direction * actualForce, ForceMode2D.Impulse);
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[Shield] 受击冲击波弹开: {enemy.name}");
+                        Debug.Log($"[Shield] 受击冲击波弹开: {enemy.name}, Force:{actualForce}");
                     }
                 }
             }
@@ -651,9 +768,9 @@ namespace LightVsDecay.Shield
                 TakeDamage(1);
             }
             
-            if (GUILayout.Button("Trigger Flash"))
+            if (GUILayout.Button("Test Shockwave"))
             {
-                TriggerHitEffect();
+                PlayShockwave(ShockwaveType.OnHit);
             }
             
             if (currentState == ShieldState.Broken && GUILayout.Button("Force Recover"))
