@@ -131,7 +131,7 @@ namespace LightVsDecay.Logic
             if (scene.name == gameSceneName)
             {
                 // 进入游戏场景，开始游戏
-                StartGame();
+                StartCoroutine(DelayedStartGame());
             }
             else if (scene.name == mainMenuSceneName)
             {
@@ -139,7 +139,16 @@ namespace LightVsDecay.Logic
                 ChangeState(GameState.Menu);
             }
         }
-        
+        /// <summary>
+        /// 延迟启动游戏，确保所有Manager都完成初始化
+        /// </summary>
+        private System.Collections.IEnumerator DelayedStartGame()
+        {
+            // 等待一帧，让所有 Start() 执行完毕
+            yield return null;
+    
+            StartGame();
+        }
         /// <summary>
         /// 加载主菜单场景（保持原有方法名兼容性）
         /// </summary>

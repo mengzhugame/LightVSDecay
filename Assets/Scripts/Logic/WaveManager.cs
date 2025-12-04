@@ -79,13 +79,12 @@ namespace LightVsDecay.Logic
             
             CalculateScreenBounds();
             InitializeTimers();
+            GameEvents.OnGameStart += OnGameStart;
+            GameEvents.OnGameStateChanged += OnGameStateChanged;
         }
         
         private void Start()
         {
-            // 订阅游戏事件
-            GameEvents.OnGameStart += OnGameStart;
-            GameEvents.OnGameStateChanged += OnGameStateChanged;
         }
         
         protected override void OnSingletonDestroy()

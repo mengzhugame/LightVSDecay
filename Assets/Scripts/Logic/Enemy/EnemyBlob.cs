@@ -100,7 +100,9 @@ namespace LightVsDecay.Logic.Enemy
         
         // 速度倍率（狂暴模式）
         private float speedMultiplier = 1f;
-        
+
+        private int shieldLayer;
+        private int towerLayer;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -120,6 +122,9 @@ namespace LightVsDecay.Logic.Enemy
             // 加载配置
             LoadDataFromConfig();
             ConfigureRigidbody();
+            // 【新增】缓存 Layer（避免每次碰撞都调用 NameToLayer）
+            shieldLayer = LayerMask.NameToLayer("Shield");
+            towerLayer = LayerMask.NameToLayer("Tower");
         }
         
         private void Start()
@@ -548,11 +553,14 @@ namespace LightVsDecay.Logic.Enemy
         {
             if (isDead) return;
             
-            if (collision.gameObject.CompareTag("Shield"))
+            int collisionLayer = collision.gameObject.layer;
+    
+            // 【修改】使用 Layer 判断而非 Tag
+            if (collisionLayer == shieldLayer)
             {
                 HandleShieldCollision(collision.gameObject);
             }
-            else if (collision.gameObject.CompareTag("Tower"))
+            else if (collisionLayer == towerLayer)
             {
                 HandleTowerCollision(collision.gameObject);
             }
@@ -560,33 +568,64 @@ namespace LightVsDecay.Logic.Enemy
         
         private void HandleShieldCollision(GameObject shieldObj)
         {
-            var shieldController = shieldObj.GetComponentInParent<ShieldController>();
+            var shieldController = shieldObj.GetComponent<ShieldController>();
+            if (shieldController == null)
+            {
+                shieldController = shieldObj.GetComponentInParent<ShieldController>();
+            }
+    
             if (shieldController == null) return;
-            
-            if (!shieldController.IsInvincible && shieldController.CurrentShieldHP > 0)
+    
+            if (shieldController.IsInvincible || shieldController.CurrentShieldHP <= 0)
+            {
+                return;
+            }
+    
+            // 【关键修复】先对护盾造成伤害！
+            bool damaged = shieldController.TakeDamage(1);
+    
+            if (damaged)
             {
                 if (IsSmallEnemy())
                 {
                     Explode();
+                }
+                else
+                {
+                    Vector2 direction = (transform.position - shieldObj.transform.position).normalized;
+                    rb.AddForce(direction * 500f, ForceMode2D.Impulse);
                 }
             }
         }
         
         private void HandleTowerCollision(GameObject towerObj)
         {
+            // 尝试从碰撞对象或其父对象获取 TurretHealth
             var turretHealth = towerObj.GetComponent<TurretHealth>();
-            if (turretHealth == null) return;
-            
+            if (turretHealth == null)
+            {
+                turretHealth = towerObj.GetComponentInParent<TurretHealth>();
+            }
+    
+            if (turretHealth == null)
+            {
+                Debug.LogWarning($"[EnemyBlob] 找不到 TurretHealth: {towerObj.name}");
+                return;
+            }
+    
+            // 对塔造成伤害
             bool damaged = turretHealth.TakeDamage(1);
-            
+    
             if (damaged)
             {
                 if (turretHealth.IsSmallEnemy(GetMass()))
                 {
+                    // 小怪自爆
                     Explode();
                 }
                 else
                 {
+                    // 大怪弹开
                     Vector2 direction = (transform.position - towerObj.transform.position).normalized;
                     rb.AddForce(direction * turretHealth.GetBounceForce(), ForceMode2D.Impulse);
                 }
