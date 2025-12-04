@@ -1,14 +1,15 @@
+using LightVsDecay.Logic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-namespace LightVsDecay.UI
+namespace LightVsDecay.UI.Panels
 {
     /// <summary>
     /// 主菜单控制器
     /// 负责 MainScene 的 UI 交互
     /// </summary>
-    public class MainMenuController : MonoBehaviour
+    public class MainMenuPanel : MonoBehaviour
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - TopArea
@@ -112,11 +113,11 @@ namespace LightVsDecay.UI
         private void LoadPlayerData()
         {
             // 从 PlayerProgressManager 或 PlayerPrefs 加载数据
-            if (Core.PlayerProgressManager.Instance != null)
+            if (ProgressManager.Instance != null)
             {
-                playerGems = Core.PlayerProgressManager.Instance.Gems;
-                playerGoldCoins = Core.PlayerProgressManager.Instance.GoldCoins;
-                playerEnergy = Core.PlayerProgressManager.Instance.Energy;
+                playerGems = ProgressManager.Instance.Gems;
+                playerGoldCoins = ProgressManager.Instance.GoldCoins;
+                playerEnergy = ProgressManager.Instance.Energy;
             }
             else
             {
@@ -231,9 +232,9 @@ namespace LightVsDecay.UI
             playerEnergy--;
             
             // 保存数据
-            if (Core.PlayerProgressManager.Instance != null)
+            if (ProgressManager.Instance != null)
             {
-                Core.PlayerProgressManager.Instance.ConsumeEnergy(1);
+                ProgressManager.Instance.ConsumeEnergy(1);
             }
             else
             {
@@ -242,9 +243,9 @@ namespace LightVsDecay.UI
             }
             
             // 加载游戏场景
-            if (Core.GameManager.Instance != null)
+            if (GameManager.Instance != null)
             {
-                Core.GameManager.Instance.LoadGameScene();
+                GameManager.Instance.LoadGameScene();
             }
             else
             {

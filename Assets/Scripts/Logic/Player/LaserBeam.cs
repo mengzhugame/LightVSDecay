@@ -1,7 +1,7 @@
 using UnityEngine;
 using LightVsDecay.Core;
 
-namespace LightVsDecay.Weapon
+namespace LightVsDecay.Logic.Player
 {
     /// <summary>
     /// 单个激光光束组件

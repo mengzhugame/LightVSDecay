@@ -2,8 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using LightVsDecay.Logic;
 
-namespace LightVsDecay.UI
+namespace LightVsDecay.UI.Panels
 {
     /// <summary>
     /// 结算面板控制器
@@ -13,7 +14,7 @@ namespace LightVsDecay.UI
     /// - UIManager：负责面板的显示/隐藏
     /// - SettlementPanelController：负责面板内容和交互逻辑
     /// </summary>
-    public class SettlementPanelController : MonoBehaviour
+    public class SettlementPanel : MonoBehaviour
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - UI 元素
@@ -89,9 +90,9 @@ namespace LightVsDecay.UI
             isVictory = victory;
 
             // 获取结算数据
-            if (Core.PlayerProgressManager.Instance != null)
+            if (ProgressManager.Instance != null)
             {
-                settlementData = Core.PlayerProgressManager.Instance.GetSettlementData();
+                settlementData = ProgressManager.Instance.GetSettlementData();
             }
             else
             {
@@ -239,9 +240,9 @@ namespace LightVsDecay.UI
 
             int doubleCoins = settlementData.coinsEarned * 2;
 
-            if (Core.PlayerProgressManager.Instance != null)
+            if (ProgressManager.Instance != null)
             {
-                Core.PlayerProgressManager.Instance.AddGoldCoins(doubleCoins);
+                ProgressManager.Instance.AddGoldCoins(doubleCoins);
             }
             else
             {
@@ -261,9 +262,9 @@ namespace LightVsDecay.UI
         {
             Debug.Log("[SettlementPanel] 返回按钮点击");
 
-            if (Core.PlayerProgressManager.Instance != null)
+            if (ProgressManager.Instance != null)
             {
-                Core.PlayerProgressManager.Instance.AddGoldCoins(settlementData.coinsEarned);
+                ProgressManager.Instance.AddGoldCoins(settlementData.coinsEarned);
             }
             else
             {
@@ -283,9 +284,9 @@ namespace LightVsDecay.UI
             Time.timeScale = 1f;
 
             // 加载主菜单
-            if (Core.GameManager.Instance != null)
+            if (GameManager.Instance != null)
             {
-                Core.GameManager.Instance.LoadMainMenu();
+                GameManager.Instance.LoadMainMenu();
             }
             else
             {

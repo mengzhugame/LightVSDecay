@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace LightVsDecay.Enemy
+namespace LightVsDecay.Logic.Enemy
 {
     /// <summary>
     /// Metaballs 视觉欺诈系统管理器

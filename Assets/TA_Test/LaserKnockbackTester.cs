@@ -140,7 +140,7 @@ public class LaserKnockbackTester : MonoBehaviour
         }
         
         // 尝试获取 EnemyBlob 组件（兼容现有系统）
-        var enemyBlob = currentHit.collider.GetComponent<LightVsDecay.Enemy.EnemyBlob>();
+        var enemyBlob = currentHit.collider.GetComponent<LightVsDecay.Logic.Enemy.EnemyBlob>();
         if (enemyBlob != null)
         {
             enemyBlob.TakeDamage(damage, knockbackForce);

@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using LightVsDecay.Core;
-using LightVsDecay.Shield;
+using LightVsDecay.Logic;
 
-namespace LightVsDecay
+namespace LightVsDecay.Logic.Player
 {
     /// <summary>
     /// 光棱塔本体血量管理

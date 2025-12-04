@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-namespace LightVsDecay.Enemy
+namespace LightVsDecay.Logic.Enemy
 {
     /// <summary>
     /// 黑油怪物眼睛行为

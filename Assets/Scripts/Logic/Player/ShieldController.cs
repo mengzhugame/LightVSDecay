@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using LightVsDecay.Core.Pool;
-using LightVsDecay.Enemy;
+using LightVsDecay.Logic.Enemy;
 
-namespace LightVsDecay.Shield
+namespace LightVsDecay.Logic.Player
 {
     /// <summary>
     /// 护盾状态枚举

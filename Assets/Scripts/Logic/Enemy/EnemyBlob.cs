@@ -2,9 +2,9 @@ using UnityEngine;
 using System.Collections;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
-using LightVsDecay.Shield;
+using LightVsDecay.Logic.Player;
 
-namespace LightVsDecay.Enemy
+namespace LightVsDecay.Logic.Enemy
 {
     /// <summary>
     /// 黑油怪物主逻辑

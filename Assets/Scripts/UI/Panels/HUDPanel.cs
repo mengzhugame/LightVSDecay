@@ -2,14 +2,16 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using LightVsDecay.Logic;
+using LightVsDecay.Logic.Player;
 
-namespace LightVsDecay.UI
+namespace LightVsDecay.UI.Panels
 {
     /// <summary>
     /// HUD 控制器
     /// 负责 GameScene 所有 HUD UI 元素的更新
     /// </summary>
-    public class HUDController : MonoBehaviour
+    public class HUDPanel : MonoBehaviour
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 顶部区域
@@ -528,12 +530,12 @@ namespace LightVsDecay.UI
             }
             
             // 通过 PlayerProgressManager 使用大招
-            if (Core.PlayerProgressManager.Instance != null)
+            if (ProgressManager.Instance != null)
             {
-                if (Core.PlayerProgressManager.Instance.UseUlt())
+                if (ProgressManager.Instance.UseUlt())
                 {
                     // 触发激光控制器的大招
-                    var laserController = FindObjectOfType<Weapon.LaserController>();
+                    var laserController = FindObjectOfType<LaserController>();
                     if (laserController != null)
                     {
                         laserController.ActivateUlt();

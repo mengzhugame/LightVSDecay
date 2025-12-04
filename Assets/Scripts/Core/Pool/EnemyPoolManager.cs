@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using LightVsDecay.Enemy;
+using LightVsDecay.Logic.Enemy;
 
 namespace LightVsDecay.Core.Pool
 {

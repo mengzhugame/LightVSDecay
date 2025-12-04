@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 using LightVsDecay.Core.Pool;
-using LightVsDecay.Enemy;
+using LightVsDecay.Logic.Enemy;
 
-namespace LightVsDecay.Core
+namespace LightVsDecay.Logic
 {
     /// <summary>
     /// 生成位置区域

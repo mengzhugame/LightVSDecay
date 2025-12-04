@@ -1,7 +1,7 @@
 using UnityEngine;
 using LightVsDecay.Core;
 
-namespace LightVsDecay.Weapon
+namespace LightVsDecay.Logic.Player
 {
     /// <summary>
     /// 激光控制器 - 只负责伤害判定和击退处理

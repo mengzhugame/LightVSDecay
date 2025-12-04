@@ -1,21 +1,16 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using LightVsDecay.Core;
 
-namespace LightVsDecay.Core
+namespace LightVsDecay.Logic
 {
     /// <summary>
     /// 游戏管理器 (单例)
     /// 负责：游戏状态管理、场景切换、游戏计时
     /// </summary>
-    public class GameManager : MonoBehaviour
+    public class GameManager : PersistentSingleton<GameManager>
     {
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 单例
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        public static GameManager Instance { get; private set; }
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -55,19 +50,14 @@ namespace LightVsDecay.Core
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            // 单例设置 (跨场景保持)
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            
-            // 监听场景加载
             SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+    
+        protected override void OnSingletonDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
         }
         
         private void Update()
@@ -77,16 +67,7 @@ namespace LightVsDecay.Core
                 UpdateGameTimer();
             }
         }
-        
-        private void OnDestroy()
-        {
-            if (Instance == this)
-            {
-                Instance = null;
-                SceneManager.sceneLoaded -= OnSceneLoaded;
-            }
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 场景管理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

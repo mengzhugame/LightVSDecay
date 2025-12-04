@@ -1,7 +1,7 @@
 using UnityEngine;
 using LightVsDecay.Core;
 
-namespace LightVsDecay.Weapon
+namespace LightVsDecay.Logic.Player
 {
     /// <summary>
     /// 光棱塔控制器 - 负责输入处理和旋转控制

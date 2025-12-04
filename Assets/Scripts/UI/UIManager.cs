@@ -4,6 +4,8 @@
 // 用途：统一管理所有 UI 面板的显示/隐藏
 // ============================================================
 
+using LightVsDecay.Core;
+using LightVsDecay.UI.Panels;
 using UnityEngine;
 
 namespace LightVsDecay.UI
@@ -13,14 +15,8 @@ namespace LightVsDecay.UI
     /// 挂载在 Canvas 上，统一控制所有弹窗面板的显示/隐藏
     /// 各面板控制器只负责业务逻辑，不负责显隐
     /// </summary>
-    public class UIManager : MonoBehaviour
+    public class UIManager : Singleton<UIManager>
     {
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 单例
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        public static UIManager Instance { get; private set; }
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 面板引用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -40,7 +36,7 @@ namespace LightVsDecay.UI
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("面板控制器")]
-        [SerializeField] private SettlementPanelController settlementController;
+        [SerializeField] private SettlementPanel settlementController;
         
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
@@ -55,16 +51,8 @@ namespace LightVsDecay.UI
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            // 单例设置
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-            
             // 初始化：隐藏所有面板
             HideAllPanels();
         }
@@ -97,12 +85,8 @@ namespace LightVsDecay.UI
             }
         }
         
-        private void OnDestroy()
+        private void OnSingletonDestroy()
         {
-            if (Instance == this)
-            {
-                Instance = null;
-            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

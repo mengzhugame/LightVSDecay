@@ -1,6 +1,8 @@
+using LightVsDecay.Core;
 using UnityEngine;
+using LightVsDecay.Core.Pool;
 
-namespace LightVsDecay.Core
+namespace LightVsDecay.Logic
 {
     /// <summary>
     /// 玩家进度管理器 (单例)
@@ -8,14 +10,9 @@ namespace LightVsDecay.Core
     /// - 局内进度：经验值、等级、局内金币、大招能量、击杀数、连击数
     /// - 局外进度：宝石、金币（永久）、能量
     /// </summary>
-    public class PlayerProgressManager : MonoBehaviour
+    public class ProgressManager : PersistentSingleton<ProgressManager>
     {
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 单例
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        public static PlayerProgressManager Instance { get; private set; }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 局外进度（Meta）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -145,17 +142,8 @@ namespace LightVsDecay.Core
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            // 单例设置（跨场景保持）
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            
             // 加载持久化数据
             LoadMetaProgress();
         }
@@ -178,13 +166,8 @@ namespace LightVsDecay.Core
             CheckComboTimeout();
         }
         
-        private void OnDestroy()
+        protected override void OnSingletonDestroy()
         {
-            if (Instance == this)
-            {
-                Instance = null;
-            }
-            
             // 取消订阅
             GameEvents.OnEnemyDied -= OnEnemyDied;
             GameEvents.OnGameStart -= ResetSessionProgress;
@@ -570,7 +553,7 @@ namespace LightVsDecay.Core
         /// <summary>
         /// 敌人死亡回调
         /// </summary>
-        private void OnEnemyDied(Pool.EnemyType type, Vector3 pos, int xp, int coin)
+        private void OnEnemyDied(EnemyType type, Vector3 pos, int xp, int coin)
         {
             // 增加击杀
             AddKill();
@@ -588,7 +571,7 @@ namespace LightVsDecay.Core
             }
             
             // 增加大招能量
-            int ultGain = (type == Pool.EnemyType.Tank) ? ultEnergyPerEliteKill : ultEnergyPerKill;
+            int ultGain = (type == EnemyType.Tank) ? ultEnergyPerEliteKill : ultEnergyPerKill;
             AddUltEnergy(ultGain);
             
             if (showDebugInfo)
