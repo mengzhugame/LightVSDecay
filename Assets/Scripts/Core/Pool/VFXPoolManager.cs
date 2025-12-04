@@ -48,14 +48,8 @@ namespace LightVsDecay.Core.Pool
     /// VFX对象池管理器
     /// 单例模式，统一管理所有特效
     /// </summary>
-    public class VFXPoolManager : MonoBehaviour
+    public class VFXPoolManager : PersistentSingleton<VFXPoolManager>
     {
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 单例
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        public static VFXPoolManager Instance { get; private set; }
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -81,27 +75,14 @@ namespace LightVsDecay.Core.Pool
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            // 单例设置
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-            
             CreatePoolContainer();
             InitializePools();
         }
         
-        private void OnDestroy()
+        protected override void OnSingletonDestroy()
         {
-            if (Instance == this)
-            {
-                Instance = null;
-            }
-            
             ClearAllPools();
         }
         

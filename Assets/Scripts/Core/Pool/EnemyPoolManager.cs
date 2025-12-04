@@ -34,14 +34,8 @@ namespace LightVsDecay.Core.Pool
     /// 敌人对象池管理器
     /// 单例模式，管理所有敌人类型的对象池
     /// </summary>
-    public class EnemyPoolManager : MonoBehaviour
+    public class EnemyPoolManager : PersistentSingleton<EnemyPoolManager>
     {
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 单例
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        public static EnemyPoolManager Instance { get; private set; }
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -83,16 +77,8 @@ namespace LightVsDecay.Core.Pool
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            // 单例设置
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-            
             // 创建容器
             CreatePoolContainer();
             
@@ -100,13 +86,8 @@ namespace LightVsDecay.Core.Pool
             InitializePools();
         }
         
-        private void OnDestroy()
+        protected override void OnSingletonDestroy()
         {
-            if (Instance == this)
-            {
-                Instance = null;
-            }
-            
             // 清理所有池
             ClearAllPools();
         }

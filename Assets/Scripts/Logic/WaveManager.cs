@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Logic.Enemy;
 
@@ -41,14 +42,8 @@ namespace LightVsDecay.Logic
     /// 刷怪管理器
     /// 实现完整5分钟波次系统，支持暂停/恢复、Boss预留
     /// </summary>
-    public class WaveManager : MonoBehaviour
+    public class WaveManager : PersistentSingleton<WaveManager>
     {
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 单例
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        public static WaveManager Instance { get; private set; }
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -142,16 +137,8 @@ namespace LightVsDecay.Logic
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            // 单例设置
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-            
             if (gameCamera == null)
             {
                 gameCamera = Camera.main;
@@ -186,12 +173,9 @@ namespace LightVsDecay.Logic
             ExecuteSpawnLogic();
         }
         
-        private void OnDestroy()
+        protected override void OnSingletonDestroy()
         {
-            if (Instance == this)
-            {
-                Instance = null;
-            }
+
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
