@@ -1,86 +1,103 @@
+// ============================================================
+// LaserController.cs (修复版)
+// 文件位置: Assets/Scripts/Logic/Player/LaserController.cs
+// 用途：激光伤害判定和击退 - 修复接口调用
+// ============================================================
+
 using UnityEngine;
+using System.Collections.Generic;
 using LightVsDecay.Core;
+using LightVsDecay.Core.Pool;
+using LightVsDecay.Data;
+using LightVsDecay.Data.SO;
+using LightVsDecay.Logic.Enemy;
 
 namespace LightVsDecay.Logic.Player
 {
     /// <summary>
-    /// 激光控制器 - 只负责伤害判定和击退处理
-    /// 【修改】优化击退力计算，与测试脚本保持一致
-    /// 旋转控制由 TurretController 负责
+    /// 激光控制器
+    /// 负责伤害判定、击退效果
+    /// 配置从 GameSettings ScriptableObject 读取
     /// </summary>
     public class LaserController : MonoBehaviour
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Inspector 可配置参数
+        // 配置引用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        [Header("配置")]
+        [Tooltip("游戏设置")]
+        [SerializeField] private GameSettings settings;
+        
         [Header("组件引用")]
-        [Tooltip("激光Beam组件")]
         [SerializeField] private LaserBeam laserBeam;
+        [SerializeField] private Transform firePoint;
         
-        [Tooltip("塔身控制器（用于大招控制）")]
-        [SerializeField] private TurretController turretController;
-        
-        [Header("伤害设置")]
-        [Tooltip("基础DPS")]
-        [SerializeField] private float baseDPS = GameConstants.BASE_DPS;
-        
-        [Tooltip("伤害判定间隔")]
-        [SerializeField] private float damageTickRate = GameConstants.DAMAGE_TICK_RATE;
-        
-        [Header("击退设置")]
-        [Tooltip("基础击退力（每Tick施加的力）")]
-        [SerializeField] private float baseKnockback = 50f;
-        
-        [Header("大招设置")]
-        [Tooltip("大招持续时间")]
-        [SerializeField] private float ultDuration = 5f;
-        
-        [Tooltip("大招旋转速度（度/秒）")]
-        [SerializeField] private float ultRotationSpeed = 360f;
-        
-        [Tooltip("大招伤害倍率")]
-        [SerializeField] private float ultDamageMultiplier = 2f;
-        
-        [Tooltip("大招击退力倍率")]
-        [SerializeField] private float ultKnockbackMultiplier = 1.5f;
+        [Header("检测设置")]
+        [Tooltip("激光检测层")]
+        [SerializeField] private LayerMask enemyLayer;
         
         [Header("调试")]
-        [SerializeField] private bool showDebugLog = false;
-        [SerializeField] private bool showDebugGizmos = true;
+        [SerializeField] private bool showDebugInfo = false;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 运行时配置缓存
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private float baseDPS = 100f;
+        private float tickRate = 0.1f;
+        private float baseKnockbackForce = 10f;
+        private float maxLaserLength = 15f;
+        private float baseLaserWidth = 0.5f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private bool isUltActive = false;
-        private float ultEndTime;
-        private float ultCurrentAngle = 0f;
+        private float tickTimer = 0f;
+        private bool isUltMode = false;
+        private float ultDamageMultiplier = 2f;
+        private float ultKnockbackMultiplier = 1.5f;
         
-        // 伤害计时器
-        private float lastDamageTickTime;
+        // 技能加成
+        private float skillDamageMultiplier = 1f;
+        private float skillKnockbackMultiplier = 1f;
+        private float skillWidthMultiplier = 1f;
         
-        // 当前属性（考虑技能加成）
-        private float currentDPS;
-        private float currentKnockback;
-        
-        // 【新增】上一次击中的信息（用于 Gizmo 绘制）
-        private Vector2 lastHitPoint;
-        private Vector2 lastKnockbackDirection;
-        private bool hasLastHit;
+        // 缓存
+        private List<EnemyBlob> hitEnemies = new List<EnemyBlob>();
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 事件
+        // 属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>大招激活时触发</summary>
-        public event System.Action OnUltActivated;
+        /// <summary>当前每次判定伤害</summary>
+        public float CurrentDamagePerTick
+        {
+            get
+            {
+                float damage = baseDPS * tickRate * skillDamageMultiplier;
+                if (isUltMode) damage *= ultDamageMultiplier;
+                return damage;
+            }
+        }
         
-        /// <summary>大招结束时触发</summary>
-        public event System.Action OnUltEnded;
+        /// <summary>当前击退力</summary>
+        public float CurrentKnockbackForce
+        {
+            get
+            {
+                float force = baseKnockbackForce * skillKnockbackMultiplier;
+                if (isUltMode) force *= ultKnockbackMultiplier;
+                return force;
+            }
+        }
         
-        /// <summary>造成伤害时触发（参数：伤害值，位置）</summary>
-        public event System.Action<float, Vector2> OnDamageDealt;
+        /// <summary>当前激光宽度</summary>
+        public float CurrentLaserWidth => baseLaserWidth * skillWidthMultiplier * (isUltMode ? 2f : 1f);
+        
+        /// <summary>是否处于大招模式</summary>
+        public bool IsUltMode => isUltMode;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -88,270 +105,275 @@ namespace LightVsDecay.Logic.Player
         
         private void Awake()
         {
-            // 自动获取组件（如果没有手动赋值）
-            if (laserBeam == null)
-            {
-                laserBeam = GetComponentInChildren<LaserBeam>();
-            }
-            
-            if (turretController == null)
-            {
-                turretController = GetComponentInChildren<TurretController>();
-            }
-            
-            // 验证必要组件
-            if (laserBeam == null)
-            {
-                Debug.LogError("[LaserController] 未找到 LaserBeam 组件！", this);
-            }
-            
-            if (turretController == null)
-            {
-                Debug.LogWarning("[LaserController] 未找到 TurretController，大招旋转将无法工作", this);
-            }
-            
-            // 初始化当前属性
-            currentDPS = baseDPS;
-            currentKnockback = baseKnockback;
+            LoadConfig();
+        }
+        
+        private void Start()
+        {
+            // 订阅大招事件
+            GameEvents.OnUltReady += OnUltReady;
+            GameEvents.OnUltUsed += OnUltUsed;
+        }
+        
+        private void OnDestroy()
+        {
+            GameEvents.OnUltReady -= OnUltReady;
+            GameEvents.OnUltUsed -= OnUltUsed;
         }
         
         private void Update()
         {
-            // 更新大招状态
-            if (isUltActive)
-            {
-                UpdateUltMode();
-            }
+            tickTimer += Time.deltaTime;
             
-            // 处理伤害判定
-            ProcessDamage();
+            if (tickTimer >= tickRate)
+            {
+                tickTimer = 0f;
+                ProcessDamage();
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 大招系统
+        // 配置加载
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>
-        /// 激活大招（外部调用，如能量系统）
-        /// </summary>
-        public void ActivateUlt()
+        private void LoadConfig()
         {
-            if (isUltActive) return;
-            
-            isUltActive = true;
-            ultEndTime = Time.time + ultDuration;
-            ultCurrentAngle = turretController != null ? turretController.GetCurrentAngle() : 0f;
-            
-            // 通知 TurretController 进入大招模式
-            if (turretController != null)
+            if (settings != null)
             {
-                turretController.SetUltActive(true);
+                baseDPS = settings.baseDPS;
+                tickRate = settings.tickRate;
+                baseKnockbackForce = settings.baseKnockbackForce;
+                maxLaserLength = settings.maxLaserLength;
+                baseLaserWidth = settings.baseLaserWidth;
             }
-            
-            // 触发事件
-            OnUltActivated?.Invoke();
-            
-            Debug.Log($"[LaserController] 大招激活！持续 {ultDuration} 秒");
-        }
-        
-        /// <summary>
-        /// 更新大招模式（自动360度旋转）
-        /// </summary>
-        private void UpdateUltMode()
-        {
-            // 自动旋转
-            ultCurrentAngle += ultRotationSpeed * Time.deltaTime;
-            
-            // 保持在 -180~180 范围（可选，360度旋转可以不限制）
-            if (ultCurrentAngle > 180f)
-                ultCurrentAngle -= 360f;
-            else if (ultCurrentAngle < -180f)
-                ultCurrentAngle += 360f;
-            
-            // 强制设置 TurretController 的角度
-            if (turretController != null)
+            else
             {
-                turretController.SetAngle(ultCurrentAngle);
+                // 使用 GameConstants 默认值
+                baseDPS = GameConstants.BASE_DPS;
+                tickRate = GameConstants.DAMAGE_TICK_RATE;
+                baseKnockbackForce = GameConstants.BASE_KNOCKBACK_FORCE;
+                maxLaserLength = GameConstants.LASER_MAX_LENGTH;
+                baseLaserWidth = GameConstants.LASER_DEFAULT_WIDTH;
             }
-            
-            // 检查是否结束
-            if (Time.time >= ultEndTime)
-            {
-                EndUlt();
-            }
-        }
-        
-        /// <summary>
-        /// 结束大招
-        /// </summary>
-        private void EndUlt()
-        {
-            isUltActive = false;
-            
-            // 通知 TurretController 退出大招模式
-            if (turretController != null)
-            {
-                turretController.SetUltActive(false);
-                turretController.ResetRotation(); // 重置到朝上
-            }
-            
-            // 触发事件
-            OnUltEnded?.Invoke();
-            
-            Debug.Log("[LaserController] 大招结束");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 伤害处理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>
-        /// 处理伤害判定
-        /// 【修改】优化击退力计算方式
-        /// </summary>
         private void ProcessDamage()
         {
-            // 检查 Tick 间隔
-            if (Time.time - lastDamageTickTime < damageTickRate)
-                return;
+            if (firePoint == null) return;
             
-            lastDamageTickTime = Time.time;
-            hasLastHit = false;
+            hitEnemies.Clear();
             
-            // 获取激光当前击中的目标
-            if (laserBeam == null) return;
-            
-            RaycastHit2D hit = laserBeam.GetCurrentHit();
-            if (hit.collider == null)
+            // 获取激光当前长度 - 使用 LaserBeam 的正确接口
+            float currentLength = maxLaserLength;
+            if (laserBeam != null)
             {
-                return;
-            }
-            
-            // 计算当前伤害（考虑大招加成）
-            float damage = currentDPS * damageTickRate;
-            if (isUltActive)
-                damage *= ultDamageMultiplier;
-            
-            // 【修改】计算击退力方向（从激光原点指向敌人）
-            Vector2 laserOrigin = laserBeam.transform.position;
-            Vector2 knockbackDirection = (hit.point - laserOrigin).normalized;
-            
-            // 【修改】计算击退力大小
-            float knockbackMagnitude = currentKnockback;
-            if (isUltActive)
-                knockbackMagnitude *= ultKnockbackMultiplier;
-            
-            Vector2 knockbackForce = knockbackDirection * knockbackMagnitude;
-            
-            // 保存击中信息（用于 Gizmo）
-            lastHitPoint = hit.point;
-            lastKnockbackDirection = knockbackDirection;
-            hasLastHit = true;
-            
-            if (showDebugLog)
-            {
-                Debug.Log($"[LaserController] 击中: {hit.collider.name}" +
-                          $"\n  伤害: {damage:F1}" +
-                          $"\n  击退方向: {knockbackDirection}" +
-                          $"\n  击退力: {knockbackForce.magnitude:F2}");
-            }
-            
-            // 调用敌人的受伤接口
-            var enemy = hit.collider.GetComponent<Enemy.EnemyBlob>();
-            if (enemy != null)
-            {
-                enemy.TakeDamage(damage, knockbackForce);
-                
-                // 触发事件
-                OnDamageDealt?.Invoke(damage, hit.point);
-            }
-            else
-            {
-                // 【新增】尝试直接操作 Rigidbody2D（兼容测试方块）
-                var rb = hit.collider.GetComponent<Rigidbody2D>();
-                if (rb != null)
+                // LaserBeam 使用 GetCurrentHit() 来获取击中信息
+                var hit = laserBeam.GetCurrentHit();
+                if (hit.collider != null)
                 {
-                    rb.AddForce(knockbackForce, ForceMode2D.Force);
-                    
-                    if (showDebugLog)
-                        Debug.Log($"[LaserController] 直接击退 Rigidbody2D: {rb.name}");
+                    currentLength = hit.distance;
                 }
             }
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 公共接口（用于技能升级系统）
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        /// <summary>
-        /// 设置 DPS 倍率（技能加成）
-        /// </summary>
-        public void SetDPSMultiplier(float multiplier)
-        {
-            currentDPS = baseDPS * multiplier;
-        }
-        
-        /// <summary>
-        /// 设置击退力倍率（技能加成）
-        /// </summary>
-        public void SetKnockbackMultiplier(float multiplier)
-        {
-            currentKnockback = baseKnockback * multiplier;
-        }
-        
-        /// <summary>
-        /// 【新增】直接设置击退力
-        /// </summary>
-        public void SetKnockbackForce(float force)
-        {
-            currentKnockback = force;
-        }
-        
-        /// <summary>
-        /// 获取 LaserBeam 引用
-        /// </summary>
-        public LaserBeam GetLaserBeam() => laserBeam;
-        
-        /// <summary>
-        /// 获取 TurretController 引用
-        /// </summary>
-        public TurretController GetTurretController() => turretController;
-        
-        /// <summary>
-        /// 检查是否在大招状态
-        /// </summary>
-        public bool IsUltActive() => isUltActive;
-        
-        /// <summary>
-        /// 获取当前 DPS
-        /// </summary>
-        public float GetCurrentDPS() => currentDPS;
-        
-        /// <summary>
-        /// 获取当前击退力
-        /// </summary>
-        public float GetCurrentKnockback() => currentKnockback;
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 调试可视化
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private void OnDrawGizmos()
-        {
-            if (!showDebugGizmos || !Application.isPlaying) return;
             
-            // 绘制击中点和击退方向
-            if (hasLastHit)
+            // BoxCast 检测
+            Vector2 origin = firePoint.position;
+            Vector2 direction = firePoint.up;
+            Vector2 size = new Vector2(CurrentLaserWidth, currentLength);
+            float angle = firePoint.eulerAngles.z;
+            
+            // 中心点偏移
+            Vector2 center = origin + direction * (currentLength * 0.5f);
+            
+            // 检测所有敌人
+            Collider2D[] hits = Physics2D.OverlapBoxAll(center, size, angle, enemyLayer);
+            
+            foreach (var hit in hits)
             {
-                // 击中点
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawWireSphere(lastHitPoint, 0.3f);
-                
-                // 击退方向
-                Gizmos.color = Color.magenta;
-                Gizmos.DrawLine(lastHitPoint, lastHitPoint + lastKnockbackDirection * 2f);
-                Gizmos.DrawWireSphere(lastHitPoint + lastKnockbackDirection * 2f, 0.1f);
+                EnemyBlob enemy = hit.GetComponent<EnemyBlob>();
+                if (enemy != null && !hitEnemies.Contains(enemy))
+                {
+                    hitEnemies.Add(enemy);
+                    ApplyDamageAndKnockback(enemy, direction);
+                }
+            }
+            
+            if (showDebugInfo && hitEnemies.Count > 0)
+            {
+                Debug.Log($"[LaserController] 击中 {hitEnemies.Count} 个敌人, 伤害: {CurrentDamagePerTick}");
             }
         }
+        
+        private void ApplyDamageAndKnockback(EnemyBlob enemy, Vector2 laserDirection)
+        {
+            // 计算击退方向（激光方向）
+            Vector2 knockbackDir = laserDirection.normalized;
+            Vector2 knockbackForce = knockbackDir * CurrentKnockbackForce;
+            
+            // 应用伤害和击退
+            enemy.TakeDamage(CurrentDamagePerTick, knockbackForce);
+            
+            // 播放击中特效 - 使用 VFXPoolManager.Play 方法
+            if (VFXPoolManager.Instance != null)
+            {
+                VFXPoolManager.Instance.Play(VFXType.LaserHit, enemy.transform.position);
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 大招模式
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void OnUltReady()
+        {
+            // 大招准备好时的提示
+        }
+        
+        private void OnUltUsed()
+        {
+            // 大招使用由 UltController 调用 ActivateUlt
+        }
+        
+        /// <summary>
+        /// 激活大招模式（保持原有方法名兼容性）
+        /// </summary>
+        public void ActivateUlt()
+        {
+            isUltMode = true;
+            
+            // 更新激光视觉 - 使用 LaserBeam 的正确接口
+            if (laserBeam != null)
+            {
+                laserBeam.SetLaserWidth(CurrentLaserWidth);
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[LaserController] 进入大招模式");
+            }
+        }
+        
+        /// <summary>
+        /// 进入大招模式（别名方法）
+        /// </summary>
+        public void EnterUltMode() => ActivateUlt();
+        
+        /// <summary>
+        /// 停用大招模式
+        /// </summary>
+        public void DeactivateUlt()
+        {
+            isUltMode = false;
+            
+            // 恢复激光视觉
+            if (laserBeam != null)
+            {
+                laserBeam.SetLaserWidth(CurrentLaserWidth);
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[LaserController] 退出大招模式");
+            }
+        }
+        
+        /// <summary>
+        /// 退出大招模式（别名方法）
+        /// </summary>
+        public void ExitUltMode() => DeactivateUlt();
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 技能加成接口
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>设置伤害倍率（技能加成）</summary>
+        public void SetDamageMultiplier(float multiplier)
+        {
+            skillDamageMultiplier = Mathf.Max(0.1f, multiplier);
+        }
+        
+        /// <summary>设置击退力倍率（技能加成）</summary>
+        public void SetKnockbackMultiplier(float multiplier)
+        {
+            skillKnockbackMultiplier = Mathf.Max(0f, multiplier);
+        }
+        
+        /// <summary>设置宽度倍率（技能加成）</summary>
+        public void SetWidthMultiplier(float multiplier)
+        {
+            skillWidthMultiplier = Mathf.Max(0.1f, multiplier);
+            
+            if (laserBeam != null)
+            {
+                laserBeam.SetLaserWidth(CurrentLaserWidth);
+            }
+        }
+        
+        /// <summary>增加伤害百分比</summary>
+        public void AddDamagePercent(float percent)
+        {
+            skillDamageMultiplier += percent;
+        }
+        
+        /// <summary>增加宽度百分比</summary>
+        public void AddWidthPercent(float percent)
+        {
+            skillWidthMultiplier += percent;
+            
+            if (laserBeam != null)
+            {
+                laserBeam.SetLaserWidth(CurrentLaserWidth);
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 调试
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void OnDrawGizmosSelected()
+        {
+            if (firePoint == null) return;
+            
+            float length = maxLaserLength;
+            if (Application.isPlaying && laserBeam != null)
+            {
+                var hit = laserBeam.GetCurrentHit();
+                if (hit.collider != null)
+                {
+                    length = hit.distance;
+                }
+            }
+            float width = CurrentLaserWidth;
+            
+            // 绘制检测范围
+            Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
+            
+            Vector3 center = firePoint.position + firePoint.up * (length * 0.5f);
+            Vector3 size = new Vector3(width, length, 0.1f);
+            
+            Matrix4x4 oldMatrix = Gizmos.matrix;
+            Gizmos.matrix = Matrix4x4.TRS(center, firePoint.rotation, Vector3.one);
+            Gizmos.DrawCube(Vector3.zero, size);
+            Gizmos.matrix = oldMatrix;
+        }
+        
+#if UNITY_EDITOR
+        private void OnGUI()
+        {
+            if (!showDebugInfo) return;
+            
+            GUILayout.BeginArea(new Rect(Screen.width - 230, 10, 220, 150));
+            GUILayout.Label("=== Laser Stats ===");
+            GUILayout.Label($"DPS: {baseDPS * skillDamageMultiplier:F1} {(isUltMode ? "(x2 ULT)" : "")}");
+            GUILayout.Label($"Damage/Tick: {CurrentDamagePerTick:F1}");
+            GUILayout.Label($"Knockback: {CurrentKnockbackForce:F1}");
+            GUILayout.Label($"Width: {CurrentLaserWidth:F2}");
+            GUILayout.Label($"Ult Mode: {isUltMode}");
+            GUILayout.EndArea();
+        }
+#endif
     }
 }

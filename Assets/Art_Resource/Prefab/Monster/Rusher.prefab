@@ -313,31 +313,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45724bede2c9f5e47a5efae840add1e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
   enemyType: 2
-  maxHealth: 10
-  moveSpeed: 1
-  mass: 0.5
-  minScale: 0.3
   bodySprite: {fileID: 6680098161851612290}
   eyesController: {fileID: 820148974556763780}
   decorations:
   - {fileID: 1754928097818668523}
   - {fileID: 5754369420695981257}
-  normalFlowSpeed: 1
-  normalNoiseScale: 2
-  hitFlowSpeed: 10
-  hitNoiseScale: 5
-  wobbleReturnSpeed: 5
-  deathFadeDuration: 1
-  xpReward: 15
-  coinReward: 0
-  canBeKnockedBack: 1
-  knockbackMultiplier: 2
-  knockbackDrag: 1.5
-  knockbackStunDuration: 0.3
-  knockbackStunMoveMultiplier: 0.3
-  drifterDeflectionAngle: 45
-  drifterKnockbackMultiplier: 2
 --- !u!1 &8714887028639678598
 GameObject:
   m_ObjectHideFlags: 0

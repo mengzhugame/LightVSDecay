@@ -1,88 +1,77 @@
+// ============================================================
+// EnemyBlob.cs (修复版)
+// 文件位置: Assets/Scripts/Logic/Enemy/EnemyBlob.cs
+// 用途：敌人主逻辑 - 修复 Shader 属性名
+// ============================================================
+
 using UnityEngine;
 using System.Collections;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Data;
+using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Player;
 
 namespace LightVsDecay.Logic.Enemy
 {
     /// <summary>
     /// 黑油怪物主逻辑
-    /// 【修改】添加可配置的击退系统
-    /// 【修改】添加 Drifter 特殊击退行为
-    /// 【修改】支持狂暴模式速度加成
+    /// 配置数据从 EnemyData ScriptableObject 读取
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CircleCollider2D))]
     public class EnemyBlob : MonoBehaviour, IPoolable
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Inspector 配置
+        // 数据配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("数据配置")]
+        [Tooltip("敌人数据库")]
+        [SerializeField] private EnemyDatabase enemyDatabase;
         
         [Header("敌人类型")]
         [SerializeField] private EnemyType enemyType = EnemyType.Slime;
         
-        [Header("Enemy Stats")]
-        [SerializeField] private float maxHealth = 30f;
-        [SerializeField] private float moveSpeed = 1.0f;
-        [SerializeField] private float mass = 1.0f;
-        
-        [Header("Shrink Settings")]
-        [SerializeField] private float minScale = 0.3f;
-        
-        [Header("Body Sprite (EnemyBody Layer)")]
+        [Header("视觉组件")]
         [SerializeField] private SpriteRenderer bodySprite;
-        
-        [Header("Eyes & Decorations")]
         [SerializeField] private EnemyEyes eyesController;
         [SerializeField] private Transform[] decorations;
         
-        [Header("Shader Wobble Settings")]
-        [SerializeField] private float normalFlowSpeed = 1.0f;
-        [SerializeField] private float normalNoiseScale = 0.5f;
-        [SerializeField] private float hitFlowSpeed = 10.0f;
-        [SerializeField] private float hitNoiseScale = 5.0f;
-        [SerializeField] private float wobbleReturnSpeed = 5.0f;
-        
-        [Header("Death Fade Settings")]
-        [SerializeField] private float deathFadeDuration = 1.0f;
-        [Header("奖励设置")]
-        [Tooltip("击杀获得的经验值")]
-        [SerializeField] private int xpReward = 10;
-
-        [Tooltip("击杀获得的金币")]
-        [SerializeField] private int coinReward = 1;
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 【新增】击退系统配置
+        // 运行时配置缓存（从 EnemyData 加载）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("击退设置")]
-        [Tooltip("是否可以被击退")]
-        [SerializeField] private bool canBeKnockedBack = true;
+        private EnemyData data;
         
-        [Tooltip("击退力倍率（1.0=正常，0.5=难推，2.0=容易推）")]
-        [Range(0f, 5f)]
-        [SerializeField] private float knockbackMultiplier = 1.0f;
+        // 战斗属性
+        private float maxHealth = 30f;
+        private float baseMoveSpeed = 1.0f;
+        private float mass = 1.0f;
         
-        [Tooltip("击退阻力（越大停得越快）")]
-        [Range(0f, 10f)]
-        [SerializeField] private float knockbackDrag = 2.0f;
+        // 击退设置
+        private bool canBeKnockedBack = true;
+        private float knockbackMultiplier = 1.0f;
+        private float knockbackDrag = 2.0f;
+        private float knockbackStunDuration = 0.3f;
+        private float knockbackStunMoveMultiplier = 0.3f;
         
-        [Tooltip("受击后移动力减弱时间（秒）")]
-        [SerializeField] private float knockbackStunDuration = 0.3f;
+        // Drifter 特殊设置
+        private float drifterDeflectionAngle = 45f;
+        private float drifterKnockbackMultiplier = 2.0f;
         
-        [Tooltip("受击后移动力减弱倍率")]
-        [Range(0f, 1f)]
-        [SerializeField] private float knockbackStunMoveMultiplier = 0.3f;
+        // 视觉设置
+        private float minScale = 0.3f;
+        private float deathFadeDuration = 1.0f;
+        private float normalFlowSpeed = 1.0f;
+        private float normalNoiseScale = 0.5f;
+        private float hitFlowSpeed = 10.0f;
+        private float hitNoiseScale = 5.0f;
+        private float wobbleReturnSpeed = 5.0f;
         
-        [Header("Drifter 特殊设置")]
-        [Tooltip("Drifter被击退时的横向偏移角度（度）")]
-        [SerializeField] private float drifterDeflectionAngle = 45f;
-        
-        [Tooltip("Drifter被击退时的额外力量倍率")]
-        [SerializeField] private float drifterKnockbackMultiplier = 2.0f;
+        // 奖励
+        private int xpReward = 10;
+        private int coinReward = 1;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // IPoolable 实现
@@ -91,7 +80,7 @@ namespace LightVsDecay.Logic.Enemy
         public string PoolKey => enemyType.ToString();
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 运行时数据
+        // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private float currentHealth;
@@ -109,12 +98,8 @@ namespace LightVsDecay.Logic.Enemy
         
         private Coroutine deathCoroutine;
         
-        // 狂暴模式速度加成
-        private float speedMultiplier = 1.0f;
-        private float baseMoveSpeed;
-        
-        // 【新增】原始阻力值（用于恢复）
-        private float originalDrag;
+        // 速度倍率（狂暴模式）
+        private float speedMultiplier = 1f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -125,38 +110,101 @@ namespace LightVsDecay.Logic.Enemy
             rb = GetComponent<Rigidbody2D>();
             circleCollider = GetComponent<CircleCollider2D>();
             originalScale = transform.localScale;
-            baseMoveSpeed = moveSpeed;
             
+            // 获取材质实例
             if (bodySprite != null)
             {
                 bodyMaterial = bodySprite.material;
             }
             
+            // 加载配置
+            LoadDataFromConfig();
             ConfigureRigidbody();
         }
         
-        private void FixedUpdate()
+        private void Start()
         {
-            if (isDead) return;
-            MoveTowardsTower();
+            FindTower();
         }
         
         private void Update()
         {
             if (isDead) return;
+            
             UpdateShaderWobble();
         }
         
-        private void OnDestroy()
+        private void FixedUpdate()
         {
-            if (bodyMaterial != null)
-            {
-                Destroy(bodyMaterial);
-            }
+            if (isDead) return;
+            
+            MoveTowardsTower();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // IPoolable 接口实现
+        // 配置加载
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 从 EnemyData 加载配置
+        /// </summary>
+        private void LoadDataFromConfig()
+        {
+            // 尝试从数据库获取配置
+            if (enemyDatabase != null)
+            {
+                data = enemyDatabase.GetData(enemyType);
+            }
+            
+            // 应用配置（有默认值保护）
+            if (data != null)
+            {
+                // 战斗属性
+                maxHealth = data.maxHealth;
+                baseMoveSpeed = data.moveSpeed;
+                mass = data.mass;
+                
+                // 击退设置
+                canBeKnockedBack = data.canBeKnockedBack;
+                knockbackMultiplier = data.knockbackMultiplier;
+                knockbackDrag = data.knockbackDrag;
+                knockbackStunDuration = data.knockbackStunDuration;
+                knockbackStunMoveMultiplier = data.knockbackStunMoveMultiplier;
+                
+                // Drifter 特殊
+                drifterDeflectionAngle = data.drifterDeflectionAngle;
+                drifterKnockbackMultiplier = data.drifterKnockbackMultiplier;
+                
+                // 视觉
+                minScale = data.minScale;
+                deathFadeDuration = data.deathFadeDuration;
+                normalFlowSpeed = data.normalFlowSpeed;
+                normalNoiseScale = data.normalNoiseScale;
+                hitFlowSpeed = data.hitFlowSpeed;
+                hitNoiseScale = data.hitNoiseScale;
+                wobbleReturnSpeed = data.wobbleReturnSpeed;
+                
+                // 奖励
+                xpReward = data.xpReward;
+                coinReward = data.coinReward;
+            }
+            // 否则使用默认值（已在字段声明时初始化）
+        }
+        
+        private void ConfigureRigidbody()
+        {
+            rb.gravityScale = 0;
+            rb.mass = mass;
+            rb.drag = knockbackDrag;
+            rb.angularDrag = 0.5f;
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 对象池接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         public void OnSpawn()
@@ -164,26 +212,23 @@ namespace LightVsDecay.Logic.Enemy
             isDead = false;
             currentHealth = maxHealth;
             transform.localScale = originalScale;
-            speedMultiplier = 1.0f;
-            
-            if (rb != null)
-            {
-                rb.velocity = Vector2.zero;
-                rb.angularVelocity = 0f;
-                rb.simulated = true;
-                rb.drag = originalDrag; // 恢复原始阻力
-            }
+            speedMultiplier = 1f;
             
             if (circleCollider != null)
             {
                 circleCollider.enabled = true;
             }
             
-            InitializeShaderParameters();
-            FindTower();
+            if (rb != null)
+            {
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.simulated = true;
+            }
             
-            isBeingHit = false;
-            lastHitTime = 0f;
+            ResetShaderState();
+            ResetVisuals();
+            FindTower();
         }
         
         public void OnDespawn()
@@ -206,6 +251,7 @@ namespace LightVsDecay.Logic.Enemy
                 rb.simulated = false;
             }
             
+            isDead = true;
             ResetVisuals();
         }
         
@@ -222,27 +268,14 @@ namespace LightVsDecay.Logic.Enemy
             }
         }
         
-        private void ConfigureRigidbody()
+        private void ResetShaderState()
         {
-            rb.gravityScale = 0;
-            rb.mass = mass;
-            rb.drag = knockbackDrag; // 【修改】使用配置的击退阻力
-            rb.angularDrag = 0.5f;
-            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
-            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-            rb.bodyType = RigidbodyType2D.Dynamic;
-            rb.constraints = RigidbodyConstraints2D.FreezeRotation; // 【新增】防止旋转
-            
-            originalDrag = rb.drag; // 保存原始阻力值
-        }
-        
-        private void InitializeShaderParameters()
-        {
-            if (bodyMaterial == null) return;
-            
-            bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, normalFlowSpeed);
-            bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidNoiseScale, normalNoiseScale);
-            bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidAlpha, 1.0f);
+            if (bodyMaterial != null)
+            {
+                // 使用正确的 Shader 属性名 (LiquidFlowSpeed, LiquidNoiseScale)
+                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, normalFlowSpeed);
+                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidNoiseScale, normalNoiseScale);
+            }
             
             targetFlowSpeed = normalFlowSpeed;
             targetNoiseScale = normalNoiseScale;
@@ -293,7 +326,7 @@ namespace LightVsDecay.Logic.Enemy
             float currentMoveSpeed = baseMoveSpeed * speedMultiplier;
             float moveForce = currentMoveSpeed * 10f;
             
-            // 【修改】受击后短暂减弱移动力
+            // 受击后短暂减弱移动力
             float timeSinceHit = Time.time - lastHitTime;
             if (timeSinceHit < knockbackStunDuration)
             {
@@ -320,7 +353,7 @@ namespace LightVsDecay.Logic.Enemy
             currentHealth -= damage;
             lastHitTime = Time.time;
             
-            // 【修改】根据敌人类型和配置处理击退
+            // 根据敌人类型和配置处理击退
             if (canBeKnockedBack)
             {
                 ApplyKnockbackByType(knockbackForce);
@@ -333,6 +366,7 @@ namespace LightVsDecay.Logic.Enemy
                 eyesController.TriggerSquint();
             }
             
+            // 缩放
             float healthRatio = currentHealth / maxHealth;
             float newScale = Mathf.Lerp(minScale, 1f, healthRatio);
             transform.localScale = originalScale * newScale;
@@ -345,7 +379,6 @@ namespace LightVsDecay.Logic.Enemy
         
         /// <summary>
         /// 根据敌人类型应用不同的击退效果
-        /// 【重写】更清晰的击退逻辑
         /// </summary>
         private void ApplyKnockbackByType(Vector2 knockbackForce)
         {
@@ -365,11 +398,9 @@ namespace LightVsDecay.Logic.Enemy
             // Drifter 特殊处理：随机往左后或右后漂移
             if (enemyType == EnemyType.Drifter)
             {
-                // 随机选择左偏或右偏
                 float deflectionDirection = Random.value > 0.5f ? 1f : -1f;
                 float angleRad = drifterDeflectionAngle * Mathf.Deg2Rad * deflectionDirection;
                 
-                // 旋转击退向量
                 float cos = Mathf.Cos(angleRad);
                 float sin = Mathf.Sin(angleRad);
                 Vector2 deflectedForce = new Vector2(
@@ -381,40 +412,14 @@ namespace LightVsDecay.Logic.Enemy
             }
             else
             {
-                // 其他敌人：正常击退 × 质量缩放 × 击退倍率
                 finalForce = knockbackForce * massScale * knockbackMultiplier;
             }
             
-            // 应用击退力（使用 Force 模式，因为激光是持续照射）
             rb.AddForce(finalForce, ForceMode2D.Force);
         }
-        /// <summary>
-        /// 被冲击波杀死（由 ShieldController 调用）
-        /// </summary>
-        public void KillByShockwave()
-        {
-            if (isDead) return;
-            isDead = true;
-    
-            rb.velocity = Vector2.zero;
-    
-            if (circleCollider != null)
-            {
-                circleCollider.enabled = false;
-            }
-            // 【新增】触发敌人死亡事件
-            GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
-            deathCoroutine = StartCoroutine(DeathFadeCoroutine());
-        }
-        /// <summary>
-        /// 获取质量（供外部判断大小怪）
-        /// </summary>
-        public float GetMass()
-        {
-            return rb != null ? rb.mass : mass;
-        }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Shader抖动
+        // Shader 效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private void TriggerShaderWobble()
@@ -437,6 +442,7 @@ namespace LightVsDecay.Logic.Enemy
                 isBeingHit = false;
             }
             
+            // 使用正确的 Shader 属性名
             float currentFlow = bodyMaterial.GetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed);
             float currentNoise = bodyMaterial.GetFloat(GameConstants.ShaderProperties.LiquidNoiseScale);
             
@@ -448,7 +454,7 @@ namespace LightVsDecay.Logic.Enemy
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 死亡逻辑（使用VFX对象池）
+        // 死亡处理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private void Die()
@@ -462,25 +468,29 @@ namespace LightVsDecay.Logic.Enemy
             {
                 circleCollider.enabled = false;
             }
-            // 【新增】触发敌人死亡事件
+            
+            // 触发敌人死亡事件
             GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
-            deathCoroutine = StartCoroutine(DeathFadeCoroutine());
-        }
-        
-        private IEnumerator DeathFadeCoroutine()
-        {
-            // 使用VFX对象池播放蒸汽特效
+            
+            // 播放死亡特效
             if (VFXPoolManager.Instance != null)
             {
                 VFXPoolManager.Instance.PlayEnemySteam(transform.position);
             }
             
-            float elapsedTime = 0f;
+            deathCoroutine = StartCoroutine(DeathFadeCoroutine());
+        }
+        
+        private IEnumerator DeathFadeCoroutine()
+        {
+            float elapsed = 0f;
+            float startAlpha = 1f;
             
-            while (elapsedTime < deathFadeDuration)
+            while (elapsed < deathFadeDuration)
             {
-                elapsedTime += Time.deltaTime;
-                float alpha = Mathf.Lerp(1f, 0f, elapsedTime / deathFadeDuration);
+                elapsed += Time.deltaTime;
+                float t = elapsed / deathFadeDuration;
+                float alpha = Mathf.Lerp(startAlpha, 0f, t);
                 
                 if (bodyMaterial != null)
                 {
@@ -492,9 +502,9 @@ namespace LightVsDecay.Logic.Enemy
                     SpriteRenderer eyesSR = eyesController.GetComponent<SpriteRenderer>();
                     if (eyesSR != null)
                     {
-                        Color eyeColor = eyesSR.color;
-                        eyeColor.a = alpha;
-                        eyesSR.color = eyeColor;
+                        Color c = eyesSR.color;
+                        c.a = alpha;
+                        eyesSR.color = c;
                     }
                 }
                 
@@ -505,9 +515,9 @@ namespace LightVsDecay.Logic.Enemy
                         SpriteRenderer sr = decoration.GetComponent<SpriteRenderer>();
                         if (sr != null)
                         {
-                            Color color = sr.color;
-                            color.a = alpha;
-                            sr.color = color;
+                            Color c = sr.color;
+                            c.a = alpha;
+                            sr.color = c;
                         }
                     }
                 }
@@ -531,116 +541,94 @@ namespace LightVsDecay.Logic.Enemy
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 碰撞自爆（使用VFX对象池）
+        // 碰撞处理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private void OnCollisionEnter2D(Collision2D collision)
         {
-            // 【调试】打印所有碰撞
-            //Debug.Log($"[EnemyBlob] 碰撞到: {collision.gameObject.name}, Layer: {LayerMask.LayerToName(collision.gameObject.layer)}");
             if (isDead) return;
-    
-            int otherLayer = collision.gameObject.layer;
-    
-            // 碰到护盾
-            if (otherLayer == LayerMask.NameToLayer("Shield"))
+            
+            if (collision.gameObject.CompareTag("Shield"))
             {
                 HandleShieldCollision(collision.gameObject);
-                return;
             }
-    
-            // 碰到塔本体
-            if (otherLayer == LayerMask.NameToLayer("Tower"))
+            else if (collision.gameObject.CompareTag("Tower"))
             {
                 HandleTowerCollision(collision.gameObject);
-                return;
             }
         }
-        private void OnTriggerEnter2D(Collider2D other)
-        {
-           // Debug.Log($"[EnemyBlob] Trigger进入: {other.gameObject.name}, Layer: {LayerMask.LayerToName(other.gameObject.layer)}");
-            if (isDead) return;
-    
-            int otherLayer = other.gameObject.layer;
-    
-            // 护盾碰撞（Trigger模式）
-            if (otherLayer == LayerMask.NameToLayer("Shield"))
-            {
-                HandleShieldCollision(other.gameObject);
-            }
-        }
-        /// <summary>
-        /// 处理与护盾的碰撞
-        /// </summary>
+        
         private void HandleShieldCollision(GameObject shieldObj)
         {
-            var shield = shieldObj.GetComponent<ShieldController>();
-            if (shield == null) return;
-    
-            // 尝试对护盾造成伤害
-            bool damaged = shield.TakeDamage(1);
-    
-            if (damaged)
+            var shieldController = shieldObj.GetComponentInParent<ShieldController>();
+            if (shieldController == null) return;
+            
+            if (!shieldController.IsInvincible && shieldController.CurrentShieldHP > 0)
             {
-                // 小怪：自爆
                 if (IsSmallEnemy())
                 {
                     Explode();
                 }
-                // 大怪会被冲击波弹开，不需要额外处理
             }
-            // 如果护盾无敌中，什么都不发生
         }
-        /// <summary>
-        /// 判断是否为小怪（根据质量）
-        /// </summary>
-        private bool IsSmallEnemy()
-        {
-            return rb.mass < 2.0f;
-        }
-        /// <summary>
-        /// 处理与塔本体的碰撞
-        /// </summary>
+        
         private void HandleTowerCollision(GameObject towerObj)
         {
-            //Explode();
             var turretHealth = towerObj.GetComponent<TurretHealth>();
             if (turretHealth == null) return;
             
-            // 尝试对塔造成伤害
             bool damaged = turretHealth.TakeDamage(1);
             
             if (damaged)
             {
-                // 判断大小怪
                 if (turretHealth.IsSmallEnemy(GetMass()))
                 {
-                    // 小怪自爆
                     Explode();
                 }
                 else
                 {
-                    // 大怪被弹开
                     Vector2 direction = (transform.position - towerObj.transform.position).normalized;
                     rb.AddForce(direction * turretHealth.GetBounceForce(), ForceMode2D.Impulse);
                 }
             }
         }
+        
+        /// <summary>
+        /// 被冲击波杀死
+        /// </summary>
+        public void KillByShockwave()
+        {
+            if (isDead) return;
+            isDead = true;
+            
+            rb.velocity = Vector2.zero;
+            
+            if (circleCollider != null)
+            {
+                circleCollider.enabled = false;
+            }
+            
+            GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
+            deathCoroutine = StartCoroutine(DeathFadeCoroutine());
+        }
+        
         private void Explode()
         {
             if (isDead) return;
             isDead = true;
             
-            // 使用VFX对象池播放爆炸特效
             if (VFXPoolManager.Instance != null)
             {
                 VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
             }
             
-            // TODO: 对塔造成伤害
-            // 【新增】自爆也触发敌人死亡事件
             GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
             ReturnToPool();
+        }
+        
+        private bool IsSmallEnemy()
+        {
+            return rb.mass < 2.0f;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -648,45 +636,25 @@ namespace LightVsDecay.Logic.Enemy
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         public EnemyType GetEnemyType() => enemyType;
+        public float GetMass() => rb != null ? rb.mass : mass;
+        public float GetSpeedMultiplier() => speedMultiplier;
+        public bool CanBeKnockedBack => canBeKnockedBack;
+        public float KnockbackMultiplier => knockbackMultiplier;
         
-        /// <summary>
-        /// 设置速度倍率（用于狂暴模式）
-        /// </summary>
         public void SetSpeedMultiplier(float multiplier)
         {
             speedMultiplier = multiplier;
         }
         
-        /// <summary>
-        /// 获取当前速度倍率
-        /// </summary>
-        public float GetSpeedMultiplier() => speedMultiplier;
-        
-        /// <summary>
-        /// 【新增】设置是否可被击退
-        /// </summary>
         public void SetCanBeKnockedBack(bool canKnockback)
         {
             canBeKnockedBack = canKnockback;
         }
         
-        /// <summary>
-        /// 【新增】设置击退力倍率
-        /// </summary>
         public void SetKnockbackMultiplier(float multiplier)
         {
             knockbackMultiplier = multiplier;
         }
-        
-        /// <summary>
-        /// 【新增】获取是否可被击退
-        /// </summary>
-        public bool CanBeKnockedBack => canBeKnockedBack;
-        
-        /// <summary>
-        /// 【新增】获取击退力倍率
-        /// </summary>
-        public float KnockbackMultiplier => knockbackMultiplier;
         
         public void ApplyKnockback(Vector2 force)
         {
@@ -699,22 +667,6 @@ namespace LightVsDecay.Logic.Enemy
             );
             
             rb.AddForce(force * knockbackScale * knockbackMultiplier, ForceMode2D.Force);
-        }
-        
-        private void OnDrawGizmosSelected()
-        {
-            if (targetTower != null)
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawLine(transform.position, targetTower.position);
-            }
-            
-            // 【新增】显示当前速度向量
-            if (Application.isPlaying && rb != null)
-            {
-                Gizmos.color = Color.green;
-                Gizmos.DrawLine(transform.position, transform.position + (Vector3)rb.velocity);
-            }
         }
     }
 }

@@ -1,0 +1,195 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64aa65cebc317f545ac1491badeaae0a, type: 3}
+  m_Name: WaveConfig
+  m_EditorClassIdentifier: 
+  gameDuration: 300
+  bossBattleTimeLimit: 60
+  globalEnemyLimit: 200
+  phases:
+  - phase: 0
+    displayName: 
+    description: "\u70ED\u8EAB\u671F"
+    startTime: 0
+    endTime: 60
+    enableSpawning: 1
+    spawnEntries:
+    - enemyType: 0
+      spawnInterval: 1
+      spawnCount: 2
+      spawnZone: 1
+      speedMultiplier: 1
+    spawnRateMultiplier: 1
+    onPhaseStart: 0
+    onPhaseEnd: 0
+    showPhaseHint: 0
+    hintText: 
+  - phase: 1
+    displayName: 
+    description: "\u7B2C\u4E00\u6CE2\u9AD8\u6F6E"
+    startTime: 60
+    endTime: 90
+    enableSpawning: 1
+    spawnEntries:
+    - enemyType: 0
+      spawnInterval: 1
+      spawnCount: 5
+      spawnZone: 0
+      speedMultiplier: 1
+    - enemyType: 1
+      spawnInterval: 2
+      spawnCount: 1
+      spawnZone: 1
+      speedMultiplier: 1
+    spawnRateMultiplier: 1.5
+    onPhaseStart: 0
+    onPhaseEnd: 0
+    showPhaseHint: 0
+    hintText: 
+  - phase: 2
+    displayName: 
+    description: "\u4F11\u606F\u671F"
+    startTime: 90
+    endTime: 105
+    enableSpawning: 0
+    spawnEntries: []
+    spawnRateMultiplier: 0
+    onPhaseStart: 5
+    onPhaseEnd: 0
+    showPhaseHint: 0
+    hintText: 
+  - phase: 3
+    displayName: 
+    description: "\u53D8\u594F\u671F"
+    startTime: 105
+    endTime: 150
+    enableSpawning: 1
+    spawnEntries:
+    - enemyType: 0
+      spawnInterval: 1
+      spawnCount: 2
+      spawnZone: 0
+      speedMultiplier: 1
+    - enemyType: 2
+      spawnInterval: 1
+      spawnCount: 5
+      spawnZone: 3
+      speedMultiplier: 1
+    spawnRateMultiplier: 1
+    onPhaseStart: 0
+    onPhaseEnd: 0
+    showPhaseHint: 0
+    hintText: 
+  - phase: 4
+    displayName: 
+    description: "\u7B2C2\u6CE2\u9AD8\u6F6E"
+    startTime: 150
+    endTime: 210
+    enableSpawning: 1
+    spawnEntries:
+    - enemyType: 0
+      spawnInterval: 1
+      spawnCount: 2
+      spawnZone: 0
+      speedMultiplier: 1
+    - enemyType: 2
+      spawnInterval: 1
+      spawnCount: 5
+      spawnZone: 3
+      speedMultiplier: 1
+    - enemyType: 1
+      spawnInterval: 2
+      spawnCount: 1
+      spawnZone: 1
+      speedMultiplier: 1
+    spawnRateMultiplier: 1
+    onPhaseStart: 0
+    onPhaseEnd: 0
+    showPhaseHint: 0
+    hintText: 
+  - phase: 5
+    displayName: 
+    description: "\u5B9D\u7BB1\u65F6\u523B"
+    startTime: 210
+    endTime: 225
+    enableSpawning: 0
+    spawnEntries:
+    - enemyType: 0
+      spawnInterval: 1
+      spawnCount: 2
+      spawnZone: 0
+      speedMultiplier: 1
+    spawnRateMultiplier: 1
+    onPhaseStart: 5
+    onPhaseEnd: 0
+    showPhaseHint: 0
+    hintText: 
+  - phase: 6
+    displayName: 
+    description: "\u6700\u7EC8\u6B7B\u5B88"
+    startTime: 225
+    endTime: 285
+    enableSpawning: 1
+    spawnEntries:
+    - enemyType: 0
+      spawnInterval: 1
+      spawnCount: 5
+      spawnZone: 0
+      speedMultiplier: 1
+    - enemyType: 1
+      spawnInterval: 2
+      spawnCount: 2
+      spawnZone: 1
+      speedMultiplier: 1
+    - enemyType: 2
+      spawnInterval: 1
+      spawnCount: 5
+      spawnZone: 0
+      speedMultiplier: 1
+    - enemyType: 3
+      spawnInterval: 1
+      spawnCount: 2
+      spawnZone: 0
+      speedMultiplier: 1
+    spawnRateMultiplier: 1.5
+    onPhaseStart: 0
+    onPhaseEnd: 0
+    showPhaseHint: 0
+    hintText: 
+  - phase: 7
+    displayName: 
+    description: "\u66B4\u98CE\u96E8\u524D\u7684\u5B81\u9759"
+    startTime: 285
+    endTime: 300
+    enableSpawning: 0
+    spawnEntries: []
+    spawnRateMultiplier: 1
+    onPhaseStart: 5
+    onPhaseEnd: 1
+    showPhaseHint: 0
+    hintText: 
+  - phase: 8
+    displayName: 
+    description: "BOSS\u6218"
+    startTime: 300
+    endTime: 360
+    enableSpawning: 0
+    spawnEntries: []
+    spawnRateMultiplier: 1
+    onPhaseStart: 3
+    onPhaseEnd: 1
+    showPhaseHint: 0
+    hintText: 
+  bossHealth: 50000
+  bossMoveSpeed: 0.2
+  bossMinionSpawnInterval: 5
+  bossMinionCount: 3

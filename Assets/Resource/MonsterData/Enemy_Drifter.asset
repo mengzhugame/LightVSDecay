@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
+  m_Name: Enemy_Drifter
+  m_EditorClassIdentifier: 
+  type: 3
+  displayName: "\u6F02\u6D41\u8005"
+  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u88AB\u6FC0\u5149\u51FB\u6253\uFF0C\u4F1A\u5411\u540E\u5F39\u98DE"
+  maxHealth: 150
+  moveSpeed: 0.5
+  mass: 1
+  contactDamage: 1
+  canBeKnockedBack: 1
+  knockbackMultiplier: 2
+  knockbackDrag: 1
+  knockbackStunDuration: 0.5
+  knockbackStunMoveMultiplier: 0.5
+  drifterDeflectionAngle: 45
+  drifterKnockbackMultiplier: 2
+  minScale: 0.3
+  deathFadeDuration: 1
+  normalFlowSpeed: 0.3
+  normalNoiseScale: 0.2
+  hitFlowSpeed: 10
+  hitNoiseScale: 5
+  wobbleReturnSpeed: 5
+  xpReward: 20
+  coinReward: 0
+  ultEnergyReward: 1
+  collisionBehavior: 0
+  bounceForce: 300
+  bounceStunDuration: 1

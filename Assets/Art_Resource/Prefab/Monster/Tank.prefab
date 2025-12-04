@@ -402,28 +402,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45724bede2c9f5e47a5efae840add1e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
   enemyType: 1
-  maxHealth: 1000
-  moveSpeed: 0.2
-  mass: 10
-  minScale: 0.3
   bodySprite: {fileID: 4969554391791242002}
   eyesController: {fileID: 8550763919871504157}
   decorations:
   - {fileID: 6126614263902724383}
   - {fileID: 7449607628985974636}
-  normalFlowSpeed: 0.1
-  normalNoiseScale: 0.5
-  hitFlowSpeed: 10
-  hitNoiseScale: 5
-  wobbleReturnSpeed: 5
-  deathFadeDuration: 1
-  xpReward: 30
-  coinReward: 3
-  canBeKnockedBack: 1
-  knockbackMultiplier: 0.3
-  knockbackDrag: 3
-  knockbackStunDuration: 0.3
-  knockbackStunMoveMultiplier: 0.3
-  drifterDeflectionAngle: 45
-  drifterKnockbackMultiplier: 2

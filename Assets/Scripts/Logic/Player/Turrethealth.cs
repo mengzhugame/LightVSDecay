@@ -1,55 +1,61 @@
+// ============================================================
+// TurretHealth.cs (修复版)
+// 文件位置: Assets/Scripts/Logic/Player/TurretHealth.cs
+// 用途：塔本体生命值 - 修复 VFXPoolManager 调用
+// ============================================================
+
 using UnityEngine;
 using System.Collections;
 using LightVsDecay.Core;
-using LightVsDecay.Logic;
+using LightVsDecay.Core.Pool;
+using LightVsDecay.Data;
+using LightVsDecay.Data.SO;
 
 namespace LightVsDecay.Logic.Player
 {
     /// <summary>
-    /// 光棱塔本体血量管理
-    /// 与 ShieldController 配合，实现 3+3 双层血条系统
+    /// 光棱塔本体生命值控制
+    /// 配置从 GameSettings ScriptableObject 读取
     /// </summary>
     public class TurretHealth : MonoBehaviour
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Inspector 配置
+        // 配置引用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("本体属性")]
-        [SerializeField] private int maxHullHP = 3;
-        [SerializeField] private float invincibilityDuration = 1.0f;
+        [Header("配置")]
+        [Tooltip("游戏设置")]
+        [SerializeField] private GameSettings settings;
         
-        [Header("大小怪判定")]
-        [Tooltip("质量小于此值判定为小怪")]
+        [Header("组件引用")]
+        [SerializeField] private ShieldController shieldController;
+        [SerializeField] private SpriteRenderer turretSprite;
+        
+        [Header("血量设置（如果没有 GameSettings）")]
+        [SerializeField] private int defaultMaxHullHP = 3;
+        [SerializeField] private float defaultInvincibilityDuration = 1.0f;
+        
+        [Header("碰撞设置")]
+        [Tooltip("小怪质量阈值（低于此值为小怪，撞击后自爆）")]
         [SerializeField] private float smallEnemyMassThreshold = 2.0f;
         
-        [Header("大怪弹开设置")]
+        [Tooltip("大怪反弹力度")]
         [SerializeField] private float bounceForce = 300f;
         
-        [Header("视觉反馈")]
-        [SerializeField] private SpriteRenderer turretRenderer;
-        [SerializeField] private float flashDuration = 0.1f;
-        [SerializeField] private int flashCount = 5;
-        
-        [Header("关联组件")]
-        [Tooltip("护盾控制器（如果为空则自动查找子物体）")]
-        [SerializeField] private ShieldController shieldController;
+        [Header("视觉设置")]
+        [SerializeField] private Color normalColor = Color.white;
+        [SerializeField] private Color damagedColor = new Color(1f, 0.3f, 0.3f, 1f);
+        [SerializeField] private float blinkInterval = 0.1f;
         
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 事件
+        // 运行时配置缓存
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>本体受击时触发（参数：剩余血量）</summary>
-        public event System.Action<int> OnHullHit;
-        
-        /// <summary>本体血量变化时触发（参数：当前血量，最大血量）</summary>
-        public event System.Action<int, int> OnHullHPChanged;
-        
-        /// <summary>游戏结束时触发（本体血量归零）</summary>
-        public event System.Action OnGameOver;
+        private int maxHullHP;
+        private float invincibilityDuration;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
@@ -57,25 +63,17 @@ namespace LightVsDecay.Logic.Player
         
         private int currentHullHP;
         private bool isInvincible = false;
-        private bool isDead = false;
-        
         private Coroutine invincibilityCoroutine;
-        private Coroutine flashCoroutine;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 属性
+        // 公共属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        public int CurrentHP => currentHullHP;
-        public int MaxHP => maxHullHP;
-        public bool IsInvincible => isInvincible;
-        public bool IsDead => isDead;
-        
-        /// <summary>护盾血量（便捷访问）</summary>
-        public int ShieldHP => shieldController != null ? shieldController.CurrentHP : 0;
-        
-        /// <summary>护盾是否激活</summary>
-        public bool IsShieldActive => shieldController != null && shieldController.IsActive;
+        public int CurrentHullHP => currentHullHP;
+        public int MaxHullHP => maxHullHP;
+        public bool IsInvincible => isInvincible || (shieldController != null && shieldController.IsInvincible);
+        public bool IsDead => currentHullHP <= 0;
+        public float HullPercent => maxHullHP > 0 ? (float)currentHullHP / maxHullHP : 0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -83,142 +81,98 @@ namespace LightVsDecay.Logic.Player
         
         private void Awake()
         {
-            currentHullHP = maxHullHP;
+            LoadConfig();
             
-            // 自动查找护盾
             if (shieldController == null)
             {
                 shieldController = GetComponentInChildren<ShieldController>();
-            }
-            
-            // 自动查找渲染器
-            if (turretRenderer == null)
-            {
-                turretRenderer = GetComponent<SpriteRenderer>();
             }
         }
         
         private void Start()
         {
-            // 订阅护盾事件
-            if (shieldController != null)
+            currentHullHP = maxHullHP;
+            UpdateVisuals();
+            BroadcastHullStatus();
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 配置加载
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void LoadConfig()
+        {
+            if (settings != null)
             {
-                shieldController.OnShieldBroken += OnShieldBroken;
-                shieldController.OnShieldRecovered += OnShieldRecovered;
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log("[TurretHealth] 已连接护盾控制器");
-                }
+                maxHullHP = settings.maxHullHP;
+                invincibilityDuration = settings.invincibilityDuration;
             }
             else
             {
-                Debug.LogWarning("[TurretHealth] 未找到护盾控制器！");
-            }
-        }
-        
-        private void OnDestroy()
-        {
-            // 取消订阅
-            if (shieldController != null)
-            {
-                shieldController.OnShieldBroken -= OnShieldBroken;
-                shieldController.OnShieldRecovered -= OnShieldRecovered;
+                // 使用默认值
+                maxHullHP = defaultMaxHullHP;
+                invincibilityDuration = defaultInvincibilityDuration;
             }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 公共接口
+        // 伤害处理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 本体受到伤害（由 EnemyBlob 调用）
+        /// 受到伤害
         /// </summary>
         /// <returns>是否成功造成伤害</returns>
         public bool TakeDamage(int damage = 1)
         {
-            if (isDead || isInvincible)
+            // 检查无敌状态
+            if (IsInvincible)
             {
+                if (showDebugInfo)
+                {
+                    Debug.Log("[TurretHealth] 无敌中，伤害无效");
+                }
                 return false;
             }
             
+            // 先由护盾承担伤害
+            if (shieldController != null && shieldController.CurrentShieldHP > 0)
+            {
+                bool shieldDamaged = shieldController.TakeDamage(damage);
+                if (shieldDamaged)
+                {
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[TurretHealth] 护盾承担伤害");
+                    }
+                    return true;
+                }
+            }
+            
+            // 护盾破了，扣本体血
             currentHullHP = Mathf.Max(0, currentHullHP - damage);
             
-            // 触发无敌帧
+            // 播放受伤特效
+            PlayDamageEffect();
+            
+            // 开始无敌
             StartInvincibility();
             
-            // 触发闪烁效果
-            TriggerFlash();
-            
-            // 触发事件
-            OnHullHit?.Invoke(currentHullHP);
-            OnHullHPChanged?.Invoke(currentHullHP, maxHullHP);
-            // 触发全局事件，通知UI更新
-            Core.GameEvents.TriggerHullHPChanged(currentHullHP, maxHullHP);
+            // 广播状态
+            BroadcastHullStatus();
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TurretHealth] 本体受击! HP: {currentHullHP}/{maxHullHP}");
+                Debug.Log($"[TurretHealth] 本体受伤: {currentHullHP}/{maxHullHP}");
             }
             
             // 检查死亡
             if (currentHullHP <= 0)
             {
-                Die();
+                OnDeath();
             }
             
             return true;
-        }
-        
-        /// <summary>
-        /// 判断质量是否为小怪
-        /// </summary>
-        public bool IsSmallEnemy(float mass)
-        {
-            return mass < smallEnemyMassThreshold;
-        }
-        
-        /// <summary>
-        /// 获取弹开力度
-        /// </summary>
-        public float GetBounceForce()
-        {
-            return bounceForce;
-        }
-        
-        /// <summary>
-        /// 重置塔（用于重新开始游戏）
-        /// </summary>
-        public void Reset()
-        {
-            StopAllCoroutines();
-            
-            currentHullHP = maxHullHP;
-            isInvincible = false;
-            isDead = false;
-            
-            // 重置护盾
-            if (shieldController != null)
-            {
-                shieldController.Reset();
-            }
-            
-            // 重置视觉
-            if (turretRenderer != null)
-            {
-                turretRenderer.enabled = true;
-                Color c = turretRenderer.color;
-                c.a = 1f;
-                turretRenderer.color = c;
-            }
-            
-            OnHullHPChanged?.Invoke(currentHullHP, maxHullHP);
-            Core.GameEvents.TriggerHullHPChanged(currentHullHP, maxHullHP);
-            
-            if (showDebugInfo)
-            {
-                Debug.Log("[TurretHealth] 已重置");
-            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -237,19 +191,43 @@ namespace LightVsDecay.Logic.Player
         private IEnumerator InvincibilityCoroutine()
         {
             isInvincible = true;
+            float elapsed = 0f;
+            bool visible = true;
             
-            if (showDebugInfo)
+            while (elapsed < invincibilityDuration)
             {
-                Debug.Log("[TurretHealth] 无敌帧开始");
+                // 闪烁效果
+                visible = !visible;
+                if (turretSprite != null)
+                {
+                    turretSprite.color = visible ? damagedColor : new Color(1f, 1f, 1f, 0.3f);
+                }
+                
+                yield return new WaitForSeconds(blinkInterval);
+                elapsed += blinkInterval;
             }
             
-            yield return new WaitForSeconds(invincibilityDuration);
-            
             isInvincible = false;
+            UpdateVisuals();
             
+            invincibilityCoroutine = null;
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 死亡处理
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void OnDeath()
+        {
             if (showDebugInfo)
             {
-                Debug.Log("[TurretHealth] 无敌帧结束");
+                Debug.Log("[TurretHealth] 光棱塔被摧毁！");
+            }
+            
+            // 触发游戏失败
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.Defeat();
             }
         }
         
@@ -257,112 +235,91 @@ namespace LightVsDecay.Logic.Player
         // 视觉效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void TriggerFlash()
+        private void UpdateVisuals()
         {
-            if (flashCoroutine != null)
+            if (turretSprite == null) return;
+            
+            if (currentHullHP <= 1)
             {
-                StopCoroutine(flashCoroutine);
-            }
-            flashCoroutine = StartCoroutine(FlashCoroutine());
-        }
-        
-        private IEnumerator FlashCoroutine()
-        {
-            if (turretRenderer == null) yield break;
-            
-            for (int i = 0; i < flashCount; i++)
-            {
-                // 隐藏
-                turretRenderer.enabled = false;
-                yield return new WaitForSeconds(flashDuration);
-                
-                // 显示
-                turretRenderer.enabled = true;
-                yield return new WaitForSeconds(flashDuration);
-            }
-            
-            // 确保最终显示
-            turretRenderer.enabled = true;
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 死亡逻辑
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private void Die()
-        {
-            if (isDead) return;
-            isDead = true;
-            
-            if (showDebugInfo)
-            {
-                Debug.Log("[TurretHealth] 游戏结束！");
-            }
-            
-            OnGameOver?.Invoke();
-            
-            // 【修复】触发游戏失败，弹出失败面板
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.Defeat();  // ← 这行是关键！
+                turretSprite.color = damagedColor;
             }
             else
             {
-                Debug.LogWarning("[TurretHealth] GameManager.Instance 为空，无法触发失败！");
+                turretSprite.color = normalColor;
             }
         }
         
+        private void PlayDamageEffect()
+        {
+            // 使用 VFXPoolManager.Play 方法
+            if (VFXPoolManager.Instance != null)
+            {
+                VFXPoolManager.Instance.Play(VFXType.TowerDamage, transform.position);
+            }
+            
+            // TODO: 屏幕震动
+        }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 护盾事件处理
+        // 事件广播
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void OnShieldBroken()
+        private void BroadcastHullStatus()
         {
+            GameEvents.TriggerHullHPChanged(currentHullHP, maxHullHP);
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 外部接口
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 判断是否为小型敌人（根据质量）
+        /// </summary>
+        public bool IsSmallEnemy(float mass)
+        {
+            return mass < smallEnemyMassThreshold;
+        }
+        
+        /// <summary>
+        /// 获取反弹力度
+        /// </summary>
+        public float GetBounceForce()
+        {
+            return bounceForce;
+        }
+        
+        /// <summary>
+        /// 恢复生命值（消耗品使用）
+        /// </summary>
+        public void RestoreHealth(int amount = 1)
+        {
+            currentHullHP = Mathf.Min(currentHullHP + amount, maxHullHP);
+            UpdateVisuals();
+            BroadcastHullStatus();
+            
             if (showDebugInfo)
             {
-                Debug.Log("[TurretHealth] 护盾已破碎，本体暴露！");
+                Debug.Log($"[TurretHealth] 恢复生命 +{amount}: {currentHullHP}/{maxHullHP}");
             }
         }
         
-        private void OnShieldRecovered()
+        /// <summary>
+        /// 重置（新游戏）
+        /// </summary>
+        public void ResetHealth()
         {
-            if (showDebugInfo)
+            currentHullHP = maxHullHP;
+            isInvincible = false;
+            
+            if (invincibilityCoroutine != null)
             {
-                Debug.Log("[TurretHealth] 护盾已恢复！");
+                StopCoroutine(invincibilityCoroutine);
+                invincibilityCoroutine = null;
             }
+            
+            UpdateVisuals();
+            BroadcastHullStatus();
         }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 调试
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-#if UNITY_EDITOR
-        private void OnGUI()
-        {
-            if (!showDebugInfo || !Application.isPlaying) return;
-            
-            GUILayout.BeginArea(new Rect(220, Screen.height - 180, 200, 170));
-            GUILayout.Label("=== Turret Health ===");
-            GUILayout.Label($"Hull HP: {currentHullHP}/{maxHullHP}");
-            GUILayout.Label($"Shield HP: {ShieldHP}/{(shieldController != null ? shieldController.MaxHP : 0)}");
-            GUILayout.Label($"Invincible: {isInvincible}");
-            GUILayout.Label($"Shield Active: {IsShieldActive}");
-            GUILayout.Label($"Dead: {isDead}");
-            
-            GUILayout.Space(5);
-            
-            if (GUILayout.Button("Take Hull Damage"))
-            {
-                TakeDamage(1);
-            }
-            
-            if (GUILayout.Button("Reset All"))
-            {
-                Reset();
-            }
-            
-            GUILayout.EndArea();
-        }
-#endif
     }
 }

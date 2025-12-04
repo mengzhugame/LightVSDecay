@@ -244,7 +244,37 @@ namespace LightVsDecay.Core.Pool
         {
             Play(VFXType.EnemyExplosion, position);
         }
+        /// <summary>
+        /// 播放激光击中特效
+        /// </summary>
+        public void PlayLaserHit(Vector3 position)
+        {
+            Play(VFXType.LaserHit, position);
+        }
         
+        /// <summary>
+        /// 播放护盾破碎特效
+        /// </summary>
+        public void PlayShieldBreak(Vector3 position)
+        {
+            Play(VFXType.ShieldBreak, position);
+        }
+        
+        /// <summary>
+        /// 播放护盾恢复特效
+        /// </summary>
+        public void PlayShieldRecover(Vector3 position)
+        {
+            Play(VFXType.ShieldRecover, position);
+        }
+        
+        /// <summary>
+        /// 播放塔受伤特效
+        /// </summary>
+        public void PlayTowerDamage(Vector3 position)
+        {
+            Play(VFXType.TowerDamage, position);
+        } 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
