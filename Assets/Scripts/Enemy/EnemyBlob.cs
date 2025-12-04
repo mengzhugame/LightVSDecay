@@ -47,6 +47,12 @@ namespace LightVsDecay.Enemy
         
         [Header("Death Fade Settings")]
         [SerializeField] private float deathFadeDuration = 1.0f;
+        [Header("奖励设置")]
+        [Tooltip("击杀获得的经验值")]
+        [SerializeField] private int xpReward = 10;
+
+        [Tooltip("击杀获得的金币")]
+        [SerializeField] private int coinReward = 1;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 【新增】击退系统配置
@@ -396,7 +402,8 @@ namespace LightVsDecay.Enemy
             {
                 circleCollider.enabled = false;
             }
-    
+            // 【新增】触发敌人死亡事件
+            GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
             deathCoroutine = StartCoroutine(DeathFadeCoroutine());
         }
         /// <summary>
@@ -455,7 +462,8 @@ namespace LightVsDecay.Enemy
             {
                 circleCollider.enabled = false;
             }
-            
+            // 【新增】触发敌人死亡事件
+            GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
             deathCoroutine = StartCoroutine(DeathFadeCoroutine());
         }
         
@@ -630,7 +638,8 @@ namespace LightVsDecay.Enemy
             }
             
             // TODO: 对塔造成伤害
-            
+            // 【新增】自爆也触发敌人死亡事件
+            GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
             ReturnToPool();
         }
         

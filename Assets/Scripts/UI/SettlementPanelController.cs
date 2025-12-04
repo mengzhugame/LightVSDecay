@@ -8,167 +8,139 @@ namespace LightVsDecay.UI
     /// <summary>
     /// 结算面板控制器
     /// 胜利和失败共用同一个面板，通过切换标题区分
+    /// 
+    /// 【职责分离】
+    /// - UIManager：负责面板的显示/隐藏
+    /// - SettlementPanelController：负责面板内容和交互逻辑
     /// </summary>
     public class SettlementPanelController : MonoBehaviour
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Inspector 配置 - 面板引用
+        // Inspector 配置 - UI 元素
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("面板组件")]
-        [SerializeField] private GameObject settlementPanel;
-        [SerializeField] private Image victoryTitle;
-        [SerializeField] private Image defeatTitle;
-        
-        [Header("信息面板")]
-        [SerializeField] private GameObject crownIcon; // 满血通关才显示
+
+        [Header("标题")] [SerializeField] private GameObject victoryTitle;
+        [SerializeField] private GameObject defeatTitle;
+
+        [Header("信息面板")] [SerializeField] private GameObject crownIcon;
         [SerializeField] private TextMeshProUGUI coinText;
         [SerializeField] private TextMeshProUGUI timeText;
         [SerializeField] private TextMeshProUGUI killCountText;
         [SerializeField] private TextMeshProUGUI maxHitCountText;
-        
-        [Header("底部按钮")]
-        [SerializeField] private Button doubleReceivedButton;
+
+        [Header("底部按钮")] [SerializeField] private Button doubleReceivedButton;
         [SerializeField] private Button returnButton;
-        
-        [Header("动画设置")]
-        [SerializeField] private float showDelay = 0.5f;
-        [SerializeField] private float fadeInDuration = 0.3f;
-        [SerializeField] private float numberAnimDuration = 1.0f; // 数字滚动时长
-        
+
+        [Header("动画设置")] [SerializeField] private float fadeInDuration = 0.3f;
+        [SerializeField] private float numberAnimDuration = 1.0f;
+
+        [Header("调试")] [SerializeField] private bool showDebugInfo = false;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private bool isVictory = false;
         private Core.SettlementData settlementData;
         private CanvasGroup canvasGroup;
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private void Awake()
         {
-            // 获取或添加 CanvasGroup
-            if (settlementPanel != null)
+            // 获取或添加 CanvasGroup（用于淡入动画）
+            canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
             {
-                canvasGroup = settlementPanel.GetComponent<CanvasGroup>();
-                if (canvasGroup == null)
-                {
-                    canvasGroup = settlementPanel.AddComponent<CanvasGroup>();
-                }
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
             }
-            
-            // 初始隐藏
-            HidePanel();
-        }
-        
-        private void Start()
-        {
-            // 订阅游戏结束事件
-            Core.GameEvents.OnGameVictory += OnVictory;
-            Core.GameEvents.OnGameDefeat += OnDefeat;
-            
+
             // 设置按钮回调
             SetupButtons();
         }
-        
-        private void OnDestroy()
-        {
-            Core.GameEvents.OnGameVictory -= OnVictory;
-            Core.GameEvents.OnGameDefeat -= OnDefeat;
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 初始化
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private void SetupButtons()
         {
             if (doubleReceivedButton != null)
             {
+                doubleReceivedButton.onClick.RemoveAllListeners();
                 doubleReceivedButton.onClick.AddListener(OnDoubleReceivedClicked);
             }
-            
+
             if (returnButton != null)
             {
+                returnButton.onClick.RemoveAllListeners();
                 returnButton.onClick.AddListener(OnReturnClicked);
             }
         }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 事件回调
+        // 公共接口（由 UIManager 调用）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private void OnVictory()
-        {
-            isVictory = true;
-            
-            // 获取结算数据
-            if (Core.PlayerProgressManager.Instance != null)
-            {
-                settlementData = Core.PlayerProgressManager.Instance.GetSettlementData();
-            }
-            else
-            {
-                // 创建默认数据
-                settlementData = new Core.SettlementData();
-            }
-            
-            StartCoroutine(ShowPanelCoroutine());
-        }
-        
-        private void OnDefeat()
-        {
-            isVictory = false;
-            
-            // 获取结算数据
-            if (Core.PlayerProgressManager.Instance != null)
-            {
-                settlementData = Core.PlayerProgressManager.Instance.GetSettlementData();
-            }
-            else
-            {
-                settlementData = new Core.SettlementData();
-            }
-            
-            StartCoroutine(ShowPanelCoroutine());
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 面板显示/隐藏
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         /// <summary>
-        /// 显示面板协程（带动画）
+        /// 显示结算内容（由 UIManager 调用）
         /// </summary>
-        private IEnumerator ShowPanelCoroutine()
+        /// <param name="victory">是否胜利</param>
+        public void Show(bool victory)
         {
-            // 等待延迟
-            yield return new WaitForSecondsRealtime(showDelay);
-            
+            isVictory = victory;
+
+            // 获取结算数据
+            if (Core.PlayerProgressManager.Instance != null)
+            {
+                settlementData = Core.PlayerProgressManager.Instance.GetSettlementData();
+            }
+            else
+            {
+                settlementData = new Core.SettlementData();
+            }
+
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SettlementPanel] 显示结算 (胜利: {victory})");
+            }
+
+            // 开始显示动画
+            StartCoroutine(ShowContentCoroutine());
+        }
+
+        /// <summary>
+        /// 重置面板状态（由 UIManager 在隐藏前调用，可选）
+        /// </summary>
+        public void ResetPanel()
+        {
+            StopAllCoroutines();
+
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 1f;
+            }
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 内容显示
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private IEnumerator ShowContentCoroutine()
+        {
             // 设置标题显示
             SetTitleDisplay(isVictory);
-            
-            // 设置皇冠显示（仅满血胜利时显示）
+
+            // 设置皇冠显示（仅满血胜利）
             bool showCrown = isVictory && settlementData.isPerfect;
             if (crownIcon != null)
             {
                 crownIcon.SetActive(showCrown);
             }
-            
-            // 显示面板
-            if (settlementPanel != null)
-            {
-                settlementPanel.SetActive(true);
-            }
-            
+
             // 淡入动画
             if (canvasGroup != null)
             {
                 canvasGroup.alpha = 0f;
-                
+
                 float elapsed = 0f;
                 while (elapsed < fadeInDuration)
                 {
@@ -176,85 +148,76 @@ namespace LightVsDecay.UI
                     canvasGroup.alpha = Mathf.Lerp(0f, 1f, elapsed / fadeInDuration);
                     yield return null;
                 }
-                
+
                 canvasGroup.alpha = 1f;
             }
-            
+
             // 播放数字滚动动画
-            StartCoroutine(AnimateNumbersCoroutine());
+            yield return StartCoroutine(AnimateNumbersCoroutine());
+
+            if (showDebugInfo)
+            {
+                Debug.Log("[SettlementPanel] 内容显示完成");
+            }
         }
-        
-        /// <summary>
-        /// 设置标题显示
-        /// </summary>
+
         private void SetTitleDisplay(bool victory)
         {
             if (victoryTitle != null)
             {
-                victoryTitle.gameObject.SetActive(victory);
+                victoryTitle.SetActive(victory);
             }
-            
+
             if (defeatTitle != null)
             {
-                defeatTitle.gameObject.SetActive(!victory);
+                defeatTitle.SetActive(!victory);
             }
         }
-        
-        /// <summary>
-        /// 数字滚动动画
-        /// </summary>
+
         private IEnumerator AnimateNumbersCoroutine()
         {
             float elapsed = 0f;
-            
+
             int targetCoin = settlementData.coinsEarned;
             int targetKill = settlementData.killCount;
             int targetMaxHit = settlementData.maxHitCount;
-            
+
             while (elapsed < numberAnimDuration)
             {
                 elapsed += Time.unscaledDeltaTime;
                 float t = elapsed / numberAnimDuration;
-                
-                // 使用 EaseOut 曲线
-                float easeT = 1f - Mathf.Pow(1f - t, 3f);
-                
-                // 更新金币
+                float easeT = 1f - Mathf.Pow(1f - t, 3f); // EaseOut
+
                 if (coinText != null)
                 {
                     int currentCoin = Mathf.RoundToInt(Mathf.Lerp(0, targetCoin, easeT));
                     coinText.text = $"x{currentCoin}";
                 }
-                
-                // 更新击杀数
+
                 if (killCountText != null)
                 {
                     int currentKill = Mathf.RoundToInt(Mathf.Lerp(0, targetKill, easeT));
                     killCountText.text = currentKill.ToString();
                 }
-                
-                // 更新最大连击
+
                 if (maxHitCountText != null)
                 {
                     int currentMaxHit = Mathf.RoundToInt(Mathf.Lerp(0, targetMaxHit, easeT));
                     maxHitCountText.text = currentMaxHit.ToString();
                 }
-                
+
                 yield return null;
             }
-            
+
             // 确保最终值准确
             if (coinText != null) coinText.text = $"x{targetCoin}";
             if (killCountText != null) killCountText.text = targetKill.ToString();
             if (maxHitCountText != null) maxHitCountText.text = targetMaxHit.ToString();
-            
-            // 更新时间（不做动画）
+
+            // 更新时间显示
             UpdateTimeDisplay();
         }
-        
-        /// <summary>
-        /// 更新时间显示
-        /// </summary>
+
         private void UpdateTimeDisplay()
         {
             if (timeText != null)
@@ -265,35 +228,17 @@ namespace LightVsDecay.UI
                 timeText.text = $"{minutes}:{seconds:D2}";
             }
         }
-        
-        /// <summary>
-        /// 隐藏面板
-        /// </summary>
-        public void HidePanel()
-        {
-            if (settlementPanel != null)
-            {
-                settlementPanel.SetActive(false);
-            }
-            
-            if (canvasGroup != null)
-            {
-                canvasGroup.alpha = 0f;
-            }
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 按钮回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private void OnDoubleReceivedClicked()
         {
             Debug.Log("[SettlementPanel] 双倍领取按钮点击");
-            
-            // 双倍金币奖励
+
             int doubleCoins = settlementData.coinsEarned * 2;
-            
-            // 添加金币
+
             if (Core.PlayerProgressManager.Instance != null)
             {
                 Core.PlayerProgressManager.Instance.AddGoldCoins(doubleCoins);
@@ -304,20 +249,18 @@ namespace LightVsDecay.UI
                 PlayerPrefs.SetInt("PlayerGoldCoins", currentCoins + doubleCoins);
                 PlayerPrefs.Save();
             }
-            
+
             Debug.Log($"[SettlementPanel] 双倍领取金币: {doubleCoins}");
-            
-            // TODO: 播放广告或其他双倍领取条件
-            
-            // 返回主菜单
+
+            // TODO: 播放广告
+
             ReturnToMainMenu();
         }
-        
+
         private void OnReturnClicked()
         {
             Debug.Log("[SettlementPanel] 返回按钮点击");
-            
-            // 普通领取金币
+
             if (Core.PlayerProgressManager.Instance != null)
             {
                 Core.PlayerProgressManager.Instance.AddGoldCoins(settlementData.coinsEarned);
@@ -328,19 +271,18 @@ namespace LightVsDecay.UI
                 PlayerPrefs.SetInt("PlayerGoldCoins", currentCoins + settlementData.coinsEarned);
                 PlayerPrefs.Save();
             }
-            
+
             Debug.Log($"[SettlementPanel] 普通领取金币: {settlementData.coinsEarned}");
-            
-            // 返回主菜单
+
             ReturnToMainMenu();
         }
-        
+
         private void ReturnToMainMenu()
         {
             // 恢复时间缩放
             Time.timeScale = 1f;
-            
-            // 加载主菜单场景
+
+            // 加载主菜单
             if (Core.GameManager.Instance != null)
             {
                 Core.GameManager.Instance.LoadMainMenu();
@@ -349,50 +291,6 @@ namespace LightVsDecay.UI
             {
                 UnityEngine.SceneManagement.SceneManager.LoadScene("MainScene");
             }
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 公共接口（用于调试或外部调用）
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        /// <summary>
-        /// 手动显示胜利面板（用于测试）
-        /// </summary>
-        [ContextMenu("Test: Show Victory")]
-        public void TestShowVictory()
-        {
-            settlementData = new Core.SettlementData
-            {
-                isVictory = true,
-                isPerfect = true,
-                coinsEarned = 150,
-                survivalTime = 300f,
-                killCount = 128,
-                maxHitCount = 568
-            };
-            
-            isVictory = true;
-            StartCoroutine(ShowPanelCoroutine());
-        }
-        
-        /// <summary>
-        /// 手动显示失败面板（用于测试）
-        /// </summary>
-        [ContextMenu("Test: Show Defeat")]
-        public void TestShowDefeat()
-        {
-            settlementData = new Core.SettlementData
-            {
-                isVictory = false,
-                isPerfect = false,
-                coinsEarned = 50,
-                survivalTime = 180f,
-                killCount = 65,
-                maxHitCount = 234
-            };
-            
-            isVictory = false;
-            StartCoroutine(ShowPanelCoroutine());
         }
     }
 }

@@ -327,6 +327,8 @@ MonoBehaviour:
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
   deathFadeDuration: 1
+  xpReward: 20
+  coinReward: 2
   canBeKnockedBack: 1
   knockbackMultiplier: 1
   knockbackDrag: 1

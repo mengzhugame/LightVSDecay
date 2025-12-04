@@ -270,6 +270,8 @@ namespace LightVsDecay.Shield
             // 触发事件
             OnShieldHit?.Invoke(currentShieldHP);
             OnShieldHPChanged?.Invoke(currentShieldHP, maxShieldHP);
+            // 触发全局事件，通知UI更新
+            Core.GameEvents.TriggerShieldHPChanged(currentShieldHP, maxShieldHP);
             
             if (showDebugInfo)
             {
@@ -342,6 +344,7 @@ namespace LightVsDecay.Shield
             
             // 重置冲击波
             ResetShockwave();
+            Core.GameEvents.TriggerShieldHPChanged(currentShieldHP, maxShieldHP);
         }
         
         /// <summary>

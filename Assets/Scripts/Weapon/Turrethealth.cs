@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using LightVsDecay.Core;
 using LightVsDecay.Shield;
 
 namespace LightVsDecay
@@ -152,6 +153,8 @@ namespace LightVsDecay
             // 触发事件
             OnHullHit?.Invoke(currentHullHP);
             OnHullHPChanged?.Invoke(currentHullHP, maxHullHP);
+            // 触发全局事件，通知UI更新
+            Core.GameEvents.TriggerHullHPChanged(currentHullHP, maxHullHP);
             
             if (showDebugInfo)
             {
@@ -210,6 +213,7 @@ namespace LightVsDecay
             }
             
             OnHullHPChanged?.Invoke(currentHullHP, maxHullHP);
+            Core.GameEvents.TriggerHullHPChanged(currentHullHP, maxHullHP);
             
             if (showDebugInfo)
             {
@@ -297,7 +301,15 @@ namespace LightVsDecay
             
             OnGameOver?.Invoke();
             
-            // TODO: 播放死亡动画、暂停游戏等
+            // 【修复】触发游戏失败，弹出失败面板
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.Defeat();  // ← 这行是关键！
+            }
+            else
+            {
+                Debug.LogWarning("[TurretHealth] GameManager.Instance 为空，无法触发失败！");
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
