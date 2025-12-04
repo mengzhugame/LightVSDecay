@@ -230,6 +230,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5562580028236921876, guid: 4ee97612d2ec13641955908b97eba771, type: 3}
   m_PrefabInstance: {fileID: 93303049}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &93303051 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5404732202858093032, guid: 4ee97612d2ec13641955908b97eba771, type: 3}
+  m_PrefabInstance: {fileID: 93303049}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &148742416
 GameObject:
   m_ObjectHideFlags: 0
@@ -383,7 +394,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &203844587
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -494,6 +505,7 @@ GameObject:
   serializedVersion: 7
   m_Component:
   - component: {fileID: 252727452}
+  - component: {fileID: 252727453}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: MainPanal
@@ -524,6 +536,34 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &252727453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 252727451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92300c85b0fac214bb75f213c0041539, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  settingButton: {fileID: 1650999880}
+  gemText: {fileID: 615935639}
+  goldCoinText: {fileID: 93303051}
+  energyText: {fileID: 608902364}
+  chapterImage: {fileID: 344738302}
+  chapterText: {fileID: 1663929134}
+  difficultyImages:
+  - {fileID: 2126249088}
+  - {fileID: 2141110060}
+  - {fileID: 757721210}
+  - {fileID: 520573809}
+  - {fileID: 354582753}
+  startButton: {fileID: 1191881780}
+  difficultyActiveColor: {r: 1, g: 1, b: 1, a: 1}
+  difficultyInactiveColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+  buttonDisabledColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!1 &344738300
 GameObject:
   m_ObjectHideFlags: 0
@@ -986,6 +1026,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5562580028236921876, guid: 4ee97612d2ec13641955908b97eba771, type: 3}
   m_PrefabInstance: {fileID: 608902362}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &608902364 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5404732202858093032, guid: 4ee97612d2ec13641955908b97eba771, type: 3}
+  m_PrefabInstance: {fileID: 608902362}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &615935637
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1100,6 +1151,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5562580028236921876, guid: 4ee97612d2ec13641955908b97eba771, type: 3}
   m_PrefabInstance: {fileID: 615935637}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &615935639 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5404732202858093032, guid: 4ee97612d2ec13641955908b97eba771, type: 3}
+  m_PrefabInstance: {fileID: 615935637}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &757721208
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,7 +4,9 @@ namespace LightVsDecay.Core
 {
     /// <summary>
     /// 玩家进度管理器 (单例)
-    /// 负责：经验值、等级、金币、大招能量、击杀数、连击数
+    /// 负责：
+    /// - 局内进度：经验值、等级、局内金币、大招能量、击杀数、连击数
+    /// - 局外进度：宝石、金币（永久）、能量
     /// </summary>
     public class PlayerProgressManager : MonoBehaviour
     {
@@ -15,10 +17,21 @@ namespace LightVsDecay.Core
         public static PlayerProgressManager Instance { get; private set; }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 - 局外进度（Meta）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("局外进度 - 能量系统")]
+        [Tooltip("最大能量值")]
+        [SerializeField] private int maxEnergy = 5;
+        
+        [Tooltip("能量恢复间隔（秒）")]
+        [SerializeField] private float energyRecoveryInterval = 600f; // 10分钟
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 经验系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("经验系统")]
+        [Header("局内经验系统")]
         [Tooltip("升级公式基础值: XP = Base + (Level * Growth)")]
         [SerializeField] private int expBase = 5;
         
@@ -58,7 +71,15 @@ namespace LightVsDecay.Core
         [SerializeField] private bool showDebugInfo = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 运行时状态
+        // 运行时状态 - 局外进度（持久化）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private int gems = 0;           // 宝石（付费货币）
+        private int goldCoins = 0;      // 金币（永久货币）
+        private int energy = 5;         // 当前能量
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 运行时状态 - 局内进度（每局重置）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         // 经验/等级
@@ -66,8 +87,8 @@ namespace LightVsDecay.Core
         private int currentExp = 0;
         private int expToNextLevel;
         
-        // 金币
-        private int totalCoins = 0;
+        // 局内金币
+        private int sessionCoins = 0;
         
         // 大招能量
         private int ultEnergy = 0;
@@ -80,7 +101,23 @@ namespace LightVsDecay.Core
         private float lastKillTime = 0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 属性
+        // 属性 - 局外进度
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>宝石（付费货币）</summary>
+        public int Gems => gems;
+        
+        /// <summary>金币（永久货币）</summary>
+        public int GoldCoins => goldCoins;
+        
+        /// <summary>当前能量</summary>
+        public int Energy => energy;
+        
+        /// <summary>最大能量</summary>
+        public int MaxEnergy => maxEnergy;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 属性 - 局内进度
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         // 经验/等级
@@ -90,8 +127,8 @@ namespace LightVsDecay.Core
         public float ExpProgress => expToNextLevel > 0 ? (float)currentExp / expToNextLevel : 0f;
         public bool IsMaxLevel => currentLevel >= maxLevel;
         
-        // 金币
-        public int TotalCoins => totalCoins;
+        // 局内金币
+        public int TotalCoins => sessionCoins;
         
         // 大招
         public int UltEnergy => ultEnergy;
@@ -110,13 +147,17 @@ namespace LightVsDecay.Core
         
         private void Awake()
         {
-            // 单例设置
+            // 单例设置（跨场景保持）
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
                 return;
             }
             Instance = this;
+            DontDestroyOnLoad(gameObject);
+            
+            // 加载持久化数据
+            LoadMetaProgress();
         }
         
         private void Start()
@@ -125,10 +166,10 @@ namespace LightVsDecay.Core
             GameEvents.OnEnemyDied += OnEnemyDied;
             
             // 订阅游戏开始事件
-            GameEvents.OnGameStart += ResetProgress;
+            GameEvents.OnGameStart += ResetSessionProgress;
             
-            // 初始化
-            ResetProgress();
+            // 初始化局内进度
+            ResetSessionProgress();
         }
         
         private void Update()
@@ -146,23 +187,165 @@ namespace LightVsDecay.Core
             
             // 取消订阅
             GameEvents.OnEnemyDied -= OnEnemyDied;
-            GameEvents.OnGameStart -= ResetProgress;
+            GameEvents.OnGameStart -= ResetSessionProgress;
+        }
+        
+        private void OnApplicationQuit()
+        {
+            // 退出时保存
+            SaveMetaProgress();
+        }
+        
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            // 后台时保存
+            if (pauseStatus)
+            {
+                SaveMetaProgress();
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 初始化
+        // 持久化（局外进度）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 重置所有进度（新游戏开始时调用）
+        /// 加载局外进度
         /// </summary>
-        public void ResetProgress()
+        private void LoadMetaProgress()
+        {
+            gems = PlayerPrefs.GetInt("PlayerGems", 0);
+            goldCoins = PlayerPrefs.GetInt("PlayerGoldCoins", 0);
+            energy = PlayerPrefs.GetInt("PlayerEnergy", maxEnergy);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[PlayerProgressManager] 加载局外进度: Gems={gems}, GoldCoins={goldCoins}, Energy={energy}");
+            }
+        }
+        
+        /// <summary>
+        /// 保存局外进度
+        /// </summary>
+        private void SaveMetaProgress()
+        {
+            PlayerPrefs.SetInt("PlayerGems", gems);
+            PlayerPrefs.SetInt("PlayerGoldCoins", goldCoins);
+            PlayerPrefs.SetInt("PlayerEnergy", energy);
+            PlayerPrefs.Save();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[PlayerProgressManager] 局外进度已保存");
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 局外货币操作
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 增加宝石
+        /// </summary>
+        public void AddGems(int amount)
+        {
+            gems += amount;
+            SaveMetaProgress();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[PlayerProgressManager] +{amount} 宝石, 总计: {gems}");
+            }
+        }
+        
+        /// <summary>
+        /// 消耗宝石
+        /// </summary>
+        public bool ConsumeGems(int amount)
+        {
+            if (gems < amount) return false;
+            
+            gems -= amount;
+            SaveMetaProgress();
+            return true;
+        }
+        
+        /// <summary>
+        /// 增加金币（永久）
+        /// </summary>
+        public void AddGoldCoins(int amount)
+        {
+            goldCoins += amount;
+            SaveMetaProgress();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[PlayerProgressManager] +{amount} 金币（永久）, 总计: {goldCoins}");
+            }
+        }
+        
+        /// <summary>
+        /// 消耗金币
+        /// </summary>
+        public bool ConsumeGoldCoins(int amount)
+        {
+            if (goldCoins < amount) return false;
+            
+            goldCoins -= amount;
+            SaveMetaProgress();
+            return true;
+        }
+        
+        /// <summary>
+        /// 消耗能量（开始游戏时调用）
+        /// </summary>
+        public bool ConsumeEnergy(int amount = 1)
+        {
+            if (energy < amount) return false;
+            
+            energy -= amount;
+            SaveMetaProgress();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[PlayerProgressManager] 消耗 {amount} 能量, 剩余: {energy}/{maxEnergy}");
+            }
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// 恢复能量
+        /// </summary>
+        public void RecoverEnergy(int amount = 1)
+        {
+            energy = Mathf.Min(energy + amount, maxEnergy);
+            SaveMetaProgress();
+        }
+        
+        /// <summary>
+        /// 满能量恢复
+        /// </summary>
+        public void RefillEnergy()
+        {
+            energy = maxEnergy;
+            SaveMetaProgress();
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 局内进度重置
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 重置局内进度（新游戏开始时调用）
+        /// </summary>
+        public void ResetSessionProgress()
         {
             currentLevel = 1;
             currentExp = 0;
             expToNextLevel = CalculateExpToNextLevel(currentLevel);
             
-            totalCoins = 0;
+            sessionCoins = 0;
             
             ultEnergy = 0;
             ultReady = false;
@@ -177,7 +360,27 @@ namespace LightVsDecay.Core
             
             if (showDebugInfo)
             {
-                Debug.Log("[PlayerProgressManager] 进度已重置");
+                Debug.Log("[PlayerProgressManager] 局内进度已重置");
+            }
+        }
+        
+        /// <summary>
+        /// 重置所有进度（包括局外）- 用于调试
+        /// </summary>
+        public void ResetAllProgress()
+        {
+            // 重置局外
+            gems = 0;
+            goldCoins = 0;
+            energy = maxEnergy;
+            SaveMetaProgress();
+            
+            // 重置局内
+            ResetSessionProgress();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[PlayerProgressManager] 所有进度已重置");
             }
         }
         
@@ -187,7 +390,7 @@ namespace LightVsDecay.Core
         private void BroadcastAllStatus()
         {
             GameEvents.TriggerExpChanged(currentExp, expToNextLevel);
-            GameEvents.TriggerCoinChanged(totalCoins);
+            GameEvents.TriggerCoinChanged(sessionCoins);
             GameEvents.TriggerUltEnergyChanged(ultEnergy, ultMaxEnergy);
             GameEvents.TriggerKillCountChanged(totalKills);
             GameEvents.TriggerComboChanged(currentCombo);
@@ -248,24 +451,23 @@ namespace LightVsDecay.Core
             }
             
             // TODO: 暂停游戏，显示3选1界面
-            // 目前先跳过，只触发事件
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 金币系统
+        // 局内金币系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 增加金币
+        /// 增加局内金币
         /// </summary>
         public void AddCoins(int amount)
         {
-            totalCoins += amount;
-            GameEvents.TriggerCoinChanged(totalCoins);
+            sessionCoins += amount;
+            GameEvents.TriggerCoinChanged(sessionCoins);
             
             if (showDebugInfo)
             {
-                Debug.Log($"[PlayerProgressManager] +{amount} 金币, 总计: {totalCoins}");
+                Debug.Log($"[PlayerProgressManager] +{amount} 局内金币, 总计: {sessionCoins}");
             }
         }
         
@@ -379,7 +581,7 @@ namespace LightVsDecay.Core
                 AddExp(xp);
             }
             
-            // 增加金币
+            // 增加局内金币
             if (coin > 0)
             {
                 AddCoins(coin);
@@ -406,10 +608,13 @@ namespace LightVsDecay.Core
         {
             return new SettlementData
             {
-                totalCoins = this.totalCoins,
+                totalCoins = this.sessionCoins,
+                coinsEarned = this.sessionCoins,
                 survivalTime = GameManager.Instance != null ? GameManager.Instance.GameTimer : 0f,
                 totalKills = this.totalKills,
+                killCount = this.totalKills,
                 maxCombo = this.maxCombo,
+                maxHitCount = this.maxCombo,
                 finalLevel = this.currentLevel
             };
         }
@@ -423,18 +628,25 @@ namespace LightVsDecay.Core
         {
             if (!showDebugInfo) return;
             
-            GUILayout.BeginArea(new Rect(10, 300, 200, 220));
-            GUILayout.Label($"=== Progress ===");
+            GUILayout.BeginArea(new Rect(10, 300, 220, 300));
+            GUILayout.Label($"=== Progress (Meta) ===");
+            GUILayout.Label($"Gems: {gems}");
+            GUILayout.Label($"GoldCoins: {goldCoins}");
+            GUILayout.Label($"Energy: {energy}/{maxEnergy}");
+            
+            GUILayout.Space(5);
+            GUILayout.Label($"=== Progress (Session) ===");
             GUILayout.Label($"Lv.{currentLevel} ({currentExp}/{expToNextLevel})");
-            GUILayout.Label($"Coins: {totalCoins}");
+            GUILayout.Label($"Session Coins: {sessionCoins}");
             GUILayout.Label($"Ult: {ultEnergy}/{ultMaxEnergy} {(ultReady ? "[READY]" : "")}");
             GUILayout.Label($"Kills: {totalKills}");
             GUILayout.Label($"Combo: {currentCombo} (Max:{maxCombo})");
             
             GUILayout.Space(5);
             if (GUILayout.Button("+100 XP")) AddExp(100);
-            if (GUILayout.Button("+50 Coins")) AddCoins(50);
+            if (GUILayout.Button("+50 Session Coins")) AddCoins(50);
             if (GUILayout.Button("+50 Ult Energy")) AddUltEnergy(50);
+            if (GUILayout.Button("+100 GoldCoins (Meta)")) AddGoldCoins(100);
             
             GUILayout.EndArea();
         }
