@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 7
   m_Component:
   - component: {fileID: 2077412448230690074}
+  - component: {fileID: -8128695650570213641}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: VFX_EXP
@@ -35,6 +36,25 @@ Transform:
   - {fileID: 4864297775395218520}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &-8128695650570213641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 321351628207387524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95c7018ce5a892444bcaafbf8f1873b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  waitBeforeFly: 0.5
+  smoothTime: 0.3
+  arriveThreshold: 0.5
+  maxSpeed: 50
+  spawnScatterForce: 3
+  floatAmplitude: 0.1
+  floatSpeed: 5
 --- !u!1 &5204701933469666246
 GameObject:
   m_ObjectHideFlags: 0

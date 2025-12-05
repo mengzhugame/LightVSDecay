@@ -106,7 +106,7 @@ namespace LightVsDecay.Logic
             // 订阅事件
             GameEvents.OnEnemyDied += OnEnemyDied;
             GameEvents.OnGameStart += ResetSession;
-            
+            GameEvents.OnXPOrbCollected += OnXPOrbCollected; 
             // 初始化局内进度
             ResetSession();
         }
@@ -120,8 +120,18 @@ namespace LightVsDecay.Logic
         {
             GameEvents.OnEnemyDied -= OnEnemyDied;
             GameEvents.OnGameStart -= ResetSession;
+            GameEvents.OnXPOrbCollected -= OnXPOrbCollected;
         }
-        
+        /// <summary>
+        /// 经验光点被收集
+        /// </summary>
+        private void OnXPOrbCollected(int xp)
+        {
+            if (xp > 0)
+            {
+                AddExp(xp);
+            }
+        }
         private void OnApplicationQuit() => meta.Save();
         private void OnApplicationPause(bool pause) { if (pause) meta.Save(); }
         
@@ -187,7 +197,14 @@ namespace LightVsDecay.Logic
                 Debug.Log($"[ProgressManager] 升级! Lv.{session.level}");
             }
             
-            // TODO: 暂停游戏，显示三选一界面
+            // 【新增】暂停游戏，显示三选一界面
+            Time.timeScale = 0f;
+    
+            // 通知 UIManager 显示技能选择面板
+            if (UI.UIManager.Instance != null)
+            {
+                UI.UIManager.Instance.ShowSkillChoosePanel(session.level);
+            }
         }
         
         /// <summary>增加局内金币</summary>
@@ -282,8 +299,7 @@ namespace LightVsDecay.Logic
         private void OnEnemyDied(EnemyType type, Vector3 pos, int xp, int coin)
         {
             AddKill();
-            
-            if (xp > 0) AddExp(xp);
+
             if (coin > 0) AddCoins(coin);
             
             int ultGain = (type == EnemyType.Tank) 

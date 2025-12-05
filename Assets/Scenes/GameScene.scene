@@ -181,6 +181,7 @@ MonoBehaviour:
   coinText: {fileID: 3938576140566452934}
   expBar: {fileID: 1180949997}
   levelText: {fileID: 1268882609}
+  expBarTarget: {fileID: 1180949996}
   bossBloodBarObj: {fileID: 1149961730}
   bossBloodBar: {fileID: 1149961732}
   bossBloodFill: {fileID: 1245219311}
@@ -1837,6 +1838,7 @@ Transform:
   - {fileID: 161095304}
   - {fileID: 1147468423}
   - {fileID: 290128681}
+  - {fileID: 547200605}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &376488525
@@ -2433,6 +2435,57 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -249}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &547200604
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 547200605}
+  - component: {fileID: 547200606}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: XPOrbSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &547200605
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 547200604}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 361127107}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &547200606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 547200604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1df0e1c8aaa22b4ea27bf946e7c593e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  orbPrefab: {fileID: -8128695650570213641, guid: 8f4e4a9b4b1399c458db96c603fd296b, type: 3}
+  prewarmCount: 20
+  maxCount: 100
+  eliteOrbCount: 5
+  normalOrbCount: 1
+  showDebugInfo: 0
 --- !u!1 &589472826
 GameObject:
   m_ObjectHideFlags: 0
@@ -3733,7 +3786,9 @@ MonoBehaviour:
   settlementPanel: {fileID: 1732947191}
   revivePanel: {fileID: 376488525}
   pausePanel: {fileID: 493727366}
+  skillChoosePanel: {fileID: 1478829713}
   settlementController: {fileID: 1732947193}
+  skillChooseController: {fileID: 0}
   showDebugInfo: 0
 --- !u!1 &933964794
 GameObject:
@@ -4896,7 +4951,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: 782.99994}
+  m_AnchoredPosition: {x: 0, y: 782}
   m_SizeDelta: {x: 1000, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1180949997
@@ -5888,6 +5943,7 @@ GameObject:
   serializedVersion: 7
   m_Component:
   - component: {fileID: 1478829714}
+  - component: {fileID: 1478829715}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: SkillChooseOnePanel
@@ -5919,6 +5975,37 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1478829715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1478829713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72821eaaa1d2d714599bdc8605524999, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  titleText: {fileID: 2002253805}
+  levelText: {fileID: 0}
+  choiceButtons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  choiceIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  choiceNameTexts:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  choiceDescTexts:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  showDebugInfo: 0
 --- !u!1 &1487344281
 GameObject:
   m_ObjectHideFlags: 0

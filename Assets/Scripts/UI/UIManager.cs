@@ -30,6 +30,8 @@ namespace LightVsDecay.UI
         
         [Tooltip("暂停面板")]
         [SerializeField] private GameObject pausePanel;
+        [Tooltip("技能选择面板")]  // 【新增】
+        [SerializeField] private GameObject skillChoosePanel;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 面板控制器引用
@@ -37,7 +39,7 @@ namespace LightVsDecay.UI
         
         [Header("面板控制器")]
         [SerializeField] private SettlementPanel settlementController;
-        
+        [SerializeField] private SkillChooseOnePanel skillChooseController;  // 【新增】
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
         
@@ -259,6 +261,52 @@ namespace LightVsDecay.UI
             }
         }
         
+        /// <summary>
+        /// 显示技能选择面板
+        /// </summary>
+        public void ShowSkillChoosePanel(int level)
+        {
+            if (skillChoosePanel == null)
+            {
+                Debug.LogWarning("[UIManager] skillChoosePanel 未设置！");
+                return;
+            }
+    
+            // 先隐藏其他面板
+            if (settlementPanel != null) settlementPanel.SetActive(false);
+            if (pausePanel != null) pausePanel.SetActive(false);
+    
+            // 显示技能选择面板
+            skillChoosePanel.SetActive(true);
+            currentActivePanel = skillChoosePanel;
+    
+            // 调用控制器初始化
+            if (skillChooseController != null)
+            {
+                skillChooseController.Show(level);
+            }
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[UIManager] 技能选择面板已显示 Lv.{level}");
+            }
+        }
+
+        /// <summary>
+        /// 隐藏技能选择面板
+        /// </summary>
+        public void HideSkillChoosePanel()
+        {
+            if (skillChoosePanel != null)
+            {
+                skillChoosePanel.SetActive(false);
+        
+                if (currentActivePanel == skillChoosePanel)
+                {
+                    currentActivePanel = null;
+                }
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 通用方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -271,7 +319,7 @@ namespace LightVsDecay.UI
             if (settlementPanel != null) settlementPanel.SetActive(false);
             if (revivePanel != null) revivePanel.SetActive(false);
             if (pausePanel != null) pausePanel.SetActive(false);
-            
+            if (skillChoosePanel != null) skillChoosePanel.SetActive(false); 
             currentActivePanel = null;
         }
         

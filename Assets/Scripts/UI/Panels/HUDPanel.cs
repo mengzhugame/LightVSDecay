@@ -4,6 +4,7 @@ using TMPro;
 using System.Collections;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Player;
+using LightVsDecay.Logic.XP;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -25,6 +26,7 @@ namespace LightVsDecay.UI.Panels
         [Header("经验条")]
         [SerializeField] private Slider expBar;
         [SerializeField] private TextMeshProUGUI levelText;
+        [SerializeField] private RectTransform expBarTarget;
         
         [Header("Boss血条")]
         [SerializeField] private GameObject bossBloodBarObj;
@@ -97,6 +99,7 @@ namespace LightVsDecay.UI.Panels
             
             // 设置按钮回调
             SetupButtons();
+            RegisterExpBarTarget();
         }
         
         private void OnDestroy()
@@ -199,7 +202,60 @@ namespace LightVsDecay.UI.Panels
                 skillButton.onClick.AddListener(OnSkillButtonClicked);
             }
         }
-        
+        /// <summary>
+        /// 注册经验条世界坐标位置获取器
+        /// </summary>
+        private void RegisterExpBarTarget()
+        {
+            if (XPOrbSpawner.Instance != null)
+            {
+                XPOrbSpawner.Instance.SetTargetPositionGetter(GetExpBarWorldPosition);
+            }
+            else
+            {
+                // 延迟注册（等待 XPOrbSpawner 初始化）
+                StartCoroutine(DelayedRegisterExpBarTarget());
+            }
+        }
+        private IEnumerator DelayedRegisterExpBarTarget()
+        {
+            yield return null; // 等待一帧
+    
+            if (XPOrbSpawner.Instance != null)
+            {
+                XPOrbSpawner.Instance.SetTargetPositionGetter(GetExpBarWorldPosition);
+            }
+        }
+        /// <summary>
+        /// 获取经验条的世界坐标位置
+        /// Screen Space - Overlay 模式下，将 UI 屏幕坐标转换为世界坐标
+        /// </summary>
+        private Vector3 GetExpBarWorldPosition()
+        {
+            RectTransform target = expBarTarget != null ? expBarTarget : (expBar != null ? expBar.GetComponent<RectTransform>() : null);
+    
+            if (target == null)
+            {
+                // 默认返回屏幕顶部中央
+                return Camera.main.ScreenToWorldPoint(new Vector3(Screen.width * 0.5f, Screen.height * 0.95f, 10f));
+            }
+    
+            // 获取 UI 元素的屏幕坐标
+            Vector3[] corners = new Vector3[4];
+            target.GetWorldCorners(corners);
+    
+            // 计算中心点（Screen Space - Overlay 模式下 corners 就是屏幕坐标）
+            Vector3 screenPos = (corners[0] + corners[2]) * 0.5f;
+    
+            // 转换为世界坐标（z 值设为相机前方一定距离）
+            if (Camera.main != null)
+            {
+                screenPos.z = 10f; // 距离相机的深度
+                return Camera.main.ScreenToWorldPoint(screenPos);
+            }
+    
+            return screenPos;
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -97,7 +97,11 @@ namespace LightVsDecay.Core
         
         /// <summary>敌人死亡 (敌人类型, 位置, 经验值, 金币)</summary>
         public static event Action<Pool.EnemyType, Vector3, int, int> OnEnemyDied;
-        
+        /// <summary>经验光点被收集 (经验值)</summary>
+        public static event Action<int> OnXPOrbCollected;
+
+        /// <summary>升级选择完成</summary>
+        public static event Action OnLevelUpChoiceComplete;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件触发方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -126,7 +130,8 @@ namespace LightVsDecay.Core
         
         public static void TriggerEnemyDied(Pool.EnemyType type, Vector3 pos, int xp, int coin) 
             => OnEnemyDied?.Invoke(type, pos, xp, coin);
-        
+        public static void TriggerXPOrbCollected(int xp) => OnXPOrbCollected?.Invoke(xp);
+        public static void TriggerLevelUpChoiceComplete() => OnLevelUpChoiceComplete?.Invoke();
         /// <summary>
         /// 清除所有事件订阅（场景切换时调用）
         /// </summary>
@@ -154,6 +159,8 @@ namespace LightVsDecay.Core
             
             OnGameTimeUpdated = null;
             OnEnemyDied = null;
+            OnXPOrbCollected = null;
+            OnLevelUpChoiceComplete = null;
         }
     }
 }
