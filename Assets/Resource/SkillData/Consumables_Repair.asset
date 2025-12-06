@@ -41,5 +41,5 @@ MonoBehaviour:
     buffDuration: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  baseWeight: 100
+  baseWeight: 20
   weightPerLevel: 0
