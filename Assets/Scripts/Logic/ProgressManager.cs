@@ -4,6 +4,7 @@
 // 用途：玩家进度管理器 - 简化后仅处理逻辑，数据存储在 Data 层
 // ============================================================
 
+using System.Collections.Generic;
 using UnityEngine;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
@@ -311,6 +312,50 @@ namespace LightVsDecay.Logic
             {
                 Debug.Log($"[ProgressManager] 敌人死亡: {type}, XP:{xp}, Coin:{coin}, UltEnergy:{ultGain}");
             }
+        }
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 技能相关
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        /// <summary>
+        /// 获取当前技能等级字典（用于三选一生成）
+        /// </summary>
+        public Dictionary<SkillType, int> GetSkillLevels()
+        {
+            return new Dictionary<SkillType, int>(session.skillLevels);
+        }
+
+        /// <summary>
+        /// 获取指定技能的当前等级
+        /// </summary>
+        public int GetSkillLevel(SkillType type)
+        {
+            return session.skillLevels.GetValueOrDefault(type, 0);
+        }
+
+        /// <summary>
+        /// 应用选择的技能（升级或获得）
+        /// </summary>
+        public void ApplySkill(SkillType type)
+        {
+            // 更新等级
+            if (session.skillLevels.ContainsKey(type))
+            {
+                session.skillLevels[type]++;
+            }
+            else
+            {
+                session.skillLevels[type] = 1;
+            }
+    
+            int newLevel = session.skillLevels[type];
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[ProgressManager] 技能升级: {type} -> Lv.{newLevel}");
+            }
+    
+            // TODO: 后续在这里添加技能效果的实际应用逻辑
+            // 例如：修改激光伤害、击退力、触发消耗品效果等
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

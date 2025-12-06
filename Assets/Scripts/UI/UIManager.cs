@@ -271,21 +271,30 @@ namespace LightVsDecay.UI
                 Debug.LogWarning("[UIManager] skillChoosePanel 未设置！");
                 return;
             }
-    
+
             // 先隐藏其他面板
             if (settlementPanel != null) settlementPanel.SetActive(false);
             if (pausePanel != null) pausePanel.SetActive(false);
-    
+
             // 显示技能选择面板
             skillChoosePanel.SetActive(true);
             currentActivePanel = skillChoosePanel;
+
+            // 【修改】自动获取控制器并调用 Show
+            if (skillChooseController == null)
+            {
+                skillChooseController = skillChoosePanel.GetComponent<SkillChooseOnePanel>();
+            }
     
-            // 调用控制器初始化
             if (skillChooseController != null)
             {
                 skillChooseController.Show(level);
             }
-    
+            else
+            {
+                Debug.LogError("[UIManager] SkillChooseOnePanel 组件未找到！");
+            }
+
             if (showDebugInfo)
             {
                 Debug.Log($"[UIManager] 技能选择面板已显示 Lv.{level}");

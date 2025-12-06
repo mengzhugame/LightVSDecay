@@ -12,9 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c92f13c6fdd92d846bc3299316f974f6, type: 3}
   m_Name: SkillDatabase
   m_EditorClassIdentifier: 
-  activeSkills: []
-  passiveSkills: []
-  consumables: []
+  activeSkills:
+  - {fileID: 11400000, guid: 83e35d4918adcbd4e83d8b53be895c6d, type: 2}
+  - {fileID: 11400000, guid: a823eca51726551499daac8565073ad3, type: 2}
+  - {fileID: 11400000, guid: 8734f1a560e63ef4da2134b0eaa37ee7, type: 2}
+  - {fileID: 11400000, guid: 3b6d59426ad3f574a82f4753f264022f, type: 2}
+  passiveSkills:
+  - {fileID: 11400000, guid: 0085b7f339c34f9469de88a2832fbb88, type: 2}
+  - {fileID: 11400000, guid: a962a4479b9ea114eb514cb630a6ce84, type: 2}
+  consumables:
+  - {fileID: 11400000, guid: b7462ed376670344e81b06eb30359566, type: 2}
+  - {fileID: 11400000, guid: 3edac1ab4fedbf34db5b6f4a53ed4aea, type: 2}
+  - {fileID: 11400000, guid: dc3ab58a15e0d304fb63c5a991a6b92c, type: 2}
   choiceCount: 3
   consumableChance: 0.3
   passiveChance: 0.25

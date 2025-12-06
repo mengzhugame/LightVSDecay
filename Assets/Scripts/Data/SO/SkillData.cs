@@ -13,20 +13,20 @@ namespace LightVsDecay.Data.SO
     /// </summary>
     public enum SkillType
     {
-        // 主动技能（最多5级）
+        // 主动技能（最多5级）- 红色/橙色卡
         Prism,      // 折射棱镜 - AOE清怪
         Focus,      // 聚能透镜 - 单体攻坚
         Impact,     // 冲击模块 - 控制/防近身
-        Frost,      // 极寒光束 - 减速辅助
         
-        // 被动技能（最多5级）
+        // 被动技能（最多5级）- 青色/蓝色卡
+        Frost,      // 极寒光束 - 减速辅助
         Power,      // 功率超频 - +DPS
         Wide,       // 广域透镜 - +激光宽度
         
-        // 消耗品（无限重复）
+        // 消耗品（无限重复）- 绿色卡
         Repair,     // 紧急抢修 - 回复护盾+1血
         Charge,     // 能量过载 - 大招+50%
-        Bounty      // 紧急资金 - 获得50金币
+        Adrenaline  // 肾上腺素 - 恢复护盾+20秒增益
     }
     
     /// <summary>
@@ -37,6 +37,17 @@ namespace LightVsDecay.Data.SO
         Active,     // 主动技能
         Passive,    // 被动技能
         Consumable  // 消耗品
+    }
+    
+    /// <summary>
+    /// 卡片颜色类型（基于技能功能分类）
+    /// </summary>
+    public enum SkillCardType
+    {
+        Attack,     // 红色/橙色 - 主动输出技能 (Prism, Focus, Impact)
+        Passive,    // 青色/蓝色 - 被动/控制技能 (Frost, Power, Wide)
+        Recovery,   // 绿色 - 消耗品 (Repair, Charge, Adrenaline)
+        MaxLevel    // 金色 - 满级技能（运行时判断）
     }
     
     /// <summary>
@@ -68,53 +79,53 @@ namespace LightVsDecay.Data.SO
         [Tooltip("减速持续时间")]
         public float slowDuration = 0f;
         
-        [Tooltip("冰冻概率 (仅Frost Lv5)")]
+        [Tooltip("冰冻概率")]
         [Range(0f, 1f)]
         public float freezeChance = 0f;
         
-        [Tooltip("冰冻时间")]
+        [Tooltip("冰冻持续时间")]
         public float freezeDuration = 0f;
         
-        [Header("棱镜相关")]
-        [Tooltip("副激光数量")]
-        public int subLaserCount = 0;
+        [Header("分裂相关（折射棱镜）")]
+        [Tooltip("分裂数量")]
+        public int splitCount = 0;
         
-        [Tooltip("副激光长度")]
-        public float subLaserLength = 3.0f;
+        [Tooltip("分裂伤害倍率")]
+        public float splitDamageMultiplier = 0.3f;
         
-        [Header("聚能相关")]
-        [Tooltip("激光宽度倍率")]
+        [Tooltip("分裂长度")]
+        public float splitLength = 3f;
+        
+        [Header("宽度相关")]
+        [Tooltip("宽度倍率")]
         public float widthMultiplier = 1.0f;
         
-        [Tooltip("击杀爆炸伤害 (仅Focus Lv5)")]
-        public float explosionDamage = 0f;
-        
-        [Header("被动加成")]
-        [Tooltip("DPS加成百分比 (0.2 = +20%)")]
-        public float dpsBonus = 0f;
-        
-        [Tooltip("宽度加成百分比")]
-        public float widthBonus = 0f;
-        
         [Header("消耗品效果")]
-        [Tooltip("恢复护盾点数")]
+        [Tooltip("恢复护盾数量")]
         public int shieldRestore = 0;
         
-        [Tooltip("恢复生命点数")]
-        public int healthRestore = 0;
+        [Tooltip("恢复生命数量")]
+        public int hullRestore = 0;
         
         [Tooltip("大招能量恢复百分比")]
         [Range(0f, 1f)]
         public float ultEnergyPercent = 0f;
         
-        [Tooltip("获得金币数量")]
-        public int coinGain = 0;
+        [Header("肾上腺素效果")]
+        [Tooltip("增益持续时间")]
+        public float buffDuration = 0f;
+        
+        [Tooltip("激光转速加成")]
+        public float rotationSpeedBonus = 0f;
+        
+        [Tooltip("击退力加成")]
+        public float knockbackBonus = 0f;
     }
     
     /// <summary>
-    /// 技能配置数据 (ScriptableObject)
+    /// 技能配置 (ScriptableObject)
     /// </summary>
-    [CreateAssetMenu(fileName = "Skill_New", menuName = "LightVsDecay/Skill Data", order = 2)]
+    [CreateAssetMenu(fileName = "Skill_New", menuName = "LightVsDecay/Skill Data", order = 1)]
     public class SkillData : ScriptableObject
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -122,13 +133,16 @@ namespace LightVsDecay.Data.SO
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("基础信息")]
-        [Tooltip("技能类型")]
+        [Tooltip("技能类型（唯一标识）")]
         public SkillType type;
         
         [Tooltip("技能类别")]
-        public SkillCategory category = SkillCategory.Active;
+        public SkillCategory category;
         
-        [Tooltip("技能名称")]
+        [Tooltip("卡片颜色类型")]
+        public SkillCardType cardType = SkillCardType.Attack;
+        
+        [Tooltip("显示名称")]
         public string displayName = "新技能";
         
         [Tooltip("技能图标")]
@@ -234,6 +248,39 @@ namespace LightVsDecay.Data.SO
             {
                 isRepeatable = true;
                 maxLevel = 1;
+            }
+            
+            // 自动设置卡片类型
+            AutoSetCardType();
+        }
+        
+        /// <summary>
+        /// 根据技能类型自动设置卡片颜色
+        /// </summary>
+        private void AutoSetCardType()
+        {
+            switch (type)
+            {
+                // 主动输出技能 - 红色
+                case SkillType.Prism:
+                case SkillType.Focus:
+                case SkillType.Impact:
+                    cardType = SkillCardType.Attack;
+                    break;
+                    
+                // 被动/控制技能 - 蓝色
+                case SkillType.Frost:
+                case SkillType.Power:
+                case SkillType.Wide:
+                    cardType = SkillCardType.Passive;
+                    break;
+                    
+                // 消耗品 - 绿色
+                case SkillType.Repair:
+                case SkillType.Charge:
+                case SkillType.Adrenaline:
+                    cardType = SkillCardType.Recovery;
+                    break;
             }
         }
 #endif
