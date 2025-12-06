@@ -23,6 +23,8 @@ namespace LightVsDecay.Logic.Player
         
         [Tooltip("击中光晕颜色")]
         [SerializeField] private Color glowColor = new Color(1f, 1f, 0.5f, 1f); // 黄色
+        // 在 GameConstants.cs 的 ShaderProperties 中添加：
+        public static readonly int LaserColor = Shader.PropertyToID("_Color");
         
         [Header("性能优化")]
         [Tooltip("Raycast检测间隔（秒）")]
@@ -192,7 +194,28 @@ namespace LightVsDecay.Logic.Player
             glowColor = color;
             UpdateShaderProperties();
         }
-        
+        // 在 LaserBeam.cs 的公共接口区域添加：
+
+        /// <summary>
+        /// 设置激光颜色（用于技能效果，如 Focus 变红）
+        /// </summary>
+        public void SetColor(Color color)
+        {
+            if (laserMaterial != null)
+            {
+                laserMaterial.SetColor(GameConstants.ShaderProperties.LaserColor, color);
+            }
+        }
+
+        /// <summary>
+        /// 获取当前激光宽度
+        /// </summary>
+        public float GetLaserWidth() => laserWidth;
+
+        /// <summary>
+        /// 获取当前最大长度
+        /// </summary>
+        public float GetMaxLength() => maxLength;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试可视化
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

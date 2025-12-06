@@ -85,6 +85,17 @@ namespace LightVsDecay.Core
         public static event Action<int, int> OnHullHPChanged;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 技能事件（新增）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>技能应用 (技能类型, 新等级)</summary>
+        public static event Action<Data.SO.SkillType, int> OnSkillApplied;
+
+// 在触发方法区域添加：
+        public static void TriggerSkillApplied(Data.SO.SkillType type, int newLevel) 
+            => OnSkillApplied?.Invoke(type, newLevel);
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 游戏时间事件
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
@@ -161,6 +172,7 @@ namespace LightVsDecay.Core
             OnEnemyDied = null;
             OnXPOrbCollected = null;
             OnLevelUpChoiceComplete = null;
+            OnSkillApplied = null;
         }
     }
 }

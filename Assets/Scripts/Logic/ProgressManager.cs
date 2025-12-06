@@ -355,7 +355,7 @@ namespace LightVsDecay.Logic
             }
     
             // TODO: 后续在这里添加技能效果的实际应用逻辑
-            // 例如：修改激光伤害、击退力、触发消耗品效果等
+            GameEvents.TriggerSkillApplied(type, newLevel);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

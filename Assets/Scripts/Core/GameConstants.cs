@@ -65,6 +65,7 @@ namespace LightVsDecay.Core
             // 激光Shader
             public static readonly int HitHeight = Shader.PropertyToID("_HitHeight");
             public static readonly int GlowColor = Shader.PropertyToID("_GlowColor");
+            public static readonly int LaserColor = Shader.PropertyToID("_Color");
             public static readonly int FlowSpeed = Shader.PropertyToID("_FlowSpeed");
             public static readonly int NoiseStrength = Shader.PropertyToID("_NoiseStrength");
             
