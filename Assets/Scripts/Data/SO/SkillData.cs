@@ -153,6 +153,7 @@ namespace LightVsDecay.Data.SO
         public string description;
         
         [Tooltip("技能颜色（用于激光变色等）")]
+        [ColorUsage(true, true)]
         public Color skillColor = Color.white;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

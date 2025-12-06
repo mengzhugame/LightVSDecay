@@ -28,7 +28,13 @@ namespace LightVsDecay.Logic.Player
         [SerializeField] private LaserController laserController;
         
         [Tooltip("塔旋转控制器（用于 Adrenaline 加速）")]
-        [SerializeField] private TowerRotation towerRotation;
+        [SerializeField] private TurretController turretController;
+        
+        [Tooltip("塔生命管理器（用于 Repair 恢复）")]
+        [SerializeField] private TurretHealth turretHealth;
+        
+        [Tooltip("护盾控制器（用于 Repair/Adrenaline 恢复）")]
+        [SerializeField] private ShieldController shieldController;
         
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = true;
@@ -60,6 +66,9 @@ namespace LightVsDecay.Logic.Player
         private float adrenalineTimer = 0f;
         private const float ADRENALINE_DURATION = 20f;
         
+        // TurretController 原始灵敏度（用于恢复）
+        private float originalSensitivity = 180f;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -86,9 +95,19 @@ namespace LightVsDecay.Logic.Player
                 laserController = FindObjectOfType<LaserController>();
             }
             
-            if (towerRotation == null)
+            if (turretController == null)
             {
-                towerRotation = FindObjectOfType<TowerRotation>();
+                turretController = FindObjectOfType<TurretController>();
+            }
+            
+            if (turretHealth == null)
+            {
+                turretHealth = FindObjectOfType<TurretHealth>();
+            }
+            
+            if (shieldController == null)
+            {
+                shieldController = FindObjectOfType<ShieldController>();
             }
             
             // 订阅事件
@@ -217,6 +236,10 @@ namespace LightVsDecay.Logic.Player
                 laserController.SetFocusLevel(level);
             }
             
+            // 重新计算伤害和宽度（因为 Focus 会影响基础值）
+            UpdateDamageMultiplier();
+            UpdateWidthMultiplier();
+            
             if (showDebugInfo)
             {
                 Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} - 主激光已强化");
@@ -328,7 +351,7 @@ namespace LightVsDecay.Logic.Player
         }
         
         /// <summary>
-        /// 更新伤害倍率（考虑 Focus + Power + Adrenaline）
+        /// 更新伤害倍率（考虑 Focus + Power）
         /// </summary>
         private void UpdateDamageMultiplier()
         {
@@ -412,13 +435,21 @@ namespace LightVsDecay.Logic.Player
         /// </summary>
         private void ApplyRepairEffect()
         {
-            // TODO: 需要 ShieldManager/HealthManager 支持
-            // ShieldManager.Instance?.RestoreFullShield();
-            // HealthManager.Instance?.RestoreHull(1);
+            // 恢复护盾（回满）
+            if (shieldController != null)
+            {
+                shieldController.ResetShield();
+            }
+            
+            // 恢复1点生命
+            if (turretHealth != null)
+            {
+                turretHealth.RestoreHealth(1);
+            }
             
             if (showDebugInfo)
             {
-                Debug.Log("[SkillEffectManager] ✓ Repair - 护盾+生命恢复（待实现）");
+                Debug.Log("[SkillEffectManager] ✓ Repair - 护盾已回满，生命+1");
             }
         }
         
@@ -446,8 +477,11 @@ namespace LightVsDecay.Logic.Player
         /// </summary>
         private void ApplyAdrenalineEffect()
         {
-            // 恢复护盾
-            // TODO: ShieldManager.Instance?.RestoreShield(1);
+            // 恢复1点护盾
+            if (shieldController != null)
+            {
+                shieldController.RestoreShield(1);
+            }
             
             // 激活 buff
             isAdrenalineActive = true;
@@ -490,14 +524,13 @@ namespace LightVsDecay.Logic.Player
         {
             float multiplier = active ? 1.5f : 1.0f;
             
-            // 转速 +50%
-            if (towerRotation != null)
+            // 转速 +50%（通过修改旋转灵敏度实现）
+            if (turretController != null)
             {
-                towerRotation.SetSpeedMultiplier(multiplier);
+                turretController.SetSensitivity(originalSensitivity * multiplier);
             }
             
             // 击退力 +50%（叠加到 Impact 效果上）
-            // 这里需要重新计算击退力
             float baseKnockback = GetImpactKnockbackMultiplier(impactLevel);
             float finalKnockback = baseKnockback * multiplier;
             
@@ -563,6 +596,15 @@ namespace LightVsDecay.Logic.Player
         }
         
         /// <summary>
+        /// 设置原始灵敏度（用于 Adrenaline buff 恢复）
+        /// 应在游戏初始化时调用
+        /// </summary>
+        public void SetOriginalSensitivity(float sensitivity)
+        {
+            originalSensitivity = sensitivity;
+        }
+        
+        /// <summary>
         /// 重置所有技能效果（新游戏开始时调用）
         /// </summary>
         public void ResetAllEffects()
@@ -589,9 +631,9 @@ namespace LightVsDecay.Logic.Player
                 laserController.SetLaserColor(Color.white);
             }
             
-            if (towerRotation != null)
+            if (turretController != null)
             {
-                towerRotation.SetSpeedMultiplier(1f);
+                turretController.SetSensitivity(originalSensitivity);
             }
             
             if (showDebugInfo)
