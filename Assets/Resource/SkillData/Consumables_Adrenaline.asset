@@ -24,7 +24,9 @@ MonoBehaviour:
   maxLevel: 1
   isRepeatable: 1
   levelData:
-  - description: 
+  - description: "\u6062\u590D <color=#00FF00>1\u70B9</color> \u62A4\u76FE\n<color=#00FF00>20\u79D2</color>
+      \u5185\u6FC0\u5149\u8F6C\u901F <color=#00FF00>+50%</color>\n\u51FB\u9000\u529B
+      <color=#00FF00>+50%</color>"
     damageMultiplier: 0
     knockbackMultiplier: 0
     stunDuration: 0

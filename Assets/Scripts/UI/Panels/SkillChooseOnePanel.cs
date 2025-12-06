@@ -15,6 +15,30 @@ using LightVsDecay.Data.SO;
 namespace LightVsDecay.UI.Panels
 {
     /// <summary>
+    /// 单张卡片的 UI 组件引用
+    /// </summary>
+    [System.Serializable]
+    public class SkillCardUI
+    {
+        [Header("卡片按钮和背景")]
+        public Button cardButton;
+        public Image cardBackground;
+        
+        [Header("技能信息")]
+        public Image skillIcon;
+        public TextMeshProUGUI skillNameText;
+        public TextMeshProUGUI skillDescText;
+        
+        [Header("NewTag 标签")]
+        public GameObject newTagObj;
+        public TextMeshProUGUI tagText;
+        
+        [Header("Upgrade 菱形")]
+        public GameObject upgradeObj;
+        public Image[] diamondImages = new Image[3];
+    }
+    
+    /// <summary>
     /// 技能选择面板控制器
     /// 升级时显示，玩家选择后关闭并恢复游戏
     /// </summary>
@@ -40,12 +64,14 @@ namespace LightVsDecay.UI.Panels
         [Tooltip("金色 - 满级技能")]
         [SerializeField] private Sprite cardBgMaxLevel;
         
-        [Header("卡片组件引用")]
-        [SerializeField] private Button[] cardButtons = new Button[3];
-        [SerializeField] private Image[] cardBackgrounds = new Image[3];
-        [SerializeField] private Image[] skillIcons = new Image[3];
-        [SerializeField] private TextMeshProUGUI[] skillNameTexts = new TextMeshProUGUI[3];
-        [SerializeField] private TextMeshProUGUI[] skillDescTexts = new TextMeshProUGUI[3];
+        [Header("菱形图标")]
+        [Tooltip("亮起的菱形图标")]
+        [SerializeField] private Sprite diamondLit;
+        [Tooltip("灰色的菱形图标")]
+        [SerializeField] private Sprite diamondDim;
+        
+        [Header("卡片组件引用（3张卡）")]
+        [SerializeField] private SkillCardUI[] cards = new SkillCardUI[3];
         
         [Header("重掷按钮")]
         [SerializeField] private Button retryButton;
@@ -84,12 +110,12 @@ namespace LightVsDecay.UI.Panels
         private void SetupButtons()
         {
             // 绑定卡片按钮点击事件
-            for (int i = 0; i < cardButtons.Length; i++)
+            for (int i = 0; i < cards.Length; i++)
             {
-                if (cardButtons[i] != null)
+                if (cards[i]?.cardButton != null)
                 {
                     int index = i; // 捕获局部变量
-                    cardButtons[i].onClick.AddListener(() => OnCardSelected(index));
+                    cards[i].cardButton.onClick.AddListener(() => OnCardSelected(index));
                 }
             }
             
@@ -152,26 +178,32 @@ namespace LightVsDecay.UI.Panels
                 Debug.LogError("[SkillChooseOnePanel] ❌ SkillDatabase 未设置！请在 Inspector 中配置");
                 return;
             }
-    
+            
             // 从 ProgressManager 获取当前技能等级
             Dictionary<SkillType, int> currentSkillLevels = GetCurrentSkillLevels();
-    
-            Debug.Log($"[SkillChooseOnePanel] 当前已有技能数量: {currentSkillLevels.Count}");
-    
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillChooseOnePanel] 当前已有技能数量: {currentSkillLevels.Count}");
+            }
+            
             // 从数据库生成三选一
             currentChoices = skillDatabase.GenerateChoices(currentSkillLevels);
-    
-            Debug.Log($"[SkillChooseOnePanel] 生成选项数量: {currentChoices.Count}");
-    
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillChooseOnePanel] 生成选项数量: {currentChoices.Count}");
+            }
+            
             // 如果没有生成选项，显示警告
             if (currentChoices.Count == 0)
             {
                 Debug.LogError("[SkillChooseOnePanel] ❌ 没有可选技能！检查 SkillDatabase 中是否已添加技能");
                 return;
             }
-    
+            
             // 填充卡片UI
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < cards.Length; i++)
             {
                 if (i < currentChoices.Count)
                 {
@@ -195,8 +227,7 @@ namespace LightVsDecay.UI.Panels
                 Debug.LogWarning("[SkillChooseOnePanel] ⚠️ ProgressManager.Instance 为空，返回空字典");
                 return new Dictionary<SkillType, int>();
             }
-    
-            // 检查方法是否存在
+            
             try
             {
                 return ProgressManager.Instance.GetSkillLevels();
@@ -204,7 +235,6 @@ namespace LightVsDecay.UI.Panels
             catch (System.Exception e)
             {
                 Debug.LogError($"[SkillChooseOnePanel] ❌ 调用 GetSkillLevels 失败: {e.Message}");
-                Debug.LogError("[SkillChooseOnePanel] 请确认 ProgressManager 中已添加 GetSkillLevels() 方法");
                 return new Dictionary<SkillType, int>();
             }
         }
@@ -214,46 +244,127 @@ namespace LightVsDecay.UI.Panels
         /// </summary>
         private void DisplayCard(int index, SkillData skill, Dictionary<SkillType, int> currentLevels)
         {
-            if (skill == null) return;
+            if (skill == null || index >= cards.Length) return;
+            
+            SkillCardUI card = cards[index];
+            if (card == null) return;
             
             // 获取当前等级和下一等级
             int currentLv = currentLevels.GetValueOrDefault(skill.type, 0);
             int nextLv = currentLv + 1;
-            bool isMaxLevel = currentLv >= skill.maxLevel;
+            bool isMaxLevel = nextLv >= skill.maxLevel;
+            bool isConsumable = skill.IsConsumable;
             
-            // 设置卡片背景
-            if (cardBackgrounds[index] != null)
+            // ========== 1. 设置卡片背景 ==========
+            if (card.cardBackground != null)
             {
-                cardBackgrounds[index].sprite = GetCardBackground(skill.cardType, isMaxLevel);
+                card.cardBackground.sprite = GetCardBackground(skill.cardType, isMaxLevel);
             }
             
-            // 设置技能图标
-            if (skillIcons[index] != null && skill.icon != null)
+            // ========== 2. 设置技能图标 ==========
+            if (card.skillIcon != null)
             {
-                skillIcons[index].sprite = skill.icon;
-                skillIcons[index].enabled = true;
-            }
-            else if (skillIcons[index] != null)
-            {
-                skillIcons[index].enabled = false;
-            }
-            
-            // 设置技能名称
-            if (skillNameTexts[index] != null)
-            {
-                skillNameTexts[index].text = skill.displayName;
+                if (skill.icon != null)
+                {
+                    card.skillIcon.sprite = skill.icon;
+                    card.skillIcon.enabled = true;
+                }
+                else
+                {
+                    card.skillIcon.enabled = false;
+                }
             }
             
-            // 设置技能描述（使用下一等级的描述）
-            if (skillDescTexts[index] != null)
+            // ========== 3. 设置技能名称 ==========
+            if (card.skillNameText != null)
+            {
+                card.skillNameText.text = skill.displayName;
+            }
+            
+            // ========== 4. 设置技能描述（支持富文本颜色） ==========
+            if (card.skillDescText != null)
             {
                 string desc = skill.GetLevelDescription(nextLv);
-                skillDescTexts[index].text = desc;
+                card.skillDescText.text = desc;
             }
+            
+            // ========== 5. 设置 NewTag ==========
+            SetupNewTag(card, nextLv, isMaxLevel, isConsumable);
+            
+            // ========== 6. 设置 Upgrade 菱形 ==========
+            SetupUpgradeDiamonds(card, nextLv, isConsumable);
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillChooseOnePanel] 卡片{index}: {skill.displayName} (Lv.{currentLv}→{nextLv})");
+                Debug.Log($"[SkillChooseOnePanel] 卡片{index}: {skill.displayName} (Lv.{currentLv}→{nextLv}, Max={isMaxLevel})");
+            }
+        }
+        
+        /// <summary>
+        /// 设置 NewTag 显示
+        /// </summary>
+        private void SetupNewTag(SkillCardUI card, int nextLv, bool isMaxLevel, bool isConsumable)
+        {
+            if (card.newTagObj == null) return;
+            
+            // 消耗品永远不显示 NewTag
+            if (isConsumable)
+            {
+                card.newTagObj.SetActive(false);
+                return;
+            }
+            
+            // 等级1显示 "NEW"，等级5显示 "MAX"，其他隐藏
+            if (nextLv == 1)
+            {
+                card.newTagObj.SetActive(true);
+                if (card.tagText != null)
+                {
+                    card.tagText.text = "NEW";
+                }
+            }
+            else if (isMaxLevel) // 等级5
+            {
+                card.newTagObj.SetActive(true);
+                if (card.tagText != null)
+                {
+                    card.tagText.text = "MAX";
+                }
+            }
+            else // 等级2-4
+            {
+                card.newTagObj.SetActive(false);
+            }
+        }
+        
+        /// <summary>
+        /// 设置 Upgrade 菱形显示
+        /// </summary>
+        private void SetupUpgradeDiamonds(SkillCardUI card, int nextLv, bool isConsumable)
+        {
+            if (card.upgradeObj == null) return;
+            
+            // 消耗品永远不显示 Upgrade
+            if (isConsumable)
+            {
+                card.upgradeObj.SetActive(false);
+                return;
+            }
+            
+            // 显示 Upgrade
+            card.upgradeObj.SetActive(true);
+            
+            // 根据等级设置菱形亮灭
+            // 等级1: 0亮, 等级2: 1亮, 等级3: 2亮, 等级4: 3亮, 等级5: 3亮
+            int litCount = Mathf.Clamp(nextLv - 1, 0, 3);
+            
+            for (int i = 0; i < card.diamondImages.Length; i++)
+            {
+                if (card.diamondImages[i] != null)
+                {
+                    // i < litCount 的菱形亮起
+                    card.diamondImages[i].sprite = (i < litCount) ? diamondLit : diamondDim;
+                }
             }
         }
         
@@ -288,9 +399,9 @@ namespace LightVsDecay.UI.Panels
         /// </summary>
         private void SetCardActive(int index, bool active)
         {
-            if (cardButtons[index] != null)
+            if (index < cards.Length && cards[index]?.cardButton != null)
             {
-                cardButtons[index].gameObject.SetActive(active);
+                cards[index].cardButton.gameObject.SetActive(active);
             }
         }
         

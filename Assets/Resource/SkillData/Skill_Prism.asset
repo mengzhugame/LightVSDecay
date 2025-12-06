@@ -22,7 +22,8 @@ MonoBehaviour:
   maxLevel: 5
   isRepeatable: 0
   levelData:
-  - description: Lv1
+  - description: "\u5206\u88C2 <color=#00FF00>2\u6761</color> \u526F\u6FC0\u5149\n\u9020\u6210
+      <color=#00FF00>30%</color> \u4F24\u5BB3"
     damageMultiplier: 0.3
     knockbackMultiplier: 0
     stunDuration: 0
@@ -40,7 +41,8 @@ MonoBehaviour:
     buffDuration: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: Lv2
+  - description: "\u5206\u88C2 <color=#00FF00>2\u6761</color> \u526F\u6FC0\u5149\n\u9020\u6210
+      <color=#00FF00>40%</color> \u4F24\u5BB3\n"
     damageMultiplier: 0.4
     knockbackMultiplier: 0
     stunDuration: 0
@@ -58,7 +60,8 @@ MonoBehaviour:
     buffDuration: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: Lv3
+  - description: "\u5206\u88C2 <color=#00FF00>3\u6761</color> \u526F\u6FC0\u5149\n\u9020\u6210
+      <color=#00FF00>40%</color> \u4F24\u5BB3"
     damageMultiplier: 0.4
     knockbackMultiplier: 0
     stunDuration: 0
@@ -76,7 +79,8 @@ MonoBehaviour:
     buffDuration: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: Lv4
+  - description: "\u5206\u88C2 <color=#00FF00>3\u6761</color> \u526F\u6FC0\u5149\n\u9020\u6210
+      <color=#00FF00>50%</color> \u4F24\u5BB3"
     damageMultiplier: 0.5
     knockbackMultiplier: 0
     stunDuration: 0
@@ -94,7 +98,8 @@ MonoBehaviour:
     buffDuration: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: Lv5
+  - description: "\u5206\u88C2 <color=#00FF00>6\u6761</color> \u526F\u6FC0\u5149\n\u9020\u6210
+      <color=#00FF00>50%</color> \u4F24\u5BB3\uFF0C\u957F\u5EA6 <color=#00FF00>6.0</color>"
     damageMultiplier: 0.5
     knockbackMultiplier: 0
     stunDuration: 0
