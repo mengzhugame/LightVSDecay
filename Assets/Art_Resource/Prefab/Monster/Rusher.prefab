@@ -213,6 +213,7 @@ GameObject:
   - component: {fileID: 3321800879149535675}
   - component: {fileID: 7681849442578578480}
   - component: {fileID: 5752198614278549089}
+  - component: {fileID: 6278199125513373514}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Rusher
@@ -320,6 +321,24 @@ MonoBehaviour:
   decorations:
   - {fileID: 1754928097818668523}
   - {fileID: 5754369420695981257}
+--- !u!114 &6278199125513373514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7863296552132143790}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 071bfaa9d74fd2446a87ead3d1507fe7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  frostSprite: {fileID: 21300000, guid: 03fcf73004bf0844980e26d2bbdc1a62, type: 3}
+  frostColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
+  fadeDuration: 0.2
+  breathScaleMin: 0.95
+  breathScaleMax: 1.05
+  breathCycleDuration: 1.5
 --- !u!1 &8714887028639678598
 GameObject:
   m_ObjectHideFlags: 0
