@@ -279,6 +279,8 @@ namespace LightVsDecay.Logic.Player
             
             // 应用伤害和击退
             enemy.TakeDamage(damage, knockbackForce);
+            // 【新增】应用 Frost 效果
+            ApplyFrostEffect(enemy);
             
             // 播放击中特效
             if (VFXPoolManager.Instance != null)
@@ -286,7 +288,29 @@ namespace LightVsDecay.Logic.Player
                 VFXPoolManager.Instance.Play(VFXType.LaserHit, enemy.transform.position);
             }
         }
-        
+        /// <summary>
+        /// 【新增】应用 Frost 减速/冰冻效果
+        /// </summary>
+        private void ApplyFrostEffect(EnemyBlob enemy)
+        {
+            if (SkillEffectManager.Instance == null) return;
+    
+            int frostLevel = SkillEffectManager.Instance.GetFrostLevel();
+            if (frostLevel <= 0) return;
+    
+            // 获取减速数据
+            SkillEffectManager.Instance.GetFrostData(out float slowPercent, out float duration);
+    
+            // Lv.5 有 20% 概率完全冰冻
+            if (SkillEffectManager.Instance.TryFrostFreeze())
+            {
+                enemy.ApplyFrostFreeze(1.0f); // 冰冻 1 秒
+            }
+            else
+            {
+                enemy.ApplyFrostSlow(slowPercent, duration);
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Prism 效果（副激光管理）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

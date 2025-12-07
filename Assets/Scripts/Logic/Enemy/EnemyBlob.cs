@@ -100,7 +100,11 @@ namespace LightVsDecay.Logic.Enemy
         
         // 速度倍率（狂暴模式）
         private float speedMultiplier = 1f;
-
+// ========== 新增：Frost 减速状态 ==========
+        private float frostSpeedMultiplier = 1f;  // Frost 减速倍率
+        private bool isFrozen = false;             // 是否完全冰冻
+        private FrostDebuff frostDebuff;           // 缓存 FrostDebuff 组件
+        
         private int shieldLayer;
         private int towerLayer;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -109,6 +113,12 @@ namespace LightVsDecay.Logic.Enemy
         
         private void Awake()
         {
+            // 【新增】初始化 FrostDebuff 组件
+            frostDebuff = GetComponent<FrostDebuff>();
+            if (frostDebuff == null)
+            {
+                frostDebuff = gameObject.AddComponent<FrostDebuff>();
+            }
             rb = GetComponent<Rigidbody2D>();
             circleCollider = GetComponent<CircleCollider2D>();
             originalScale = transform.localScale;
@@ -234,6 +244,13 @@ namespace LightVsDecay.Logic.Enemy
             ResetShaderState();
             ResetVisuals();
             FindTower();
+            // 【新增】重置 Frost 状态
+            frostSpeedMultiplier = 1f;
+            isFrozen = false;
+            if (frostDebuff != null)
+            {
+                frostDebuff.ResetDebuff();
+            }
         }
         
         public void OnDespawn()
@@ -326,20 +343,29 @@ namespace LightVsDecay.Logic.Enemy
         private void MoveTowardsTower()
         {
             if (targetTower == null) return;
-            
+    
+            // 【新增】完全冰冻时不移动
+            if (isFrozen)
+            {
+                rb.velocity = Vector2.zero;
+                return;
+            }
+    
             Vector2 direction = (targetTower.position - transform.position).normalized;
-            float currentMoveSpeed = baseMoveSpeed * speedMultiplier;
+    
+            // 【修改】计算当前移动速度（考虑 Frost 减速）
+            float currentMoveSpeed = baseMoveSpeed * speedMultiplier * frostSpeedMultiplier;
             float moveForce = currentMoveSpeed * 10f;
-            
+    
             // 受击后短暂减弱移动力
             float timeSinceHit = Time.time - lastHitTime;
             if (timeSinceHit < knockbackStunDuration)
             {
                 moveForce *= knockbackStunMoveMultiplier;
             }
-            
+    
             rb.AddForce(direction * moveForce, ForceMode2D.Force);
-            
+    
             // 限制最大速度
             if (rb.velocity.magnitude > currentMoveSpeed * 2f)
             {
@@ -420,7 +446,11 @@ namespace LightVsDecay.Logic.Enemy
                 finalForce = knockbackForce * massScale * knockbackMultiplier;
             }
             
-            rb.AddForce(finalForce, ForceMode2D.Force);
+            // 【新增】混合使用 Force 和 Impulse，让击退更有冲击感
+            // Impulse 提供瞬时冲击，Force 提供持续推力
+            float impulseRatio = 0.3f; // 30% 的力作为瞬时冲击
+            rb.AddForce(finalForce * (1f - impulseRatio), ForceMode2D.Force);
+            rb.AddForce(finalForce * impulseRatio, ForceMode2D.Impulse);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -707,5 +737,53 @@ namespace LightVsDecay.Logic.Enemy
             
             rb.AddForce(force * knockbackScale * knockbackMultiplier, ForceMode2D.Force);
         }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Frost Debuff 接口
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 当 Frost 状态改变时由 FrostDebuff 调用
+        /// </summary>
+        /// <param name="speedMult">速度倍率（0~1，0=完全冰冻）</param>
+        /// <param name="frozen">是否完全冰冻</param>
+        public void OnFrostStateChanged(float speedMult, bool frozen)
+        {
+            frostSpeedMultiplier = speedMult;
+            isFrozen = frozen;
+    
+            // 冰冻时立即停止移动
+            if (frozen && rb != null)
+            {
+                rb.velocity = Vector2.zero;
+            }
+        }
+
+        /// <summary>
+        /// 应用 Frost 减速效果（由 LaserController 调用）
+        /// </summary>
+        public void ApplyFrostSlow(float slowPercent, float duration)
+        {
+            if (frostDebuff != null)
+            {
+                frostDebuff.ApplySlow(slowPercent, duration);
+            }
+        }
+
+        /// <summary>
+        /// 应用 Frost 完全冰冻（由 LaserController 调用）
+        /// </summary>
+        public void ApplyFrostFreeze(float duration)
+        {
+            if (frostDebuff != null)
+            {
+                frostDebuff.ApplyFreeze(duration);
+            }
+        }
+
+        /// <summary>
+        /// 获取 FrostDebuff 组件
+        /// </summary>
+        public FrostDebuff GetFrostDebuff() => frostDebuff;
     }
 }
