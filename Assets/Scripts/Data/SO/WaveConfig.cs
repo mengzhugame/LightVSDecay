@@ -187,16 +187,43 @@ namespace LightVsDecay.Data.SO
         /// </summary>
         public PhaseConfig GetPhaseAtTime(float gameTime)
         {
+            if (phases == null || phases.Count == 0)
+            {
+                Debug.LogError("[WaveConfig] phases 列表为空！");
+                return null;
+            }
+    
             foreach (var phase in phases)
             {
+                if (phase == null) continue;
+        
                 if (gameTime >= phase.startTime && gameTime < phase.endTime)
                 {
                     return phase;
                 }
             }
-            
-            // 如果超过所有阶段，返回最后一个
-            return phases.Count > 0 ? phases[phases.Count - 1] : null;
+    
+            // 【修复】如果超过所有阶段时间，返回最后一个阶段
+            // 但需要检查最后一个阶段是否有效
+            var lastPhase = phases[phases.Count - 1];
+            if (lastPhase != null && gameTime >= lastPhase.startTime)
+            {
+                return lastPhase;
+            }
+    
+            // 如果都不匹配，打印警告帮助调试
+            Debug.LogWarning($"[WaveConfig] gameTime={gameTime:F1}s 不在任何阶段范围内！");
+            Debug.LogWarning($"[WaveConfig] 已配置阶段数量: {phases.Count}");
+            for (int i = 0; i < phases.Count; i++)
+            {
+                var p = phases[i];
+                if (p != null)
+                {
+                    Debug.LogWarning($"  [{i}] {p.phase}: {p.startTime}s - {p.endTime}s");
+                }
+            }
+    
+            return null;
         }
         
         /// <summary>

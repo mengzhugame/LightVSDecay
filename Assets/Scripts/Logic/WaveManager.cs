@@ -95,24 +95,38 @@ namespace LightVsDecay.Logic
         
         private void Update()
         {
-            if (!isSpawning) return;
-            if (GameManager.Instance == null || !GameManager.Instance.IsPlaying) return;
-            
-            float gameTime = GameManager.Instance.GameTimer;
-            
-            // 更新当前阶段
-            UpdateCurrentPhase(gameTime);
-            
-            // 根据阶段生成敌人
-            if (currentPhase != null && currentPhase.enableSpawning)
+            // 【修复】GameManager 检查移到最前面，这是唯一应该完全阻断的条件
+            if (GameManager.Instance == null || !GameManager.Instance.IsPlaying) 
             {
-                ProcessSpawning();
+                if (showDebugInfo) Debug.Log($"[WaveManager] Update跳过: GameManager空或不在Playing状态");
+                return;
             }
-            
-            // BOSS阶段特殊处理
-            if (currentPhaseType == GamePhase.BossFight && bossSpawned)
+    
+            float gameTime = GameManager.Instance.GameTimer;
+    
+            // 【修复】阶段更新必须始终执行，不受 isSpawning 影响
+            UpdateCurrentPhase(gameTime);
+    
+            // 【修复】只有 isSpawning = true 时才生成敌人
+            if (isSpawning)
             {
-                ProcessBossMinionSpawning();
+                // 根据阶段生成敌人
+                if (currentPhase != null && currentPhase.enableSpawning)
+                {
+                    ProcessSpawning();
+                }
+        
+                // BOSS阶段特殊处理
+                if (currentPhaseType == GamePhase.BossFight && bossSpawned)
+                {
+                    ProcessBossMinionSpawning();
+                }
+            }
+    
+            // 【新增】每10秒打印一次当前时间和阶段信息（调试用）
+            if (showDebugInfo && Mathf.FloorToInt(gameTime) % 10 == 0 && Time.frameCount % 60 == 0)
+            {
+                Debug.Log($"[WaveManager] 当前时间: {gameTime:F1}s, 当前阶段: {currentPhase?.phase}, isSpawning: {isSpawning}, TimeScale: {Time.timeScale}");
             }
         }
         
@@ -158,11 +172,21 @@ namespace LightVsDecay.Logic
             {
                 currentPhase = waveConfig.phases[0];
                 currentPhaseType = currentPhase.phase;
+        
+                // 【新增】打印初始阶段信息
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[WaveManager] 开始生成敌人，初始阶段: {currentPhase.displayName} ({currentPhase.phase})");
+                    Debug.Log($"[WaveManager] WaveConfig 共 {waveConfig.phases.Count} 个阶段:");
+                    foreach (var p in waveConfig.phases)
+                    {
+                        Debug.Log($"  - {p.phase}: {p.startTime}s - {p.endTime}s");
+                    }
+                }
             }
-            
-            if (showDebugInfo)
+            else
             {
-                Debug.Log("[WaveManager] 开始生成敌人");
+                Debug.LogError("[WaveManager] waveConfig 为空或没有配置阶段！");
             }
         }
         
@@ -183,12 +207,32 @@ namespace LightVsDecay.Logic
         
         private void UpdateCurrentPhase(float gameTime)
         {
-            if (waveConfig == null) return;
-            
-            PhaseConfig newPhase = waveConfig.GetPhaseAtTime(gameTime);
-            
-            if (newPhase != null && newPhase != currentPhase)
+            if (waveConfig == null) 
             {
+                if (showDebugInfo) Debug.LogWarning("[WaveManager] waveConfig 为空！");
+                return;
+            }
+    
+            PhaseConfig newPhase = waveConfig.GetPhaseAtTime(gameTime);
+    
+            // 【新增】调试：无法找到阶段时打印警告
+            if (newPhase == null)
+            {
+                if (showDebugInfo)
+                {
+                    Debug.LogWarning($"[WaveManager] 找不到 gameTime={gameTime:F1}s 对应的阶段！检查 WaveConfig 配置");
+                }
+                return;
+            }
+    
+            if (newPhase != currentPhase)
+            {
+                // 【新增】详细日志
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[WaveManager] 阶段切换: {currentPhase?.phase} → {newPhase.phase}, 时间: {gameTime:F1}s");
+                }
+        
                 // 阶段切换
                 OnPhaseEnd(currentPhase);
                 currentPhase = newPhase;
@@ -200,22 +244,31 @@ namespace LightVsDecay.Logic
         private void OnPhaseStart(PhaseConfig phase)
         {
             if (phase == null) return;
-            
+    
             if (showDebugInfo)
             {
                 Debug.Log($"[WaveManager] 进入阶段: {phase.displayName} ({phase.phase})");
             }
-            
+    
             // 显示阶段提示
             if (phase.showPhaseHint && !string.IsNullOrEmpty(phase.hintText))
             {
                 // TODO: 显示UI提示
                 Debug.Log($"[WaveManager] 提示: {phase.hintText}");
             }
-            
-            // 处理阶段开始事件
+    
+            // 【修复】根据阶段配置设置 isSpawning
+            // 这样每个阶段开始时会自动恢复/暂停生成
+            isSpawning = phase.enableSpawning;
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[WaveManager] isSpawning 设置为: {isSpawning} (由 enableSpawning 决定)");
+            }
+    
+            // 处理阶段开始事件（PhaseEvent 可以覆盖上面的设置）
             HandlePhaseEvent(phase.onPhaseStart);
-            
+    
             // 重置计时器
             InitializeTimers();
         }

@@ -7773,7 +7773,7 @@ MonoBehaviour:
   turretHealth: {fileID: 3751590522006977898}
   shieldController: {fileID: 6960895871992148850}
   vfxColorSync: {fileID: 0}
-  showDebugInfo: 1
+  showDebugInfo: 0
 --- !u!1 &1476883934
 GameObject:
   m_ObjectHideFlags: 0
@@ -9419,7 +9419,7 @@ MonoBehaviour:
   waveConfig: {fileID: 11400000, guid: 64a106ff6e1cecf44b30c4873532fae8, type: 2}
   mainMenuSceneName: MainScene
   gameSceneName: GameScene
-  showDebugInfo: 1
+  showDebugInfo: 0
 --- !u!1 &1732947191
 GameObject:
   m_ObjectHideFlags: 0
