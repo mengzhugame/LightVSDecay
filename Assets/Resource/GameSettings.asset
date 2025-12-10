@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameDuration: 300
   bossBattleTimeLimit: 60
-  expBase: 5
+  expBase: 10
   expGrowth: 5
   maxLevel: 20
   ultMaxEnergy: 100

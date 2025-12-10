@@ -123,7 +123,7 @@ MonoBehaviour:
     endTime: 225
     enableSpawning: 0
     spawnEntries:
-    - enemyType: 0
+    - enemyType: 4
       spawnInterval: 1
       spawnCount: 2
       spawnZone: 0

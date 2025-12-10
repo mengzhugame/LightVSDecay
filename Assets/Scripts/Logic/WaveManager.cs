@@ -301,13 +301,44 @@ namespace LightVsDecay.Logic
                 Vector3 position = GetSpawnPosition(entry.spawnZone);
                 EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(entry.enemyType, position);
                 
-                if (enemy != null && entry.speedMultiplier != 1f)
+                if (enemy != null)
                 {
-                    enemy.SetSpeedMultiplier(entry.speedMultiplier);
+                    if (entry.speedMultiplier != 1f)
+                    {
+                        enemy.SetSpeedMultiplier(entry.speedMultiplier);
+                    }
+            
+                    // 【新增】为横穿屏幕类型设置目标点
+                    if (entry.enemyType == EnemyType.Treasure)
+                    {
+                        Vector3 targetPos = GetCrossScreenTarget(entry.spawnZone, position);
+                        enemy.SetCrossScreenTarget(targetPos);
+                    }
                 }
             }
         }
-        
+        /// <summary>
+        /// 获取横穿屏幕的目标位置
+        /// </summary>
+        private Vector3 GetCrossScreenTarget(SpawnZone spawnZone, Vector3 startPos)
+        {
+            // 从左侧生成 → 目标在右侧
+            // 从右侧生成 → 目标在左侧
+            float targetX;
+            if (spawnZone == SpawnZone.LeftSideUpper)
+            {
+                targetX = screenMax.x + spawnOffset * 2f;
+            }
+            else
+            {
+                targetX = screenMin.x - spawnOffset * 2f;
+            }
+    
+            // Y 坐标保持大致相同（略有随机偏移）
+            float targetY = startPos.y + Random.Range(-1f, 1f);
+    
+            return new Vector3(targetX, targetY, 0f);
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 生成位置计算
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -330,12 +361,15 @@ namespace LightVsDecay.Logic
                     
                 case SpawnZone.BottomCorners:
                     return GetBottomCornerPosition();
-                    
+                case SpawnZone.LeftSideUpper:
+                    return GetLeftSideUpperPosition();
+    
+                case SpawnZone.RightSideUpper:
+                    return GetRightSideUpperPosition();
                 default:
                     return GetRandomEdgePosition();
             }
         }
-        
         private Vector3 GetRandomEdgePosition()
         {
             int edge = Random.Range(0, 3); // 0=上, 1=左, 2=右
@@ -395,7 +429,25 @@ namespace LightVsDecay.Logic
             float y = screenMin.y + spawnOffset;
             return new Vector3(x, y, 0f);
         }
-        
+        private Vector3 GetLeftSideUpperPosition()
+        {
+            // 屏幕左侧，Y 轴在上半部分（避开塔）
+            float x = screenMin.x - spawnOffset;
+            float yMin = (screenMin.y + screenMax.y) * 0.5f; // 屏幕中点
+            float yMax = screenMax.y - 1f; // 离顶部留点距离
+            float y = Random.Range(yMin, yMax);
+            return new Vector3(x, y, 0f);
+        }
+
+        private Vector3 GetRightSideUpperPosition()
+        {
+            // 屏幕右侧，Y 轴在上半部分
+            float x = screenMax.x + spawnOffset;
+            float yMin = (screenMin.y + screenMax.y) * 0.5f;
+            float yMax = screenMax.y - 1f;
+            float y = Random.Range(yMin, yMax);
+            return new Vector3(x, y, 0f);
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // BOSS相关
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -57,7 +57,9 @@ namespace LightVsDecay.Data.SO
         TopOnly,        // 仅上方
         TopRandom,      // 上方随机
         SideRandom,     // 两侧随机
-        BottomCorners   // 底部角落
+        BottomCorners,   // 底部角落
+        LeftSideUpper,  // 左侧上半部分（宝箱怪用）
+        RightSideUpper  // 右侧上半部分（宝箱怪用）
     }
 
     /// <summary>
@@ -329,8 +331,9 @@ namespace LightVsDecay.Data.SO
                 hintText = "💰 宝箱时刻！",
                 spawnEntries = new List<EnemySpawnEntry>
                 {
-                    // TODO: 添加宝箱怪类型
-                    new EnemySpawnEntry { enemyType = EnemyType.Slime, spawnInterval = 0.5f, spawnCount = 5, spawnZone = SpawnZone.AllEdges }
+                    // 宝箱怪从左侧或右侧上半部分生成
+                    new EnemySpawnEntry { enemyType = EnemyType.Treasure, spawnInterval = 7f, spawnCount = 1, spawnZone = SpawnZone.LeftSideUpper },
+                    new EnemySpawnEntry { enemyType = EnemyType.Treasure, spawnInterval = 7f, spawnCount = 1, spawnZone = SpawnZone.RightSideUpper }
                 }
             });
             

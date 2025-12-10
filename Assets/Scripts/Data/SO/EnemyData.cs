@@ -52,56 +52,77 @@ namespace LightVsDecay.Data.SO
         public int contactDamage = 1;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 行为设置
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("行为设置")]
+        [Tooltip("敌人行为类型")]
+        public EnemyBehaviorType behaviorType = EnemyBehaviorType.Chase;
+        
+        [Header("横穿屏幕设置（仅 CrossScreen 类型有效）")]
+        [Tooltip("波浪线振幅")]
+        [Range(0f, 3f)]
+        public float waveAmplitude = 1.0f;
+        
+        [Tooltip("波浪线频率")]
+        [Range(0.5f, 5f)]
+        public float waveFrequency = 1.5f;
+        
+        [Tooltip("出界后存活时间（秒）")]
+        [Range(0f, 3f)]
+        public float outOfBoundsLifetime = 1.0f;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 击退设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("击退设置")]
-        [Tooltip("是否可以被击退")]
+        [Tooltip("是否可被击退")]
         public bool canBeKnockedBack = true;
         
-        [Tooltip("击退力倍率（1.0=正常，0.5=难推，2.0=容易推）")]
-        [Range(0f, 5f)]
+        [Tooltip("击退力度倍率")]
+        [Range(0f, 3f)]
         public float knockbackMultiplier = 1.0f;
         
-        [Tooltip("击退阻力（越大停得越快）")]
+        [Tooltip("被击退后的阻力")]
         [Range(0f, 10f)]
         public float knockbackDrag = 2.0f;
         
-        [Tooltip("受击后移动力减弱时间（秒）")]
-        public float knockbackStunDuration = 0.3f;
+        [Tooltip("被击退后的僵直时间")]
+        [Range(0f, 1f)]
+        public float knockbackStunDuration = 0.2f;
         
-        [Tooltip("受击后移动力减弱倍率")]
+        [Tooltip("僵直期间移动力度倍率")]
         [Range(0f, 1f)]
         public float knockbackStunMoveMultiplier = 0.3f;
         
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 特殊行为（Drifter专用）
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("Drifter 特殊设置")]
-        [Tooltip("被击退时的横向偏移角度（度）")]
+        [Header("Drifter 特殊击退")]
+        [Tooltip("Drifter 偏移角度")]
+        [Range(0f, 90f)]
         public float drifterDeflectionAngle = 45f;
         
-        [Tooltip("被击退时的额外力量倍率")]
-        public float drifterKnockbackMultiplier = 2.0f;
+        [Tooltip("Drifter 击退力度倍率")]
+        [Range(1f, 3f)]
+        public float drifterKnockbackMultiplier = 1.5f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 视觉设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("视觉设置")]
-        [Tooltip("最小缩放比例（受伤后缩小到此值后死亡）")]
+        [Tooltip("最小缩放（血量为0时）")]
         [Range(0.1f, 0.5f)]
         public float minScale = 0.3f;
         
-        [Tooltip("死亡淡出时间")]
-        public float deathFadeDuration = 1.0f;
+        [Tooltip("死亡淡出时长")]
+        [Range(0.1f, 1f)]
+        public float deathFadeDuration = 0.3f;
         
-        [Header("Shader 抖动设置")]
-        public float normalFlowSpeed = 1.0f;
-        public float normalNoiseScale = 0.5f;
-        public float hitFlowSpeed = 10.0f;
-        public float hitNoiseScale = 5.0f;
+        [Header("Shader 参数")]
+        public float normalFlowSpeed = 0.3f;
+        public float normalNoiseScale = 1.0f;
+        public float hitFlowSpeed = 2.0f;
+        public float hitNoiseScale = 2.0f;
         public float wobbleReturnSpeed = 5.0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -120,6 +141,25 @@ namespace LightVsDecay.Data.SO
         [Tooltip("击杀获得的大招能量")]
         [Min(0)]
         public int ultEnergyReward = 2;
+        
+        [Header("宝箱怪特殊掉落")]
+        [Tooltip("被击中时掉落金币")]
+        public bool dropCoinOnHit = false;
+        
+        [Tooltip("每次被击中掉落的金币数")]
+        [Min(0)]
+        public int coinPerHit = 1;
+        
+        [Tooltip("死亡时爆出的金币数量")]
+        [Min(0)]
+        public int deathCoinBurst = 0;
+        
+        [Tooltip("低保经验值（玩家等级<12时）")]
+        [Min(0)]
+        public int lowLevelBonusXP = 0;
+        
+        [Tooltip("低保触发等级")]
+        public int lowLevelThreshold = 12;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 碰撞行为
@@ -148,6 +188,11 @@ namespace LightVsDecay.Data.SO
         /// 计算击杀所需时间（理论值，基于100DPS）
         /// </summary>
         public float EstimatedKillTime => maxHealth / 100f;
+        
+        /// <summary>
+        /// 是否为横穿屏幕类型
+        /// </summary>
+        public bool IsCrossScreen => behaviorType == EnemyBehaviorType.CrossScreen;
     }
     
     /// <summary>
@@ -162,6 +207,21 @@ namespace LightVsDecay.Data.SO
         Bounce,
         
         /// <summary>微弱反弹（BOSS）- 稍微后退，无僵直</summary>
-        WeakBounce
+        WeakBounce,
+        
+        /// <summary>无碰撞（宝箱怪）- 不与塔碰撞</summary>
+        None
+    }
+    
+    /// <summary>
+    /// 敌人行为类型枚举
+    /// </summary>
+    public enum EnemyBehaviorType
+    {
+        /// <summary>追击 - 向玩家移动（默认）</summary>
+        Chase,
+        
+        /// <summary>横穿屏幕 - 从一侧到另一侧（宝箱怪）</summary>
+        CrossScreen
     }
 }

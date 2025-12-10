@@ -72,7 +72,25 @@ namespace LightVsDecay.Logic.Enemy
         // 奖励
         private int xpReward = 10;
         private int coinReward = 1;
-        
+        // 行为设置
+        private EnemyBehaviorType behaviorType = EnemyBehaviorType.Chase;
+
+// 横穿屏幕相关
+        private Vector3 crossScreenTarget;
+        private Vector3 crossScreenStartPos;
+        private float crossScreenProgress = 0f;
+        private float waveAmplitude = 1.0f;
+        private float waveFrequency = 1.5f;
+        private float outOfBoundsLifetime = 1.0f;
+        private float outOfBoundsTimer = 0f;
+        private bool isOutOfBounds = false;
+
+// 宝箱怪掉落
+        private bool dropCoinOnHit = false;
+        private int coinPerHit = 1;
+        private int deathCoinBurst = 0;
+        private int lowLevelBonusXP = 0;
+        private int lowLevelThreshold = 12;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // IPoolable 实现
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -202,6 +220,18 @@ namespace LightVsDecay.Logic.Enemy
                 // 奖励
                 xpReward = data.xpReward;
                 coinReward = data.coinReward;
+                // 行为设置
+                behaviorType = data.behaviorType;
+                waveAmplitude = data.waveAmplitude;
+                waveFrequency = data.waveFrequency;
+                outOfBoundsLifetime = data.outOfBoundsLifetime;
+
+// 宝箱怪掉落
+                dropCoinOnHit = data.dropCoinOnHit;
+                coinPerHit = data.coinPerHit;
+                deathCoinBurst = data.deathCoinBurst;
+                lowLevelBonusXP = data.lowLevelBonusXP;
+                lowLevelThreshold = data.lowLevelThreshold;
             }
             // 否则使用默认值（已在字段声明时初始化）
         }
@@ -252,6 +282,12 @@ namespace LightVsDecay.Logic.Enemy
             {
                 frostDebuff.ResetDebuff();
             }
+            // 重置横穿屏幕状态
+            crossScreenTarget = Vector3.zero;
+            crossScreenStartPos = Vector3.zero;
+            crossScreenProgress = 0f;
+            isOutOfBounds = false;
+            outOfBoundsTimer = 0f;
         }
         /// <summary>
         /// 应用时间难度系数（生成时调用）
@@ -388,28 +424,98 @@ namespace LightVsDecay.Logic.Enemy
                 return;
             }
     
+            // 根据行为类型选择移动方式
+            if (behaviorType == EnemyBehaviorType.CrossScreen)
+            {
+                MoveCrossScreen();
+            }
+            else
+            {
+                MoveChase();
+            }
+        }
+        /// <summary>
+        /// 追击移动（原逻辑）
+        /// </summary>
+        private void MoveChase()
+        {
+            if (targetTower == null) return;
+
             Vector2 direction = (targetTower.position - transform.position).normalized;
-    
-            // 【修改】计算当前移动速度（考虑 Frost 减速）
+
             float currentMoveSpeed = baseMoveSpeed * speedMultiplier * frostSpeedMultiplier;
             float moveForce = currentMoveSpeed * 10f;
-    
-            // 受击后短暂减弱移动力
+
             float timeSinceHit = Time.time - lastHitTime;
             if (timeSinceHit < knockbackStunDuration)
             {
                 moveForce *= knockbackStunMoveMultiplier;
             }
-    
+
             rb.AddForce(direction * moveForce, ForceMode2D.Force);
-    
-            // 限制最大速度
+
             if (rb.velocity.magnitude > currentMoveSpeed * 2f)
             {
                 rb.velocity = rb.velocity.normalized * currentMoveSpeed * 2f;
             }
         }
-        
+
+        /// <summary>
+        /// 横穿屏幕移动（宝箱怪）
+        /// </summary>
+        private void MoveCrossScreen()
+        {
+            if (crossScreenTarget == Vector3.zero) return;
+            
+            // 计算横向进度
+            float totalDistance = Vector3.Distance(crossScreenStartPos, crossScreenTarget);
+            float currentMoveSpeed = baseMoveSpeed * speedMultiplier * frostSpeedMultiplier;
+            
+            crossScreenProgress += (currentMoveSpeed / totalDistance) * Time.fixedDeltaTime;
+            crossScreenProgress = Mathf.Clamp01(crossScreenProgress);
+            
+            // 基础位置（直线插值）
+            Vector3 basePos = Vector3.Lerp(crossScreenStartPos, crossScreenTarget, crossScreenProgress);
+            
+            // 波浪线偏移（正弦波）
+            float waveOffset = Mathf.Sin(crossScreenProgress * Mathf.PI * 2f * waveFrequency) * waveAmplitude;
+            
+            // 计算垂直于移动方向的偏移方向
+            Vector3 moveDir = (crossScreenTarget - crossScreenStartPos).normalized;
+            Vector3 perpendicular = new Vector3(-moveDir.y, moveDir.x, 0f);
+            
+            // 最终位置
+            Vector3 finalPos = basePos + perpendicular * waveOffset;
+            
+            // 使用 Rigidbody 移动（保持物理交互）
+            rb.MovePosition(finalPos);
+            
+            // 检查是否到达目标（出界）
+            if (crossScreenProgress >= 1f)
+            {
+                OnReachCrossScreenTarget();
+            }
+        }
+
+        /// <summary>
+        /// 到达横穿目标（出界销毁，不给奖励）
+        /// </summary>
+        private void OnReachCrossScreenTarget()
+        {
+            if (isOutOfBounds) return;
+            isOutOfBounds = true;
+            
+            // 延迟销毁（给点缓冲时间）
+            StartCoroutine(OutOfBoundsDestroy());
+        }
+
+        private System.Collections.IEnumerator OutOfBoundsDestroy()
+        {
+            yield return new WaitForSeconds(outOfBoundsLifetime);
+            
+            // 不触发死亡事件，不给奖励，直接回收
+            ReturnToPool();
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 伤害系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -442,6 +548,18 @@ namespace LightVsDecay.Logic.Enemy
             if (currentHealth <= 0 || newScale <= minScale)
             {
                 Die();
+            }
+            // 【新增】宝箱怪被击中掉金币
+            if (dropCoinOnHit && coinPerHit > 0)
+            {
+                // 触发金币掉落事件（复用 AddCoins）
+                if (ProgressManager.Instance != null)
+                {
+                    ProgressManager.Instance.AddCoins(coinPerHit);
+                }
+    
+                // TODO: 播放金币飞出特效
+                // VFXPoolManager.Instance?.PlayCoinDrop(transform.position);
             }
         }
         
@@ -541,6 +659,24 @@ namespace LightVsDecay.Logic.Enemy
                 circleCollider.enabled = false;
             }
             
+            // 【新增】宝箱怪死亡爆金币
+            if (deathCoinBurst > 0)
+            {
+                if (ProgressManager.Instance != null)
+                {
+                    ProgressManager.Instance.AddCoins(deathCoinBurst);
+                }
+                // TODO: 播放金币爆炸特效
+            }
+            // 计算实际经验值（考虑低保机制）
+            int actualXP = xpReward;
+            if (lowLevelBonusXP > 0 && ProgressManager.Instance != null)
+            {
+                if (ProgressManager.Instance.CurrentLevel < lowLevelThreshold)
+                {
+                    actualXP = lowLevelBonusXP;
+                }
+            }
             // 触发敌人死亡事件
             GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
             
@@ -619,7 +755,11 @@ namespace LightVsDecay.Logic.Enemy
         private void OnCollisionEnter2D(Collision2D collision)
         {
             if (isDead) return;
-            
+            // 【新增】宝箱怪不处理碰撞（无碰撞行为）
+            if (data != null && data.collisionBehavior == EnemyCollisionBehavior.None)
+            {
+                return;
+            }
             int collisionLayer = collision.gameObject.layer;
     
             // 【修改】使用 Layer 判断而非 Tag
@@ -774,7 +914,17 @@ namespace LightVsDecay.Logic.Enemy
             
             rb.AddForce(force * knockbackScale * knockbackMultiplier, ForceMode2D.Force);
         }
-        
+        /// <summary>
+        /// 设置横穿屏幕的目标位置（由 WaveManager 调用）
+        /// </summary>
+        public void SetCrossScreenTarget(Vector3 target)
+        {
+            crossScreenTarget = target;
+            crossScreenStartPos = transform.position;
+            crossScreenProgress = 0f;
+            isOutOfBounds = false;
+            outOfBoundsTimer = 0f;
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Frost Debuff 接口
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

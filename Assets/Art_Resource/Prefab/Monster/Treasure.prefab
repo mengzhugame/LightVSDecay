@@ -404,7 +404,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
-  enemyType: 1
+  enemyType: 4
   bodySprite: {fileID: 4969554391791242002}
   eyesController: {fileID: 8550763919871504157}
   decorations:

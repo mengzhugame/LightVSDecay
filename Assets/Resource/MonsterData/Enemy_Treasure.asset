@@ -10,32 +10,41 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Enemy_Slime
+  m_Name: Enemy_Treasure
   m_EditorClassIdentifier: 
-  type: 0
-  displayName: "\u7C98\u6DB2"
-  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u6570\u91CF\u591A\uFF0C\u8BA9\u73A9\u5BB6\u4F53\u9A8C\u5272\u8349"
-  maxHealth: 30
-  moveSpeed: 0.6
-  mass: 1
-  contactDamage: 1
+  type: 4
+  displayName: "\u5B9D\u7BB1\u602A"
+  description: "\u6389\u843D\u91D1\u5E01"
+  maxHealth: 300
+  moveSpeed: 0.8
+  mass: 10
+  contactDamage: 0
+  behaviorType: 1
+  waveAmplitude: 1.5
+  waveFrequency: 2
+  outOfBoundsLifetime: 0.5
   canBeKnockedBack: 0
-  knockbackMultiplier: 1.5
-  knockbackDrag: 2
+  knockbackMultiplier: 0
+  knockbackDrag: 3
   knockbackStunDuration: 0.3
   knockbackStunMoveMultiplier: 0.3
   drifterDeflectionAngle: 45
   drifterKnockbackMultiplier: 2
   minScale: 0.3
   deathFadeDuration: 1
-  normalFlowSpeed: 0.3
-  normalNoiseScale: 0.2
+  normalFlowSpeed: 0.1
+  normalNoiseScale: 0.5
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 1
-  coinReward: 0
-  ultEnergyReward: 1
-  collisionBehavior: 0
+  xpReward: 30
+  coinReward: 5
+  ultEnergyReward: 0
+  dropCoinOnHit: 1
+  coinPerHit: 1
+  deathCoinBurst: 25
+  lowLevelBonusXP: 100
+  lowLevelThreshold: 12
+  collisionBehavior: 3
   bounceForce: 300
   bounceStunDuration: 1

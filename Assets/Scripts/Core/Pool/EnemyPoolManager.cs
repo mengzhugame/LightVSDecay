@@ -13,7 +13,8 @@ namespace LightVsDecay.Core.Pool
         Slime,      // A - 粘液 - 基础单位
         Tank,       // B - 硬壳 - 高血量
         Rusher,     // C - 速攻虫 - 快速小型
-        Drifter     // D - 漂流者 - 被击退时随机左后/右后漂移
+        Drifter,     // D - 漂流者 - 被击退时随机左后/右后漂移
+        Treasure    // T - 宝箱怪 - 横穿屏幕，高奖励
     }
     
     /// <summary>

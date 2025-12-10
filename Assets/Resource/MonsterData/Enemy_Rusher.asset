@@ -33,7 +33,7 @@ MonoBehaviour:
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 15
+  xpReward: 1
   coinReward: 0
   ultEnergyReward: 1
   collisionBehavior: 0
