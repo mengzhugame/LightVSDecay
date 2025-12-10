@@ -225,6 +225,7 @@ namespace LightVsDecay.Logic.Enemy
         public void OnSpawn()
         {
             isDead = false;
+            ApplyDifficultyModifiers();
             currentHealth = maxHealth;
             transform.localScale = originalScale;
             speedMultiplier = 1f;
@@ -252,7 +253,43 @@ namespace LightVsDecay.Logic.Enemy
                 frostDebuff.ResetDebuff();
             }
         }
-        
+        /// <summary>
+        /// 应用时间难度系数（生成时调用）
+        /// </summary>
+        private void ApplyDifficultyModifiers()
+        {
+            // 没有 DifficultyManager 时使用原始数据
+            if (DifficultyManager.Instance == null)
+            {
+                // 确保使用配置数据的原始值
+                if (data != null)
+                {
+                    maxHealth = data.maxHealth;
+                    baseMoveSpeed = data.moveSpeed;
+                    if (rb != null) rb.mass = data.mass;
+                }
+                return;
+            }
+    
+            var modifiers = DifficultyManager.Instance.GetCurrentModifiers();
+    
+            // 基础值（从配置或默认值）
+            float baseHP = data != null ? data.maxHealth : maxHealth;
+            float baseSpeed = data != null ? data.moveSpeed : baseMoveSpeed;
+            float baseMass = data != null ? data.mass : mass;
+    
+            // 应用 HP 系数（无上限）
+            maxHealth = baseHP * modifiers.hpMultiplier;
+    
+            // 应用速度系数（封顶 1.5x）
+            baseMoveSpeed = baseSpeed * modifiers.speedMultiplier;
+    
+            // 应用质量系数（封顶 1.3x，保持手感）
+            if (rb != null)
+            {
+                rb.mass = baseMass * modifiers.massMultiplier;
+            }
+        }
         public void OnDespawn()
         {
             if (deathCoroutine != null)
