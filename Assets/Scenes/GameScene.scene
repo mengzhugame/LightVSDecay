@@ -7772,6 +7772,7 @@ MonoBehaviour:
   turretController: {fileID: 8715888216377999216}
   turretHealth: {fileID: 3751590522006977898}
   shieldController: {fileID: 6960895871992148850}
+  vfxColorSync: {fileID: 0}
   showDebugInfo: 1
 --- !u!1 &1476883934
 GameObject:
@@ -12180,7 +12181,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7652950869103742150, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
   m_PrefabInstance: {fileID: 7547185026885081177}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 7547185026885081180}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 82b3710d6b092564e9e0d37efb9bc635, type: 3}
@@ -12324,6 +12325,7 @@ MonoBehaviour:
   laserPivot: {fileID: 8535393363888997607}
   firePoint: {fileID: 8535393363888997607}
   laserBeamPrefab: {fileID: 2996164119025857455, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
+  vfxColorSync: {fileID: 0}
   enemyLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -12854,8 +12856,44 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2996164119025857455, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7547185026885081181}
   m_SourcePrefab: {fileID: 100100000, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
+--- !u!4 &7547185026885081178 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8935620744005129406, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
+  m_PrefabInstance: {fileID: 7547185026885081177}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7547185026885081179 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8469571510745026593, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
+  m_PrefabInstance: {fileID: 7547185026885081177}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7547185026885081180 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2996164119025857455, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
+  m_PrefabInstance: {fileID: 7547185026885081177}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7547185026885081181
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7547185026885081180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31e7bad73f0b3af42bbd815c6123e936, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startVFX: {fileID: 7547185026885081179}
+  endVFX: {fileID: 7547185026885081178}
+  defaultLaserColor: {r: 0, g: 3, b: 3, a: 1}
+  defaultVFXColor: {r: 0, g: 3, b: 3, a: 1}
+  emissionColorProperty: _EmissionColor
+  showDebugInfo: 0
 --- !u!4 &8535393363888997607
 Transform:
   m_ObjectHideFlags: 0

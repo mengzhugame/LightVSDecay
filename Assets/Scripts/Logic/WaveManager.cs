@@ -373,7 +373,7 @@ namespace LightVsDecay.Logic
         private Vector3 GetRandomEdgePosition()
         {
             int edge = Random.Range(0, 3); // 0=上, 1=左, 2=右
-            
+            float screenMidY = (screenMin.y + screenMax.y) * 0.5f;
             switch (edge)
             {
                 case 0: // 上
@@ -385,13 +385,13 @@ namespace LightVsDecay.Logic
                 case 1: // 左
                     return new Vector3(
                         screenMin.x - spawnOffset,
-                        Random.Range(screenMin.y, screenMax.y),
+                        Random.Range(screenMidY, screenMax.y),
                         0f
                     );
                 case 2: // 右
                     return new Vector3(
                         screenMax.x + spawnOffset,
-                        Random.Range(screenMin.y, screenMax.y),
+                        Random.Range(screenMidY, screenMax.y),
                         0f
                     );
                 default:
@@ -418,7 +418,9 @@ namespace LightVsDecay.Logic
         {
             bool isLeft = Random.value > 0.5f;
             float x = isLeft ? screenMin.x - spawnOffset : screenMax.x + spawnOffset;
-            float y = Random.Range(screenMin.y + 1f, screenMax.y);
+            // 【修改】Y 轴限制在屏幕上半部分（>= 50%）
+            float screenMidY = (screenMin.y + screenMax.y) * 0.5f;
+            float y = Random.Range(screenMidY, screenMax.y);
             return new Vector3(x, y, 0f);
         }
         

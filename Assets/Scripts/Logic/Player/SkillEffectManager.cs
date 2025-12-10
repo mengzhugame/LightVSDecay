@@ -35,7 +35,8 @@ namespace LightVsDecay.Logic.Player
         
         [Tooltip("护盾控制器（用于 Repair/Adrenaline 恢复）")]
         [SerializeField] private ShieldController shieldController;
-        
+        [Tooltip("VFX颜色同步组件（可选，用于 Frost 效果）")]
+        [SerializeField] private LaserVFXColorSync vfxColorSync;
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = true;
         
@@ -68,7 +69,9 @@ namespace LightVsDecay.Logic.Player
         
         // TurretController 原始灵敏度（用于恢复）
         private float originalSensitivity = 180f;
-        
+        private static readonly Color DEFAULT_LASER_COLOR = new Color(0f, 3f, 3f, 1f);  // 青色 HDR
+        private static readonly Color FOCUS_LASER_COLOR = new Color(3f, 0.3f, 0.2f, 1f); // 红色 HDR
+        private static readonly Color FROST_VFX_COLOR = new Color(0.3f, 0.7f, 3f, 1f);   // 蓝色 HDR
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -109,7 +112,15 @@ namespace LightVsDecay.Logic.Player
             {
                 shieldController = FindObjectOfType<ShieldController>();
             }
-            
+            if (vfxColorSync == null && laserController != null)
+            {
+                // 尝试从 LaserController 的子物体查找
+                var mainLaserBeam = laserController.GetComponentInChildren<LaserBeam>();
+                if (mainLaserBeam != null)
+                {
+                    vfxColorSync = mainLaserBeam.GetComponent<LaserVFXColorSync>();
+                }
+            }
             // 订阅事件
             SubscribeEvents();
         }
@@ -233,13 +244,12 @@ namespace LightVsDecay.Logic.Player
             
             if (laserController != null)
             {
-                laserController.SetFocusLevel(level);
+                laserController.SetFocusLevel(level, FOCUS_LASER_COLOR);
             }
             
             // 重新计算伤害和宽度（因为 Focus 会影响基础值）
             UpdateDamageMultiplier();
-            UpdateWidthMultiplier();
-            
+
             if (showDebugInfo)
             {
                 Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} - 主激光已强化");
@@ -255,15 +265,16 @@ namespace LightVsDecay.Logic.Player
             
             // 计算击退力倍率
             float knockbackMultiplier = GetImpactKnockbackMultiplier(level);
-            
+    
             if (laserController != null)
             {
                 laserController.SetKnockbackMultiplier(knockbackMultiplier);
             }
-            
+    
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} - 击退力 x{knockbackMultiplier:F2}");
+                float stunChance = GetImpactStunChance(level);
+                Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} - 击退力 x{knockbackMultiplier:F2}, 僵直概率 {stunChance:P0}");
             }
         }
         
@@ -274,19 +285,20 @@ namespace LightVsDecay.Logic.Player
         {
             frostLevel = level;
             
-            // TODO: 实现减速效果（需要敌人系统支持）
-            // 目前先记录等级，后续在 LaserController 的伤害逻辑中处理
-            
-            // 视觉：变蓝（与 Focus 的红色不叠加，优先 Focus）
-            if (focusLevel == 0 && laserController != null)
+            // 【修改】只修改 VFX 特效颜色，不修改激光颜色
+            if (vfxColorSync != null)
             {
-                Color frostColor = new Color(0.3f, 0.7f, 1f, 1f); // 冰蓝色
-                laserController.SetLaserColor(frostColor);
+                vfxColorSync.SetVFXColor(FROST_VFX_COLOR);
             }
-            
+            else if (laserController != null)
+            {
+                // 备用：如果没有 VFX 组件，调用 LaserController 的 SetVFXColor
+                laserController.SetVFXColor(FROST_VFX_COLOR);
+            }
+    
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Frost Lv.{level} - 减速效果待实现");
+                Debug.Log($"[SkillEffectManager] ✓ Frost Lv.{level} - VFX特效变蓝，减速效果已启用");
             }
         }
         
@@ -338,8 +350,8 @@ namespace LightVsDecay.Logic.Player
         {
             wideLevel = level;
             
-            // 计算总宽度加成（每级 +15%）
-            totalWidthBonus = level * 0.15f;
+            // 计算总宽度加成（每级 +30%）
+            totalWidthBonus = level * 0.30f;
             
             // 应用到激光
             UpdateWidthMultiplier();
@@ -377,14 +389,8 @@ namespace LightVsDecay.Logic.Player
             if (laserController == null) return;
             
             // Focus 的宽度倍率（基础值，可能是缩小）
-            float focusMultiplier = GetFocusWidthMultiplier(focusLevel);
-            
-            // Wide 的累加加成
-            float wideBonus = totalWidthBonus;
-            
-            // 最终倍率 = Focus基础 * (1 + Wide加成)
-            float finalMultiplier = focusMultiplier * (1f + wideBonus);
-            
+            float finalMultiplier = 1f + totalWidthBonus;
+    
             laserController.SetWidthMultiplier(finalMultiplier);
         }
         
@@ -404,27 +410,59 @@ namespace LightVsDecay.Logic.Player
                 default: return 1.0f;
             }
         }
-        
+
         /// <summary>
-        /// 获取 Focus 宽度倍率
+        /// 获取 Impact 僵直概率（Lv4-5 才有）
         /// </summary>
-        private float GetFocusWidthMultiplier(int level)
+        public float GetImpactStunChance(int level)
         {
             switch (level)
             {
-                case 0: return 1.0f;
-                case 1:
-                case 2:
-                    return 0.80f;
-                case 3:
-                case 4:
-                case 5:
-                    return 0.60f;
-                default:
-                    return 1.0f;
+                case 4: return 0.05f; // 5% 概率
+                case 5: return 0.10f; // 10% 概率
+                default: return 0f;
             }
         }
-        
+
+        /// <summary>
+        /// 获取 Impact 僵直持续时间
+        /// </summary>
+        public float GetImpactStunDuration(int level)
+        {
+            switch (level)
+            {
+                case 4: return 0.8f;  // 0.8秒
+                case 5: return 1.0f;  // 1.0秒
+                default: return 0f;
+            }
+        }
+
+        /// <summary>
+        /// 尝试触发 Impact 僵直（由 LaserController 伤害检测调用）
+        /// </summary>
+        public bool TryTriggerImpactStun(out float stunDuration)
+        {
+            stunDuration = 0f;
+    
+            if (impactLevel < 4) return false;
+    
+            float chance = GetImpactStunChance(impactLevel);
+            if (Random.value < chance)
+            {
+                stunDuration = GetImpactStunDuration(impactLevel);
+                return true;
+            }
+    
+            return false;
+        }
+        /// <summary>
+        /// 获取 Frost 减速参数（兼容两种命名）
+        /// </summary>
+        public void GetFrostParams(out float slowPercent, out float duration)
+        {
+            GetFrostData(out slowPercent, out duration);
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 消耗品效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -615,27 +653,37 @@ namespace LightVsDecay.Logic.Player
             frostLevel = 0;
             powerLevel = 0;
             wideLevel = 0;
-            
+    
             totalDamageBonus = 0f;
             totalWidthBonus = 0f;
-            
+    
             isAdrenalineActive = false;
             adrenalineTimer = 0f;
-            
+    
             if (laserController != null)
             {
                 laserController.ClearAllSubLasers();
                 laserController.SetDamageMultiplier(1f);
                 laserController.SetKnockbackMultiplier(1f);
                 laserController.SetWidthMultiplier(1f);
-                laserController.SetLaserColor(Color.white);
+                laserController.SetLaserColor(DEFAULT_LASER_COLOR); // 【修改】使用默认青色
             }
-            
+    
+            // 【新增】重置 VFX 颜色
+            if (vfxColorSync != null)
+            {
+                vfxColorSync.ResetVFXColor();
+            }
+            else if (laserController != null)
+            {
+                laserController.ResetVFXColor();
+            }
+    
             if (turretController != null)
             {
                 turretController.SetSensitivity(originalSensitivity);
             }
-            
+    
             if (showDebugInfo)
             {
                 Debug.Log("[SkillEffectManager] 所有技能效果已重置");

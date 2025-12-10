@@ -98,10 +98,10 @@ namespace LightVsDecay.Data.SO
         public float baseKnockbackForce = 10f;
         
         [Tooltip("激光最大长度")]
-        public float maxLaserLength = 15f;
+        public float maxLaserLength = 20f;
         
         [Tooltip("激光基础宽度")]
-        public float baseLaserWidth = 0.5f;
+        public float baseLaserWidth = 1.0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 护盾系统

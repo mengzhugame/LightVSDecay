@@ -25,11 +25,12 @@ namespace LightVsDecay.Core
         public const float BASE_KNOCKBACK_FORCE = 10f;
         
         /// <summary>激光最大长度（Unity单位）</summary>
-        public const float LASER_MAX_LENGTH = 15f;
+        public const float LASER_MAX_LENGTH = 20f;
         
         /// <summary>激光默认宽度</summary>
-        public const float LASER_DEFAULT_WIDTH = 0.5f;
-        
+        public const float LASER_DEFAULT_WIDTH = 1.0f;
+        /// <summary>副激光宽度倍率（相对主激光）</summary>
+        public const float SUB_LASER_WIDTH_RATIO = 0.65f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 物理检测
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

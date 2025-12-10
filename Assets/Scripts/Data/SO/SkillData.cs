@@ -270,7 +270,6 @@ namespace LightVsDecay.Data.SO
                     break;
                     
                 // 被动/控制技能 - 蓝色
-                case SkillType.Frost:
                 case SkillType.Power:
                 case SkillType.Wide:
                     cardType = SkillCardType.Passive;
