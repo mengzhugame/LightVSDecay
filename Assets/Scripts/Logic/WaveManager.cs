@@ -34,7 +34,9 @@ namespace LightVsDecay.Logic
         
         [Tooltip("屏幕外偏移")]
         [SerializeField] private float spawnOffset = 1.5f;
-        
+        [Header("BOSS配置")]
+        [Tooltip("BOSS预制体")]
+        [SerializeField] private GameObject bossPrefab;
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
         [SerializeField] private bool showSpawnArea = false;
@@ -53,7 +55,8 @@ namespace LightVsDecay.Logic
         // 屏幕边界缓存
         private Vector2 screenMin;
         private Vector2 screenMax;
-        
+        // 当前BOSS实例引用
+        private GameObject currentBossInstance;
         // BOSS相关
         private bool bossSpawned = false;
         private float bossMinionTimer = 0f;
@@ -65,7 +68,11 @@ namespace LightVsDecay.Logic
         public bool IsSpawning => isSpawning;
         public GamePhase CurrentPhase => currentPhaseType;
         public string CurrentPhaseName => currentPhase?.displayName ?? "未知";
-        
+        /// <summary>当前BOSS实例</summary>
+        public GameObject CurrentBoss => currentBossInstance;
+
+        /// <summary>BOSS是否存活</summary>
+        public bool IsBossAlive => currentBossInstance != null;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -510,17 +517,35 @@ namespace LightVsDecay.Logic
         private void SpawnBoss()
         {
             if (bossSpawned) return;
-            
+    
+            if (bossPrefab == null)
+            {
+                Debug.LogError("[WaveManager] bossPrefab 未设置！无法生成BOSS");
+                return;
+            }
+    
             bossSpawned = true;
-            
-            // TODO: 生成BOSS
-            Debug.Log("[WaveManager] BOSS 生成！");
-            
+    
             // BOSS生成位置（屏幕上方中央）
             Vector3 bossPosition = new Vector3(0f, screenMax.y + 2f, 0f);
-            
-            // TODO: 实际BOSS生成逻辑
-            // BossController.Instance.SpawnBoss(bossPosition);
+    
+            // 实际生成BOSS
+            currentBossInstance = Instantiate(bossPrefab, bossPosition, Quaternion.identity);
+    
+            // 通知 GameManager 进入 BOSS 战
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.EnterBossFight();
+            }
+    
+            // 从 WaveConfig 读取 BOSS 血量并设置
+            BossHealth bossHealth = currentBossInstance.GetComponent<BossHealth>();
+            if (bossHealth != null && waveConfig != null)
+            {
+                bossHealth.SetMaxHealth(waveConfig.bossHealth);
+            }
+    
+            Debug.Log($"[WaveManager] BOSS 生成！位置: {bossPosition}");
         }
         
         private void ProcessBossMinionSpawning()
@@ -584,7 +609,36 @@ namespace LightVsDecay.Logic
         {
             isSpawning = true;
         }
-        
+        /// <summary>
+        /// 测试用：立即生成BOSS
+        /// </summary>
+        public void TestSpawnBoss()
+        {
+            if (bossSpawned)
+            {
+                Debug.LogWarning("[WaveManager] BOSS已经生成过了！");
+                return;
+            }
+    
+            // 强制进入BOSS阶段
+            currentPhaseType = GamePhase.BossFight;
+    
+            SpawnBoss();
+        }
+
+        /// <summary>
+        /// 测试用：销毁当前BOSS
+        /// </summary>
+        public void TestDestroyBoss()
+        {
+            if (currentBossInstance != null)
+            {
+                Destroy(currentBossInstance);
+                currentBossInstance = null;
+                bossSpawned = false;
+                Debug.Log("[WaveManager] BOSS已销毁");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

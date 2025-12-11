@@ -1,5 +1,6 @@
 using UnityEngine;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Logic;
 
 namespace LightVsDecay
 {
@@ -340,6 +341,27 @@ namespace LightVsDecay
             }
             
             GUILayout.Space(10);
+
+            GUILayout.Label("=== BOSS 测试 ===");
+
+            if (GUILayout.Button("生成 BOSS"))
+            {
+                TestSpawnBoss();
+            }
+
+            if (GUILayout.Button("销毁 BOSS"))
+            {
+                TestDestroyBoss();
+            }
+
+// 显示BOSS状态
+            if (WaveManager.Instance != null)
+            {
+                string bossStatus = WaveManager.Instance.IsBossAlive ? "存活" : "无";
+                GUILayout.Label($"BOSS状态: {bossStatus}");
+            }
+
+            GUILayout.Space(5);
             GUILayout.Label($"当前敌人数: {EnemyPoolManager.Instance.TotalActiveEnemies}");
             
             GUILayout.EndArea();
@@ -387,6 +409,36 @@ namespace LightVsDecay
             // 绘制边框
             Gizmos.color = new Color(Gizmos.color.r, Gizmos.color.g, Gizmos.color.b, 1f);
             Gizmos.DrawWireCube(center, size);
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// BOSS 测试方法
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [ContextMenu("Test: Spawn Boss")]
+        public void TestSpawnBoss()
+        {
+            if (WaveManager.Instance == null)
+            {
+                Debug.LogError("[EnemySpawnTester] WaveManager 未初始化！");
+                return;
+            }
+    
+            WaveManager.Instance.TestSpawnBoss();
+            Debug.Log("[EnemySpawnTester] 已请求生成 BOSS");
+        }
+
+        [ContextMenu("Test: Destroy Boss")]
+        public void TestDestroyBoss()
+        {
+            if (WaveManager.Instance == null)
+            {
+                Debug.LogError("[EnemySpawnTester] WaveManager 未初始化！");
+                return;
+            }
+    
+            WaveManager.Instance.TestDestroyBoss();
+            Debug.Log("[EnemySpawnTester] 已请求销毁 BOSS");
         }
     }
 }
