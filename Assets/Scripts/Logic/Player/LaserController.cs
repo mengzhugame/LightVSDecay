@@ -266,7 +266,9 @@ namespace LightVsDecay.Logic.Player
                 Vector2 knockbackDir = (enemy.transform.position - origin.position).normalized;
                 Vector2 knockbackForce = knockbackDir * CurrentKnockbackForce * knockbackMultiplier;
                 
-                enemy.TakeDamage(damage, knockbackForce);
+// TODO: 暴击判定（后续添加暴击系统时实现）
+                bool isCrit = false;
+                enemy.TakeDamage(damage, knockbackForce, isCrit);
                 
                 // 应用 Frost 减速效果
                 ApplyFrostEffect(enemy);

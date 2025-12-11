@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1343997964473775117}
   - component: {fileID: 3988100806900536482}
   - component: {fileID: 8609685334684566284}
+  - component: {fileID: 4052392330538193639}
   m_Layer: 8
   m_HasEditorInfo: 1
   m_Name: Eyes
@@ -112,6 +113,41 @@ MonoBehaviour:
   squintDuration: 0.15
   squintScaleY: 0.5
   eyesSprite: {fileID: 3988100806900536482}
+--- !u!58 &4052392330538193639
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1328806322944234479}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  serializedVersion: 2
+  m_Radius: 1.13
 --- !u!1 &2365372588096546128
 GameObject:
   m_ObjectHideFlags: 0

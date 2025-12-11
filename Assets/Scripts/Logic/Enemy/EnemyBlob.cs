@@ -11,6 +11,7 @@ using LightVsDecay.Core.Pool;
 using LightVsDecay.Data;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Player;
+using LightVsDecay.UI.FloatingText;
 
 namespace LightVsDecay.Logic.Enemy
 {
@@ -542,10 +543,20 @@ namespace LightVsDecay.Logic.Enemy
         // 伤害系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        public void TakeDamage(float damage, Vector2 knockbackForce)
+        /// <summary>
+        /// 受到伤害
+        /// </summary>
+        /// <param name="damage">伤害值</param>
+        /// <param name="knockbackForce">击退力</param>
+        /// <param name="isCrit">是否暴击</param>
+        public void TakeDamage(float damage, Vector2 knockbackForce, bool isCrit = false)
         {
             if (isDead) return;
-            
+            // 【新增】显示伤害飘字
+            if (FloatingTextManager.Instance != null)
+            {
+                FloatingTextManager.Instance.ShowDamage(transform.position, damage, isCrit);
+            }
             currentHealth -= damage;
             lastHitTime = Time.time;
             
@@ -914,6 +925,11 @@ namespace LightVsDecay.Logic.Enemy
             if (isDead || isStunned) return;
     
             isStunned = true;
+            // // 【新增】显示 STUN 飘字
+            // if (FloatingTextManager.Instance != null)
+            // {
+            //     FloatingTextManager.Instance.ShowStatus(transform.position, "STUN!");
+            // }
             stunDuration = duration;
             stunTimer = duration;
     

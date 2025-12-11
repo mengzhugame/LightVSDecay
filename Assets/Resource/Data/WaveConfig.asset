@@ -46,7 +46,7 @@ MonoBehaviour:
       spawnZone: 0
       speedMultiplier: 1
     - enemyType: 1
-      spawnInterval: 2
+      spawnInterval: 3
       spawnCount: 1
       spawnZone: 1
       speedMultiplier: 1
@@ -126,7 +126,7 @@ MonoBehaviour:
     - enemyType: 4
       spawnInterval: 1
       spawnCount: 2
-      spawnZone: 0
+      spawnZone: 5
       speedMultiplier: 1
     spawnRateMultiplier: 1
     onPhaseStart: 5

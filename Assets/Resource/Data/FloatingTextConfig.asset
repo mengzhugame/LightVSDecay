@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3def4053da25c514a8c6fe7f2183ab13, type: 3}
+  m_Name: FloatingTextConfig
+  m_EditorClassIdentifier: 
+  prewarmCount: 20
+  maxPoolSize: 40
+  normalPriority: 0
+  critPriority: 2
+  statusPriority: 1
+  normalStyle:
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+    outlineColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
+    fontSize: 32
+    isBold: 0
+    outlineWidth: 0.15
+    duration: 0.6
+    initialUpSpeed: 120
+    horizontalRandomRange: 60
+    gravity: 100
+    fadeStartPercent: 0.5
+    useScaleAnimation: 0
+    initialScale: 1
+    peakScale: 1
+    scalePeakPercent: 0.2
+  critStyle:
+    textColor: {r: 1, g: 0, b: 0.33, a: 1}
+    outlineColor: {r: 0.5, g: 0, b: 0.15, a: 1}
+    fontSize: 48
+    isBold: 1
+    outlineWidth: 0.25
+    duration: 1
+    initialUpSpeed: 200
+    horizontalRandomRange: 40
+    gravity: 300
+    fadeStartPercent: 0.6
+    useScaleAnimation: 1
+    initialScale: 0.8
+    peakScale: 1.4
+    scalePeakPercent: 0.15
+  statusStyle:
+    textColor: {r: 1, g: 0.92, b: 0.016, a: 1}
+    outlineColor: {r: 0.3, g: 0.25, b: 0, a: 1}
+    fontSize: 36
+    isBold: 1
+    outlineWidth: 0.2
+    duration: 0.8
+    initialUpSpeed: 180
+    horizontalRandomRange: 20
+    gravity: 50
+    fadeStartPercent: 0.6
+    useScaleAnimation: 1
+    initialScale: 0.6
+    peakScale: 1.2
+    scalePeakPercent: 0.25
