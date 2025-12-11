@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1343997964473775117}
   - component: {fileID: 3988100806900536482}
   - component: {fileID: 8609685334684566284}
-  - component: {fileID: 4052392330538193639}
+  - component: {fileID: 8982475681369856819}
   m_Layer: 8
   m_HasEditorInfo: 1
   m_Name: Eyes
@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.35202888, y: 0.35202888, z: 0.35202888}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8875329790981093609}
@@ -113,8 +113,8 @@ MonoBehaviour:
   squintDuration: 0.15
   squintScaleY: 0.5
   eyesSprite: {fileID: 3988100806900536482}
---- !u!58 &4052392330538193639
-CircleCollider2D:
+--- !u!61 &8982475681369856819
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -145,9 +145,19 @@ CircleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0.00085425377, y: -0.03010577}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 5.12, y: 5.12}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
   serializedVersion: 2
-  m_Radius: 1.13
+  m_Size: {x: 1.5365796, y: 1.2965685}
+  m_EdgeRadius: 0
 --- !u!1 &2365372588096546128
 GameObject:
   m_ObjectHideFlags: 0
@@ -254,7 +264,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5649553928748941591
 Transform:
   m_ObjectHideFlags: 0
@@ -427,6 +437,7 @@ GameObject:
   - component: {fileID: 4368819993110178146}
   - component: {fileID: 2878663063999937833}
   - component: {fileID: 8783612272968732188}
+  - component: {fileID: 3305369117275716465}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Boss
@@ -449,9 +460,9 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1950070957951512174}
+  - {fileID: 2438999953779928413}
   - {fileID: 5649553928748941591}
   - {fileID: 1343997964473775117}
-  - {fileID: 2438999953779928413}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!50 &4368819993110178146
@@ -515,7 +526,7 @@ CircleCollider2D:
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
-  m_Radius: 2
+  m_Radius: 2.15
 --- !u!114 &8783612272968732188
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -534,3 +545,20 @@ MonoBehaviour:
   breathScaleMin: 0.95
   breathScaleMax: 1.05
   breathCycleDuration: 1.5
+--- !u!114 &3305369117275716465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7651956220622171640}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58b616f6f1c8d0a4e843e871bc09a97e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 5000
+  armorDamageMultiplier: 0.3
+  coreDamageMultiplier: 2
+  coreCollider: {fileID: 8982475681369856819}
+  showDebugInfo: 0

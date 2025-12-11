@@ -1,7 +1,7 @@
 // ============================================================
 // FloatingTextManager.cs
 // 文件位置: Assets/Scripts/UI/FloatingText/FloatingTextManager.cs
-// 用途：飘字系统管理器（单例）- 对象池 + 优先级回收
+// 用途：飘字系统管理器（单例）- 多Prefab对象池 + 优先级回收
 // ============================================================
 
 using System.Collections;
@@ -14,6 +14,7 @@ namespace LightVsDecay.UI.FloatingText
     /// <summary>
     /// 飘字系统管理器
     /// 单例模式，管理飘字对象池和显示
+    /// 支持多种 Prefab 类型（Normal, Crit, BossShield, BossCore）
     /// </summary>
     public class FloatingTextManager : Singleton<FloatingTextManager>
     {
@@ -24,9 +25,6 @@ namespace LightVsDecay.UI.FloatingText
         [Header("配置")]
         [Tooltip("飘字配置文件")]
         [SerializeField] private FloatingTextConfig config;
-        
-        [Tooltip("飘字预制体")]
-        [SerializeField] private GameObject floatingTextPrefab;
         
         [Header("Canvas 引用")]
         [Tooltip("飘字挂载的 Canvas（需要是 Screen Space - Overlay 或 Camera）")]
@@ -39,7 +37,8 @@ namespace LightVsDecay.UI.FloatingText
         // 运行时数据
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private Queue<FloatingText> availablePool = new Queue<FloatingText>();
+        // 每种类型独立的对象池
+        private Dictionary<FloatingTextType, Queue<FloatingText>> typePools = new Dictionary<FloatingTextType, Queue<FloatingText>>();
         private List<FloatingText> activeTexts = new List<FloatingText>();
         private Transform poolContainer = null;
         private int totalCreated = 0;
@@ -50,7 +49,6 @@ namespace LightVsDecay.UI.FloatingText
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         public int ActiveCount => activeTexts.Count;
-        public int AvailableCount => availablePool.Count;
         public int TotalCreated => totalCreated;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -92,12 +90,6 @@ namespace LightVsDecay.UI.FloatingText
                 return;
             }
             
-            if (floatingTextPrefab == null)
-            {
-                Debug.LogError("[FloatingTextManager] 初始化失败: floatingTextPrefab 未设置！");
-                return;
-            }
-            
             // 2. 获取 Canvas
             if (targetCanvas == null)
             {
@@ -129,27 +121,77 @@ namespace LightVsDecay.UI.FloatingText
             
             Debug.Log($"[FloatingTextManager] 池容器已创建: {poolContainer.name}");
             
-            // 4. 预热对象池
-            int prewarmCount = config.prewarmCount;
-            
-            for (int i = 0; i < prewarmCount; i++)
-            {
-                GameObject go = Instantiate(floatingTextPrefab, poolContainer);
-                go.name = $"FloatingText_{i:D3}";
-                
-                FloatingText ft = go.GetComponent<FloatingText>();
-                if (ft == null)
-                {
-                    ft = go.AddComponent<FloatingText>();
-                }
-                
-                go.SetActive(false);
-                availablePool.Enqueue(ft);
-                totalCreated++;
-            }
+            // 4. 初始化各类型对象池
+            InitializeTypePools();
             
             isInitialized = true;
-            Debug.Log($"[FloatingTextManager] ===== 初始化完成: 池={availablePool.Count} =====");
+            Debug.Log($"[FloatingTextManager] ===== 初始化完成: 总创建={totalCreated} =====");
+        }
+        
+        /// <summary>
+        /// 初始化各类型的对象池
+        /// </summary>
+        private void InitializeTypePools()
+        {
+            // 为每种类型创建空队列
+            foreach (FloatingTextType type in System.Enum.GetValues(typeof(FloatingTextType)))
+            {
+                typePools[type] = new Queue<FloatingText>();
+            }
+            
+            // 预热主要类型
+            PrewarmType(FloatingTextType.Normal, config.prewarmCount / 2);
+            PrewarmType(FloatingTextType.Crit, config.prewarmCount / 4);
+            PrewarmType(FloatingTextType.BossShield, 5);
+            PrewarmType(FloatingTextType.BossCore, 5);
+        }
+        
+        /// <summary>
+        /// 预热指定类型的对象池
+        /// </summary>
+        private void PrewarmType(FloatingTextType type, int count)
+        {
+            GameObject prefab = config.GetPrefab(type);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[FloatingTextManager] {type} Prefab 未设置，跳过预热");
+                return;
+            }
+            
+            for (int i = 0; i < count; i++)
+            {
+                FloatingText ft = CreateInstance(type, prefab);
+                if (ft != null)
+                {
+                    ft.gameObject.SetActive(false);
+                    typePools[type].Enqueue(ft);
+                }
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[FloatingTextManager] 预热 {type}: {count} 个");
+            }
+        }
+        
+        /// <summary>
+        /// 创建飘字实例
+        /// </summary>
+        private FloatingText CreateInstance(FloatingTextType type, GameObject prefab)
+        {
+            if (prefab == null || poolContainer == null) return null;
+            
+            GameObject go = Instantiate(prefab, poolContainer);
+            go.name = $"FloatingText_{type}_{totalCreated:D3}";
+            
+            FloatingText ft = go.GetComponent<FloatingText>();
+            if (ft == null)
+            {
+                ft = go.AddComponent<FloatingText>();
+            }
+            
+            totalCreated++;
+            return ft;
         }
         
         protected override void OnSingletonDestroy()
@@ -158,15 +200,36 @@ namespace LightVsDecay.UI.FloatingText
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 公共接口
+        // 公共接口 - 伤害显示
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 显示伤害飘字
+        /// 显示普通伤害飘字（支持暴击）
         /// </summary>
         public void ShowDamage(Vector3 worldPosition, float damage, bool isCrit = false)
         {
             FloatingTextType type = isCrit ? FloatingTextType.Crit : FloatingTextType.Normal;
+            string text = Mathf.RoundToInt(damage).ToString();
+            Show(worldPosition, text, type);
+        }
+        
+        /// <summary>
+        /// 显示 Boss 护甲伤害飘字（银灰色 + 盾牌图标）
+        /// </summary>
+        public void ShowBossShieldDamage(Vector3 worldPosition, float damage)
+        {
+            string text = Mathf.RoundToInt(damage).ToString();
+            Show(worldPosition, text, FloatingTextType.BossShield);
+        }
+        
+        /// <summary>
+        /// 显示 Boss 核心伤害飘字（红色 + 眼睛图标）
+        /// </summary>
+        /// <param name="isCrit">是否同时触发暴击（弱点+暴击叠加）</param>
+        public void ShowBossCoreDamage(Vector3 worldPosition, float damage, bool isCrit = false)
+        {
+            // 如果弱点命中同时触发暴击，使用暴击样式（更大更明显）
+            FloatingTextType type = isCrit ? FloatingTextType.Crit : FloatingTextType.BossCore;
             string text = Mathf.RoundToInt(damage).ToString();
             Show(worldPosition, text, type);
         }
@@ -198,13 +261,14 @@ namespace LightVsDecay.UI.FloatingText
             
             if (showDebugInfo)
             {
-                Debug.Log($"[FloatingTextManager] Show: '{text}' @ {worldPosition}");
+                Debug.Log($"[FloatingTextManager] Show: '{text}' @ {worldPosition}, Type: {type}");
             }
             
             // 获取实例
             FloatingText ft = GetInstance(type);
             if (ft == null)
             {
+                Debug.LogWarning($"[FloatingTextManager] 无法获取 {type} 类型的飘字实例");
                 return;
             }
             
@@ -237,11 +301,15 @@ namespace LightVsDecay.UI.FloatingText
         {
             ReturnAll();
             
-            while (availablePool.Count > 0)
+            foreach (var pool in typePools.Values)
             {
-                var ft = availablePool.Dequeue();
-                if (ft != null) Destroy(ft.gameObject);
+                while (pool.Count > 0)
+                {
+                    var ft = pool.Dequeue();
+                    if (ft != null) Destroy(ft.gameObject);
+                }
             }
+            typePools.Clear();
             
             totalCreated = 0;
             isInitialized = false;
@@ -253,23 +321,28 @@ namespace LightVsDecay.UI.FloatingText
         
         private FloatingText GetInstance(FloatingTextType requestType)
         {
-            // 1. 从池中取
-            if (availablePool.Count > 0)
+            // 确保类型池存在
+            if (!typePools.ContainsKey(requestType))
             {
-                return availablePool.Dequeue();
+                typePools[requestType] = new Queue<FloatingText>();
+            }
+            
+            var pool = typePools[requestType];
+            
+            // 1. 从对应类型池中取
+            if (pool.Count > 0)
+            {
+                return pool.Dequeue();
             }
             
             // 2. 动态创建
             if (totalCreated < config.maxPoolSize && poolContainer != null)
             {
-                GameObject go = Instantiate(floatingTextPrefab, poolContainer);
-                go.name = $"FloatingText_{totalCreated:D3}";
-                
-                FloatingText ft = go.GetComponent<FloatingText>();
-                if (ft == null) ft = go.AddComponent<FloatingText>();
-                
-                totalCreated++;
-                return ft;
+                GameObject prefab = config.GetPrefab(requestType);
+                if (prefab != null)
+                {
+                    return CreateInstance(requestType, prefab);
+                }
             }
             
             // 3. 优先级回收
@@ -312,7 +385,14 @@ namespace LightVsDecay.UI.FloatingText
             
             activeTexts.Remove(ft);
             ft.Reset();
-            availablePool.Enqueue(ft);
+            
+            // 根据类型放回对应的池
+            FloatingTextType type = ft.CurrentType;
+            if (!typePools.ContainsKey(type))
+            {
+                typePools[type] = new Queue<FloatingText>();
+            }
+            typePools[type].Enqueue(ft);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -324,13 +404,18 @@ namespace LightVsDecay.UI.FloatingText
         {
             if (!showDebugInfo || !Application.isPlaying) return;
             
-            GUILayout.BeginArea(new Rect(10, 450, 250, 140));
+            GUILayout.BeginArea(new Rect(10, 450, 250, 180));
             GUILayout.Label("=== FloatingText Debug ===");
             GUILayout.Label($"Initialized: {isInitialized}");
-            GUILayout.Label($"PoolContainer: {(poolContainer != null ? poolContainer.name : "NULL")}");
             GUILayout.Label($"Active: {activeTexts.Count}");
-            GUILayout.Label($"Available: {availablePool.Count}");
             GUILayout.Label($"Total Created: {totalCreated}");
+            
+            // 显示各类型池的数量
+            foreach (var kvp in typePools)
+            {
+                GUILayout.Label($"  {kvp.Key}: {kvp.Value.Count}");
+            }
+            
             GUILayout.EndArea();
         }
 #endif

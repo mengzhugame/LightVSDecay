@@ -113,6 +113,21 @@ namespace LightVsDecay.Core
 
         /// <summary>升级选择完成</summary>
         public static event Action OnLevelUpChoiceComplete;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Boss 事件
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>Boss 血量变化 (血量百分比 0-1)</summary>
+        public static event Action<float> OnBossHealthChanged;
+        
+        /// <summary>Boss 死亡</summary>
+        public static event Action OnBossDeath;
+        
+        /// <summary>Boss 战斗开始</summary>
+        public static event Action OnBossFightStart;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件触发方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -143,6 +158,9 @@ namespace LightVsDecay.Core
             => OnEnemyDied?.Invoke(type, pos, xp, coin);
         public static void TriggerXPOrbCollected(int xp) => OnXPOrbCollected?.Invoke(xp);
         public static void TriggerLevelUpChoiceComplete() => OnLevelUpChoiceComplete?.Invoke();
+        public static void TriggerBossHealthChanged(float percent) => OnBossHealthChanged?.Invoke(percent);
+        public static void TriggerBossDeath() => OnBossDeath?.Invoke();
+        public static void TriggerBossFightStart() => OnBossFightStart?.Invoke();
         /// <summary>
         /// 清除所有事件订阅（场景切换时调用）
         /// </summary>
@@ -173,6 +191,10 @@ namespace LightVsDecay.Core
             OnXPOrbCollected = null;
             OnLevelUpChoiceComplete = null;
             OnSkillApplied = null;
+            // Boss 事件清理
+            OnBossHealthChanged = null;
+            OnBossDeath = null;
+            OnBossFightStart = null;
         }
     }
 }

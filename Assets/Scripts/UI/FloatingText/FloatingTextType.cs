@@ -14,10 +14,16 @@ namespace LightVsDecay.UI.FloatingText
         /// <summary>普通伤害 - 白色小字，快速消失</summary>
         Normal,
         
-        /// <summary>暴击伤害 - 红色大字，弹跳动画</summary>
+        /// <summary>暴击伤害 - 红色大字，弹跳动画，爆炸图标</summary>
         Crit,
         
         /// <summary>状态文本 - 黄色，如 STUN!, BLOCK</summary>
-        Status
+        Status,
+        
+        /// <summary>Boss护甲伤害 - 银灰色小字，盾牌图标</summary>
+        BossShield,
+        
+        /// <summary>Boss核心伤害 - 红色大字，眼睛图标（可选）</summary>
+        BossCore
     }
 }
