@@ -104,28 +104,34 @@ namespace LightVsDecay.Data.SO
         public float chargeBounceBackDuration = 0.5f;
         
         [Header("═══ 角力物理 (Pushback) ═══")]
-        [Tooltip("被推住判定：速度低于此值视为静止")]
-        public float stoppedVelocityThreshold = 0.5f;
+        [Tooltip("安全线Y坐标（推回这里算玩家胜利）")]
+        public float safeLineY = 3.0f;
         
-        [Tooltip("被推住判定：需要保持静止的时间")]
-        public float stoppedDurationRequired = 0.5f;
+        [Tooltip("撞击线Y坐标（Boss到达这里算玩家失败）")]
+        public float hitLineY = -3.0f;
+             
+        [Tooltip("角力最大持续时间（防止卡住）")]
+        public float maxCrushingDuration = 15f;
         
         [Tooltip("被推住后的僵直时长（奖励时间）")]
-        public float counterStunDuration = 2.0f;
+        public float counterStunDuration = 3.0f;
         
         [Tooltip("普通激光对Boss的基础推力")]
-        public float baseLaserPushForce = 2f;
+        public float baseLaserPushForce = 80f;
         
         [Tooltip("Impact技能等级的推力倍率 [Lv0, Lv1, Lv2, Lv3, Lv4, Lv5]")]
-        public float[] impactPushMultipliers = new float[] { 0.1f, 0.3f, 0.5f, 0.8f, 1.2f, 1.5f };
+        public float[] impactPushMultipliers = new float[] { 0.3f, 0.5f, 0.7f, 1.0f, 1.3f, 1.6f };
         
         [Tooltip("大招激光推力倍率")]
-        public float ultPushMultiplier = 2.0f;
+        public float ultPushMultiplier = 2.5f;
         
         [Tooltip("冲撞力（Boss向下冲的力）")]
-        public float chargeForce = 15f;
+        public float chargeForce = 100f;
+        [Tooltip("角力前召唤小怪数量（0=不召唤）")]
+        public int crushingSummonCount = 4;
         [Tooltip("蓄力霸体时间（前X秒不可打断）")]
         public float telegraphSuperArmorDuration = 1.0f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Stun (僵直) 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

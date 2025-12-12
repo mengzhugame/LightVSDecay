@@ -2,7 +2,7 @@
 // BossController.cs
 // 文件位置: Assets/Scripts/Logic/Boss/BossController.cs
 // 用途：Boss 行为状态机主控制器 (The Corruptor - 污染之核)
-// 【重构】实现完整的野蛮冲撞 + 角力物理系统
+// 【重构】实现完整的野蛮冲撞 + 持续角力物理系统
 // ============================================================
 
 using UnityEngine;
@@ -28,14 +28,14 @@ namespace LightVsDecay.Logic.Boss
         Spawn,      // 入场
         Idle,       // 待机/游走
         Summon,     // 召唤
-        Charge,     // 冲撞（包含蓄力+冲锋）
+        Charge,     // 冲撞（包含蓄力+持续角力）
         Stun        // 僵直/虚弱
     }
     
     /// <summary>
     /// Boss 控制器 - 污染之核 (The Corruptor)
     /// 状态机循环：Spawn -> Idle -> Summon/Charge -> Idle -> ...
-    /// 【核心玩法】野蛮冲撞 + 角力物理系统
+    /// 【核心玩法】野蛮冲撞 + 持续角力物理系统
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(BossHealth))]
@@ -99,18 +99,19 @@ namespace LightVsDecay.Logic.Boss
         private bool isCharging = false;            // 是否正在冲锋阶段（非蓄力）
         private bool chargeInterrupted = false;     // 蓄力是否被打断
         
-        // 【新增】角力物理相关
+        // 【核心】角力物理相关
         private Vector2 accumulatedPushForce;       // 累积的激光推力
-        private float stoppedTimer = 0f;            // 被推住的计时器
-        private bool isBeingPushed = false;         // 是否正在被激光推
+        private bool isBeingPushed = false;         // 是否正在被激光推（本帧）
+        
+        // 霸体状态
+        private bool isSuperArmor = false;
         
         // 颜色缓存（用于僵直变暗）
         private Color[] originalColors;
         
         // 协程引用
         private Coroutine stateCoroutine;
-        // 【新增】霸体状态
-        private bool isSuperArmor = false;
+        
 #if DOTWEEN
         private Tweener moveTweener;
         private Tweener shakeTweener;
@@ -126,9 +127,11 @@ namespace LightVsDecay.Logic.Boss
         
         /// <summary>是否处于可被打断的蓄力阶段（非霸体时）</summary>
         public bool IsInTelegraphPhase => currentState == BossState.Charge && !isCharging && !isSuperArmor;
+        
         /// <summary>是否处于霸体状态</summary>
         public bool IsSuperArmor => isSuperArmor;
-        /// <summary>是否正在冲撞中（可以被推）</summary>
+        
+        /// <summary>是否正在冲撞/角力中（可以被推）</summary>
         public bool IsCharging => currentState == BossState.Charge && isCharging;
         
         /// <summary>血量百分比</summary>
@@ -208,7 +211,7 @@ namespace LightVsDecay.Logic.Boss
         
         private void FixedUpdate()
         {
-            // 【新增】在冲撞阶段应用累积的推力
+            // 【核心】在冲撞/角力阶段应用累积的推力
             if (isCharging && accumulatedPushForce.sqrMagnitude > 0.01f)
             {
                 // 推力抵消冲撞速度
@@ -216,7 +219,7 @@ namespace LightVsDecay.Logic.Boss
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[BossController] 受到推力: {accumulatedPushForce.magnitude:F2}");
+                    Debug.Log($"[BossController] 受到推力: {accumulatedPushForce.magnitude:F2}, 当前Y速度: {rb.velocity.y:F2}");
                 }
                 
                 // 重置累积推力（每帧重新计算）
@@ -235,7 +238,7 @@ namespace LightVsDecay.Logic.Boss
         /// <param name="pushForce">推力向量（方向 + 大小）</param>
         public void ApplyLaserPushForce(Vector2 pushForce)
         {
-            // 只在冲撞阶段接受推力
+            // 只在冲撞/角力阶段接受推力
             if (!isCharging) return;
             
             // 累积推力（FixedUpdate 中应用）
@@ -244,17 +247,17 @@ namespace LightVsDecay.Logic.Boss
         }
         
         /// <summary>
-        /// 计算当前激光对Boss的推力
+        /// 计算当前激光对Boss的推力大小
         /// </summary>
         /// <param name="impactLevel">Impact技能等级 (0-5)</param>
         /// <param name="isUltMode">是否开启大招</param>
         /// <returns>推力大小</returns>
         public float CalculatePushForce(int impactLevel, bool isUltMode)
         {
-            float baseForce = config != null ? config.baseLaserPushForce : 2f;
+            float baseForce = config != null ? config.baseLaserPushForce : 80f;
             
             // Impact 等级倍率
-            float impactMultiplier = 0.1f; // 默认 Lv0
+            float impactMultiplier = 0.3f; // 默认 Lv0
             if (config != null && config.impactPushMultipliers != null && impactLevel < config.impactPushMultipliers.Length)
             {
                 impactMultiplier = config.impactPushMultipliers[impactLevel];
@@ -264,13 +267,13 @@ namespace LightVsDecay.Logic.Boss
                 // 回退值
                 switch (impactLevel)
                 {
-                    case 0: impactMultiplier = 0.1f; break;   // 微弱，减速10%
-                    case 1: impactMultiplier = 0.3f; break;
-                    case 2: impactMultiplier = 0.5f; break;
-                    case 3: impactMultiplier = 0.8f; break;
-                    case 4: impactMultiplier = 1.2f; break;   // 可以刹停
-                    case 5: impactMultiplier = 1.5f; break;   // 轻松刹停
-                    default: impactMultiplier = 0.1f; break;
+                    case 0: impactMultiplier = 0.3f; break;
+                    case 1: impactMultiplier = 0.5f; break;
+                    case 2: impactMultiplier = 0.7f; break;
+                    case 3: impactMultiplier = 1.0f; break;
+                    case 4: impactMultiplier = 1.3f; break;
+                    case 5: impactMultiplier = 1.6f; break;
+                    default: impactMultiplier = 0.3f; break;
                 }
             }
             
@@ -279,7 +282,7 @@ namespace LightVsDecay.Logic.Boss
             // 大招加成
             if (isUltMode)
             {
-                float ultMultiplier = config != null ? config.ultPushMultiplier : 2.0f;
+                float ultMultiplier = config != null ? config.ultPushMultiplier : 2.5f;
                 totalForce *= ultMultiplier;
             }
             
@@ -364,10 +367,15 @@ namespace LightVsDecay.Logic.Boss
             {
                 isCharging = false;
                 chargeInterrupted = false;
-                isSuperArmor = false;  // 【新增】重置霸体
+                isSuperArmor = false;
                 accumulatedPushForce = Vector2.zero;
-                stoppedTimer = 0f;
                 isBeingPushed = false;
+                
+                // 关闭红色特效
+                if (redBodyEffect != null)
+                {
+                    redBodyEffect.SetActive(false);
+                }
             }
             
 #if DOTWEEN
@@ -442,7 +450,6 @@ namespace LightVsDecay.Logic.Boss
                 .SetEase(Ease.OutQuad)
                 .OnComplete(() => moveComplete = true);
             
-            // 等待移动完成
             while (!moveComplete)
             {
                 yield return null;
@@ -465,7 +472,7 @@ namespace LightVsDecay.Logic.Boss
             transform.position = battleAnchorPosition;
 #endif
             
-            // 播放咆哮（TODO: 音效）
+            // 播放咆哮
             if (showDebugInfo)
             {
                 Debug.Log("[BossController] BOSS 咆哮！");
@@ -480,9 +487,9 @@ namespace LightVsDecay.Logic.Boss
                 CameraShake.Instance.Shake(shakeIntensity, shakeDuration);
             }
             
-            // 短暂停顿后进入Idle
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(shakeDuration);
             
+            // 进入 Idle
             ChangeState(BossState.Idle);
         }
         
@@ -498,66 +505,73 @@ namespace LightVsDecay.Logic.Boss
                 eyeController.Close();
             }
             
-            // 隐藏红色特效
-            if (redBodyEffect != null)
-            {
-                redBodyEffect.SetActive(false);
-            }
-            
             // 根据血量决定Idle时长
-            currentIdleDuration = config != null 
-                ? config.GetIdleDuration(HealthPercent) 
-                : Random.Range(3f, 5f);
+            bool isRage = HealthPercent < (config != null ? config.rageHealthThreshold : 0.3f);
+            
+            if (isRage)
+            {
+                float minDur = config != null ? config.rageIdleDurationMin : 1.5f;
+                float maxDur = config != null ? config.rageIdleDurationMax : 2.5f;
+                currentIdleDuration = Random.Range(minDur, maxDur);
+            }
+            else
+            {
+                float minDur = config != null ? config.idleDurationMin : 3.0f;
+                float maxDur = config != null ? config.idleDurationMax : 5.0f;
+                currentIdleDuration = Random.Range(minDur, maxDur);
+            }
             
             idleTimer = 0f;
             
-            // 选择随机移动目标
-            idleMoveTargetX = Random.Range(screenMinX, screenMaxX);
+            // 设置下一个移动目标
+            SetNextIdleMoveTarget();
+            
+            // 启动 Idle 更新协程
+            stateCoroutine = StartCoroutine(IdleRoutine());
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 进入Idle，持续 {currentIdleDuration:F1}s");
+                Debug.Log($"[BossController] 进入 Idle, 时长: {currentIdleDuration:F1}s, 狂暴: {isRage}");
             }
         }
         
-        private void Update()
+        private IEnumerator IdleRoutine()
         {
-            if (currentState == BossState.Idle)
-            {
-                UpdateIdle();
-            }
-        }
-        
-        private void UpdateIdle()
-        {
-            idleTimer += Time.deltaTime;
-            
-            // 水平移动
             float moveSpeed = config != null ? config.idleMoveSpeed : 1.5f;
-            float targetX = idleMoveTargetX;
-            float currentX = transform.position.x;
             
-            // 缓慢移向目标
-            float newX = Mathf.MoveTowards(currentX, targetX, moveSpeed * Time.deltaTime);
-            transform.position = new Vector3(newX, transform.position.y, transform.position.z);
-            
-            // 到达目标后选新目标
-            if (Mathf.Abs(newX - targetX) < 0.1f)
+            while (idleTimer < currentIdleDuration)
             {
-                idleMoveTargetX = Random.Range(screenMinX, screenMaxX);
+                idleTimer += Time.deltaTime;
+                
+                // 水平游走
+                float currentX = transform.position.x;
+                float newX = Mathf.MoveTowards(currentX, idleMoveTargetX, moveSpeed * Time.deltaTime);
+                transform.position = new Vector3(newX, transform.position.y, transform.position.z);
+                
+                // 到达目标后设置新目标
+                if (Mathf.Abs(newX - idleMoveTargetX) < 0.1f)
+                {
+                    SetNextIdleMoveTarget();
+                }
+                
+                yield return null;
             }
             
-            // Idle 时间到，选择下一个技能
-            if (idleTimer >= currentIdleDuration)
-            {
-                DecideNextSkill();
-            }
+            // Idle 结束，决定下一个技能
+            DecideNextSkill();
+        }
+        
+        private void SetNextIdleMoveTarget()
+        {
+            // 在屏幕范围内随机选择一个目标X坐标
+            idleMoveTargetX = Random.Range(screenMinX, screenMaxX);
         }
         
         private void DecideNextSkill()
         {
             int mobCount = GetCurrentMobCount();
             
+            // 使用配置决定技能
             bool shouldSummon = config != null 
                 ? config.ShouldSummon(mobCount, lastSkillWasCharge)
                 : (mobCount < 3);
@@ -576,13 +590,11 @@ namespace LightVsDecay.Logic.Boss
         
         private int GetCurrentMobCount()
         {
-            // 从 EnemyPoolManager 获取活跃敌人数量
             if (EnemyPoolManager.Instance != null)
             {
                 return EnemyPoolManager.Instance.TotalActiveEnemies;
             }
             
-            // Fallback: 查找场景中的敌人
             return GameObject.FindGameObjectsWithTag("Enemy").Length;
         }
         
@@ -663,20 +675,50 @@ namespace LightVsDecay.Logic.Boss
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // State: Charge (冲撞) - 【重构】完整角力物理
+        // State: Charge (冲撞) - 【重构】持续角力物理系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private IEnumerator ChargeRoutine()
         {
             chargeInterrupted = false;
             isCharging = false;
-            stoppedTimer = 0f;
             accumulatedPushForce = Vector2.zero;
             
-            float telegraphDuration = config != null ? config.chargeTelegraphDuration : 1.5f;
+            float telegraphDuration = config != null ? config.chargeTelegraphDuration : 2.0f;
             float windupDistance = config != null ? config.chargeWindupDistance : 0.5f;
             
-           // ═══════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════
+            // Phase 0: 先召唤一波小怪（制造困境）
+            // ═══════════════════════════════════════════════════
+            
+            int summonCount = config != null ? config.crushingSummonCount : 4;
+            if (summonCount > 0 && EnemyPoolManager.Instance != null)
+            {
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[BossController] 🐙 冲撞前召唤 {summonCount} 只小怪！");
+                }
+                
+                for (int i = 0; i < summonCount; i++)
+                {
+                    if (EnemyPoolManager.Instance.IsAtGlobalCapacity) break;
+                    
+                    // 在屏幕两侧生成（制造分散玩家注意力的效果）
+                    float side = (i % 2 == 0) ? -1f : 1f;
+                    float offsetX = side * Random.Range(2f, 4f);
+                    float offsetY = Random.Range(-1f, 1f);
+                    Vector3 spawnPos = transform.position + new Vector3(offsetX, offsetY, 0);
+                    
+                    // 优先生成 Rusher（速攻怪）
+                    EnemyType type = (i < summonCount / 2) ? EnemyType.Rusher : EnemyType.Slime;
+                    EnemyPoolManager.Instance.Spawn(type, spawnPos);
+                }
+                
+                // 短暂等待，让玩家注意到小怪
+                yield return new WaitForSeconds(0.5f);
+            }
+            
+            // ═══════════════════════════════════════════════════
             // Phase A: Telegraph (蓄力预警) - 带霸体机制
             // ═══════════════════════════════════════════════════
             
@@ -691,7 +733,7 @@ namespace LightVsDecay.Logic.Boss
                 eyeController.Open();
             }
             
-            // 显示红色特效（眼睛变红）
+            // 显示红色特效（怒目）
             if (redBodyEffect != null)
             {
                 redBodyEffect.SetActive(true);
@@ -713,9 +755,9 @@ namespace LightVsDecay.Logic.Boss
             }
 #endif
             
-            // 【新增】霸体时间（前1秒不可打断）
+            // 霸体时间（前X秒不可打断）
             float superArmorDuration = config != null ? config.telegraphSuperArmorDuration : 1.0f;
-            isSuperArmor = true;  // 霸体状态
+            isSuperArmor = true;
             
             if (showDebugInfo)
             {
@@ -756,73 +798,55 @@ namespace LightVsDecay.Logic.Boss
             }
             
             // ═══════════════════════════════════════════════════
-            // Phase B: Dash (冲锋) - 角力物理核心
+            // Phase B: Crushing Press (持续角力) - 核心玩法
             // ═══════════════════════════════════════════════════
             
             isCharging = true;
+            rb.velocity = Vector2.zero; // 清空之前的速度
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🔴 野蛮冲撞开始！");
+                Debug.Log("[BossController] 🔴 野蛮冲撞开始！持续向下压迫！");
             }
             
-            // 目标位置（玩家塔底部）
-            Vector3 targetPos = playerTower != null 
-                ? new Vector3(playerTower.position.x, playerTower.position.y - 1f, 0f)
-                : new Vector3(transform.position.x, -4f, 0f);
+            // 获取配置参数
+            float chargeForce = config != null ? config.chargeForce : 100f;
+            float safeLineY = config != null ? config.safeLineY : 3.0f;
+            float hitLineY = config != null ? config.hitLineY : -3.0f;
+            float maxDuration = config != null ? config.maxCrushingDuration : 15f;
             
-            float chargeForce = config != null ? config.chargeForce : 15f;
-            float maxDashTime = 3f; // 最大冲撞时间防止卡住
-            float dashElapsed = 0f;
+            float crushingElapsed = 0f;
             
-            // 冲撞方向（向下）
-            Vector2 dashDirection = Vector2.down;
-            
-            // 被推住判定参数
-            float stoppedThreshold = config != null ? config.stoppedVelocityThreshold : 0.5f;
-            float stoppedRequired = config != null ? config.stoppedDurationRequired : 0.5f;
-            
-            while (dashElapsed < maxDashTime)
+            // 【核心循环】持续角力
+            while (crushingElapsed < maxDuration)
             {
-                dashElapsed += Time.deltaTime;
+                crushingElapsed += Time.deltaTime;
                 
-                // 持续施加冲撞力
-                rb.AddForce(dashDirection * chargeForce, ForceMode2D.Force);
+                // 持续施加向下的压迫力
+                rb.AddForce(Vector2.down * chargeForce, ForceMode2D.Force);
                 
                 // ─────────────────────────────────────────────────
-                // 检查1: 是否撞到玩家
+                // 胜利条件：被推回安全线上方
                 // ─────────────────────────────────────────────────
-                if (transform.position.y < -3f)
+                if (transform.position.y > safeLineY)
+                {
+                    OnChargePushedBack();
+                    yield break;
+                }
+                
+                // ─────────────────────────────────────────────────
+                // 失败条件：撞到玩家（到达撞击线）
+                // ─────────────────────────────────────────────────
+                if (transform.position.y < hitLineY)
                 {
                     OnChargeHitPlayer();
-                    break;
+                    yield break;
                 }
                 
-                // ─────────────────────────────────────────────────
-                // 检查2: 是否被激光推住（角力成功）
-                // ─────────────────────────────────────────────────
-                float currentSpeed = Mathf.Abs(rb.velocity.y);
-                
-                if (currentSpeed < stoppedThreshold && dashElapsed > 0.3f)
+                // 调试信息
+                if (showDebugInfo && Time.frameCount % 30 == 0)
                 {
-                    stoppedTimer += Time.deltaTime;
-                    
-                    if (showDebugInfo && isBeingPushed)
-                    {
-                        Debug.Log($"[BossController] ⚡ 角力中... 静止时间: {stoppedTimer:F2}/{stoppedRequired:F2}");
-                    }
-                    
-                    // 被推住足够久 -> 玩家胜利！
-                    if (stoppedTimer >= stoppedRequired)
-                    {
-                        OnChargeStopped();
-                        yield break; // 直接退出，不执行后续
-                    }
-                }
-                else
-                {
-                    // 速度恢复，重置计时
-                    stoppedTimer = Mathf.Max(0f, stoppedTimer - Time.deltaTime * 2f);
+                    Debug.Log($"[BossController] 角力中... Y={transform.position.y:F2}, 速度Y={rb.velocity.y:F2}, 被推={isBeingPushed}");
                 }
                 
                 // 重置被推标记（下一帧重新计算）
@@ -831,12 +855,43 @@ namespace LightVsDecay.Logic.Boss
                 yield return null;
             }
             
-            // 冲撞结束，没撞到也没被推住 -> 弹回
+            // 超时：弹回原位
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 角力超时，弹回原位");
+            }
+            
             OnChargeComplete();
         }
         
         /// <summary>
-        /// 冲撞撞到玩家
+        /// 【玩家胜利】Boss被推回安全线
+        /// </summary>
+        private void OnChargePushedBack()
+        {
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 🎉 被激光推回！玩家角力胜利！进入僵直奖励时间！");
+            }
+            
+            rb.velocity = Vector2.zero;
+            isCharging = false;
+            
+            // 显示 STOPPED! 飘字
+            ShowCounterText("STOPPED!");
+            
+            // 屏幕轻微震动（成功反制的感觉）
+            if (CameraShake.Instance != null)
+            {
+                CameraShake.Instance.Shake(0.3f, 0.2f);
+            }
+            
+            // 进入僵直状态（奖励时间）- 眼睛保持睁开
+            ChangeState(BossState.Stun);
+        }
+        
+        /// <summary>
+        /// 【玩家失败】Boss撞到玩家
         /// </summary>
         private void OnChargeHitPlayer()
         {
@@ -848,9 +903,12 @@ namespace LightVsDecay.Logic.Boss
             rb.velocity = Vector2.zero;
             isCharging = false;
             
-            // 对玩家造成伤害（300点）
+            // 对玩家造成伤害
             float damage = config != null ? config.chargeHitDamage : 300f;
             ApplyDamageToPlayer(damage);
+            
+            // 显示伤害飘字
+            ShowCounterText($"-{(int)damage}");
             
             // 屏幕震动（强烈）
             float shakeIntensity = config != null ? config.chargeHitShakeIntensity : 0.8f;
@@ -861,38 +919,12 @@ namespace LightVsDecay.Logic.Boss
                 CameraShake.Instance.ImpactShake(Vector2.down, shakeIntensity, shakeDuration);
             }
             
-            // BOSS 弹回并进入短暂僵直
+            // Boss弹回并进入短暂僵直
             StartCoroutine(BounceBackAndRecover());
         }
         
         /// <summary>
-        /// 冲撞被激光推住（玩家角力成功！）
-        /// </summary>
-        private void OnChargeStopped()
-        {
-            if (showDebugInfo)
-            {
-                Debug.Log("[BossController] 🛡️ 被激光推住！玩家角力成功！进入僵直奖励时间！");
-            }
-            
-            rb.velocity = Vector2.zero;
-            isCharging = false;
-            
-            // 显示 COUNTER! 飘字
-            ShowCounterText("STOPPED!");
-            
-            // 屏幕轻微震动（成功反制的感觉）
-            if (CameraShake.Instance != null)
-            {
-                CameraShake.Instance.Shake(0.3f, 0.2f);
-            }
-            
-            // 进入僵直状态（奖励时间）
-            ChangeState(BossState.Stun);
-        }
-        
-        /// <summary>
-        /// 冲撞正常结束（没撞到玩家也没被推住）
+        /// 冲撞超时结束
         /// </summary>
         private void OnChargeComplete()
         {
@@ -952,6 +984,9 @@ namespace LightVsDecay.Logic.Boss
             }
             transform.position = battleAnchorPosition;
 #endif
+            
+            // 弹回后返回 Idle
+            ChangeState(BossState.Idle);
         }
         
         /// <summary>
@@ -993,7 +1028,6 @@ namespace LightVsDecay.Logic.Boss
         {
             if (FloatingTextManager.Instance != null)
             {
-                // 使用特殊样式显示（黄色大字）
                 FloatingTextManager.Instance.ShowStatus(transform.position, text);
             }
         }
@@ -1004,7 +1038,7 @@ namespace LightVsDecay.Logic.Boss
         /// </summary>
         public void InterruptCharge()
         {
-            if (currentState == BossState.Charge && !isCharging)
+            if (currentState == BossState.Charge && !isCharging && !isSuperArmor)
             {
                 chargeInterrupted = true;
                 
@@ -1022,42 +1056,44 @@ namespace LightVsDecay.Logic.Boss
         private IEnumerator StunRoutine()
         {
             // 使用反制僵直时长（被推住的奖励）
-            float duration = config != null ? config.counterStunDuration : 2.0f;
+            float duration = config != null ? config.counterStunDuration : 3.0f;
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 💫 进入僵直！持续 {duration}s - 这是奖励时间！疯狂输出吧！");
+                Debug.Log($"[BossController] 进入僵直！眼睛睁开 {duration} 秒！");
             }
             
-            // 眼睛保持睁开（奖励玩家，200%弱点伤害）
+            // 【关键】眼睛保持睁开（奖励玩家DPS窗口）
             if (eyeController != null)
             {
                 eyeController.Open();
             }
             
-            // 身体变暗（表示虚弱）
-            DarkenColors();
+            // 颜色变暗
+            DarkenBody();
             
-            // 停止移动
-            rb.velocity = Vector2.zero;
-            
-            // 隐藏红色特效
+            // 关闭红色特效
             if (redBodyEffect != null)
             {
                 redBodyEffect.SetActive(false);
             }
             
-            // 等待僵直结束
             yield return new WaitForSeconds(duration);
             
             // 恢复颜色
             RestoreColors();
             
+            // 眼睛闭合
+            if (eyeController != null)
+            {
+                eyeController.Close();
+            }
+            
             // 返回 Idle
             ChangeState(BossState.Idle);
         }
         
-        private void DarkenColors()
+        private void DarkenBody()
         {
             float darkenAmount = config != null ? config.stunDarkenAmount : 0.5f;
             
@@ -1124,15 +1160,16 @@ namespace LightVsDecay.Logic.Boss
         {
             if (!showDebugInfo) return;
             
-            GUILayout.BeginArea(new Rect(10, 150, 250, 180));
-            GUILayout.Label("=== Boss Controller ===");
+            GUILayout.BeginArea(new Rect(10, 150, 280, 220));
+            GUILayout.Label("=== Boss Controller (角力系统) ===");
             GUILayout.Label($"State: {currentState}");
             GUILayout.Label($"HP: {HealthPercent:P1}");
             GUILayout.Label($"Eye: {(eyeController != null ? eyeController.CurrentState.ToString() : "N/A")}");
             GUILayout.Label($"Mobs: {GetCurrentMobCount()}");
             GUILayout.Label($"IsCharging: {isCharging}");
-            GUILayout.Label($"Velocity: {(rb != null ? rb.velocity.magnitude.ToString("F2") : "N/A")}");
-            GUILayout.Label($"StoppedTimer: {stoppedTimer:F2}");
+            GUILayout.Label($"Position Y: {transform.position.y:F2}");
+            GUILayout.Label($"Velocity Y: {(rb != null ? rb.velocity.y.ToString("F2") : "N/A")}");
+            GUILayout.Label($"SafeLineY: {(config != null ? config.safeLineY : 3.0f):F1} | HitLineY: {(config != null ? config.hitLineY : -3.0f):F1}");
             
             GUILayout.Space(5);
             
@@ -1160,9 +1197,15 @@ namespace LightVsDecay.Logic.Boss
             float y = battleAnchorPosition.y;
             Gizmos.DrawLine(new Vector3(screenMinX, y, 0), new Vector3(screenMaxX, y, 0));
             
-            // 绘制撞击判定线
+            // 绘制安全线
+            float safeY = config != null ? config.safeLineY : 3.0f;
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(new Vector3(-10, safeY, 0), new Vector3(10, safeY, 0));
+            
+            // 绘制撞击线
+            float hitY = config != null ? config.hitLineY : -3.0f;
             Gizmos.color = Color.red;
-            Gizmos.DrawLine(new Vector3(-10, -3, 0), new Vector3(10, -3, 0));
+            Gizmos.DrawLine(new Vector3(-10, hitY, 0), new Vector3(10, hitY, 0));
         }
 #endif
     }

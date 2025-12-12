@@ -34,19 +34,21 @@ MonoBehaviour:
   chargeHitShakeIntensity: 0.8
   chargeHitShakeDuration: 0.3
   chargeBounceBackDuration: 0.5
-  stoppedVelocityThreshold: 0.5
-  stoppedDurationRequired: 0.5
+  safeLineY: 3
+  hitLineY: -3
+  maxCrushingDuration: 15
   counterStunDuration: 2
-  baseLaserPushForce: 2
+  baseLaserPushForce: 80
   impactPushMultipliers:
-  - 0.1
   - 0.3
-  - 0.5
-  - 0.8
+  - 0.6
+  - 0.9
   - 1.2
   - 1.5
+  - 2
   ultPushMultiplier: 2
-  chargeForce: 15
+  chargeForce: 100
+  crushingSummonCount: 4
   telegraphSuperArmorDuration: 1
   stunDuration: 2.5
   stunDarkenAmount: 0.5
