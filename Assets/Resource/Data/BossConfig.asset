@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f08c93735e3ebd468254b7f0b24e8d3, type: 3}
+  m_Name: BossConfig
+  m_EditorClassIdentifier: 
+  spawnDuration: 2.5
+  battleAnchorY: 3.5
+  spawnShakeIntensity: 0.5
+  spawnShakeDuration: 0.5
+  idleDurationMin: 3
+  idleDurationMax: 5
+  rageIdleDurationMin: 1.5
+  rageIdleDurationMax: 2.5
+  rageHealthThreshold: 0.3
+  idleMoveSpeed: 1.5
+  idleMoveRangePercent: 0.8
+  summonDuration: 1.5
+  summonShakeIntensity: 0.1
+  summonShakeFrequency: 30
+  summonMinionCount: 3
+  chargeTelegraphDuration: 2
+  chargeWindupDistance: 0.5
+  chargeDashSpeed: 15
+  chargeHitDamage: 300
+  chargeHitShakeIntensity: 0.8
+  chargeHitShakeDuration: 0.3
+  chargeBounceBackDuration: 0.5
+  stunDuration: 2.5
+  stunDarkenAmount: 0.5
+  eyeClosedScaleY: 0.1
+  eyeOpenColliderScale: 1.5
+  eyeTransitionDuration: 0.2
+  cleanSceneMobThreshold: 3
+  chaoticSceneMobThreshold: 5
+  cleanSceneSummonChance: 0.7

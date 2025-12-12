@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 3988100806900536482}
   - component: {fileID: 8609685334684566284}
   - component: {fileID: 8982475681369856819}
+  - component: {fileID: 5778125128812573581}
   m_Layer: 8
   m_HasEditorInfo: 1
   m_Name: Eyes
@@ -158,6 +159,27 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1.5365796, y: 1.2965685}
   m_EdgeRadius: 0
+--- !u!114 &5778125128812573581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1328806322944234479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 864fca0977edead4b939023bcf1cd733, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  eyeTransform: {fileID: 1343997964473775117}
+  eyeRenderer: {fileID: 3988100806900536482}
+  eyeCollider: {fileID: 8982475681369856819}
+  redBodyEffect: {fileID: 4801645900123614117}
+  pupilGlowEffect: {fileID: 0}
+  closedScaleY: 0.1
+  openColliderScale: 1.5
+  transitionDuration: 0.2
+  showDebugInfo: 0
 --- !u!1 &2365372588096546128
 GameObject:
   m_ObjectHideFlags: 0
@@ -438,6 +460,7 @@ GameObject:
   - component: {fileID: 2878663063999937833}
   - component: {fileID: 8783612272968732188}
   - component: {fileID: 3305369117275716465}
+  - component: {fileID: 5212838760448453320}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Boss
@@ -562,3 +585,24 @@ MonoBehaviour:
   coreDamageMultiplier: 2
   coreCollider: {fileID: 8982475681369856819}
   showDebugInfo: 0
+--- !u!114 &5212838760448453320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7651956220622171640}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17d8803025536e9489aa84bffb9da209, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: a7575bca66b9d0648b544d425b82bca3, type: 2}
+  eyeController: {fileID: 5778125128812573581}
+  bodyTransform: {fileID: 8875329790981093609}
+  redBodyEffect: {fileID: 4801645900123614117}
+  bodyRenderers:
+  - {fileID: 3062438057919091048}
+  - {fileID: 3988100806900536482}
+  playerTower: {fileID: 0}
+  showDebugInfo: 1

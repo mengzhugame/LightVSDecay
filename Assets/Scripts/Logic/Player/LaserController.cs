@@ -10,6 +10,7 @@ using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Data;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
 
 namespace LightVsDecay.Logic.Player
@@ -352,6 +353,22 @@ namespace LightVsDecay.Logic.Player
                         
                         // 核心伤害 - 200% 弱点伤害，可叠加暴击
                         bossHealth.TakeCoreDamage(damage, collider.transform.position, isCrit, critDamageMultiplier);
+                        // ══════════════════════════════════════════════
+                        // 【新增】尝试打断Boss冲撞
+                        // ══════════════════════════════════════════════
+                        BossController bossController = bossHealth.GetComponent<BossController>();
+                        if (bossController != null && bossController.IsInTelegraphPhase)
+                        {
+                            // TODO: 检查玩家是否有 Impact Max 技能
+                            // if (HasImpactMaxSkill())
+                            // {
+                            bossController.InterruptCharge();
+                            if (showDebugInfo)
+                            {
+                                Debug.Log("[LaserController] 🛑 打断Boss冲撞蓄力！");
+                            }
+                            // }
+                        }
                         hitBosses.Add(bossHealth);
                         
                         if (showDebugInfo)
