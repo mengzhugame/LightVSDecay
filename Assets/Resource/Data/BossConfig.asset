@@ -27,13 +27,27 @@ MonoBehaviour:
   summonShakeIntensity: 0.1
   summonShakeFrequency: 30
   summonMinionCount: 3
-  chargeTelegraphDuration: 2
+  chargeTelegraphDuration: 1.5
   chargeWindupDistance: 0.5
   chargeDashSpeed: 15
-  chargeHitDamage: 300
+  chargeHitDamage: 3
   chargeHitShakeIntensity: 0.8
   chargeHitShakeDuration: 0.3
   chargeBounceBackDuration: 0.5
+  stoppedVelocityThreshold: 0.5
+  stoppedDurationRequired: 0.5
+  counterStunDuration: 2
+  baseLaserPushForce: 2
+  impactPushMultipliers:
+  - 0.1
+  - 0.3
+  - 0.5
+  - 0.8
+  - 1.2
+  - 1.5
+  ultPushMultiplier: 2
+  chargeForce: 15
+  telegraphSuperArmorDuration: 1
   stunDuration: 2.5
   stunDarkenAmount: 0.5
   eyeClosedScaleY: 0.1

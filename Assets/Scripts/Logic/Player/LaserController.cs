@@ -342,6 +342,7 @@ namespace LightVsDecay.Logic.Player
                 // ═══════════════════════════════════════════════════
                 // Boss 核心检测（EnemyEyes Layer）
                 // 只有 Boss 眼睛在这个层有 Collider
+                // 【重构】实现完整的角力物理系统
                 // ═══════════════════════════════════════════════════
                 if (colliderLayer == bossEyesLayerIndex)
                 {
@@ -353,22 +354,65 @@ namespace LightVsDecay.Logic.Player
                         
                         // 核心伤害 - 200% 弱点伤害，可叠加暴击
                         bossHealth.TakeCoreDamage(damage, collider.transform.position, isCrit, critDamageMultiplier);
+                        
                         // ══════════════════════════════════════════════
-                        // 【新增】尝试打断Boss冲撞
+                        // 【角力系统】对 Boss 施加推力 + 打断判定
                         // ══════════════════════════════════════════════
                         BossController bossController = bossHealth.GetComponent<BossController>();
-                        if (bossController != null && bossController.IsInTelegraphPhase)
+                        if (bossController != null)
                         {
-                            // TODO: 检查玩家是否有 Impact Max 技能
-                            // if (HasImpactMaxSkill())
-                            // {
-                            bossController.InterruptCharge();
-                            if (showDebugInfo)
+                            // 获取技能等级和大招状态
+                            int impactLevel = SkillEffectManager.Instance != null 
+                                ? SkillEffectManager.Instance.GetImpactLevel() 
+                                : 0;
+                            
+                            // === 情况1: 蓄力阶段 - 尝试打断 ===
+                            if (bossController.IsInTelegraphPhase)
                             {
-                                Debug.Log("[LaserController] 🛑 打断Boss冲撞蓄力！");
+                                // 检查是否可以打断（Impact Lv.4+ 或 大招）
+                                bool canInterrupt = SkillEffectManager.Instance != null
+                                    ? SkillEffectManager.Instance.CanInterruptBossCharge(isUltMode)
+                                    : (impactLevel >= 4 || isUltMode);
+                                
+                                if (canInterrupt)
+                                {
+                                    bossController.InterruptCharge();
+                                    
+                                    if (showDebugInfo)
+                                    {
+                                        Debug.Log("[LaserController] 🛑 打断 BOSS 蓄力！");
+                                    }
+                                }
                             }
-                            // }
+                            // 【新增】霸体状态提示
+                            else if (bossController.IsSuperArmor)
+                            {
+                                // 霸体中，无法打断，但可以输出伤害
+                                if (showDebugInfo)
+                                {
+                                    Debug.Log("[LaserController] 🛡️ BOSS 霸体中，无法打断！");
+                                }
+                            }
+                            // === 情况2: 冲撞阶段 - 施加推力（角力核心） ===
+                            else if (bossController.IsCharging)
+                            {
+                                // 计算推力
+                                float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
+                                
+                                // 推力方向（向上，与冲撞方向相反）
+                                Vector2 pushDirection = Vector2.up;
+                                Vector2 pushForce = pushDirection * pushMagnitude;
+                                
+                                // 应用推力
+                                bossController.ApplyLaserPushForce(pushForce);
+                                
+                                if (showDebugInfo)
+                                {
+                                    Debug.Log($"[LaserController] ⚡ 对冲撞中的 BOSS 施加推力: {pushMagnitude:F2} (Impact Lv.{impactLevel}, Ult: {isUltMode})");
+                                }
+                            }
                         }
+                        
                         hitBosses.Add(bossHealth);
                         
                         if (showDebugInfo)

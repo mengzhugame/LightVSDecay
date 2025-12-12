@@ -210,7 +210,61 @@ namespace LightVsDecay.Logic.Player
             
             return true;
         }
-        
+        /// <summary>
+        /// 受到BOSS伤害（大数值伤害，如冲撞300点）
+        /// </summary>
+        /// <param name="damage">伤害值</param>
+        /// <returns>剩余未吸收的伤害（需要由本体承受）</returns>
+        public int TakeBossDamage(int damage)
+        {
+            // 无敌状态不受伤
+            if (isInvincible)
+            {
+                if (showDebugInfo)
+                {
+                    Debug.Log("[ShieldController] 无敌中，BOSS伤害无效");
+                }
+                return 0;
+            }
+            
+            // 护盾已破
+            if (currentShieldHP <= 0)
+            {
+                return damage; // 全部伤害穿透
+            }
+            
+            // 计算护盾能吸收多少
+            int absorbed = Mathf.Min(currentShieldHP, damage);
+            int remaining = damage - absorbed;
+            
+            // 扣除护盾
+            currentShieldHP -= absorbed;
+            lastDamageTime = Time.time;
+            
+            // 取消恢复中状态
+            if (recoveryCoroutine != null)
+            {
+                StopCoroutine(recoveryCoroutine);
+                recoveryCoroutine = null;
+                isRecovering = false;
+            }
+            
+            // 播放受伤特效
+            PlayDamageEffect();
+            
+            // 开始无敌
+            StartInvincibility();
+            
+            // 广播状态
+            BroadcastShieldStatus();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[ShieldController] BOSS伤害: 护盾吸收 {absorbed}, 剩余护盾 {currentShieldHP}, 穿透伤害 {remaining}");
+            }
+            
+            return remaining;
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 无敌帧
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

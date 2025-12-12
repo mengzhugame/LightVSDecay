@@ -181,7 +181,7 @@ MonoBehaviour:
     displayName: 
     description: "BOSS\u6218"
     startTime: 300
-    endTime: 360
+    endTime: 600
     enableSpawning: 0
     spawnEntries: []
     spawnRateMultiplier: 1

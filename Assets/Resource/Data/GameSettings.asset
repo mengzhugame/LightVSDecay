@@ -31,7 +31,7 @@ MonoBehaviour:
   baseKnockbackForce: 10
   maxLaserLength: 15
   baseLaserWidth: 0.5
-  maxShieldHP: 3
+  maxShieldHP: 500
   shieldRecoveryTime: 12
-  maxHullHP: 3
+  maxHullHP: 1000
   invincibilityDuration: 1

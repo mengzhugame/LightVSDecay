@@ -174,7 +174,48 @@ namespace LightVsDecay.Logic.Player
             
             return true;
         }
-        
+        /// <summary>
+        /// 受到BOSS伤害（大数值伤害）
+        /// </summary>
+        /// <param name="damage">伤害值</param>
+        public void TakeBossDamage(int damage)
+        {
+            // 检查无敌状态
+            if (IsInvincible)
+            {
+                if (showDebugInfo)
+                {
+                    Debug.Log("[TurretHealth] 无敌中，BOSS伤害无效");
+                }
+                return;
+            }
+            
+            // 扣本体血
+            currentHullHP = Mathf.Max(0, currentHullHP - damage);
+            
+            // 播放受伤特效
+            PlayDamageEffect();
+            
+            // 开始无敌
+            StartInvincibility();
+            
+            // 更新视觉
+            UpdateVisuals();
+            
+            // 广播状态
+            BroadcastHullStatus();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[TurretHealth] BOSS伤害: -{damage}, 剩余血量: {currentHullHP}/{maxHullHP}");
+            }
+            
+            // 检查死亡
+            if (currentHullHP <= 0)
+            {
+                OnDeath();
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 无敌帧
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -221,14 +262,11 @@ namespace LightVsDecay.Logic.Player
         {
             if (showDebugInfo)
             {
-                Debug.Log("[TurretHealth] 光棱塔被摧毁！");
+                Debug.Log("[TurretHealth] 💀 塔被摧毁！游戏结束！");
             }
             
-            // 触发游戏失败
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.Defeat();
-            }
+            // 触发游戏失败事件
+            GameEvents.TriggerGameDefeat();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

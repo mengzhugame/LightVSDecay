@@ -689,5 +689,47 @@ namespace LightVsDecay.Logic.Player
                 Debug.Log("[SkillEffectManager] 所有技能效果已重置");
             }
         }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Boss 角力相关查询（供 LaserController 调用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 获取当前 Impact 技能等级
+        /// </summary>
+        public int GetImpactLevel()
+        {
+            return impactLevel;
+        }
+        
+        /// <summary>
+        /// 检查是否可以打断 BOSS 蓄力
+        /// 条件：Impact Lv.4+ 或 大招模式
+        /// </summary>
+        /// <param name="isUltMode">是否开启大招</param>
+        /// <returns>是否可以打断</returns>
+        public bool CanInterruptBossCharge(bool isUltMode)
+        {
+            // 大招模式必定可以打断
+            if (isUltMode) return true;
+            
+            // Impact Lv.4+ 可以打断
+            return impactLevel >= 4;
+        }
+        
+        /// <summary>
+        /// 检查是否可以推住冲撞中的 BOSS
+        /// 条件：Impact Lv.4+ 或 大招模式
+        /// </summary>
+        /// <param name="isUltMode">是否开启大招</param>
+        /// <returns>是否有足够推力</returns>
+        public bool CanStopBossCharge(bool isUltMode)
+        {
+            // 大招模式必定可以推住
+            if (isUltMode) return true;
+            
+            // Impact Lv.4+ 可以推住
+            return impactLevel >= 4;
+        }
     }
 }
