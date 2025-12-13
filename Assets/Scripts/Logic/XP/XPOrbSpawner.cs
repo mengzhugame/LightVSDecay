@@ -50,9 +50,12 @@ namespace LightVsDecay.Logic.XP
         private HashSet<XPOrb> activeOrbs;
         private Transform poolContainer;
         private int totalCreated;
-        
-        // 目标位置获取器（由 HUDPanel 设置）
+
+// 目标位置获取器（由 HUDPanel 设置）
         private System.Func<Vector3> targetPositionGetter;
+
+// 生成开关（Boss阶段禁用）
+        private bool isSpawningEnabled = true;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -138,15 +141,15 @@ namespace LightVsDecay.Logic.XP
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 设置目标位置获取器（由 HUDPanel 调用）
+        /// 设置经验球生成开关（Boss阶段调用）
         /// </summary>
-        public void SetTargetPositionGetter(System.Func<Vector3> getter)
+        public void SetSpawningEnabled(bool enabled)
         {
-            targetPositionGetter = getter;
-            
+            isSpawningEnabled = enabled;
+    
             if (showDebugInfo)
             {
-                Debug.Log("[XPOrbSpawner] 目标位置获取器已设置");
+                Debug.Log($"[XPOrbSpawner] 经验球生成: {(enabled ? "启用" : "禁用")}");
             }
         }
         
@@ -228,13 +231,27 @@ namespace LightVsDecay.Logic.XP
             
             totalCreated = 0;
         }
-        
+        /// <summary>
+        /// 设置目标位置获取器（由 HUDPanel 调用）
+        /// </summary>
+        public void SetTargetPositionGetter(System.Func<Vector3> getter)
+        {
+            targetPositionGetter = getter;
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[XPOrbSpawner] 目标位置获取器已设置");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private void OnEnemyDied(EnemyType type, Vector3 pos, int xp, int coin)
         {
+            // Boss阶段禁用经验球生成
+            if (!isSpawningEnabled) return;
+    
             if (xp <= 0) return;
             
             // 根据敌人类型决定光点数量

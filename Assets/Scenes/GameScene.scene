@@ -179,15 +179,14 @@ MonoBehaviour:
   stageNameText: {fileID: 1617263480}
   pauseButton: {fileID: 819363807}
   coinText: {fileID: 3938576140566452934}
+  expBarObj: {fileID: 1180949995}
   expBar: {fileID: 1180949997}
   levelText: {fileID: 1268882609}
   expBarTarget: {fileID: 1180949996}
-  bossBloodBarObj: {fileID: 1149961730}
-  bossBloodBar: {fileID: 1149961732}
-  bossBloodFill: {fileID: 1245219311}
-  bossBloodBuffer: {fileID: 0}
-  bossNameText: {fileID: 187741296}
-  bossHealthValueText: {fileID: 0}
+  bossBloodBarObj: {fileID: 275753618}
+  bossBloodFill: {fileID: 1490426509}
+  bossBloodBuffer: {fileID: 602054473}
+  bossNameText: {fileID: 1952239813}
   bossBufferDelay: 0.5
   bossBufferDuration: 0.3
   comboCountText: {fileID: 2086143252}
@@ -2111,7 +2110,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &275753619
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2131,7 +2130,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 832}
+  m_AnchoredPosition: {x: 0, y: 810}
   m_SizeDelta: {x: 1024, y: 256}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &275753620
@@ -2819,7 +2818,7 @@ RectTransform:
   m_Father: {fileID: 1967821169}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0.398, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6209,7 +6208,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1180949996
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8507,8 +8506,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 409975149}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.398, y: 0}
-  m_AnchorMax: {x: 0.398, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -10716,7 +10715,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 100}
+  m_AnchoredPosition: {x: 0, y: 120}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1952239813
