@@ -30,7 +30,7 @@ MonoBehaviour:
   chargeTelegraphDuration: 1.5
   chargeWindupDistance: 0.5
   chargeDashSpeed: 15
-  chargeHitDamage: 3
+  chargeHitDamage: 300
   chargeHitShakeIntensity: 0.8
   chargeHitShakeDuration: 0.3
   chargeBounceBackDuration: 0.5

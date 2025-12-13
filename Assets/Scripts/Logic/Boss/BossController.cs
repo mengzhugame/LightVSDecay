@@ -111,7 +111,12 @@ namespace LightVsDecay.Logic.Boss
         
         // 协程引用
         private Coroutine stateCoroutine;
-        
+        // ═══ 新增：Summon 冷却计时器 ═══
+        private float summonCooldownTimer;
+        private bool summonCooldownReady = false;
+
+// ═══ 新增：Pollution 发射计时器 ═══
+        private float pollutionTimer;
 #if DOTWEEN
         private Tweener moveTweener;
         private Tweener shakeTweener;
@@ -204,11 +209,45 @@ namespace LightVsDecay.Logic.Boss
             
             // 缓存原始颜色
             CacheOriginalColors();
-            
+            // ═══ 新增：初始化召唤冷却 ═══
+            summonCooldownTimer = config != null ? config.summonCooldown : 15f;
+            summonCooldownReady = false;
+            pollutionTimer = 0f;
             // 开始入场状态
             ChangeState(BossState.Spawn);
         }
-        
+        private void Update()
+        {
+            // ═══ 新增：更新召唤冷却计时器 ═══
+            if (summonCooldownTimer > 0)
+            {
+                summonCooldownTimer -= Time.deltaTime;
+                if (summonCooldownTimer <= 0)
+                {
+                    summonCooldownReady = true;
+                    if (showDebugInfo)
+                    {
+                        Debug.Log("[BossController] ⏰ 召唤冷却完成！下次 Idle 结束将强制 Summon");
+                    }
+                }
+            }
+            
+#if UNITY_EDITOR
+            // 调试快捷键（保留原有）
+            if (Input.GetKeyDown(KeyCode.K))
+            {
+                if (bossHealth != null)
+                {
+                    bossHealth.TakeCoreDamage(1000f, transform.position, false);
+                }
+            }
+            if (Input.GetKeyDown(KeyCode.J))
+            {
+                // 如果有 Kill() 方法则调用
+                // Kill();
+            }
+#endif
+        }
         private void FixedUpdate()
         {
             // 【核心】在冲撞/角力阶段应用累积的推力
@@ -539,11 +578,20 @@ namespace LightVsDecay.Logic.Boss
         {
             float moveSpeed = config != null ? config.idleMoveSpeed : 1.5f;
             
+            // ═══ 新增：重置 Pollution 计时器 ═══
+            pollutionTimer = 0f;
+            float pollutionInterval = config != null ? config.pollutionInterval : 4f;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[BossController] Idle 开始，Pollution 间隔: {pollutionInterval}秒");
+            }
+            
             while (idleTimer < currentIdleDuration)
             {
                 idleTimer += Time.deltaTime;
                 
-                // 水平游走
+                // ═══ 原有：水平游走（保持不变）═══
                 float currentX = transform.position.x;
                 float newX = Mathf.MoveTowards(currentX, idleMoveTargetX, moveSpeed * Time.deltaTime);
                 transform.position = new Vector3(newX, transform.position.y, transform.position.z);
@@ -552,6 +600,14 @@ namespace LightVsDecay.Logic.Boss
                 if (Mathf.Abs(newX - idleMoveTargetX) < 0.1f)
                 {
                     SetNextIdleMoveTarget();
+                }
+                
+                // ═══ 新增：Pollution 发射 ═══
+                pollutionTimer += Time.deltaTime;
+                if (pollutionTimer >= pollutionInterval)
+                {
+                    pollutionTimer = 0f;
+                    FirePollution();
                 }
                 
                 yield return null;
@@ -571,7 +627,23 @@ namespace LightVsDecay.Logic.Boss
         {
             int mobCount = GetCurrentMobCount();
             
-            // 使用配置决定技能
+            // ═══ 新增：召唤冷却优先级最高 ═══
+            if (summonCooldownReady)
+            {
+                summonCooldownReady = false;
+                summonCooldownTimer = config != null ? config.summonCooldown : 15f;
+                lastSkillWasCharge = false;
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log("[BossController] 🔥 召唤冷却完成 -> 强制进入 Summon！");
+                }
+                
+                ChangeState(BossState.Summon);
+                return;
+            }
+            
+            // ═══ 原有决策逻辑（保持不变）═══
             bool shouldSummon = config != null 
                 ? config.ShouldSummon(mobCount, lastSkillWasCharge)
                 : (mobCount < 3);
@@ -636,7 +708,9 @@ namespace LightVsDecay.Logic.Boss
             
             // 召唤小怪
             SpawnMinions();
-            
+            // ═══ 新增：重置召唤冷却 ═══
+            summonCooldownTimer = config != null ? config.summonCooldown : 15f;
+            summonCooldownReady = false;
             yield return new WaitForSeconds(duration * 0.5f);
             
             // 恢复位置
@@ -653,27 +727,111 @@ namespace LightVsDecay.Logic.Boss
         {
             if (EnemyPoolManager.Instance == null) return;
             
-            int count = config != null ? config.summonMinionCount : 3;
+            // ═══ 新增：读取钳形攻势配置 ═══
+            Vector2 leftOffset = config != null ? config.summonLeftOffset : new Vector2(-3f, -1f);
+            Vector2 rightOffset = config != null ? config.summonRightOffset : new Vector2(3f, -1f);
+            int perSide = config != null ? config.summonRusherPerSide : 2;
             
-            for (int i = 0; i < count; i++)
+            // 兼容：如果新配置为0，使用旧配置
+            if (perSide <= 0)
+            {
+                // 回退到原有逻辑
+                int count = config != null ? config.summonMinionCount : 3;
+                for (int i = 0; i < count; i++)
+                {
+                    if (EnemyPoolManager.Instance.IsAtGlobalCapacity) break;
+                    Vector2 offset = Random.insideUnitCircle * 2f;
+                    Vector3 spawnPos = transform.position + new Vector3(offset.x, offset.y, 0);
+                    EnemyType type = Random.value > 0.5f ? EnemyType.Rusher : EnemyType.Slime;
+                    EnemyPoolManager.Instance.Spawn(type, spawnPos);
+                }
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[BossController] 召唤了 {count} 个小怪！（原有模式）");
+                }
+                return;
+            }
+            
+            int spawnedCount = 0;
+            
+            // ═══ 新增：左侧生成（钳形攻势）═══
+            for (int i = 0; i < perSide; i++)
             {
                 if (EnemyPoolManager.Instance.IsAtGlobalCapacity) break;
                 
-                // 在Boss周围随机位置生成
-                Vector2 offset = Random.insideUnitCircle * 2f;
-                Vector3 spawnPos = transform.position + new Vector3(offset.x, offset.y, 0);
+                Vector2 randomOffset = Random.insideUnitCircle * 0.5f;
+                Vector3 spawnPos = transform.position + new Vector3(
+                    leftOffset.x + randomOffset.x, 
+                    leftOffset.y + randomOffset.y, 
+                    0
+                );
                 
-                // 随机类型
-                EnemyType type = Random.value > 0.5f ? EnemyType.Rusher : EnemyType.Slime;
-                EnemyPoolManager.Instance.Spawn(type, spawnPos);
+                EnemyPoolManager.Instance.Spawn(EnemyType.Rusher, spawnPos);
+                spawnedCount++;
+            }
+            
+            // ═══ 新增：右侧生成（钳形攻势）═══
+            for (int i = 0; i < perSide; i++)
+            {
+                if (EnemyPoolManager.Instance.IsAtGlobalCapacity) break;
+                
+                Vector2 randomOffset = Random.insideUnitCircle * 0.5f;
+                Vector3 spawnPos = transform.position + new Vector3(
+                    rightOffset.x + randomOffset.x, 
+                    rightOffset.y + randomOffset.y, 
+                    0
+                );
+                
+                EnemyPoolManager.Instance.Spawn(EnemyType.Rusher, spawnPos);
+                spawnedCount++;
             }
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 召唤了 {count} 个小怪！");
+                Debug.Log($"[BossController] 🦀 钳形攻势！召唤了 {spawnedCount} 个 Rusher（左{perSide} + 右{perSide}）");
             }
         }
-        
+        /// <summary>
+        /// 【新增】发射污秽投射物
+        /// </summary>
+        private void FirePollution()
+        {
+            // 检查 Prefab
+            GameObject prefab = config != null ? config.pollutionProjectilePrefab : null;
+            if (prefab == null)
+            {
+                if (showDebugInfo)
+                {
+                    Debug.LogWarning("[BossController] Pollution Prefab 未设置！跳过发射。");
+                }
+                return;
+            }
+            
+            // 生成位置（BOSS 中心稍下）
+            Vector3 spawnPos = transform.position + Vector3.down * 0.5f;
+            
+            // 实例化投射物
+            GameObject projectileObj = Instantiate(prefab, spawnPos, Quaternion.identity);
+            
+            // 初始化参数
+            BossPollutionProjectile projectile = projectileObj.GetComponent<BossPollutionProjectile>();
+            if (projectile != null && config != null)
+            {
+                projectile.Initialize(
+                    config.pollutionSpeed,
+                    config.pollutionTurnSpeed,
+                    config.pollutionShieldDamage,
+                    config.pollutionLifetime
+                );
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 💜 发射污秽投射物！");
+            }
+            
+            // TODO: 播放发射音效和特效
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // State: Charge (冲撞) - 【重构】持续角力物理系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1147,7 +1305,10 @@ namespace LightVsDecay.Logic.Boss
             {
                 eyeController.SetStateDirect(BossEyeState.Closed);
             }
-            
+            // ═══ 新增：重置冷却计时器 ═══
+            summonCooldownTimer = config != null ? config.summonCooldown : 15f;
+            summonCooldownReady = false;
+            pollutionTimer = 0f;
             ChangeState(BossState.Idle);
         }
         
@@ -1182,7 +1343,9 @@ namespace LightVsDecay.Logic.Boss
             {
                 ChangeState(BossState.Charge);
             }
-            
+            // ═══ 新增：显示冷却信息 ═══
+            GUILayout.Label($"Summon CD: {summonCooldownTimer:F1}s {(summonCooldownReady ? "✓ READY" : "")}");
+            GUILayout.Label($"Pollution: {pollutionTimer:F1}s / {(config != null ? config.pollutionInterval : 4f):F1}s");
             GUILayout.EndArea();
         }
         

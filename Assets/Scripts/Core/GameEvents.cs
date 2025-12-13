@@ -127,7 +127,6 @@ namespace LightVsDecay.Core
         
         /// <summary>Boss 战斗开始</summary>
         public static event Action OnBossFightStart;
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件触发方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

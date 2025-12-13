@@ -76,11 +76,44 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("召唤小怪数量")]
         public int summonMinionCount = 3;
+        // ═══ 新增：Summon 冷却机制 ═══
+        [Header("═══ Summon 冷却 (新增) ═══")]
+        [Tooltip("召唤技能冷却时间（秒）- Idle结束时检查，优先级最高")]
+        public float summonCooldown = 15f;
         
+        [Tooltip("钳形攻势：左侧生成偏移（相对BOSS位置）")]
+        public Vector2 summonLeftOffset = new Vector2(-3f, -1f);
+        
+        [Tooltip("钳形攻势：右侧生成偏移（相对BOSS位置）")]
+        public Vector2 summonRightOffset = new Vector2(3f, -1f);
+        
+        [Tooltip("钳形攻势：每侧生成的 Rusher 数量")]
+        public int summonRusherPerSide = 2;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // ═══ 新增：Pollution 污秽喷吐 ═══
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("═══ Pollution 污秽喷吐 (新增) ═══")]
+        [Tooltip("Idle 状态下发射间隔（秒）")]
+        public float pollutionInterval = 4f;
+        
+        [Tooltip("投射物飞行速度")]
+        public float pollutionSpeed = 5f;
+        
+        [Tooltip("惰性追踪转向速度（度/秒）- 越小转弯越大")]
+        public float pollutionTurnSpeed = 90f;
+        
+        [Tooltip("投射物命中护盾伤害")]
+        public int pollutionShieldDamage = 100;
+        
+        [Tooltip("投射物 Prefab（需在Inspector中拖入）")]
+        public GameObject pollutionProjectilePrefab;
+        
+        [Tooltip("投射物生命周期（秒）")]
+        public float pollutionLifetime = 8f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Charge (冲撞) 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
         [Header("═══ Charge (冲撞) ═══")]
         [Tooltip("蓄力时长（玩家DPS窗口）")]
         public float chargeTelegraphDuration = 2.0f;

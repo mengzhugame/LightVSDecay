@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 using LightVsDecay.Logic;
+using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Player;
 using LightVsDecay.Logic.XP;
 
@@ -34,7 +35,12 @@ namespace LightVsDecay.UI.Panels
         [SerializeField] private Image bossBloodFill;
         [SerializeField] private Image bossBloodBuffer; // 白色缓冲条
         [SerializeField] private TextMeshProUGUI bossNameText;
-        
+        [Tooltip("Boss 血量数值文本")]
+        [SerializeField] private TextMeshProUGUI bossHealthValueText;
+        [Tooltip("缓冲延迟时间（秒）")]
+        [SerializeField] private float bossBufferDelay = 0.5f;
+        [Tooltip("缓冲缓动时间（秒）")]
+        [SerializeField] private float bossBufferDuration = 0.3f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 中间区域
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -81,7 +87,8 @@ namespace LightVsDecay.UI.Panels
         private float bossCurrentHP = 1f;
         private float bossBufferHP = 1f;
         private Coroutine bossBufferCoroutine;
-        
+        private int bossMaxHealth;  // Boss 最大血量（用于数值显示）
+        private BossHealth cachedBossHealth;  // 缓存 BossHealth 引用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -144,6 +151,9 @@ namespace LightVsDecay.UI.Panels
             UpdateUltEnergy(0, 100);
             SetUltReady(false);
             
+            // ═══ 新增：初始化 Boss 血条状态 ═══
+            bossCurrentHP = 1f;
+            bossBufferHP = 1f;
             // Boss血条（初始隐藏）
             if (bossBloodBarObj != null)
             {
@@ -169,6 +179,10 @@ namespace LightVsDecay.UI.Panels
             
             // 游戏时间事件
             Core.GameEvents.OnGameTimeUpdated += OnGameTimeUpdated;
+            // ═══ 新增：Boss 事件 ═══
+            Core.GameEvents.OnBossHealthChanged += OnBossHealthChanged;
+            Core.GameEvents.OnBossFightStart += OnBossFightStart;
+            Core.GameEvents.OnBossDeath += OnBossDeath;
         }
         
         private void UnsubscribeEvents()
@@ -186,6 +200,10 @@ namespace LightVsDecay.UI.Panels
             Core.GameEvents.OnHullHPChanged -= OnHullHPChanged;
             
             Core.GameEvents.OnGameTimeUpdated -= OnGameTimeUpdated;
+            // ═══ 新增：Boss 事件取消订阅 ═══
+            Core.GameEvents.OnBossHealthChanged -= OnBossHealthChanged;
+            Core.GameEvents.OnBossFightStart -= OnBossFightStart;
+            Core.GameEvents.OnBossDeath -= OnBossDeath;
         }
         
         private void SetupButtons()
@@ -315,7 +333,55 @@ namespace LightVsDecay.UI.Panels
         {
             UpdateGameTimer(current, total);
         }
-        
+// ═══ Boss 战斗开始 ═══
+        private void OnBossFightStart()
+        {
+            // 查找并缓存 BossHealth
+            cachedBossHealth = FindObjectOfType<BossHealth>();
+    
+            int maxHealth = cachedBossHealth != null ? (int)cachedBossHealth.MaxHealth : 50000;
+            ShowBossHealthBar("THE CORRUPTOR", maxHealth);
+        }
+
+// ═══ Boss 血量变化（参数只有百分比）═══
+        private void OnBossHealthChanged(float healthPercent)
+        {
+            // 从缓存的 BossHealth 获取当前血量
+            int currentHealth = 0;
+            if (cachedBossHealth != null)
+            {
+                currentHealth = (int)cachedBossHealth.CurrentHealth;
+            }
+    
+            UpdateBossHealthWithValue(healthPercent, currentHealth);
+        }
+
+// ═══ Boss 死亡 ═══
+        private void OnBossDeath()
+        {
+            HideBossHealthBar();
+            cachedBossHealth = null;
+        }
+        /// <summary>更新Boss血量（带数值显示）</summary>
+        private void UpdateBossHealthWithValue(float normalizedHP, int currentHealth)
+        {
+            // 红色条瞬间减少
+            bossCurrentHP = normalizedHP;
+            UpdateBossHealthDisplay(normalizedHP);
+    
+            // 更新数值文本
+            if (bossHealthValueText != null)
+            {
+                bossHealthValueText.text = currentHealth.ToString("N0");  // 格式：50,000
+            }
+    
+            // 白色缓冲条延迟追赶
+            if (bossBufferCoroutine != null)
+            {
+                StopCoroutine(bossBufferCoroutine);
+            }
+            bossBufferCoroutine = StartCoroutine(BossBufferCoroutine());
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // UI 更新方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -478,23 +544,36 @@ namespace LightVsDecay.UI.Panels
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>显示Boss血条</summary>
-        public void ShowBossHealthBar(string bossName, float maxHP)
+        public void ShowBossHealthBar(string bossName, int maxHealth)
         {
             if (bossBloodBarObj != null)
             {
                 bossBloodBarObj.SetActive(true);
             }
-            
+    
             if (bossNameText != null)
             {
                 bossNameText.text = bossName;
             }
-            
+    
             bossCurrentHP = 1f;
             bossBufferHP = 1f;
-            
+    
             UpdateBossHealthDisplay(1f);
+    
+            // 同步缓冲条
+            if (bossBloodBuffer != null)
+            {
+                bossBloodBuffer.fillAmount = 1f;
+            }
+    
+            // ═══ 新增：初始化血量数值 ═══
+            if (bossHealthValueText != null)
+            {
+                bossHealthValueText.text = maxHealth.ToString("N0");
+            }
         }
+
         
         /// <summary>隐藏Boss血条</summary>
         public void HideBossHealthBar()
@@ -536,37 +615,65 @@ namespace LightVsDecay.UI.Panels
             }
         }
         
-        /// <summary>Boss血条缓冲动画</summary>
+        /// <summary>【优化】Boss血条缓冲动画 - 0.5秒延迟 + 0.3秒缓动</summary>
         private IEnumerator BossBufferCoroutine()
         {
-            // 停顿0.2秒
-            yield return new WaitForSeconds(0.2f);
-            
-            // 白色条平滑追赶红色条
+            // 使用配置的延迟（默认0.5秒，原来是0.2秒）
+            yield return new WaitForSeconds(bossBufferDelay);
+    
+            // 使用配置的缓动时长（默认0.3秒）
             float startBuffer = bossBufferHP;
-            float duration = 0.3f;
             float elapsed = 0f;
-            
-            while (elapsed < duration)
+    
+            while (elapsed < bossBufferDuration)
             {
                 elapsed += Time.deltaTime;
-                bossBufferHP = Mathf.Lerp(startBuffer, bossCurrentHP, elapsed / duration);
-                
+                float t = elapsed / bossBufferDuration;
+        
+                // EaseOutQuad 缓动
+                float easeT = 1f - (1f - t) * (1f - t);
+        
+                bossBufferHP = Mathf.Lerp(startBuffer, bossCurrentHP, easeT);
+        
                 if (bossBloodBuffer != null)
                 {
                     bossBloodBuffer.fillAmount = bossBufferHP;
                 }
-                
+        
                 yield return null;
             }
-            
+    
             bossBufferHP = bossCurrentHP;
             if (bossBloodBuffer != null)
             {
                 bossBloodBuffer.fillAmount = bossBufferHP;
             }
         }
-        
+        /// <summary>【新增】更新Boss血量百分比（带缓冲效果）</summary>
+        public void UpdateBossHealthPercent(float normalizedHP, int currentHealth)
+        {
+            bossCurrentHP = normalizedHP;
+            UpdateBossHealthDisplay(normalizedHP);
+    
+            // ═══ 新增：更新血量数值 ═══
+            UpdateBossHealthValueText(currentHealth);
+    
+            // 白色缓冲条延迟追赶
+            if (bossBufferCoroutine != null)
+            {
+                StopCoroutine(bossBufferCoroutine);
+            }
+            bossBufferCoroutine = StartCoroutine(BossBufferCoroutine());
+        }
+        /// <summary>更新 Boss 血量数值文本</summary>
+        private void UpdateBossHealthValueText(int currentHealth)
+        {
+            if (bossHealthValueText != null)
+            {
+                // 格式化为千分位：50,000
+                bossHealthValueText.text = currentHealth.ToString("N0");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 按钮回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
