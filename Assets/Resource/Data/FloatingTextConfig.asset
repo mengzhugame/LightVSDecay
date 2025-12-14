@@ -18,7 +18,7 @@ MonoBehaviour:
   critPrefab: {fileID: 8951767721941194616, guid: 53d3b9b50821acb44943bd9fccb50123, type: 3}
   bossShieldPrefab: {fileID: 8951767721941194616, guid: 14704d5b81a539345837d12000bda4a6, type: 3}
   bossCorePrefab: {fileID: 8951767721941194616, guid: 8eef231d29e85c544bcb135ae85d7b83, type: 3}
-  statusPrefab: {fileID: 8951767721941194616, guid: 2d0339ad5a2d99b4796bad6817c00db8, type: 3}
+  statusPrefab: {fileID: 8951767721941194616, guid: 83a3ec4eea9fd0641bef603d2369352f, type: 3}
   normalPriority: 0
   critPriority: 2
   statusPriority: 1
@@ -89,7 +89,7 @@ MonoBehaviour:
     scalePeakPercent: 0.2
     sizeMultiplier: 0.7
   bossCoreStyle:
-    textColor: {r: 1, g: 0.48682925, b: 0.10196078, a: 1}
+    textColor: {r: 1, g: 0.5651199, b: 0.10196078, a: 1}
     outlineColor: {r: 0.6, g: 0, b: 0, a: 1}
     fontSize: 60
     isBold: 1

@@ -367,12 +367,12 @@ namespace LightVsDecay.Logic.Player
                                 : 0;
                             
                             // === 情况1: 蓄力阶段 - 尝试打断 ===
-                            if (bossController.IsInTelegraphPhase)
+                            if (bossController.IsInChargeTelegraph)
                             {
                                 // 检查是否可以打断（Impact Lv.4+ 或 大招）
                                 bool canInterrupt = SkillEffectManager.Instance != null
                                     ? SkillEffectManager.Instance.CanInterruptBossCharge(isUltMode)
-                                    : (impactLevel >= 4 || isUltMode);
+                                    : (impactLevel >= 5 || isUltMode);
                                 
                                 if (canInterrupt)
                                 {
@@ -384,17 +384,8 @@ namespace LightVsDecay.Logic.Player
                                     }
                                 }
                             }
-                            // 【新增】霸体状态提示
-                            else if (bossController.IsSuperArmor)
-                            {
-                                // 霸体中，无法打断，但可以输出伤害
-                                if (showDebugInfo)
-                                {
-                                    Debug.Log("[LaserController] 🛡️ BOSS 霸体中，无法打断！");
-                                }
-                            }
                             // === 情况2: 冲撞阶段 - 施加推力（角力核心） ===
-                            else if (bossController.IsCharging)
+                            else if (bossController.IsPressing)
                             {
                                 // 计算推力
                                 float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);

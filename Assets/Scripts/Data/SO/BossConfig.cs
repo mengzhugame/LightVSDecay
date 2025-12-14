@@ -2,6 +2,7 @@
 // BossConfig.cs
 // 文件位置: Assets/Scripts/Data/SO/BossConfig.cs
 // 用途：Boss 行为配置 (ScriptableObject)
+// 【重构】分离 Charge(快招) 和 Press(慢招) 配置
 // ============================================================
 
 using UnityEngine;
@@ -23,8 +24,8 @@ namespace LightVsDecay.Data.SO
         [Tooltip("入场下沉时长")]
         public float spawnDuration = 2.5f;
         
-        [Tooltip("战斗锚点Y坐标（屏幕上方1/4处）")]
-        public float battleAnchorY = 3.5f;
+        [Tooltip("战斗锚点Y坐标（屏幕上方）")]
+        public float battleAnchorY = 3.0f;
         
         [Tooltip("入场后震动强度")]
         public float spawnShakeIntensity = 0.5f;
@@ -61,12 +62,18 @@ namespace LightVsDecay.Data.SO
         public float idleMoveRangePercent = 0.8f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Summon (召唤) 配置
+        // Summon (召唤爪牙) - 被动技能
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("═══ Summon (召唤) ═══")]
-        [Tooltip("召唤动画时长")]
-        public float summonDuration = 1.5f;
+        [Header("═══ Summon 召唤爪牙 (被动技能) ═══")]
+        [Tooltip("召唤技能冷却时间（秒）")]
+        public float summonCooldown = 15f;
+        
+        [Tooltip("狂暴时召唤冷却（秒）")]
+        public float summonCooldownRage = 10f;
+        
+        [Tooltip("召唤动画时长（身体收缩）")]
+        public float summonDuration = 1.0f;
         
         [Tooltip("身体震动强度")]
         public float summonShakeIntensity = 0.1f;
@@ -74,55 +81,54 @@ namespace LightVsDecay.Data.SO
         [Tooltip("身体震动频率")]
         public float summonShakeFrequency = 30f;
         
-        [Tooltip("召唤小怪数量")]
-        public int summonMinionCount = 3;
-        // ═══ 新增：Summon 冷却机制 ═══
-        [Header("═══ Summon 冷却 (新增) ═══")]
-        [Tooltip("召唤技能冷却时间（秒）- Idle结束时检查，优先级最高")]
-        public float summonCooldown = 15f;
-        
-        [Tooltip("钳形攻势：左侧生成偏移（相对BOSS位置）")]
+        [Tooltip("左侧生成偏移（相对BOSS位置）")]
         public Vector2 summonLeftOffset = new Vector2(-3f, -1f);
         
-        [Tooltip("钳形攻势：右侧生成偏移（相对BOSS位置）")]
+        [Tooltip("右侧生成偏移（相对BOSS位置）")]
         public Vector2 summonRightOffset = new Vector2(3f, -1f);
         
-        [Tooltip("钳形攻势：每侧生成的 Rusher 数量")]
+        [Tooltip("每侧生成的 Rusher 数量")]
         public int summonRusherPerSide = 2;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // ═══ 新增：Pollution 污秽喷吐 ═══
+        // Pollution (污秽喷吐) - 被动技能
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-        [Header("═══ Pollution 污秽喷吐 (新增) ═══")]
+        
+        [Header("═══ Pollution 污秽喷吐 (被动技能) ═══")]
         [Tooltip("Idle 状态下发射间隔（秒）")]
         public float pollutionInterval = 4f;
         
         [Tooltip("投射物飞行速度")]
         public float pollutionSpeed = 5f;
         
-        [Tooltip("惰性追踪转向速度（度/秒）- 越小转弯越大")]
+        [Tooltip("惰性追踪转向速度（度/秒）")]
         public float pollutionTurnSpeed = 90f;
         
         [Tooltip("投射物命中护盾伤害")]
         public int pollutionShieldDamage = 100;
         
-        [Tooltip("投射物 Prefab（需在Inspector中拖入）")]
+        [Tooltip("投射物 Prefab")]
         public GameObject pollutionProjectilePrefab;
         
         [Tooltip("投射物生命周期（秒）")]
         public float pollutionLifetime = 8f;
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Charge (冲撞) 配置
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        [Header("═══ Charge (冲撞) ═══")]
-        [Tooltip("蓄力时长（玩家DPS窗口）")]
-        public float chargeTelegraphDuration = 2.0f;
         
-        [Tooltip("蓄力后退距离")]
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Charge (野蛮冲撞) - 主动技能A【快招】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("═══ Charge 野蛮冲撞 (快招/反应测试) ═══")]
+        [Tooltip("蓄力预警时长（眼睛睁开+红光闪烁）")]
+        public float chargeTelegraphDuration = 1.0f;
+        
+        [Tooltip("蓄力后退距离（像拉弓）")]
         public float chargeWindupDistance = 0.5f;
         
-        [Tooltip("冲撞速度")]
-        public float chargeDashSpeed = 15f;
+        [Tooltip("冲锋动画时长（Lerp移动）")]
+        public float chargeDashDuration = 0.3f;
+        
+        [Tooltip("冲锋目标Y坐标（塔的位置）")]
+        public float chargeTargetY = -10f;
         
         [Tooltip("撞击玩家伤害")]
         public float chargeHitDamage = 300f;
@@ -136,19 +142,49 @@ namespace LightVsDecay.Data.SO
         [Tooltip("冲撞后弹回时长")]
         public float chargeBounceBackDuration = 0.5f;
         
-        [Header("═══ 角力物理 (Pushback) ═══")]
+        [Tooltip("打断需要的Impact等级（5=仅Lv.5和大招可打断）")]
+        public int chargeInterruptRequiredLevel = 5;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Press (重力碾压) - 主动技能B【慢招】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("═══ Press 重力碾压 (慢招/物理角力) ═══")]
+        [Tooltip("Phase 1: 突进时长（瞬移/极速冲到塔前）")]
+        public float pressJumpDuration = 0.5f;
+        
+        [Tooltip("突进目标Y坐标（塔前1米）")]
+        public float pressHoverY = -5f;
+        
+        [Tooltip("Phase 2: 施压时长（眼睛缓慢睁开）")]
+        public float pressGlareDuration = 1.5f;
+        
+        [Tooltip("碾压下压力（Boss向下的力）")]
+        public float pressForce = 100f;
+        
+        [Tooltip("狂暴时碾压力增强倍率")]
+        public float pressForceRageMultiplier = 1.2f;
+        
         [Tooltip("安全线Y坐标（推回这里算玩家胜利）")]
-        public float safeLineY = 3.0f;
+        public float pressSafeLineY = 3.5f;
         
         [Tooltip("撞击线Y坐标（Boss到达这里算玩家失败）")]
-        public float hitLineY = -3.0f;
-             
+        public float pressHitLineY = -10f;
+        
         [Tooltip("角力最大持续时间（防止卡住）")]
-        public float maxCrushingDuration = 15f;
+        public float pressMaxDuration = 15f;
         
         [Tooltip("被推住后的僵直时长（奖励时间）")]
-        public float counterStunDuration = 3.0f;
+        public float pressCounterStunDuration = 3.0f;
         
+        [Tooltip("角力前召唤小怪数量（0=不召唤）")]
+        public int pressSummonCount = 0;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 角力物理 (Press 专用)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("═══ 角力物理 (Press专用) ═══")]
         [Tooltip("普通激光对Boss的基础推力")]
         public float baseLaserPushForce = 80f;
         
@@ -158,24 +194,20 @@ namespace LightVsDecay.Data.SO
         [Tooltip("大招激光推力倍率")]
         public float ultPushMultiplier = 2.5f;
         
-        [Tooltip("冲撞力（Boss向下冲的力）")]
-        public float chargeForce = 100f;
-        [Tooltip("角力前召唤小怪数量（0=不召唤）")]
-        public int crushingSummonCount = 4;
-        [Tooltip("蓄力霸体时间（前X秒不可打断）")]
-        public float telegraphSuperArmorDuration = 1.0f;
-
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Stun (僵直) 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("═══ Stun (僵直) ═══")]
-        [Tooltip("僵直时长")]
-        public float stunDuration = 2.5f;
+        [Tooltip("Charge被打断后的僵直时长")]
+        public float chargeInterruptStunDuration = 3.0f;
         
         [Tooltip("僵直时颜色变暗程度")]
         [Range(0f, 1f)]
         public float stunDarkenAmount = 0.5f;
+        
+        [Tooltip("僵直结束后是否飞回战斗锚点（false=直接Idle）")]
+        public bool stunReturnToAnchor = true;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 眼睛 (弱点) 配置
@@ -189,23 +221,11 @@ namespace LightVsDecay.Data.SO
         [Tooltip("睁眼时Collider放大倍数")]
         public float eyeOpenColliderScale = 1.5f;
         
-        [Tooltip("眼睛开闭动画时长")]
+        [Tooltip("眼睛快速开闭动画时长")]
         public float eyeTransitionDuration = 0.2f;
         
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // AI 决策配置
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("═══ AI 决策 ═══")]
-        [Tooltip("场面干净阈值（小怪数量）")]
-        public int cleanSceneMobThreshold = 3;
-        
-        [Tooltip("场面混乱阈值（小怪数量）")]
-        public int chaoticSceneMobThreshold = 5;
-        
-        [Tooltip("场面干净时Summon概率")]
-        [Range(0f, 1f)]
-        public float cleanSceneSummonChance = 0.7f;
+        [Tooltip("眼睛缓慢睁开动画时长（Press用）")]
+        public float eyeSlowOpenDuration = 1.0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 便捷方法
@@ -218,44 +238,50 @@ namespace LightVsDecay.Data.SO
         {
             if (healthPercent <= rageHealthThreshold)
             {
-                // 狂暴模式
                 return Random.Range(rageIdleDurationMin, rageIdleDurationMax);
             }
             else
             {
-                // 普通模式
                 return Random.Range(idleDurationMin, idleDurationMax);
             }
         }
         
         /// <summary>
-        /// 决定下一个技能（Summon 或 Charge）
+        /// 获取召唤冷却（根据血量百分比）
         /// </summary>
-        /// <param name="currentMobCount">场上小怪数量</param>
-        /// <param name="lastSkillWasCharge">上次是否是Charge</param>
-        /// <returns>true = Summon, false = Charge</returns>
-        public bool ShouldSummon(int currentMobCount, bool lastSkillWasCharge)
+        public float GetSummonCooldown(float healthPercent)
         {
-            // 防连续：上次是Charge，这次强制Summon
-            if (lastSkillWasCharge && currentMobCount < chaoticSceneMobThreshold)
+            if (healthPercent <= rageHealthThreshold)
             {
-                return true;
+                return summonCooldownRage;
             }
-            
-            // 场面混乱：强制Charge
-            if (currentMobCount >= chaoticSceneMobThreshold)
+            return summonCooldown;
+        }
+        
+        /// <summary>
+        /// 获取碾压力（根据血量百分比，狂暴增强）
+        /// </summary>
+        public float GetPressForce(float healthPercent)
+        {
+            if (healthPercent <= rageHealthThreshold)
             {
-                return false;
+                return pressForce * pressForceRageMultiplier;
             }
+            return pressForce;
+        }
+        
+        /// <summary>
+        /// 获取推力倍率
+        /// </summary>
+        public float GetPushMultiplier(int impactLevel, bool isUlt)
+        {
+            if (isUlt) return ultPushMultiplier;
             
-            // 场面干净：70%概率Summon
-            if (currentMobCount < cleanSceneMobThreshold)
+            if (impactLevel >= 0 && impactLevel < impactPushMultipliers.Length)
             {
-                return Random.value < cleanSceneSummonChance;
+                return impactPushMultipliers[impactLevel];
             }
-            
-            // 中等场面：50/50
-            return Random.value < 0.5f;
+            return impactPushMultipliers[0];
         }
     }
 }

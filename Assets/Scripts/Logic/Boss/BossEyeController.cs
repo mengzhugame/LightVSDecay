@@ -2,6 +2,7 @@
 // BossEyeController.cs
 // 文件位置: Assets/Scripts/Logic/Boss/BossEyeController.cs
 // 用途：Boss 眼睛状态控制（与Boss行为状态绑定）
+// 【重构】添加缓慢睁开方法（用于Press技能）
 // ============================================================
 
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace LightVsDecay.Logic.Boss
     public enum BossEyeState
     {
         Closed,     // 闭眼（防御态）
+        Opening,    // 正在睁开（过渡态）【新增】
         Open        // 睁眼（攻击态/虚弱态）
     }
     
@@ -57,8 +59,18 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("睁眼时Collider放大倍数")]
         [SerializeField] private float openColliderScale = 1.5f;
         
-        [Tooltip("开闭动画时长")]
+        [Tooltip("快速开闭动画时长")]
         [SerializeField] private float transitionDuration = 0.2f;
+        
+        [Tooltip("缓慢睁开动画时长（Press用）")]
+        [SerializeField] private float slowOpenDuration = 1.0f;
+        
+        [Header("颜色配置")]
+        [Tooltip("闭眼时颜色（暗淡）")]
+        [SerializeField] private Color closedColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+        
+        [Tooltip("睁眼时颜色（高亮红/紫）")]
+        [SerializeField] private Color openColor = new Color(1f, 0.2f, 0.2f, 1f);
         
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
@@ -74,6 +86,7 @@ namespace LightVsDecay.Logic.Boss
         
 #if DOTWEEN
         private Tweener scaleTweener;
+        private Tweener colorTweener;
 #endif
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -83,8 +96,8 @@ namespace LightVsDecay.Logic.Boss
         /// <summary>当前眼睛状态</summary>
         public BossEyeState CurrentState => currentState;
         
-        /// <summary>眼睛是否睁开</summary>
-        public bool IsOpen => currentState == BossEyeState.Open;
+        /// <summary>是否可被攻击（睁眼或正在睁开）</summary>
+        public bool IsVulnerable => currentState == BossEyeState.Open;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -92,51 +105,22 @@ namespace LightVsDecay.Logic.Boss
         
         private void Awake()
         {
-            // 自动查找组件
-            if (eyeTransform == null)
+            // 缓存原始缩放
+            if (eyeTransform != null)
             {
-                eyeTransform = transform;
+                originalEyeScale = eyeTransform.localScale;
             }
-            
-            if (eyeRenderer == null)
-            {
-                eyeRenderer = GetComponent<SpriteRenderer>();
-            }
-            
-            if (eyeCollider == null)
-            {
-                eyeCollider = GetComponent<Collider2D>();
-            }
-            
-            // 记录原始缩放
-            originalEyeScale = eyeTransform.localScale;
             
             if (eyeCollider != null)
             {
-                // 对于CircleCollider2D，使用radius作为缩放基准
-                originalColliderScale = Vector3.one;
+                originalColliderScale = eyeCollider.transform.localScale;
             }
         }
         
         private void Start()
         {
-            // 初始状态：闭眼
+            // 初始化为闭眼状态
             SetStateDirect(BossEyeState.Closed);
-        }
-        
-        private void OnDestroy()
-        {
-#if DOTWEEN
-            if (scaleTweener != null && scaleTweener.IsActive())
-            {
-                scaleTweener.Kill();
-            }
-#endif
-            
-            if (transitionCoroutine != null)
-            {
-                StopCoroutine(transitionCoroutine);
-            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -144,295 +128,262 @@ namespace LightVsDecay.Logic.Boss
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 设置眼睛状态（带动画）
-        /// </summary>
-        public void SetState(BossEyeState newState)
-        {
-            if (currentState == newState) return;
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[BossEyeController] 状态切换: {currentState} -> {newState}");
-            }
-            
-            currentState = newState;
-            
-#if DOTWEEN
-            TransitionWithDOTween(newState);
-#else
-            if (transitionCoroutine != null)
-            {
-                StopCoroutine(transitionCoroutine);
-            }
-            transitionCoroutine = StartCoroutine(TransitionCoroutine(newState));
-#endif
-        }
-        
-        /// <summary>
-        /// 直接设置状态（无动画，用于初始化）
-        /// </summary>
-        public void SetStateDirect(BossEyeState newState)
-        {
-            currentState = newState;
-            
-            if (newState == BossEyeState.Closed)
-            {
-                ApplyClosedState();
-            }
-            else
-            {
-                ApplyOpenState();
-            }
-        }
-        
-        /// <summary>
-        /// 睁眼（便捷方法）
+        /// 快速睁眼（用于Charge蓄力、Stun状态）
         /// </summary>
         public void Open()
         {
-            SetState(BossEyeState.Open);
+            if (currentState == BossEyeState.Open) return;
+            
+            StopCurrentTransition();
+            transitionCoroutine = StartCoroutine(TransitionToState(BossEyeState.Open, transitionDuration));
         }
         
         /// <summary>
-        /// 闭眼（便捷方法）
+        /// 快速闭眼（用于Idle、Spawn）
         /// </summary>
         public void Close()
         {
-            SetState(BossEyeState.Closed);
+            if (currentState == BossEyeState.Closed) return;
+            
+            StopCurrentTransition();
+            transitionCoroutine = StartCoroutine(TransitionToState(BossEyeState.Closed, transitionDuration));
         }
         
         /// <summary>
-        /// 配置参数（由BossController调用）
+        /// 缓慢睁开眼睛（用于Press施压阶段）
+        /// 视觉效果：像机械光圈缓缓打开
         /// </summary>
-        public void Configure(float closedScale, float colliderScale, float duration)
+        /// <param name="duration">睁开持续时间（默认使用配置值）</param>
+        public void OpenSlowly(float duration = -1f)
         {
-            closedScaleY = closedScale;
-            openColliderScale = colliderScale;
-            transitionDuration = duration;
+            if (duration < 0) duration = slowOpenDuration;
+            
+            StopCurrentTransition();
+            transitionCoroutine = StartCoroutine(SlowOpenRoutine(duration));
         }
         
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 状态应用
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private void ApplyClosedState()
+        /// <summary>
+        /// 直接设置状态（无动画）
+        /// </summary>
+        public void SetStateDirect(BossEyeState state)
         {
-            // 眼睛缩扁（眯眼）
-            if (eyeTransform != null)
-            {
-                Vector3 closedScale = originalEyeScale;
-                closedScale.y = originalEyeScale.y * closedScaleY;
-                eyeTransform.localScale = closedScale;
-            }
+            StopCurrentTransition();
+            currentState = state;
+            ApplyStateVisuals(state, 1f);
             
-            // 禁用Collider
-            if (eyeCollider != null)
+            if (showDebugInfo)
             {
-                eyeCollider.enabled = false;
-            }
-            
-            // 隐藏怒目特效
-            if (redBodyEffect != null)
-            {
-                redBodyEffect.SetActive(false);
-            }
-            
-            if (pupilGlowEffect != null)
-            {
-                pupilGlowEffect.SetActive(false);
-            }
-        }
-        
-        private void ApplyOpenState()
-        {
-            // 眼睛恢复原大小
-            if (eyeTransform != null)
-            {
-                eyeTransform.localScale = originalEyeScale;
-            }
-            
-            // 激活并放大Collider
-            if (eyeCollider != null)
-            {
-                eyeCollider.enabled = true;
-                
-                // 放大Collider（对于CircleCollider2D）
-                CircleCollider2D circleCollider = eyeCollider as CircleCollider2D;
-                if (circleCollider != null)
-                {
-                    // 注意：我们通过修改transform.localScale来影响collider
-                    // 或者可以直接修改radius，但需要记录原始值
-                }
-            }
-            
-            // 显示怒目特效（红色身体）
-            if (redBodyEffect != null)
-            {
-                redBodyEffect.SetActive(true);
-            }
-            
-            if (pupilGlowEffect != null)
-            {
-                pupilGlowEffect.SetActive(true);
+                Debug.Log($"[BossEyeController] 直接设置状态: {state}");
             }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // DOTween 实现
+        // 动画协程
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-#if DOTWEEN
-        private void TransitionWithDOTween(BossEyeState newState)
+        private IEnumerator TransitionToState(BossEyeState targetState, float duration)
         {
-            // 停止当前动画
-            if (scaleTweener != null && scaleTweener.IsActive())
-            {
-                scaleTweener.Kill();
-            }
+            BossEyeState startState = currentState;
+            currentState = targetState == BossEyeState.Open ? BossEyeState.Opening : targetState;
             
-            if (newState == BossEyeState.Open)
-            {
-                // 睁眼动画
-                
-                // 激活Collider
-                if (eyeCollider != null)
-                {
-                    eyeCollider.enabled = true;
-                }
-                
-                // 显示怒目特效
-                if (redBodyEffect != null)
-                {
-                    redBodyEffect.SetActive(true);
-                }
-                
-                if (pupilGlowEffect != null)
-                {
-                    pupilGlowEffect.SetActive(true);
-                }
-                
-                // 眼睛放大动画（从眯眼到正常）
-                if (eyeTransform != null)
-                {
-                    scaleTweener = eyeTransform
-                        .DOScale(originalEyeScale, transitionDuration)
-                        .SetEase(Ease.OutBack);
-                }
-            }
-            else
-            {
-                // 闭眼动画
-                
-                // 隐藏怒目特效
-                if (redBodyEffect != null)
-                {
-                    redBodyEffect.SetActive(false);
-                }
-                
-                if (pupilGlowEffect != null)
-                {
-                    pupilGlowEffect.SetActive(false);
-                }
-                
-                // 眼睛缩扁动画
-                Vector3 closedScale = originalEyeScale;
-                closedScale.y = originalEyeScale.y * closedScaleY;
-                
-                if (eyeTransform != null)
-                {
-                    scaleTweener = eyeTransform
-                        .DOScale(closedScale, transitionDuration)
-                        .SetEase(Ease.InQuad)
-                        .OnComplete(() => {
-                            // 动画结束后禁用Collider
-                            if (eyeCollider != null)
-                            {
-                                eyeCollider.enabled = false;
-                            }
-                        });
-                }
-                else
-                {
-                    // 无动画时直接禁用
-                    if (eyeCollider != null)
-                    {
-                        eyeCollider.enabled = false;
-                    }
-                }
-            }
-        }
-#endif
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 协程实现（Fallback）
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private IEnumerator TransitionCoroutine(BossEyeState newState)
-        {
             float elapsed = 0f;
-            Vector3 startScale = eyeTransform != null ? eyeTransform.localScale : Vector3.one;
-            Vector3 endScale;
+            float startT = (startState == BossEyeState.Open) ? 1f : 0f;
+            float endT = (targetState == BossEyeState.Open) ? 1f : 0f;
             
-            if (newState == BossEyeState.Open)
+#if DOTWEEN
+            // 使用 DOTween
+            bool complete = false;
+            
+            if (eyeTransform != null)
             {
-                endScale = originalEyeScale;
-                
-                // 立即激活相关效果
-                if (eyeCollider != null) eyeCollider.enabled = true;
-                if (redBodyEffect != null) redBodyEffect.SetActive(true);
-                if (pupilGlowEffect != null) pupilGlowEffect.SetActive(true);
-            }
-            else
-            {
-                endScale = originalEyeScale;
-                endScale.y = originalEyeScale.y * closedScaleY;
-                
-                // 立即隐藏特效
-                if (redBodyEffect != null) redBodyEffect.SetActive(false);
-                if (pupilGlowEffect != null) pupilGlowEffect.SetActive(false);
+                Vector3 targetScale = GetEyeScale(endT);
+                scaleTweener = eyeTransform.DOScale(targetScale, duration)
+                    .SetEase(Ease.OutQuad)
+                    .OnComplete(() => complete = true);
             }
             
-            while (elapsed < transitionDuration)
+            if (eyeRenderer != null)
+            {
+                Color targetColor = Color.Lerp(closedColor, openColor, endT);
+                colorTweener = eyeRenderer.DOColor(targetColor, duration).SetEase(Ease.OutQuad);
+            }
+            
+            while (!complete && elapsed < duration)
             {
                 elapsed += Time.deltaTime;
-                float t = elapsed / transitionDuration;
+                yield return null;
+            }
+#else
+            // 协程动画
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Lerp(startT, endT, elapsed / duration);
+                ApplyStateVisuals(targetState, t);
+                yield return null;
+            }
+#endif
+            
+            // 完成
+            currentState = targetState;
+            ApplyStateVisuals(targetState, endT);
+            UpdateColliderState(targetState == BossEyeState.Open);
+            UpdateEffects(targetState == BossEyeState.Open);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[BossEyeController] 状态过渡完成: {targetState}");
+            }
+        }
+        
+        /// <summary>
+        /// 缓慢睁开动画（带戏剧性效果）
+        /// </summary>
+        private IEnumerator SlowOpenRoutine(float duration)
+        {
+            currentState = BossEyeState.Opening;
+            
+            float elapsed = 0f;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[BossEyeController] 🔴 开始缓慢睁眼... {duration}秒");
+            }
+            
+#if DOTWEEN
+            // DOTween 实现
+            if (eyeTransform != null)
+            {
+                Vector3 targetScale = GetEyeScale(1f);
+                scaleTweener = eyeTransform
+                    .DOScale(targetScale, duration)
+                    .SetEase(Ease.InOutSine); // 使用更戏剧性的缓动
+            }
+            
+            if (eyeRenderer != null)
+            {
+                colorTweener = eyeRenderer
+                    .DOColor(openColor, duration)
+                    .SetEase(Ease.InOutSine);
+            }
+            
+            // 等待动画完成
+            yield return new WaitForSeconds(duration);
+#else
+            // 协程实现（带缓动）
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                // 使用 SmoothStep 缓动，产生"慢-快-慢"的效果
+                float rawT = elapsed / duration;
+                float t = rawT * rawT * (3f - 2f * rawT); // SmoothStep
                 
-                // 简单缓动
-                float easeT = newState == BossEyeState.Open 
-                    ? EaseOutBack(t)  // 睁眼用弹性
-                    : t * t;          // 闭眼用平滑
+                ApplyStateVisuals(BossEyeState.Open, t);
                 
-                if (eyeTransform != null)
+                // 在一半进度时激活 Collider（可以开始造成伤害）
+                if (rawT >= 0.5f && eyeCollider != null && !eyeCollider.enabled)
                 {
-                    eyeTransform.localScale = Vector3.Lerp(startScale, endScale, easeT);
+                    eyeCollider.enabled = true;
+                    
+                    if (showDebugInfo)
+                    {
+                        Debug.Log("[BossEyeController] 👁️ 弱点碰撞器激活！");
+                    }
                 }
                 
                 yield return null;
             }
+#endif
             
-            // 确保最终状态
-            if (eyeTransform != null)
+            // 完成
+            currentState = BossEyeState.Open;
+            ApplyStateVisuals(BossEyeState.Open, 1f);
+            UpdateColliderState(true);
+            UpdateEffects(true);
+            
+            if (showDebugInfo)
             {
-                eyeTransform.localScale = endScale;
+                Debug.Log("[BossEyeController] 👁️ 眼睛完全睁开！弱点暴露！");
             }
-            
-            // 闭眼动画结束后禁用Collider
-            if (newState == BossEyeState.Closed && eyeCollider != null)
-            {
-                eyeCollider.enabled = false;
-            }
-            
-            transitionCoroutine = null;
         }
         
-        /// <summary>
-        /// EaseOutBack 缓动
-        /// </summary>
-        private float EaseOutBack(float t)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 视觉效果
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void ApplyStateVisuals(BossEyeState state, float t)
         {
-            const float c1 = 1.70158f;
-            const float c3 = c1 + 1f;
-            return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
+            // t = 0 表示完全闭眼，t = 1 表示完全睁眼
+            
+            // 缩放动画
+            if (eyeTransform != null)
+            {
+                eyeTransform.localScale = GetEyeScale(t);
+            }
+            
+            // 颜色动画
+            if (eyeRenderer != null)
+            {
+                eyeRenderer.color = Color.Lerp(closedColor, openColor, t);
+            }
+        }
+        
+        private Vector3 GetEyeScale(float t)
+        {
+            float scaleY = Mathf.Lerp(closedScaleY, originalEyeScale.y, t);
+            return new Vector3(originalEyeScale.x, scaleY, originalEyeScale.z);
+        }
+        
+        private void UpdateColliderState(bool isOpen)
+        {
+            if (eyeCollider == null) return;
+            
+            // 睁眼时激活并放大 Collider
+            eyeCollider.enabled = isOpen;
+            
+            if (isOpen)
+            {
+                eyeCollider.transform.localScale = originalColliderScale * openColliderScale;
+            }
+            else
+            {
+                eyeCollider.transform.localScale = originalColliderScale;
+            }
+        }
+        
+        private void UpdateEffects(bool isOpen)
+        {
+            // 红色身体特效（怒目）
+            if (redBodyEffect != null)
+            {
+                redBodyEffect.SetActive(isOpen);
+            }
+            
+            // 瞳孔发光
+            if (pupilGlowEffect != null)
+            {
+                pupilGlowEffect.SetActive(isOpen);
+            }
+        }
+        
+        private void StopCurrentTransition()
+        {
+            if (transitionCoroutine != null)
+            {
+                StopCoroutine(transitionCoroutine);
+                transitionCoroutine = null;
+            }
+            
+#if DOTWEEN
+            if (scaleTweener != null && scaleTweener.IsActive())
+            {
+                scaleTweener.Kill();
+            }
+            if (colorTweener != null && colorTweener.IsActive())
+            {
+                colorTweener.Kill();
+            }
+#endif
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -440,16 +391,21 @@ namespace LightVsDecay.Logic.Boss
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
 #if UNITY_EDITOR
-        [ContextMenu("Test Open")]
-        private void TestOpen()
+        private void OnDrawGizmosSelected()
         {
-            Open();
-        }
-        
-        [ContextMenu("Test Close")]
-        private void TestClose()
-        {
-            Close();
+            if (eyeCollider == null) return;
+            
+            // 绘制弱点区域
+            Gizmos.color = currentState == BossEyeState.Open ? Color.red : Color.gray;
+            
+            if (eyeCollider is CircleCollider2D circle)
+            {
+                Gizmos.DrawWireSphere(eyeCollider.transform.position, circle.radius * eyeCollider.transform.lossyScale.x);
+            }
+            else if (eyeCollider is BoxCollider2D box)
+            {
+                Gizmos.DrawWireCube(eyeCollider.transform.position, box.size * eyeCollider.transform.lossyScale.x);
+            }
         }
 #endif
     }

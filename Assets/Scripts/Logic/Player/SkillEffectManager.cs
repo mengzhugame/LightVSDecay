@@ -713,8 +713,8 @@ namespace LightVsDecay.Logic.Player
             // 大招模式必定可以打断
             if (isUltMode) return true;
             
-            // Impact Lv.4+ 可以打断
-            return impactLevel >= 4;
+            // Impact Lv.5+ 可以打断
+            return impactLevel >= 5;
         }
         
         /// <summary>
