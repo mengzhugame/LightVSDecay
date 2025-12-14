@@ -297,33 +297,26 @@ namespace LightVsDecay.Logic
         private void UpdateGameTimer()
         {
             gameTimer += Time.deltaTime;
-    
+
             // 广播时间更新
             GameEvents.TriggerGameTimeUpdated(gameTimer, gameDuration);
-    
+
             // 检查是否进入BOSS阶段
             if (!isBossFight && gameTimer >= gameDuration)
             {
-                // 【修复】进入BOSS战，而不是直接胜利
                 EnterBossFight();
                 GameEvents.TriggerBossFightStart();
-        
+
                 if (showDebugInfo)
                 {
                     Debug.Log("[GameManager] 时间到，进入BOSS战！");
                 }
             }
     
-            // BOSS战计时
+            // Boss 战期间继续计时（仅用于统计，不触发超时失败）
             if (isBossFight)
             {
                 bossTimer += Time.deltaTime;
-        
-                // BOSS战超时 = 失败
-                if (bossTimer >= bossBattleTimeLimit)
-                {
-                    Defeat();
-                }
             }
         }
         

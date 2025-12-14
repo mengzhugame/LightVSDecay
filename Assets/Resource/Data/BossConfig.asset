@@ -27,6 +27,16 @@ MonoBehaviour:
   summonShakeIntensity: 0.1
   summonShakeFrequency: 30
   summonMinionCount: 3
+  summonCooldown: 15
+  summonLeftOffset: {x: -3, y: -1}
+  summonRightOffset: {x: 3, y: -1}
+  summonRusherPerSide: 2
+  pollutionInterval: 4
+  pollutionSpeed: 5
+  pollutionTurnSpeed: 90
+  pollutionShieldDamage: 100
+  pollutionProjectilePrefab: {fileID: 7931272736081078569, guid: f4929c07f31834743be4ca16e007ddda, type: 3}
+  pollutionLifetime: 8
   chargeTelegraphDuration: 1.5
   chargeWindupDistance: 0.5
   chargeDashSpeed: 15
