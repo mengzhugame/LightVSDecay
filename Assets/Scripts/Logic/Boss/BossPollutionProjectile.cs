@@ -39,8 +39,8 @@ namespace LightVsDecay.Logic.Boss
         [SerializeField] private int shieldDamage = 100;
         
         [Header("视觉效果")]
-        [Tooltip("拖尾粒子系统")]
-        [SerializeField] private ParticleSystem trailParticle;
+        //[Tooltip("拖尾粒子系统")]
+        //[SerializeField] private ParticleSystem trailParticle;
         
         [Tooltip("爆炸粒子系统")]
         [SerializeField] private ParticleSystem explosionParticle;
@@ -97,10 +97,10 @@ namespace LightVsDecay.Logic.Boss
             {
                 bodyRenderer = GetComponentInChildren<SpriteRenderer>();
             }
-            if (trailParticle == null)
-            {
-                trailParticle = GetComponentInChildren<ParticleSystem>();
-            }
+            // if (trailParticle == null)
+            // {
+            //     trailParticle = GetComponentInChildren<ParticleSystem>();
+            // }
         }
         
         private void Start()
@@ -120,11 +120,11 @@ namespace LightVsDecay.Logic.Boss
                 currentDirection = Vector2.down; // 默认向下
             }
             
-            // 启动拖尾特效
-            if (trailParticle != null)
-            {
-                trailParticle.Play();
-            }
+            // // 启动拖尾特效
+            // if (trailParticle != null)
+            // {
+            //     trailParticle.Play();
+            // }
             
             if (showDebugInfo)
             {
@@ -312,11 +312,11 @@ namespace LightVsDecay.Logic.Boss
                 bodyRenderer.enabled = false;
             }
             
-            // 停止拖尾
-            if (trailParticle != null)
-            {
-                trailParticle.Stop();
-            }
+            // // 停止拖尾
+            // if (trailParticle != null)
+            // {
+            //     trailParticle.Stop();
+            // }
             
             // 播放爆炸特效
             if (playExplosion && explosionParticle != null)
@@ -326,9 +326,10 @@ namespace LightVsDecay.Logic.Boss
                 Destroy(explosionParticle.gameObject, explosionParticle.main.duration + 0.5f);
             }
             
-            // 延迟销毁（等待拖尾消失）
-            float destroyDelay = (trailParticle != null) ? trailParticle.main.duration : 0.1f;
-            Destroy(gameObject, destroyDelay);
+            // // 延迟销毁（等待拖尾消失）
+            // float destroyDelay = (trailParticle != null) ? trailParticle.main.duration : 0.1f;
+            // Destroy(gameObject, destroyDelay);
+            Destroy(gameObject, 1.0f);
             
             if (showDebugInfo)
             {
