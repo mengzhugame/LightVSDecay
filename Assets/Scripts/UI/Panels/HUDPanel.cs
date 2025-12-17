@@ -36,9 +36,9 @@ namespace LightVsDecay.UI.Panels
         [SerializeField] private Image bossBloodBuffer; // Fill01 白色缓冲条
         [SerializeField] private TextMeshProUGUI bossNameText;
         [Tooltip("缓冲延迟时间（秒）")]
-        [SerializeField] private float bossBufferDelay = 0.5f;
+        [SerializeField] private float bossBufferDelay = 0.35f;
         [Tooltip("缓冲缓动时间（秒）")]
-        [SerializeField] private float bossBufferDuration = 0.3f;
+        [SerializeField] private float bossBufferDuration = 0.6f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 中间区域
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -356,8 +356,33 @@ namespace LightVsDecay.UI.Panels
 // ═══ Boss 死亡 ═══
         private void OnBossDeath()
         {
-            HideBossHealthBar();
+            //HideBossHealthBar();
             cachedBossHealth = null;
+            // 启动死亡处理协程
+            StartCoroutine(BossDeathSequence());
+        }
+        /// <summary>Boss 死亡序列 - 确保血条归零动画完成</summary>
+        private IEnumerator BossDeathSequence()
+        {
+            // 强制触发最后一次缓冲动画（血量归零）
+            bossCurrentHP = 0f;
+            UpdateBossHealthDisplay(0f);
+    
+            if (bossBufferCoroutine != null)
+            {
+                StopCoroutine(bossBufferCoroutine);
+            }
+            bossBufferCoroutine = StartCoroutine(BossBufferCoroutine());
+    
+            // 等待缓冲动画完成
+            yield return new WaitForSeconds(bossBufferDelay + bossBufferDuration + 0.1f);
+    
+            // 清理缓存
+            cachedBossHealth = null;
+    
+            // 注意：不隐藏血条，让结算面板显示
+            // 如果需要隐藏，取消注释下面这行
+            // HideBossHealthBar();
         }
         /// <summary>更新Boss血量（带缓冲效果）</summary>
         private void UpdateBossHealthWithValue(float normalizedHP, int currentHealth)
@@ -611,22 +636,22 @@ namespace LightVsDecay.UI.Panels
         /// <summary>【优化】Boss血条缓冲动画 - 0.5秒延迟 + 0.3秒缓动</summary>
         private IEnumerator BossBufferCoroutine()
         {
-            // 使用配置的延迟（默认0.5秒，原来是0.2秒）
+            // 使用配置的延迟
             yield return new WaitForSeconds(bossBufferDelay);
-    
-            // 使用配置的缓动时长（默认0.3秒）
+
             float startBuffer = bossBufferHP;
+            float targetBuffer = bossCurrentHP;
             float elapsed = 0f;
-    
+
             while (elapsed < bossBufferDuration)
             {
                 elapsed += Time.deltaTime;
-                float t = elapsed / bossBufferDuration;
+                float t = Mathf.Clamp01(elapsed / bossBufferDuration);
         
-                // EaseOutQuad 缓动
-                float easeT = 1f - (1f - t) * (1f - t);
+                // EaseOutCubic 缓动 - 比 EaseOutQuad 更丝滑
+                float easeT = 1f - Mathf.Pow(1f - t, 3f);
         
-                bossBufferHP = Mathf.Lerp(startBuffer, bossCurrentHP, easeT);
+                bossBufferHP = Mathf.Lerp(startBuffer, targetBuffer, easeT);
         
                 if (bossBloodBuffer != null)
                 {
@@ -635,8 +660,9 @@ namespace LightVsDecay.UI.Panels
         
                 yield return null;
             }
-    
-            bossBufferHP = bossCurrentHP;
+
+            // 确保最终值精确
+            bossBufferHP = targetBuffer;
             if (bossBloodBuffer != null)
             {
                 bossBloodBuffer.fillAmount = bossBufferHP;

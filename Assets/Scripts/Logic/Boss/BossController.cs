@@ -106,6 +106,14 @@ namespace LightVsDecay.Logic.Boss
         private bool isPressing = false;            // 是否正在碾压/角力
         private Vector2 accumulatedPushForce;       // 累积的激光推力
         private bool isBeingPushed = false;         // 是否正在被推
+        // 在现有字段区域添加：
+        private float currentPushForce = 0f;           // 当前推力大小（持续施加直到更新）
+        private bool isReceivingLaserHit = false;      // 是否正在被激光照射
+        private float laserHitTimeout = 0.15f;         // 激光命中超时（略大于tick间隔）
+        private float lastLaserHitTime = 0f;           // 上次被激光命中的时间
+        // Press 角力状态
+        private bool isPressPhase3Active = false;    // Phase 3 角力是否激活
+        private float pressDownForce = 0f;           // 当前下压力
         
         // 颜色缓存
         private Color[] originalColors;
@@ -199,17 +207,36 @@ namespace LightVsDecay.Logic.Boss
         
         private void FixedUpdate()
         {
-            // 在Press角力阶段应用累积的推力
-            if (isPressing && accumulatedPushForce.sqrMagnitude > 0.01f)
+            // ═══════════════════════════════════════════════════
+            // Press 角力物理（统一在 FixedUpdate 处理）
+            // ═══════════════════════════════════════════════════
+            if (isPressing && isPressPhase3Active)
             {
-                rb.AddForce(accumulatedPushForce, ForceMode2D.Force);
-                
-                if (showDebugInfo)
+                // 1. 施加下压力
+                if (pressDownForce > 0)
                 {
-                    Debug.Log($"[BossController] 受到推力: {accumulatedPushForce.magnitude:F2}, Y速度: {rb.velocity.y:F2}");
+                    rb.AddForce(Vector2.down * pressDownForce, ForceMode2D.Force);
                 }
-                
-                accumulatedPushForce = Vector2.zero;
+        
+                // 2. 检查激光命中是否超时
+                if (isReceivingLaserHit && Time.time - lastLaserHitTime > laserHitTimeout)
+                {
+                    isReceivingLaserHit = false;
+                    currentPushForce = 0f;
+                }
+        
+                // 3. 施加激光推力
+                if (isReceivingLaserHit && currentPushForce > 0.01f)
+                {
+                    rb.AddForce(Vector2.up * currentPushForce, ForceMode2D.Force);
+                }
+        
+                // 调试日志
+                if (showDebugInfo && Time.frameCount % 30 == 0)
+                {
+                    float netForce = currentPushForce - pressDownForce;
+                    Debug.Log($"[BossController] 角力: 下压={pressDownForce:F0}, 上推={currentPushForce:F0}, 净力={netForce:F0}, Y速度={rb.velocity.y:F2}");
+                }
             }
         }
         
@@ -836,63 +863,64 @@ namespace LightVsDecay.Logic.Boss
             
             yield return new WaitForSeconds(glareDuration);
             
-            // ═══════════════════════════════════════════════════
-            // Phase 3: The Crush (碾压/角力)
-            // 物理：持续施加向下的力
-            // 玩家对策：持续射击核心，施加向上的推力
-            // ═══════════════════════════════════════════════════
-            
+// ═══════════════════════════════════════════════════
+// Phase 3: Crushing (角力) - 持续直到胜负
+// 眼睛：完全睁开（可被攻击）
+// 物理：Boss 向下压，玩家用激光向上推
+// ═══════════════════════════════════════════════════
+
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🟣 Press Phase 3: 开始碾压！角力进行中...");
+                Debug.Log("[BossController] Press Phase 3: 开始碾压！角力进行中...");
             }
-            
+
             isPressing = true;
-            rb.velocity = Vector2.zero;
-            
-            float pressForce = config != null ? config.GetPressForce(HealthPercent) : 100f;
+            isPressPhase3Active = true;  // 激活 FixedUpdate 中的物理处理
+
+// 设置下压力（由 FixedUpdate 施加）
+            pressDownForce = config != null ? config.GetPressForce(HealthPercent) : 100f;
+
             float safeLineY = config != null ? config.pressSafeLineY : 3.5f;
             float hitLineY = config != null ? config.pressHitLineY : -10f;
             float maxDuration = config != null ? config.pressMaxDuration : 15f;
-            
+
             float crushingElapsed = 0f;
-            
+
             while (crushingElapsed < maxDuration)
             {
                 crushingElapsed += Time.deltaTime;
-                
-                // 持续向下压迫
-                rb.AddForce(Vector2.down * pressForce, ForceMode2D.Force);
-                
+    
+                // 注意：不再在这里施加力！力在 FixedUpdate 中统一施加
+    
                 // ─────────────────────────────────────────────────
                 // 胜利条件：被推回安全线上方
                 // ─────────────────────────────────────────────────
                 if (transform.position.y > safeLineY)
                 {
+                    isPressPhase3Active = false;
+                    pressDownForce = 0f;
                     OnPressPushedBack();
                     yield break;
                 }
-                
+    
                 // ─────────────────────────────────────────────────
                 // 失败条件：撞到玩家
                 // ─────────────────────────────────────────────────
                 if (transform.position.y < hitLineY)
                 {
+                    isPressPhase3Active = false;
+                    pressDownForce = 0f;
                     OnPressHitPlayer();
                     yield break;
                 }
-                
-                // 调试
-                if (showDebugInfo && Time.frameCount % 60 == 0)
-                {
-                    Debug.Log($"[BossController] 角力中... Y={transform.position.y:F2}, VelY={rb.velocity.y:F2}");
-                }
-                
-                isBeingPushed = false;
+    
                 yield return null;
             }
-            
-            // 超时
+
+// 超时
+            isPressPhase3Active = false;
+            pressDownForce = 0f;
+
             if (showDebugInfo) Debug.Log("[BossController] Press 超时");
             OnPressTimeout();
         }
@@ -902,6 +930,11 @@ namespace LightVsDecay.Logic.Boss
         /// </summary>
         private void OnPressPushedBack()
         {
+// 重置角力状态
+            isPressPhase3Active = false;
+            pressDownForce = 0f;
+            currentPushForce = 0f;
+            isReceivingLaserHit = false;
             if (showDebugInfo)
             {
                 Debug.Log("[BossController] 🎉 Press 被推回！玩家角力胜利！");
@@ -926,6 +959,11 @@ namespace LightVsDecay.Logic.Boss
         /// </summary>
         private void OnPressHitPlayer()
         {
+// 重置角力状态
+            isPressPhase3Active = false;
+            pressDownForce = 0f;
+            currentPushForce = 0f;
+            isReceivingLaserHit = false;
             if (showDebugInfo)
             {
                 Debug.Log("[BossController] 💥 Press 撞击玩家！");
@@ -956,6 +994,11 @@ namespace LightVsDecay.Logic.Boss
         /// </summary>
         private void OnPressTimeout()
         {
+// 重置角力状态
+            isPressPhase3Active = false;
+            pressDownForce = 0f;
+            currentPushForce = 0f;
+            isReceivingLaserHit = false;
             rb.velocity = Vector2.zero;
             isPressing = false;
             StartCoroutine(PressBounceBackRoutine());
@@ -997,9 +1040,16 @@ namespace LightVsDecay.Logic.Boss
         public void ApplyLaserPushForce(Vector2 pushForce)
         {
             if (!isPressing) return;
-            
-            accumulatedPushForce += pushForce;
-            isBeingPushed = true;
+    
+            // 更新推力值和命中时间
+            currentPushForce = pushForce.magnitude;
+            lastLaserHitTime = Time.time;
+            isReceivingLaserHit = true;
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[BossController] 收到推力更新: {currentPushForce:F2}");
+            }
         }
         
         /// <summary>

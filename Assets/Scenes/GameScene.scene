@@ -187,8 +187,8 @@ MonoBehaviour:
   bossBloodFill: {fileID: 1490426509}
   bossBloodBuffer: {fileID: 602054473}
   bossNameText: {fileID: 1952239813}
-  bossBufferDelay: 0.5
-  bossBufferDuration: 0.3
+  bossBufferDelay: 0.35
+  bossBufferDuration: 0.6
   comboCountText: {fileID: 2086143252}
   gameTimerBar: {fileID: 933964796}
   comboFadeDelay: 1.5
@@ -9048,7 +9048,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1568450558
 Transform:
   m_ObjectHideFlags: 0

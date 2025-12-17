@@ -49,14 +49,14 @@ MonoBehaviour:
   pressJumpDuration: 0.5
   pressHoverY: -5
   pressGlareDuration: 1.5
-  pressForce: 100
+  pressForce: 80
   pressForceRageMultiplier: 1.2
   pressSafeLineY: 3.5
   pressHitLineY: -10
   pressMaxDuration: 15
   pressCounterStunDuration: 3
   pressSummonCount: 0
-  baseLaserPushForce: 80
+  baseLaserPushForce: 120
   impactPushMultipliers:
   - 0.3
   - 0.6

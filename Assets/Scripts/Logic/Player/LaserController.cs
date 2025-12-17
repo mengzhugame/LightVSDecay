@@ -387,6 +387,8 @@ namespace LightVsDecay.Logic.Player
                             // === 情况2: 冲撞阶段 - 施加推力（角力核心） ===
                             else if (bossController.IsPressing)
                             {
+                                // 【调试】打印 impactLevel 确认值
+                                Debug.Log($"[LaserController] 推力计算 - impactLevel={impactLevel}, isUltMode={isUltMode}");
                                 // 计算推力
                                 float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
                                 
