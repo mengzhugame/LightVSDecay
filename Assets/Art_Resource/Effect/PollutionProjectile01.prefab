@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3126378829724346276}
   - component: {fileID: 3174533424781315248}
   - component: {fileID: 2695195767019092234}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Smoke
   m_TagString: Untagged
@@ -4925,7 +4925,7 @@ GameObject:
   - component: {fileID: 4878795442864880810}
   - component: {fileID: 2342962372531498646}
   - component: {fileID: 2647140455499990057}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Glow_Along
   m_TagString: Untagged
@@ -9772,7 +9772,7 @@ GameObject:
   - component: {fileID: 6158709293962526265}
   - component: {fileID: 1148855865658458893}
   - component: {fileID: 4527741337894788247}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Sparks
   m_TagString: Untagged
@@ -14741,7 +14741,7 @@ GameObject:
   - component: {fileID: 7952344680305300356}
   - component: {fileID: -2500873050137931374}
   - component: {fileID: 502823638954774356}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: PollutionProjectile01
   m_TagString: Untagged
@@ -14826,7 +14826,7 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
   m_Constraints: 0
 --- !u!114 &502823638954774356
 MonoBehaviour:
@@ -14840,20 +14840,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7f2a45886c698b4ab164f090118d7a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
+  moveSpeed: 1
   turnSpeed: 90
   lifetime: 8
   shieldDamage: 100
-  trailParticle: {fileID: 0}
+  orbParticle: {fileID: 6444289942308689427}
   explosionParticle: {fileID: 1790109604786490453}
-  bodyRenderer: {fileID: 0}
   playerTowerLayer:
     serializedVersion: 2
-    m_Bits: 1024
-  laserLayer:
-    serializedVersion: 2
-    m_Bits: 1024
-  showDebugInfo: 0
+    m_Bits: 1536
+  showDebugInfo: 1
 --- !u!1 &1247851999411206509
 GameObject:
   m_ObjectHideFlags: 0
@@ -14865,9 +14861,9 @@ GameObject:
   - component: {fileID: 7689613121430481560}
   - component: {fileID: 1790109604786490453}
   - component: {fileID: 2578548442230667758}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
-  m_Name: Impact (1)
+  m_Name: VFX_Pollution_Explosion
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19807,7 +19803,7 @@ GameObject:
   - component: {fileID: 1735737643573819535}
   - component: {fileID: 8965522472741903826}
   - component: {fileID: 2957666779576123946}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Smoke
   m_TagString: Untagged
@@ -24721,7 +24717,7 @@ GameObject:
   - component: {fileID: 3454415734961702824}
   - component: {fileID: 8289777904661481335}
   - component: {fileID: 7027774907469247316}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Trail
   m_TagString: Untagged
@@ -28388,7 +28384,7 @@ ParticleSystem:
         m_NumAlphaKeys: 2
     range: {x: 0, y: 1}
   CollisionModule:
-    enabled: 1
+    enabled: 0
     serializedVersion: 4
     type: 1
     collisionMode: 0
@@ -29622,7 +29618,7 @@ GameObject:
   - component: {fileID: 5934683677639846319}
   - component: {fileID: 8804368805016945254}
   - component: {fileID: 7324406825899367801}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Sparks_Stretched
   m_TagString: Untagged
@@ -34554,7 +34550,7 @@ GameObject:
   - component: {fileID: 7166311722071527169}
   - component: {fileID: 5141958873205768657}
   - component: {fileID: 7693043384553445100}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Stars_Along
   m_TagString: Untagged
@@ -39473,7 +39469,7 @@ GameObject:
   - component: {fileID: 7763731417220147588}
   - component: {fileID: 6088937145575839283}
   - component: {fileID: 6636437762389221557}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Stars
   m_TagString: Untagged
@@ -44450,7 +44446,7 @@ GameObject:
   - component: {fileID: 3468657118236745837}
   - component: {fileID: 8317026922904986306}
   - component: {fileID: 1638379430863132955}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Hit
   m_TagString: Untagged
@@ -49373,7 +49369,7 @@ GameObject:
   - component: {fileID: 6494439641610861019}
   - component: {fileID: 3667618644463077621}
   - component: {fileID: 8591747364199353193}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Smoke_Along
   m_TagString: Untagged
@@ -54229,9 +54225,9 @@ GameObject:
   - component: {fileID: 1560207930182395974}
   - component: {fileID: 6444289942308689427}
   - component: {fileID: 733185063282476085}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
-  m_Name: VFX_Dark_Magic_Projectile
+  m_Name: VFX_Pollution_Orb
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -58066,7 +58062,7 @@ ParticleSystem:
         m_NumAlphaKeys: 2
     range: {x: 0, y: 1}
   CollisionModule:
-    enabled: 1
+    enabled: 0
     serializedVersion: 4
     type: 1
     collisionMode: 0
@@ -59341,7 +59337,7 @@ GameObject:
   - component: {fileID: 8180027350449044274}
   - component: {fileID: 6537160028246691970}
   - component: {fileID: 5801774830953602417}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Star
   m_TagString: Untagged
@@ -64255,7 +64251,7 @@ GameObject:
   - component: {fileID: 4891630401422154421}
   - component: {fileID: 4513690573230564645}
   - component: {fileID: 4334022333341859354}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Flare
   m_TagString: Untagged
@@ -69160,14 +69156,14 @@ GameObject:
   - component: {fileID: 6883807234722825328}
   - component: {fileID: 581987102816582904}
   - component: {fileID: 2430299686474965107}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Flare
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6883807234722825328
 Transform:
   m_ObjectHideFlags: 0
@@ -74065,7 +74061,7 @@ GameObject:
   - component: {fileID: 6424022681109456345}
   - component: {fileID: 7890441846729789037}
   - component: {fileID: 1137808247393601695}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Sparks_Stretched_Along
   m_TagString: Untagged
@@ -78948,7 +78944,7 @@ GameObject:
   - component: {fileID: 7939874364356626371}
   - component: {fileID: 3610254816164250976}
   - component: {fileID: 8362800503941576861}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Sparks_Along_Upwards
   m_TagString: Untagged
@@ -83831,7 +83827,7 @@ GameObject:
   - component: {fileID: 314136919762073627}
   - component: {fileID: 4777919804536998634}
   - component: {fileID: 1030678358850209139}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Glow
   m_TagString: Untagged
@@ -88738,14 +88734,14 @@ GameObject:
   - component: {fileID: 6157162435293643688}
   - component: {fileID: 4938225834261937638}
   - component: {fileID: 4607418550455566679}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: Stars_Along
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6157162435293643688
 Transform:
   m_ObjectHideFlags: 0

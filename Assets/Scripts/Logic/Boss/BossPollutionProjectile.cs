@@ -39,22 +39,14 @@ namespace LightVsDecay.Logic.Boss
         [SerializeField] private int shieldDamage = 100;
         
         [Header("视觉效果")]
-        //[Tooltip("拖尾粒子系统")]
-        //[SerializeField] private ParticleSystem trailParticle;
-        
+        [Tooltip("飞行拖尾粒子系统（VFX_Pollution_Orb）")]
+        [SerializeField] private ParticleSystem orbParticle;
         [Tooltip("爆炸粒子系统")]
         [SerializeField] private ParticleSystem explosionParticle;
-        
-        [Tooltip("主体 SpriteRenderer")]
-        [SerializeField] private SpriteRenderer bodyRenderer;
-        
+
         [Header("Layer 设置")]
         [Tooltip("玩家塔所在 Layer（用于命中检测）")]
         [SerializeField] private LayerMask playerTowerLayer;
-        
-        [Tooltip("激光所在 Layer（用于拦截检测）")]
-        [SerializeField] private LayerMask laserLayer;
-        
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
         
@@ -91,16 +83,6 @@ namespace LightVsDecay.Logic.Boss
             
             // 配置碰撞器为触发器
             col.isTrigger = true;
-            
-            // 自动查找组件
-            if (bodyRenderer == null)
-            {
-                bodyRenderer = GetComponentInChildren<SpriteRenderer>();
-            }
-            // if (trailParticle == null)
-            // {
-            //     trailParticle = GetComponentInChildren<ParticleSystem>();
-            // }
         }
         
         private void Start()
@@ -119,13 +101,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 currentDirection = Vector2.down; // 默认向下
             }
-            
-            // // 启动拖尾特效
-            // if (trailParticle != null)
-            // {
-            //     trailParticle.Play();
-            // }
-            
+
             if (showDebugInfo)
             {
                 Debug.Log($"[PollutionProjectile] 生成 @ {transform.position}, 目标: {(target != null ? target.name : "无")}");
@@ -215,54 +191,48 @@ namespace LightVsDecay.Logic.Boss
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (isDestroyed) return;
-            
+    
             int otherLayer = other.gameObject.layer;
-            
-            // 检查是否被激光命中（一击即爆）
-            if (IsInLayerMask(otherLayer, laserLayer))
+            string layerName = LayerMask.LayerToName(otherLayer);
+    
+            if (showDebugInfo)
             {
-                if (showDebugInfo)
-                {
-                    Debug.Log("[PollutionProjectile] 被激光拦截！");
-                }
-                DestroyProjectile(true);
-                return;
+                Debug.Log($"[PollutionProjectile] 触发碰撞: {other.gameObject.name}, Layer: {layerName}");
+                Debug.Log($"[PollutionProjectile] playerTowerLayer.value = {playerTowerLayer.value}, 检测位 = {(1 << otherLayer)}");
             }
-            
-            // 检查是否命中玩家塔/护盾（通过 Layer）
-            if (IsInLayerMask(otherLayer, playerTowerLayer))
+    
+            // 【方案A】直接用 Layer 名称判断（更可靠）
+            if (layerName == "Shield" || layerName == "Tower")
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[PollutionProjectile] 命中玩家！造成 {shieldDamage} 点护盾伤害");
+                    Debug.Log($"[PollutionProjectile] 🎯 命中 {layerName}！造成 {shieldDamage} 点护盾伤害");
                 }
-                
+        
                 ApplyDamage();
                 DestroyProjectile(true);
                 return;
             }
-            
-            // 检查 Shield 或 Turret 组件（作为后备检测）
+    
+            // 【方案B】后备检测：通过组件
             ShieldController shield = other.GetComponent<ShieldController>();
+            if (shield == null) shield = other.GetComponentInParent<ShieldController>();
+    
             TurretHealth turret = other.GetComponent<TurretHealth>();
-            
+            if (turret == null) turret = other.GetComponentInParent<TurretHealth>();
+    
             if (shield != null || turret != null)
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[PollutionProjectile] 命中玩家组件！造成 {shieldDamage} 点护盾伤害");
+                    Debug.Log($"[PollutionProjectile] 🎯 命中玩家组件！造成 {shieldDamage} 点护盾伤害");
                 }
-                
+        
                 ApplyDamage();
                 DestroyProjectile(true);
             }
         }
-        
-        private bool IsInLayerMask(int layer, LayerMask mask)
-        {
-            return (mask.value & (1 << layer)) != 0;
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 伤害处理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -299,38 +269,40 @@ namespace LightVsDecay.Logic.Boss
         {
             if (isDestroyed) return;
             isDestroyed = true;
-            
+    
             // 停止移动
             rb.velocity = Vector2.zero;
-            
+    
             // 禁用碰撞
             col.enabled = false;
-            
-            // 隐藏主体
-            if (bodyRenderer != null)
+    
+            // 【关键】停止飞行拖尾粒子
+            if (orbParticle != null)
             {
-                bodyRenderer.enabled = false;
+                orbParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                orbParticle.gameObject.SetActive(false);
             }
-            
-            // // 停止拖尾
-            // if (trailParticle != null)
-            // {
-            //     trailParticle.Stop();
-            // }
-            
+    
             // 播放爆炸特效
             if (playExplosion && explosionParticle != null)
             {
-                explosionParticle.transform.SetParent(null); // 脱离父物体
+                Vector3 explosionPos = transform.position;
+        
+                explosionParticle.transform.SetParent(null);
+                explosionParticle.transform.position = explosionPos;
                 explosionParticle.Play();
+        
                 Destroy(explosionParticle.gameObject, explosionParticle.main.duration + 0.5f);
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[PollutionProjectile] 💥 爆炸特效播放 @ {explosionPos}");
+                }
             }
-            
-            // // 延迟销毁（等待拖尾消失）
-            // float destroyDelay = (trailParticle != null) ? trailParticle.main.duration : 0.1f;
-            // Destroy(gameObject, destroyDelay);
-            Destroy(gameObject, 1.0f);
-            
+    
+            // 立即销毁主体
+            Destroy(gameObject, 0.05f);
+    
             if (showDebugInfo)
             {
                 Debug.Log($"[PollutionProjectile] 销毁 (爆炸: {playExplosion})");
@@ -351,22 +323,7 @@ namespace LightVsDecay.Logic.Boss
             shieldDamage = damage;
             lifetime = life;
         }
-        
-        /// <summary>
-        /// 被激光击中（外部调用的替代入口）
-        /// </summary>
-        public void OnHitByLaser()
-        {
-            if (!isDestroyed)
-            {
-                if (showDebugInfo)
-                {
-                    Debug.Log("[PollutionProjectile] 被激光击中！");
-                }
-                DestroyProjectile(true);
-            }
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Gizmos 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
