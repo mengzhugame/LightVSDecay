@@ -45,7 +45,13 @@ namespace LightVsDecay.UI.Panels
         
         [Header("中间区域 - MidArea")]
         [SerializeField] private TextMeshProUGUI comboCountText;
-        [SerializeField] private Slider gameTimerBar;
+        
+        [Header("波次进度")]
+        [Tooltip("波次进度条（复用原 gameTimerBar）")]
+        [SerializeField] private Slider waveProgressBar;  // 改名更清晰
+        
+        [Tooltip("波次文本（如：波次: 3/12）")]
+        [SerializeField] private TextMeshProUGUI waveText;
         
         [Header("连击显示设置")]
         [SerializeField] private float comboFadeDelay = 1.5f;
@@ -152,9 +158,8 @@ namespace LightVsDecay.UI.Panels
             {
                 comboCanvasGroup.alpha = 0f;
             }
-            
-            // 游戏计时器
-            UpdateGameTimer(0f, 300f);
+            // 波次进度（初始化为第1波）
+            UpdateWaveProgress(1, 12);
             
             // 玩家血量
             healthCurrentPercent = 1f;
@@ -192,8 +197,10 @@ namespace LightVsDecay.UI.Panels
             Core.GameEvents.OnShieldHPChanged += OnShieldHPChanged;
             Core.GameEvents.OnHullHPChanged += OnHullHPChanged;
             
-            // 游戏时间事件
-            Core.GameEvents.OnGameTimeUpdated += OnGameTimeUpdated;
+            // 波次进度事件
+            Core.GameEvents.OnWaveProgressUpdated += OnWaveProgressUpdated;
+            Core.GameEvents.OnWaveStart += OnWaveStart;
+            Core.GameEvents.OnWaveComplete += OnWaveComplete;
             // ═══ 新增：Boss 事件 ═══
             Core.GameEvents.OnBossHealthChanged += OnBossHealthChanged;
             Core.GameEvents.OnBossFightStart += OnBossFightStart;
@@ -211,7 +218,9 @@ namespace LightVsDecay.UI.Panels
             Core.GameEvents.OnShieldHPChanged -= OnShieldHPChanged;
             Core.GameEvents.OnHullHPChanged -= OnHullHPChanged;
             
-            Core.GameEvents.OnGameTimeUpdated -= OnGameTimeUpdated;
+            Core.GameEvents.OnWaveProgressUpdated -= OnWaveProgressUpdated;
+            Core.GameEvents.OnWaveStart -= OnWaveStart;
+            Core.GameEvents.OnWaveComplete -= OnWaveComplete;
             // ═══ 新增：Boss 事件取消订阅 ═══
             Core.GameEvents.OnBossHealthChanged -= OnBossHealthChanged;
             Core.GameEvents.OnBossFightStart -= OnBossFightStart;
@@ -319,11 +328,58 @@ namespace LightVsDecay.UI.Panels
         {
             UpdateHullHP(current, max);
         }
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 波次 UI 更新
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void OnGameTimeUpdated(float current, float total)
+        /// <summary>更新波次进度显示</summary>
+        private void UpdateWaveProgress(int currentWave, int totalWaves)
         {
-            UpdateGameTimer(current, total);
+            // 更新进度条（显示已完成的波次比例）
+            if (waveProgressBar != null)
+            {
+                // 进度 = (当前波次 - 1) / 总波次
+                // 例如：第3波时进度为 2/12 = 16.7%
+                float progress = totalWaves > 0 ? (float)(currentWave - 1) / totalWaves : 0f;
+                waveProgressBar.value = progress;
+            }
+            
+            // 更新波次文本
+            if (waveText != null)
+            {
+                waveText.text = $"波次: {currentWave}/{totalWaves}";
+            }
         }
+        
+        /// <summary>波次进度更新回调</summary>
+        private void OnWaveProgressUpdated(int currentWave, int totalWaves)
+        {
+            UpdateWaveProgress(currentWave, totalWaves);
+        }
+        
+        /// <summary>波次开始回调</summary>
+        private void OnWaveStart(int currentWave, int totalWaves)
+        {
+            UpdateWaveProgress(currentWave, totalWaves);
+            
+            // TODO: 可以在这里显示波次开始的提示动画
+            // 例如：闪烁波次文本、播放音效等
+        }
+        
+        /// <summary>波次完成回调</summary>
+        private void OnWaveComplete(int completedWave, int totalWaves)
+        {
+            // 波次完成时，进度条填满到当前波次
+            if (waveProgressBar != null)
+            {
+                float progress = totalWaves > 0 ? (float)completedWave / totalWaves : 0f;
+                waveProgressBar.value = progress;
+            }
+            
+            // TODO: 可以在这里显示波次完成的庆祝动画
+            // 例如：进度条闪光、播放音效等
+        }
+
 // ═══ Boss 战斗开始 ═══
         private void OnBossFightStart()
         {
@@ -426,16 +482,7 @@ namespace LightVsDecay.UI.Panels
                 levelText.text = $"Lv.{level}";
             }
         }
-        
-        /// <summary>更新游戏计时器</summary>
-        private void UpdateGameTimer(float current, float total)
-        {
-            if (gameTimerBar != null)
-            {
-                gameTimerBar.value = total > 0 ? current / total : 0f;
-            }
-        }
-        
+
         /// <summary>更新连击显示</summary>
         private void UpdateComboDisplay(int combo)
         {

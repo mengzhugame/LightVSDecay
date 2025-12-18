@@ -1,22 +1,47 @@
 // ============================================================
-// WaveManager.cs (修复版)
+// WaveManager.cs (重构版)
 // 文件位置: Assets/Scripts/Logic/WaveManager.cs
-// 用途：敌人波次管理 - 修复 GameState 命名空间
+// 用途：波次管理器 - 状态机驱动，基于波次序列
 // ============================================================
 
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
-using LightVsDecay.Data;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Enemy;
 
 namespace LightVsDecay.Logic
 {
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 波次状态枚举
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /// <summary>
+    /// 波次状态
+    /// </summary>
+    public enum WaveState
+    {
+        /// <summary>等待开始（商店/骰子阶段）</summary>
+        Waiting,
+        
+        /// <summary>正在按时间轴生成敌人</summary>
+        Spawning,
+        
+        /// <summary>敌人生成完毕，等待玩家清场</summary>
+        Battle,
+        
+        /// <summary>波次胜利，结算奖励</summary>
+        Complete,
+        
+        /// <summary>BOSS 战</summary>
+        BossFight
+    }
+
     /// <summary>
     /// 波次管理器
-    /// 根据 WaveConfig 配置控制敌人生成节奏
+    /// 状态机驱动，控制 12 波敌人生成节奏
     /// </summary>
     public class WaveManager : Singleton<WaveManager>
     {
@@ -34,45 +59,80 @@ namespace LightVsDecay.Logic
         
         [Tooltip("屏幕外偏移")]
         [SerializeField] private float spawnOffset = 1.5f;
+        
         [Header("BOSS配置")]
         [Tooltip("BOSS预制体")]
         [SerializeField] private GameObject bossPrefab;
+        
         [Header("调试")]
-        [SerializeField] private bool showDebugInfo = false;
+        [SerializeField] private bool showDebugInfo = true;
         [SerializeField] private bool showSpawnArea = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 运行时状态
+        // 状态机
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private bool isSpawning = false;
-        private PhaseConfig currentPhase;
-        private GamePhase currentPhaseType = GamePhase.Warmup;
+        private WaveState currentState = WaveState.Waiting;
+        private int currentWaveNumber = 0;  // 当前波次（1-based）
+        private WaveData currentWaveData;   // 当前波次配置
         
-        // 生成计时器（每种敌人类型独立计时）
-        private Dictionary<EnemyType, float> spawnTimers = new Dictionary<EnemyType, float>();
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 进度监控
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        private int totalEnemiesInWave = 0;     // 本波总敌人数（从配置读取）
+        private int enemiesSpawned = 0;         // 已生成敌人数
+        private int enemiesKilled = 0;          // 已击杀敌人数
+        private float waveTimer = 0f;           // 波次计时器
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // BOSS 相关
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private GameObject currentBossInstance;
+        private bool bossSpawned = false;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 屏幕边界缓存
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         private Vector2 screenMin;
         private Vector2 screenMax;
-        // 当前BOSS实例引用
-        private GameObject currentBossInstance;
-        // BOSS相关
-        private bool bossSpawned = false;
-        private float bossMinionTimer = 0f;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 协程引用
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private Coroutine waveIntervalCoroutine;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        public bool IsSpawning => isSpawning;
-        public GamePhase CurrentPhase => currentPhaseType;
-        public string CurrentPhaseName => currentPhase?.displayName ?? "未知";
-        /// <summary>当前BOSS实例</summary>
-        public GameObject CurrentBoss => currentBossInstance;
-
-        /// <summary>BOSS是否存活</summary>
-        public bool IsBossAlive => currentBossInstance != null;
+        /// <summary>当前波次状态</summary>
+        public WaveState CurrentState => currentState;
+        
+        /// <summary>当前波次编号（1-based）</summary>
+        public int CurrentWaveNumber => currentWaveNumber;
+        
+        /// <summary>总波次数</summary>
+        public int TotalWaves => waveConfig != null ? waveConfig.totalWaves : 12;
+        
+        /// <summary>本波总敌人数</summary>
+        public int TotalEnemiesInWave => totalEnemiesInWave;
+        
+        /// <summary>已击杀敌人数</summary>
+        public int EnemiesKilled => enemiesKilled;
+        
+        /// <summary>当前波次名称</summary>
+        public string CurrentWaveName => currentWaveData?.displayName ?? "---";
+        
+        /// <summary>波次进度（0-1）用于进度条</summary>
+        public float WaveProgress => TotalWaves > 0 ? (float)(currentWaveNumber - 1) / TotalWaves : 0f;
+        
+        /// <summary>是否在 BOSS 战</summary>
+        public bool IsBossFight => currentState == WaveState.BossFight;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -85,493 +145,447 @@ namespace LightVsDecay.Logic
             }
             
             CalculateScreenBounds();
-            InitializeTimers();
+        }
+        
+        private void OnEnable()
+        {
+            // 订阅事件
             GameEvents.OnGameStart += OnGameStart;
             GameEvents.OnGameStateChanged += OnGameStateChanged;
+            GameEvents.OnEnemyDied += OnEnemyDied;
+            GameEvents.OnBossDeath += OnBossDefeated;
         }
         
-        private void Start()
+        private void OnDisable()
         {
-        }
-        
-        protected override void OnSingletonDestroy()
-        {
+            // 取消订阅
             GameEvents.OnGameStart -= OnGameStart;
             GameEvents.OnGameStateChanged -= OnGameStateChanged;
+            GameEvents.OnEnemyDied -= OnEnemyDied;
+            GameEvents.OnBossDeath -= OnBossDefeated;
         }
         
         private void Update()
         {
-            // 【修复】GameManager 检查移到最前面，这是唯一应该完全阻断的条件
-            if (GameManager.Instance == null || !GameManager.Instance.IsPlaying) 
+            if (currentState == WaveState.Spawning)
             {
-                if (showDebugInfo) Debug.Log($"[WaveManager] Update跳过: GameManager空或不在Playing状态");
-                return;
-            }
-    
-            float gameTime = GameManager.Instance.GameTimer;
-    
-            // 【修复】阶段更新必须始终执行，不受 isSpawning 影响
-            UpdateCurrentPhase(gameTime);
-    
-            // 【修复】只有 isSpawning = true 时才生成敌人
-            if (isSpawning)
-            {
-                // 根据阶段生成敌人
-                if (currentPhase != null && currentPhase.enableSpawning)
-                {
-                    ProcessSpawning();
-                }
-        
-                // BOSS阶段特殊处理
-                if (currentPhaseType == GamePhase.BossFight && bossSpawned)
-                {
-                    ProcessBossMinionSpawning();
-                }
-            }
-    
-            // 【新增】每10秒打印一次当前时间和阶段信息（调试用）
-            if (showDebugInfo && Mathf.FloorToInt(gameTime) % 10 == 0 && Time.frameCount % 60 == 0)
-            {
-                Debug.Log($"[WaveManager] 当前时间: {gameTime:F1}s, 当前阶段: {currentPhase?.phase}, isSpawning: {isSpawning}, TimeScale: {Time.timeScale}");
+                ProcessSpawning();
             }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 初始化
+        // 状态机控制
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void CalculateScreenBounds()
+        /// <summary>
+        /// 切换状态
+        /// </summary>
+        private void ChangeState(WaveState newState)
         {
-            if (gameCamera == null) return;
+            if (currentState == newState) return;
             
-            float height = gameCamera.orthographicSize * 2f;
-            float width = height * gameCamera.aspect;
+            WaveState oldState = currentState;
+            currentState = newState;
             
-            Vector3 camPos = gameCamera.transform.position;
-            
-            screenMin = new Vector2(camPos.x - width / 2f, camPos.y - height / 2f);
-            screenMax = new Vector2(camPos.x + width / 2f, camPos.y + height / 2f);
-        }
-        
-        private void InitializeTimers()
-        {
-            spawnTimers.Clear();
-            foreach (EnemyType type in System.Enum.GetValues(typeof(EnemyType)))
+            if (showDebugInfo)
             {
-                spawnTimers[type] = 0f;
+                Debug.Log($"[WaveManager] 状态切换: {oldState} → {newState}");
             }
+            
+            // 触发状态变化事件
+            GameEvents.TriggerWaveStateChanged(newState, currentWaveNumber);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 事件回调
+        // 游戏流程
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 游戏开始回调
+        /// </summary>
         private void OnGameStart()
         {
-            isSpawning = true;
-            bossSpawned = false;
-            bossMinionTimer = 0f;
-            InitializeTimers();
+            if (showDebugInfo)
+            {
+                Debug.Log("[WaveManager] 游戏开始！");
+            }
             
-            // 设置初始阶段
-            if (waveConfig != null && waveConfig.phases.Count > 0)
-            {
-                currentPhase = waveConfig.phases[0];
-                currentPhaseType = currentPhase.phase;
-        
-                // 【新增】打印初始阶段信息
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[WaveManager] 开始生成敌人，初始阶段: {currentPhase.displayName} ({currentPhase.phase})");
-                    Debug.Log($"[WaveManager] WaveConfig 共 {waveConfig.phases.Count} 个阶段:");
-                    foreach (var p in waveConfig.phases)
-                    {
-                        Debug.Log($"  - {p.phase}: {p.startTime}s - {p.endTime}s");
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogError("[WaveManager] waveConfig 为空或没有配置阶段！");
-            }
+            // 重置状态
+            currentWaveNumber = 0;
+            bossSpawned = false;
+            
+            // 开始第一波
+            StartNextWave();
         }
         
         /// <summary>
-        /// 游戏状态变化回调 - 使用 Core.GameState
+        /// 游戏状态变化回调
         /// </summary>
         private void OnGameStateChanged(GameState state)
         {
             if (state == GameState.Victory || state == GameState.Defeat)
             {
-                isSpawning = false;
+                // 游戏结束，停止所有波次逻辑
+                StopAllCoroutines();
+                ChangeState(WaveState.Waiting);
             }
         }
         
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 阶段管理
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private void UpdateCurrentPhase(float gameTime)
+        /// <summary>
+        /// 开始下一波
+        /// </summary>
+        public void StartNextWave()
         {
-            if (waveConfig == null) 
-            {
-                if (showDebugInfo) Debug.LogWarning("[WaveManager] waveConfig 为空！");
-                return;
-            }
-    
-            PhaseConfig newPhase = waveConfig.GetPhaseAtTime(gameTime);
-    
-            // 【新增】调试：无法找到阶段时打印警告
-            if (newPhase == null)
-            {
-                if (showDebugInfo)
-                {
-                    Debug.LogWarning($"[WaveManager] 找不到 gameTime={gameTime:F1}s 对应的阶段！检查 WaveConfig 配置");
-                }
-                return;
-            }
-    
-            if (newPhase != currentPhase)
-            {
-                // 【新增】详细日志
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[WaveManager] 阶段切换: {currentPhase?.phase} → {newPhase.phase}, 时间: {gameTime:F1}s");
-                }
-        
-                // 阶段切换
-                OnPhaseEnd(currentPhase);
-                currentPhase = newPhase;
-                currentPhaseType = newPhase.phase;
-                OnPhaseStart(newPhase);
-            }
-        }
-        
-        private void OnPhaseStart(PhaseConfig phase)
-        {
-            if (phase == null) return;
-    
-            if (showDebugInfo)
-            {
-                Debug.Log($"[WaveManager] 进入阶段: {phase.displayName} ({phase.phase})");
-            }
-    
-            // 显示阶段提示
-            if (phase.showPhaseHint && !string.IsNullOrEmpty(phase.hintText))
-            {
-                // TODO: 显示UI提示
-                Debug.Log($"[WaveManager] 提示: {phase.hintText}");
-            }
-    
-            // 【修复】根据阶段配置设置 isSpawning
-            // 这样每个阶段开始时会自动恢复/暂停生成
-            isSpawning = phase.enableSpawning;
-    
-            if (showDebugInfo)
-            {
-                Debug.Log($"[WaveManager] isSpawning 设置为: {isSpawning} (由 enableSpawning 决定)");
-            }
-    
-            // 处理阶段开始事件（PhaseEvent 可以覆盖上面的设置）
-            HandlePhaseEvent(phase.onPhaseStart);
-    
-            // 重置计时器
-            InitializeTimers();
-        }
-        
-        private void OnPhaseEnd(PhaseConfig phase)
-        {
-            if (phase == null) return;
+            currentWaveNumber++;
             
-            // 处理阶段结束事件
-            HandlePhaseEvent(phase.onPhaseEnd);
-        }
-        
-        private void HandlePhaseEvent(PhaseEvent evt)
-        {
-            switch (evt)
+            if (currentWaveNumber > TotalWaves)
             {
-                case PhaseEvent.ClearAllEnemies:
-                    ClearAllEnemies();
-                    break;
-                    
-                case PhaseEvent.PlayWarningSound:
-                    // TODO: 播放警告音效
-                    Debug.Log("[WaveManager] 警告音效！");
-                    break;
-                    
-                case PhaseEvent.SpawnBoss:
-                    SpawnBoss();
-                    break;
-                    
-                case PhaseEvent.PauseSpawning:
-                    isSpawning = false;
-                    break;
-                    
-                case PhaseEvent.ResumeSpawning:
-                    isSpawning = true;
-                    break;
+                // 所有波次完成，触发胜利
+                if (showDebugInfo)
+                {
+                    Debug.Log("[WaveManager] 所有波次完成！游戏胜利！");
+                }
+                GameManager.Instance?.TriggerVictory();
+                return;
             }
+            
+            // 加载当前波次配置
+            currentWaveData = waveConfig.GetWave(currentWaveNumber);
+            
+            if (currentWaveData == null)
+            {
+                Debug.LogError($"[WaveManager] 无法加载波次 {currentWaveNumber} 的配置！");
+                return;
+            }
+            
+            // 检查是否为 BOSS 波
+            if (currentWaveData.isBossWave)
+            {
+                StartBossWave();
+                return;
+            }
+            
+            // 普通波次初始化
+            InitializeWave();
+            
+            // 广播波次开始事件
+            GameEvents.TriggerWaveStart(currentWaveNumber, TotalWaves);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[WaveManager] ========== 波次 {currentWaveNumber}/{TotalWaves} 开始 ==========");
+                Debug.Log($"[WaveManager] 名称: {currentWaveData.displayName}");
+                Debug.Log($"[WaveManager] 总敌人数: {totalEnemiesInWave}");
+                Debug.Log($"[WaveManager] 难度倍率: {currentWaveData.difficultyMultiplier}x");
+            }
+            
+            // 进入生成状态
+            ChangeState(WaveState.Spawning);
+        }
+        
+        /// <summary>
+        /// 初始化波次数据
+        /// </summary>
+        private void InitializeWave()
+        {
+            // 重置计数器
+            waveTimer = 0f;
+            enemiesSpawned = 0;
+            enemiesKilled = 0;
+            
+            // 从配置读取总敌人数
+            totalEnemiesInWave = currentWaveData.TotalEnemyCount;
+            
+            // 重置所有刷怪组的状态
+            currentWaveData.ResetSpawnStates();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 敌人生成
+        // 刷怪执行器
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 处理刷怪逻辑（每帧调用）
+        /// </summary>
         private void ProcessSpawning()
         {
-            if (currentPhase == null) return;
+            if (currentWaveData == null) return;
             if (EnemyPoolManager.Instance == null) return;
-            if (EnemyPoolManager.Instance.IsAtGlobalCapacity) return;
             
-            float rateMultiplier = currentPhase.spawnRateMultiplier > 0 
-                ? 1f / currentPhase.spawnRateMultiplier 
-                : 1f;
+            // 更新波次计时器
+            waveTimer += Time.deltaTime;
             
-            foreach (var entry in currentPhase.spawnEntries)
+            // 遍历所有刷怪组
+            bool allGroupsSpawned = true;
+            
+            foreach (var group in currentWaveData.spawnGroups)
             {
-                // 更新计时器
-                spawnTimers[entry.enemyType] += Time.deltaTime;
+                // 跳过已执行的组
+                if (group.hasSpawned) continue;
                 
-                // 检查生成间隔
-                float interval = entry.spawnInterval * rateMultiplier;
+                allGroupsSpawned = false;
                 
-                if (spawnTimers[entry.enemyType] >= interval)
+                // 检查是否到达生成时间
+                if (waveTimer >= group.spawnTime)
                 {
-                    spawnTimers[entry.enemyType] = 0f;
-                    
-                    // 生成敌人
-                    SpawnEnemies(entry);
+                    SpawnGroup(group);
+                    group.hasSpawned = true;
                 }
+            }
+            
+            // 所有组都已生成，进入战斗状态
+            if (allGroupsSpawned && currentState == WaveState.Spawning)
+            {
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[WaveManager] 所有敌人已生成！共 {enemiesSpawned} 只");
+                }
+                
+                ChangeState(WaveState.Battle);
             }
         }
         
-        private void SpawnEnemies(EnemySpawnEntry entry)
+        /// <summary>
+        /// 执行单个刷怪组
+        /// </summary>
+        private void SpawnGroup(SpawnGroup group)
         {
-            if (!EnemyPoolManager.Instance.HasPool(entry.enemyType))
+            if (!EnemyPoolManager.Instance.HasPool(group.enemyType))
             {
+                Debug.LogWarning($"[WaveManager] 敌人类型 {group.enemyType} 没有对象池！");
                 return;
             }
             
-            for (int i = 0; i < entry.spawnCount; i++)
+            for (int i = 0; i < group.count; i++)
             {
-                if (EnemyPoolManager.Instance.IsAtGlobalCapacity) break;
+                // 检查全局上限
+                if (EnemyPoolManager.Instance.IsAtGlobalCapacity)
+                {
+                    Debug.LogWarning("[WaveManager] 达到全局敌人上限！");
+                    break;
+                }
                 
-                Vector3 position = GetSpawnPosition(entry.spawnZone);
-                EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(entry.enemyType, position);
+                // 获取生成位置
+                Vector3 position = GetSpawnPosition(group.spawnZone);
+                
+                // 生成敌人
+                EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(group.enemyType, position);
                 
                 if (enemy != null)
                 {
-                    if (entry.speedMultiplier != 1f)
-                    {
-                        enemy.SetSpeedMultiplier(entry.speedMultiplier);
-                    }
-            
-                    // 【新增】为横穿屏幕类型设置目标点
-                    if (entry.enemyType == EnemyType.Treasure)
-                    {
-                        Vector3 targetPos = GetCrossScreenTarget(entry.spawnZone, position);
-                        enemy.SetCrossScreenTarget(targetPos);
-                    }
+                    // 应用难度倍率
+                    ApplyDifficultyModifiers(enemy, group);
+                    enemiesSpawned++;
                 }
             }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[WaveManager] 刷怪组: {group.enemyType} x{group.count} @ {group.spawnTime}s");
+            }
         }
+        
         /// <summary>
-        /// 获取横穿屏幕的目标位置
+        /// 应用难度修正
         /// </summary>
-        private Vector3 GetCrossScreenTarget(SpawnZone spawnZone, Vector3 startPos)
+        private void ApplyDifficultyModifiers(EnemyBlob enemy, SpawnGroup group)
         {
-            // 从左侧生成 → 目标在右侧
-            // 从右侧生成 → 目标在左侧
-            float targetX;
-            if (spawnZone == SpawnZone.LeftSideUpper)
+            float globalMultiplier = currentWaveData.difficultyMultiplier;
+            
+            // 应用速度倍率
+            if (group.speedMultiplier != 1f)
             {
-                targetX = screenMax.x + spawnOffset * 2f;
+                enemy.SetSpeedMultiplier(group.speedMultiplier);
             }
-            else
-            {
-                targetX = screenMin.x - spawnOffset * 2f;
-            }
-    
-            // Y 坐标保持大致相同（略有随机偏移）
-            float targetY = startPos.y + Random.Range(-1f, 1f);
-    
-            return new Vector3(targetX, targetY, 0f);
+            
+            // TODO: 应用血量、伤害倍率（需要 EnemyBlob 支持）
+            // enemy.SetHealthMultiplier(group.healthMultiplier * globalMultiplier);
+            // enemy.SetDamageMultiplier(group.damageMultiplier * globalMultiplier);
         }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 生成位置计算
+        // 进度监控
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private Vector3 GetSpawnPosition(SpawnZone zone)
+        /// <summary>
+        /// 敌人死亡回调
+        /// </summary>
+        private void OnEnemyDied(EnemyType type, Vector3 pos, int xp, int coin)
         {
-            switch (zone)
+            // 只在战斗状态计数
+            if (currentState != WaveState.Spawning && currentState != WaveState.Battle)
+                return;
+            
+            enemiesKilled++;
+            
+            if (showDebugInfo)
             {
-                case SpawnZone.AllEdges:
-                    return GetRandomEdgePosition();
-                    
-                case SpawnZone.TopOnly:
-                    return GetTopPosition();
-                    
-                case SpawnZone.TopRandom:
-                    return GetTopRandomPosition();
-                    
-                case SpawnZone.SideRandom:
-                    return GetSideRandomPosition();
-                    
-                case SpawnZone.BottomCorners:
-                    return GetBottomCornerPosition();
-                case SpawnZone.LeftSideUpper:
-                    return GetLeftSideUpperPosition();
-    
-                case SpawnZone.RightSideUpper:
-                    return GetRightSideUpperPosition();
-                default:
-                    return GetRandomEdgePosition();
+                Debug.Log($"[WaveManager] 敌人击杀: {enemiesKilled}/{totalEnemiesInWave}");
             }
+            
+            // 检查是否清场完成
+            CheckWaveComplete();
         }
-        private Vector3 GetRandomEdgePosition()
+        
+        /// <summary>
+        /// 检查波次是否完成
+        /// </summary>
+        private void CheckWaveComplete()
         {
-            int edge = Random.Range(0, 3); // 0=上, 1=左, 2=右
-            float screenMidY = (screenMin.y + screenMax.y) * 0.5f;
-            switch (edge)
+            // 只在战斗状态检查
+            if (currentState != WaveState.Battle) return;
+            
+            // 胜利条件：击杀数 >= 总数
+            if (enemiesKilled >= totalEnemiesInWave)
             {
-                case 0: // 上
-                    return new Vector3(
-                        Random.Range(screenMin.x, screenMax.x),
-                        screenMax.y + spawnOffset,
-                        0f
-                    );
-                case 1: // 左
-                    return new Vector3(
-                        screenMin.x - spawnOffset,
-                        Random.Range(screenMidY, screenMax.y),
-                        0f
-                    );
-                case 2: // 右
-                    return new Vector3(
-                        screenMax.x + spawnOffset,
-                        Random.Range(screenMidY, screenMax.y),
-                        0f
-                    );
-                default:
-                    return GetTopPosition();
+                OnWaveComplete();
             }
         }
         
-        private Vector3 GetTopPosition()
+        /// <summary>
+        /// 波次完成
+        /// </summary>
+        private void OnWaveComplete()
         {
-            return new Vector3(
-                Random.Range(screenMin.x, screenMax.x),
-                screenMax.y + spawnOffset,
-                0f
-            );
+            ChangeState(WaveState.Complete);
+            
+            // 广播波次完成事件
+            GameEvents.TriggerWaveComplete(currentWaveNumber, TotalWaves);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[WaveManager] ========== 波次 {currentWaveNumber}/{TotalWaves} 完成！ ==========");
+                Debug.Log($"[WaveManager] 击杀数: {enemiesKilled}");
+            }
+            
+            // TODO: 播放 UI_Wave_Clear 音效
+            // AudioManager.Instance?.PlaySFX("UI_Wave_Clear");
+            
+            // 开始波次间隔
+            StartWaveInterval();
         }
         
-        private Vector3 GetTopRandomPosition()
+        /// <summary>
+        /// 开始波次间隔（等待期）
+        /// </summary>
+        private void StartWaveInterval()
         {
-            float x = Random.Range(screenMin.x * 0.8f, screenMax.x * 0.8f);
-            return new Vector3(x, screenMax.y + spawnOffset, 0f);
+            if (waveIntervalCoroutine != null)
+            {
+                StopCoroutine(waveIntervalCoroutine);
+            }
+            
+            waveIntervalCoroutine = StartCoroutine(WaveIntervalCoroutine());
         }
         
-        private Vector3 GetSideRandomPosition()
+        /// <summary>
+        /// 波次间隔协程
+        /// </summary>
+        private IEnumerator WaveIntervalCoroutine()
         {
-            bool isLeft = Random.value > 0.5f;
-            float x = isLeft ? screenMin.x - spawnOffset : screenMax.x + spawnOffset;
-            // 【修改】Y 轴限制在屏幕上半部分（>= 50%）
-            float screenMidY = (screenMin.y + screenMax.y) * 0.5f;
-            float y = Random.Range(screenMidY, screenMax.y);
-            return new Vector3(x, y, 0f);
+            float interval = waveConfig != null ? waveConfig.waveInterval : 10f;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[WaveManager] 波次间隔开始，{interval} 秒后进入下一波...");
+            }
+            
+            // 等待指定时间
+            // TODO: 这里后续替换为骰子动画和商店流程
+            yield return new WaitForSeconds(interval);
+            
+            // 开始下一波
+            StartNextWave();
         }
         
-        private Vector3 GetBottomCornerPosition()
-        {
-            bool isLeft = Random.value > 0.5f;
-            float x = isLeft ? screenMin.x - spawnOffset : screenMax.x + spawnOffset;
-            float y = screenMin.y + spawnOffset;
-            return new Vector3(x, y, 0f);
-        }
-        private Vector3 GetLeftSideUpperPosition()
-        {
-            // 屏幕左侧，Y 轴在上半部分（避开塔）
-            float x = screenMin.x - spawnOffset;
-            float yMin = (screenMin.y + screenMax.y) * 0.5f; // 屏幕中点
-            float yMax = screenMax.y - 1f; // 离顶部留点距离
-            float y = Random.Range(yMin, yMax);
-            return new Vector3(x, y, 0f);
-        }
-
-        private Vector3 GetRightSideUpperPosition()
-        {
-            // 屏幕右侧，Y 轴在上半部分
-            float x = screenMax.x + spawnOffset;
-            float yMin = (screenMin.y + screenMax.y) * 0.5f;
-            float yMax = screenMax.y - 1f;
-            float y = Random.Range(yMin, yMax);
-            return new Vector3(x, y, 0f);
-        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // BOSS相关
+        // BOSS 战
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 开始 BOSS 波
+        /// </summary>
+        private void StartBossWave()
+        {
+            if (showDebugInfo)
+            {
+                Debug.Log("[WaveManager] ========== BOSS 战开始！ ==========");
+            }
+            
+            // 广播波次开始（BOSS）
+            GameEvents.TriggerWaveStart(currentWaveNumber, TotalWaves);
+            
+            // 进入 BOSS 战状态
+            ChangeState(WaveState.BossFight);
+            
+            // 通知 GameManager 进入 BOSS 战
+            GameManager.Instance?.EnterBossFight();
+            
+            // 生成 BOSS
+            SpawnBoss();
+            
+            // 广播 BOSS 战开始
+            GameEvents.TriggerBossFightStart();
+        }
+        
+        /// <summary>
+        /// 生成 BOSS
+        /// </summary>
         private void SpawnBoss()
         {
-            if (bossSpawned) return;
-    
             if (bossPrefab == null)
             {
-                Debug.LogError("[WaveManager] bossPrefab 未设置！无法生成BOSS");
+                Debug.LogError("[WaveManager] BOSS 预制体未设置！");
                 return;
             }
-    
-            bossSpawned = true;
-    
-            // BOSS生成位置（屏幕上方中央）
-            Vector3 bossPosition = new Vector3(0f, screenMax.y + 2f, 0f);
-    
-            // 实际生成BOSS
-            currentBossInstance = Instantiate(bossPrefab, bossPosition, Quaternion.identity);
-    
-            // 通知 GameManager 进入 BOSS 战
-            if (GameManager.Instance != null)
+            
+            if (bossSpawned)
             {
-                GameManager.Instance.EnterBossFight();
+                Debug.LogWarning("[WaveManager] BOSS 已经生成过了！");
+                return;
             }
-    
-            // 从 WaveConfig 读取 BOSS 血量并设置
-            BossHealth bossHealth = currentBossInstance.GetComponent<BossHealth>();
+            
+            // 计算 BOSS 生成位置（屏幕上方）
+            Vector3 bossPosition = new Vector3(
+                (screenMin.x + screenMax.x) / 2f,  // 屏幕中央
+                screenMax.y + 2f,                   // 屏幕上方
+                0f
+            );
+            
+            // 生成 BOSS
+            currentBossInstance = Instantiate(bossPrefab, bossPosition, Quaternion.identity);
+            bossSpawned = true;
+            
+            // 设置 BOSS 血量
+            var bossHealth = currentBossInstance.GetComponent<BossHealth>();
             if (bossHealth != null && waveConfig != null)
             {
                 bossHealth.SetMaxHealth(waveConfig.bossHealth);
             }
-    
-            Debug.Log($"[WaveManager] BOSS 生成！位置: {bossPosition}");
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[WaveManager] BOSS 生成！位置: {bossPosition}");
+            }
         }
         
-        private void ProcessBossMinionSpawning()
+        /// <summary>
+        /// BOSS 被击败回调
+        /// </summary>
+        private void OnBossDefeated()
         {
-            if (waveConfig == null) return;
+            if (currentState != WaveState.BossFight) return;
             
-            bossMinionTimer += Time.deltaTime;
-            
-            if (bossMinionTimer >= waveConfig.bossMinionSpawnInterval)
+            if (showDebugInfo)
             {
-                bossMinionTimer = 0f;
-                
-                // 生成小弟
-                for (int i = 0; i < waveConfig.bossMinionCount; i++)
-                {
-                    if (EnemyPoolManager.Instance.IsAtGlobalCapacity) break;
-                    
-                    Vector3 position = GetRandomEdgePosition();
-                    EnemyPoolManager.Instance.Spawn(EnemyType.Slime, position);
-                }
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[WaveManager] BOSS召唤 {waveConfig.bossMinionCount} 个小弟");
-                }
+                Debug.Log("[WaveManager] ========== BOSS 被击败！ ==========");
             }
+            
+            // 清除所有残留敌人（作为通关庆祝）
+            ClearAllEnemies();
+            
+            // 触发游戏胜利
+            GameManager.Instance?.TriggerVictory();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -595,39 +609,146 @@ namespace LightVsDecay.Logic
         }
         
         /// <summary>
-        /// 停止生成
+        /// 强制开始下一波（供外部调用，如商店确认按钮）
         /// </summary>
-        public void StopSpawning()
+        public void ForceStartNextWave()
         {
-            isSpawning = false;
+            if (waveIntervalCoroutine != null)
+            {
+                StopCoroutine(waveIntervalCoroutine);
+                waveIntervalCoroutine = null;
+            }
+            
+            StartNextWave();
         }
         
         /// <summary>
-        /// 恢复生成
+        /// 获取当前波次的格式化文本
         /// </summary>
-        public void ResumeSpawning()
+        public string GetWaveText()
         {
-            isSpawning = true;
+            return $"波次: {currentWaveNumber}/{TotalWaves}";
         }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 生成位置计算
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void CalculateScreenBounds()
+        {
+            if (gameCamera == null) return;
+            
+            float height = gameCamera.orthographicSize * 2f;
+            float width = height * gameCamera.aspect;
+            
+            Vector3 camPos = gameCamera.transform.position;
+            
+            screenMin = new Vector2(camPos.x - width / 2f, camPos.y - height / 2f);
+            screenMax = new Vector2(camPos.x + width / 2f, camPos.y + height / 2f);
+        }
+        
+        private Vector3 GetSpawnPosition(SpawnZone zone)
+        {
+            float x, y;
+            float offset = spawnOffset;
+            
+            switch (zone)
+            {
+                case SpawnZone.TopOnly:
+                    x = Random.Range(screenMin.x, screenMax.x);
+                    y = screenMax.y + offset;
+                    break;
+                    
+                case SpawnZone.TopRandom:
+                    x = Random.Range(screenMin.x + 1f, screenMax.x - 1f);
+                    y = screenMax.y + offset;
+                    break;
+                    
+                case SpawnZone.SideRandom:
+                    if (Random.value > 0.5f)
+                    {
+                        x = screenMin.x - offset;
+                        y = Random.Range(screenMin.y + 1f, screenMax.y - 1f);
+                    }
+                    else
+                    {
+                        x = screenMax.x + offset;
+                        y = Random.Range(screenMin.y + 1f, screenMax.y - 1f);
+                    }
+                    break;
+                    
+                case SpawnZone.LeftSide:
+                    x = screenMin.x - offset;
+                    y = Random.Range(screenMin.y + 1f, screenMax.y - 1f);
+                    break;
+                    
+                case SpawnZone.RightSide:
+                    x = screenMax.x + offset;
+                    y = Random.Range(screenMin.y + 1f, screenMax.y - 1f);
+                    break;
+                    
+                case SpawnZone.BottomCorners:
+                    if (Random.value > 0.5f)
+                    {
+                        x = screenMin.x - offset;
+                        y = screenMin.y - offset;
+                    }
+                    else
+                    {
+                        x = screenMax.x + offset;
+                        y = screenMin.y - offset;
+                    }
+                    break;
+                    
+                case SpawnZone.AllEdges:
+                default:
+                    int edge = Random.Range(0, 4);
+                    switch (edge)
+                    {
+                        case 0: // 上
+                            x = Random.Range(screenMin.x, screenMax.x);
+                            y = screenMax.y + offset;
+                            break;
+                        case 1: // 右
+                            x = screenMax.x + offset;
+                            y = Random.Range(screenMin.y, screenMax.y);
+                            break;
+                        case 2: // 下
+                            x = Random.Range(screenMin.x, screenMax.x);
+                            y = screenMin.y - offset;
+                            break;
+                        default: // 左
+                            x = screenMin.x - offset;
+                            y = Random.Range(screenMin.y, screenMax.y);
+                            break;
+                    }
+                    break;
+            }
+            
+            return new Vector3(x, y, 0f);
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 测试方法
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         /// <summary>
-        /// 测试用：立即生成BOSS
+        /// 测试：立即生成 BOSS
         /// </summary>
         public void TestSpawnBoss()
         {
             if (bossSpawned)
             {
-                Debug.LogWarning("[WaveManager] BOSS已经生成过了！");
+                Debug.LogWarning("[WaveManager] BOSS 已经生成过了！");
                 return;
             }
-    
-            // 强制进入BOSS阶段
-            currentPhaseType = GamePhase.BossFight;
-    
+            
+            ChangeState(WaveState.BossFight);
             SpawnBoss();
         }
-
+        
         /// <summary>
-        /// 测试用：销毁当前BOSS
+        /// 测试：销毁当前 BOSS
         /// </summary>
         public void TestDestroyBoss()
         {
@@ -636,9 +757,22 @@ namespace LightVsDecay.Logic
                 Destroy(currentBossInstance);
                 currentBossInstance = null;
                 bossSpawned = false;
-                Debug.Log("[WaveManager] BOSS已销毁");
+                Debug.Log("[WaveManager] BOSS 已销毁");
             }
         }
+        
+        /// <summary>
+        /// 测试：跳到指定波次
+        /// </summary>
+        public void TestSkipToWave(int waveNumber)
+        {
+            StopAllCoroutines();
+            ClearAllEnemies();
+            
+            currentWaveNumber = waveNumber - 1;
+            StartNextWave();
+        }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -673,16 +807,20 @@ namespace LightVsDecay.Logic
         {
             if (!showDebugInfo) return;
             
-            GUILayout.BeginArea(new Rect(10, 170, 220, 120));
+            GUILayout.BeginArea(new Rect(10, 170, 250, 180));
             GUILayout.Label($"=== Wave Manager ===");
-            GUILayout.Label($"Phase: {currentPhaseType}");
-            GUILayout.Label($"Name: {CurrentPhaseName}");
-            GUILayout.Label($"Spawning: {isSpawning}");
-            GUILayout.Label($"Boss Spawned: {bossSpawned}");
+            GUILayout.Label($"状态: {currentState}");
+            GUILayout.Label($"波次: {currentWaveNumber}/{TotalWaves}");
+            GUILayout.Label($"名称: {CurrentWaveName}");
+            GUILayout.Label($"敌人: {enemiesKilled}/{totalEnemiesInWave}");
+            GUILayout.Label($"计时: {waveTimer:F1}s");
+            GUILayout.Label($"BOSS: {(bossSpawned ? "已生成" : "未生成")}");
+            
             if (EnemyPoolManager.Instance != null)
             {
-                GUILayout.Label($"Active Enemies: {EnemyPoolManager.Instance.TotalActiveEnemies}");
+                GUILayout.Label($"场上敌人: {EnemyPoolManager.Instance.TotalActiveEnemies}");
             }
+            
             GUILayout.EndArea();
         }
 #endif

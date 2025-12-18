@@ -91,33 +91,19 @@ namespace LightVsDecay.Logic
             SceneManager.sceneLoaded -= OnSceneLoaded;
             GameEvents.OnBossDeath -= OnBossDefeated;
         }
-        
-        private void Update()
-        {
-            if (isTimerRunning && currentState == GameState.Playing)
-            {
-                UpdateGameTimer();
-            }
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 配置加载
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private void LoadConfig()
         {
-            // 优先从 WaveConfig 读取游戏时长
-            if (waveConfig != null)
+            // 波次系统不再使用 gameDuration
+            // 但保留此方法以便读取其他配置
+            if (settings != null)
             {
-                gameDuration = waveConfig.gameDuration;
-                bossBattleTimeLimit = waveConfig.bossBattleTimeLimit;
+                // 读取其他游戏设置...
             }
-            else if (settings != null)
-            {
-                gameDuration = settings.gameDuration;
-                bossBattleTimeLimit = 60f;
-            }
-            // 否则使用默认值
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -293,31 +279,18 @@ namespace LightVsDecay.Logic
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 计时器
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
         private void UpdateGameTimer()
         {
             gameTimer += Time.deltaTime;
-
-            // 广播时间更新
-            GameEvents.TriggerGameTimeUpdated(gameTimer, gameDuration);
-
-            // 检查是否进入BOSS阶段
-            if (!isBossFight && gameTimer >= gameDuration)
-            {
-                EnterBossFight();
-                GameEvents.TriggerBossFightStart();
-
-                if (showDebugInfo)
-                {
-                    Debug.Log("[GameManager] 时间到，进入BOSS战！");
-                }
-            }
-    
-            // Boss 战期间继续计时（仅用于统计，不触发超时失败）
+            
+            // Boss 战期间继续计时（仅用于统计）
             if (isBossFight)
             {
                 bossTimer += Time.deltaTime;
             }
+            
+            // 注意：不再广播 OnGameTimeUpdated，因为新系统使用波次事件
+            // 如果有其他系统需要游戏时长，可以直接访问 GameManager.Instance.GameTimer
         }
         
         /// <summary>

@@ -354,13 +354,6 @@ namespace LightVsDecay
                 TestDestroyBoss();
             }
 
-// 显示BOSS状态
-            if (WaveManager.Instance != null)
-            {
-                string bossStatus = WaveManager.Instance.IsBossAlive ? "存活" : "无";
-                GUILayout.Label($"BOSS状态: {bossStatus}");
-            }
-
             GUILayout.Space(5);
             GUILayout.Label($"当前敌人数: {EnemyPoolManager.Instance.TotalActiveEnemies}");
             

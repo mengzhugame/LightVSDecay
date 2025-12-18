@@ -1,7 +1,7 @@
 // ============================================================
-// WaveConfig.cs
+// WaveConfig.cs (重构版)
 // 文件位置: Assets/Scripts/Data/SO/WaveConfig.cs
-// 用途：波次配置数据（ScriptableObject）
+// 用途：波次配置数据（ScriptableObject）- 基于波次序列，非时间轴
 // ============================================================
 
 using System.Collections.Generic;
@@ -10,44 +10,10 @@ using LightVsDecay.Core.Pool;
 
 namespace LightVsDecay.Data.SO
 {
-    /// <summary>
-    /// 游戏阶段枚举
-    /// </summary>
-    public enum GamePhase
-    {
-        Warmup,         // 热身期 (0:00 - 1:00)
-        Wave1Climax,    // 第1波高潮 (1:00 - 1:30)
-        Rest1,          // 休息期 (1:30 - 1:45)
-        Variation,      // 变奏期 (1:45 - 2:30)
-        Wave2Climax,    // 第2波高潮 (2:30 - 3:30)
-        TreasureTime,   // 宝箱时刻 (3:30 - 3:45)
-        FinalStand,     // 最终死守 (3:45 - 4:45)
-        CalmBeforeStorm,// 暴风雨前的宁静 (4:45 - 5:00)
-        BossFight       // BOSS战 (5:00+)
-    }
-
-    /// <summary>
-    /// 单个敌人生成配置
-    /// </summary>
-    [System.Serializable]
-    public class EnemySpawnEntry
-    {
-        [Tooltip("敌人类型")]
-        public EnemyType enemyType = EnemyType.Slime;
-        
-        [Tooltip("生成间隔（秒）")]
-        public float spawnInterval = 2f;
-        
-        [Tooltip("每次生成数量")]
-        public int spawnCount = 1;
-        
-        [Tooltip("生成区域")]
-        public SpawnZone spawnZone = SpawnZone.AllEdges;
-        
-        [Tooltip("速度倍率（用于狂暴模式）")]
-        public float speedMultiplier = 1f;
-    }
-
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 枚举定义
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
     /// <summary>
     /// 生成区域枚举
     /// </summary>
@@ -57,84 +23,145 @@ namespace LightVsDecay.Data.SO
         TopOnly,        // 仅上方
         TopRandom,      // 上方随机
         SideRandom,     // 两侧随机
-        BottomCorners,   // 底部角落
-        LeftSideUpper,  // 左侧上半部分（宝箱怪用）
-        RightSideUpper  // 右侧上半部分（宝箱怪用）
+        BottomCorners,  // 底部角落
+        LeftSide,       // 左侧
+        RightSide       // 右侧
     }
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 刷怪组配置（单次刷怪事件）
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
     /// <summary>
-    /// 单个阶段配置
+    /// 单个刷怪组
+    /// 定义在波次中某个时间点生成一批敌人
     /// </summary>
     [System.Serializable]
-    public class PhaseConfig
+    public class SpawnGroup
     {
-        [Header("阶段信息")]
-        [Tooltip("阶段类型")]
-        public GamePhase phase;
+        [Header("时间轴")]
+        [Tooltip("相对于波次开始的生成时间（秒）")]
+        public float spawnTime = 0f;
         
-        [Tooltip("阶段名称（显示用）")]
-        public string displayName = "阶段";
+        [Header("敌人配置")]
+        [Tooltip("敌人类型")]
+        public EnemyType enemyType = EnemyType.Slime;
         
-        [Tooltip("阶段描述")]
+        [Tooltip("生成数量")]
+        [Range(1, 20)]
+        public int count = 3;
+        
+        [Header("位置与属性")]
+        [Tooltip("生成区域")]
+        public SpawnZone spawnZone = SpawnZone.AllEdges;
+        
+        [Tooltip("血量倍率（用于难度调整）")]
+        [Range(0.5f, 5f)]
+        public float healthMultiplier = 1f;
+        
+        [Tooltip("速度倍率")]
+        [Range(0.5f, 3f)]
+        public float speedMultiplier = 1f;
+        
+        [Tooltip("伤害倍率")]
+        [Range(0.5f, 3f)]
+        public float damageMultiplier = 1f;
+        
+        // 运行时标记（不序列化）
+        [System.NonSerialized]
+        public bool hasSpawned = false;
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 单波配置
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /// <summary>
+    /// 单波配置数据
+    /// 定义一波的所有刷怪组和属性
+    /// </summary>
+    [System.Serializable]
+    public class WaveData
+    {
+        [Header("波次信息")]
+        [Tooltip("波次编号（1-12）")]
+        public int waveNumber = 1;
+        
+        [Tooltip("波次名称（显示用）")]
+        public string displayName = "Wave 1";
+        
+        [Tooltip("波次描述")]
         [TextArea(1, 2)]
-        public string description;
+        public string description = "";
         
-        [Header("时间设置")]
-        [Tooltip("阶段开始时间（秒）")]
-        public float startTime = 0f;
+        [Header("刷怪配置")]
+        [Tooltip("本波所有刷怪组")]
+        public List<SpawnGroup> spawnGroups = new List<SpawnGroup>();
         
-        [Tooltip("阶段结束时间（秒）")]
-        public float endTime = 60f;
+        [Header("难度设置")]
+        [Tooltip("全局难度倍率（影响所有怪物）")]
+        [Range(0.5f, 3f)]
+        public float difficultyMultiplier = 1f;
         
-        [Header("生成设置")]
-        [Tooltip("是否启用生成")]
-        public bool enableSpawning = true;
+        [Header("特殊标记")]
+        [Tooltip("是否为BOSS波")]
+        public bool isBossWave = false;
         
-        [Tooltip("敌人生成配置列表")]
-        public List<EnemySpawnEntry> spawnEntries = new List<EnemySpawnEntry>();
-        
-        [Header("密度调整")]
-        [Tooltip("生成频率倍率（1.0=正常，1.5=+50%密度）")]
-        [Range(0f, 3f)]
-        public float spawnRateMultiplier = 1f;
-        
-        [Header("特殊事件")]
-        [Tooltip("阶段开始时触发的事件")]
-        public PhaseEvent onPhaseStart = PhaseEvent.None;
-        
-        [Tooltip("阶段结束时触发的事件")]
-        public PhaseEvent onPhaseEnd = PhaseEvent.None;
-        
-        [Header("UI提示")]
-        [Tooltip("是否显示阶段提示")]
-        public bool showPhaseHint = false;
-        
-        [Tooltip("提示文本")]
+        [Tooltip("波次开始提示文本")]
         public string hintText = "";
         
         /// <summary>
-        /// 阶段持续时间
+        /// 计算本波总敌人数
         /// </summary>
-        public float Duration => endTime - startTime;
+        public int TotalEnemyCount
+        {
+            get
+            {
+                int total = 0;
+                foreach (var group in spawnGroups)
+                {
+                    total += group.count;
+                }
+                return total;
+            }
+        }
+        
+        /// <summary>
+        /// 获取本波最后一组的生成时间（用于判断刷怪完成）
+        /// </summary>
+        public float LastSpawnTime
+        {
+            get
+            {
+                float maxTime = 0f;
+                foreach (var group in spawnGroups)
+                {
+                    if (group.spawnTime > maxTime)
+                        maxTime = group.spawnTime;
+                }
+                return maxTime;
+            }
+        }
+        
+        /// <summary>
+        /// 重置所有刷怪组的状态
+        /// </summary>
+        public void ResetSpawnStates()
+        {
+            foreach (var group in spawnGroups)
+            {
+                group.hasSpawned = false;
+            }
+        }
     }
 
-    /// <summary>
-    /// 阶段事件枚举
-    /// </summary>
-    public enum PhaseEvent
-    {
-        None,
-        ClearAllEnemies,    // 清除所有敌人
-        PlayWarningSound,   // 播放警告音效
-        SpawnBoss,          // 生成BOSS
-        ShowBossHealthBar,  // 显示BOSS血条
-        PauseSpawning,      // 暂停生成
-        ResumeSpawning      // 恢复生成
-    }
-
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 波次配置 ScriptableObject
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
     /// <summary>
     /// 波次配置 (ScriptableObject)
-    /// 定义整局游戏的敌人生成节奏
+    /// 定义整局游戏的 12 波敌人配置
     /// </summary>
     [CreateAssetMenu(fileName = "WaveConfig", menuName = "LightVsDecay/Wave Config", order = 3)]
     public class WaveConfig : ScriptableObject
@@ -144,25 +171,25 @@ namespace LightVsDecay.Data.SO
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("全局设置")]
-        [Tooltip("单局总时长（秒）")]
-        public float gameDuration = 300f;
+        [Tooltip("总波次数")]
+        public int totalWaves = 12;
         
-        [Tooltip("BOSS战限时（秒）")]
-        public float bossBattleTimeLimit = 60f;
+        [Tooltip("波次间隔时间（秒）")]
+        public float waveInterval = 10f;
         
         [Tooltip("全局敌人上限")]
         public int globalEnemyLimit = 200;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 阶段配置
+        // 波次配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("阶段配置")]
-        [Tooltip("所有阶段的配置")]
-        public List<PhaseConfig> phases = new List<PhaseConfig>();
+        [Header("波次配置")]
+        [Tooltip("所有波次的配置")]
+        public List<WaveData> waves = new List<WaveData>();
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // BOSS设置
+        // BOSS 设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("BOSS设置")]
@@ -172,251 +199,172 @@ namespace LightVsDecay.Data.SO
         [Tooltip("BOSS移动速度")]
         public float bossMoveSpeed = 0.2f;
         
-        [Tooltip("BOSS召唤小怪间隔（秒）")]
-        public float bossMinionSpawnInterval = 5f;
-        
-        [Tooltip("BOSS每次召唤小怪数量")]
-        public int bossMinionCount = 3;
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 便捷方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 根据游戏时间获取当前阶段
+        /// 获取指定波次的配置
         /// </summary>
-        public PhaseConfig GetPhaseAtTime(float gameTime)
+        /// <param name="waveNumber">波次编号（1-based）</param>
+        public WaveData GetWave(int waveNumber)
         {
-            if (phases == null || phases.Count == 0)
+            int index = waveNumber - 1;
+            if (index >= 0 && index < waves.Count)
             {
-                Debug.LogError("[WaveConfig] phases 列表为空！");
-                return null;
+                return waves[index];
             }
-    
-            foreach (var phase in phases)
-            {
-                if (phase == null) continue;
-        
-                if (gameTime >= phase.startTime && gameTime < phase.endTime)
-                {
-                    return phase;
-                }
-            }
-    
-            // 【修复】如果超过所有阶段时间，返回最后一个阶段
-            // 但需要检查最后一个阶段是否有效
-            var lastPhase = phases[phases.Count - 1];
-            if (lastPhase != null && gameTime >= lastPhase.startTime)
-            {
-                return lastPhase;
-            }
-    
-            // 如果都不匹配，打印警告帮助调试
-            Debug.LogWarning($"[WaveConfig] gameTime={gameTime:F1}s 不在任何阶段范围内！");
-            Debug.LogWarning($"[WaveConfig] 已配置阶段数量: {phases.Count}");
-            for (int i = 0; i < phases.Count; i++)
-            {
-                var p = phases[i];
-                if (p != null)
-                {
-                    Debug.LogWarning($"  [{i}] {p.phase}: {p.startTime}s - {p.endTime}s");
-                }
-            }
-    
+            
+            Debug.LogWarning($"[WaveConfig] 波次 {waveNumber} 不存在！");
             return null;
         }
         
         /// <summary>
-        /// 获取指定阶段的配置
+        /// 检查是否为BOSS波
         /// </summary>
-        public PhaseConfig GetPhase(GamePhase phaseType)
+        public bool IsBossWave(int waveNumber)
         {
-            return phases.Find(p => p.phase == phaseType);
+            var wave = GetWave(waveNumber);
+            return wave != null && wave.isBossWave;
         }
         
         /// <summary>
-        /// 检查是否到达BOSS阶段
+        /// 获取波次总数
         /// </summary>
-        public bool IsBossPhase(float gameTime)
-        {
-            var phase = GetPhaseAtTime(gameTime);
-            return phase != null && phase.phase == GamePhase.BossFight;
-        }
+        public int WaveCount => waves.Count;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 编辑器支持
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
 #if UNITY_EDITOR
-        [ContextMenu("生成默认配置")]
+        [ContextMenu("生成默认12波配置")]
         public void GenerateDefaultConfig()
         {
-            phases.Clear();
+            waves.Clear();
             
-            // 热身期 (0:00 - 1:00)
-            phases.Add(new PhaseConfig
+            // ========== Wave 1-3: 教学期 ==========
+            // Wave 1: 纯 Slime 入门
+            waves.Add(CreateWave(1, "初见", "只有 Slime，熟悉操作", 1.0f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 3, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 3f, enemyType = EnemyType.Slime, count = 3, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 6f, enemyType = EnemyType.Slime, count = 4, spawnZone = SpawnZone.AllEdges }
+            ));
+            
+            // Wave 2: Slime 增量
+            waves.Add(CreateWave(2, "热身", "Slime 数量增加", 1.0f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 4, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 2f, enemyType = EnemyType.Slime, count = 3, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 5f, enemyType = EnemyType.Slime, count = 5, spawnZone = SpawnZone.AllEdges }
+            ));
+            
+            // Wave 3: Slime 密集
+            waves.Add(CreateWave(3, "试炼", "Slime 密集波", 1.0f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 5, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 2f, enemyType = EnemyType.Slime, count = 4, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 4f, enemyType = EnemyType.Slime, count = 3, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 6f, enemyType = EnemyType.Slime, count = 3, spawnZone = SpawnZone.AllEdges }
+            ));
+            
+            // ========== Wave 4-6: 成长期（引入 Rusher）==========
+            // Wave 4: 首次出现 Rusher
+            waves.Add(CreateWave(4, "冲锋", "⚡ Rusher 来袭！", 1.1f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 4, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 2f, enemyType = EnemyType.Rusher, count = 2, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 5f, enemyType = EnemyType.Slime, count = 3, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 7f, enemyType = EnemyType.Rusher, count = 3, spawnZone = SpawnZone.SideRandom }
+            ));
+            
+            // Wave 5: Rusher 增量
+            waves.Add(CreateWave(5, "突袭", "Rusher 增多", 1.1f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Rusher, count = 3, spawnZone = SpawnZone.LeftSide },
+                new SpawnGroup { spawnTime = 2f, enemyType = EnemyType.Slime, count = 5, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 4f, enemyType = EnemyType.Rusher, count = 3, spawnZone = SpawnZone.RightSide },
+                new SpawnGroup { spawnTime = 6f, enemyType = EnemyType.Slime, count = 4, spawnZone = SpawnZone.AllEdges }
+            ));
+            
+            // Wave 6: 混合压力
+            waves.Add(CreateWave(6, "围攻", "四面楚歌", 1.2f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 4, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 2f, enemyType = EnemyType.Rusher, count = 4, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 4f, enemyType = EnemyType.Slime, count = 5, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 6f, enemyType = EnemyType.Rusher, count = 4, spawnZone = SpawnZone.AllEdges }
+            ));
+            
+            // ========== Wave 7-9: 高压期（引入 Tank）==========
+            // Wave 7: 首次出现 Tank
+            waves.Add(CreateWave(7, "重甲", "🛡 Tank 出现！", 1.3f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Tank, count = 1, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 2f, enemyType = EnemyType.Slime, count = 5, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 4f, enemyType = EnemyType.Rusher, count = 3, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 6f, enemyType = EnemyType.Tank, count = 1, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 8f, enemyType = EnemyType.Slime, count = 4, spawnZone = SpawnZone.AllEdges }
+            ));
+            
+            // Wave 8: 三种混合
+            waves.Add(CreateWave(8, "乱战", "三军混战", 1.4f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 5, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 2f, enemyType = EnemyType.Tank, count = 2, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 4f, enemyType = EnemyType.Rusher, count = 5, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 6f, enemyType = EnemyType.Slime, count = 4, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 8f, enemyType = EnemyType.Rusher, count = 4, spawnZone = SpawnZone.AllEdges }
+            ));
+            
+            // Wave 9: 高压测试
+            waves.Add(CreateWave(9, "炼狱", "极限测试", 1.5f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Tank, count = 2, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 1f, enemyType = EnemyType.Rusher, count = 4, spawnZone = SpawnZone.LeftSide },
+                new SpawnGroup { spawnTime = 2f, enemyType = EnemyType.Rusher, count = 4, spawnZone = SpawnZone.RightSide },
+                new SpawnGroup { spawnTime = 4f, enemyType = EnemyType.Slime, count = 6, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 6f, enemyType = EnemyType.Tank, count = 2, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 8f, enemyType = EnemyType.Rusher, count = 5, spawnZone = SpawnZone.SideRandom }
+            ));
+            
+            // ========== Wave 10-11: 疯狂期 ==========
+            // Wave 10: 大量 Rusher + Tank
+            waves.Add(CreateWave(10, "狂潮", "🔥 全面进攻！", 1.6f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Tank, count = 3, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 1f, enemyType = EnemyType.Rusher, count = 5, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 3f, enemyType = EnemyType.Slime, count = 6, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 5f, enemyType = EnemyType.Rusher, count = 6, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 7f, enemyType = EnemyType.Tank, count = 2, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 9f, enemyType = EnemyType.Rusher, count = 4, spawnZone = SpawnZone.SideRandom }
+            ));
+            
+            // Wave 11: 最终试炼
+            waves.Add(CreateWave(11, "死守", "💀 最后一搏！", 1.8f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Tank, count = 3, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 1f, enemyType = EnemyType.Rusher, count = 6, spawnZone = SpawnZone.LeftSide },
+                new SpawnGroup { spawnTime = 2f, enemyType = EnemyType.Rusher, count = 6, spawnZone = SpawnZone.RightSide },
+                new SpawnGroup { spawnTime = 4f, enemyType = EnemyType.Slime, count = 8, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 6f, enemyType = EnemyType.Tank, count = 2, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 8f, enemyType = EnemyType.Rusher, count = 6, spawnZone = SpawnZone.AllEdges, speedMultiplier = 1.5f }
+            ));
+            
+            // ========== Wave 12: BOSS 战 ==========
+            waves.Add(CreateWave(12, "决战", "👹 BOSS 降临！", 2.0f, true));
+            
+            totalWaves = waves.Count;
+            
+            Debug.Log($"[WaveConfig] 默认配置已生成！共 {waves.Count} 波");
+        }
+        
+        /// <summary>
+        /// 创建波次辅助方法
+        /// </summary>
+        private WaveData CreateWave(int number, string name, string hint, float difficulty, bool isBoss, params SpawnGroup[] groups)
+        {
+            var wave = new WaveData
             {
-                phase = GamePhase.Warmup,
-                displayName = "热身期",
-                description = "只有Slime，稀疏刷新。放松：适应操作，点亮前几个技能。",
-                startTime = 0f,
-                endTime = 60f,
-                enableSpawning = true,
-                spawnRateMultiplier = 0.7f,
-                spawnEntries = new List<EnemySpawnEntry>
-                {
-                    new EnemySpawnEntry { enemyType = EnemyType.Slime, spawnInterval = 2f, spawnCount = 2, spawnZone = SpawnZone.AllEdges }
-                }
-            });
-            
-            // 第1波高潮 (1:00 - 1:30)
-            phases.Add(new PhaseConfig
-            {
-                phase = GamePhase.Wave1Climax,
-                displayName = "第1波高潮",
-                description = "Tank出现，怪群密度+50%。紧张：第一次感受到推不动的压力。",
-                startTime = 60f,
-                endTime = 90f,
-                enableSpawning = true,
-                spawnRateMultiplier = 1.5f,
-                showPhaseHint = true,
-                hintText = "⚠ Tank 来袭！",
-                spawnEntries = new List<EnemySpawnEntry>
-                {
-                    new EnemySpawnEntry { enemyType = EnemyType.Slime, spawnInterval = 1.5f, spawnCount = 3, spawnZone = SpawnZone.AllEdges },
-                    new EnemySpawnEntry { enemyType = EnemyType.Tank, spawnInterval = 4f, spawnCount = 1, spawnZone = SpawnZone.TopRandom }
-                }
-            });
-            
-            // 休息期 (1:30 - 1:45)
-            phases.Add(new PhaseConfig
-            {
-                phase = GamePhase.Rest1,
-                displayName = "休息期",
-                description = "停止刷怪或只刷极少量Slime。释放：处理残兵，喘口气。",
-                startTime = 90f,
-                endTime = 105f,
-                enableSpawning = true,
-                spawnRateMultiplier = 0.3f,
-                spawnEntries = new List<EnemySpawnEntry>
-                {
-                    new EnemySpawnEntry { enemyType = EnemyType.Slime, spawnInterval = 5f, spawnCount = 1, spawnZone = SpawnZone.AllEdges }
-                }
-            });
-            
-            // 变奏期 (1:45 - 2:30)
-            phases.Add(new PhaseConfig
-            {
-                phase = GamePhase.Variation,
-                displayName = "变奏期",
-                description = "Rusher(速攻)出现，快速冲脸。惊吓：考验反应速度。",
-                startTime = 105f,
-                endTime = 150f,
-                enableSpawning = true,
-                spawnRateMultiplier = 1.0f,
-                showPhaseHint = true,
-                hintText = "⚡ Rusher 出现！",
-                spawnEntries = new List<EnemySpawnEntry>
-                {
-                    new EnemySpawnEntry { enemyType = EnemyType.Slime, spawnInterval = 2f, spawnCount = 2, spawnZone = SpawnZone.AllEdges },
-                    new EnemySpawnEntry { enemyType = EnemyType.Rusher, spawnInterval = 2.5f, spawnCount = 4, spawnZone = SpawnZone.SideRandom }
-                }
-            });
-            
-            // 第2波高潮 (2:30 - 3:30)
-            phases.Add(new PhaseConfig
-            {
-                phase = GamePhase.Wave2Climax,
-                displayName = "第2波高潮",
-                description = "三种怪混刷，精英怪出现。高压：技能成型，疯狂割草。",
-                startTime = 150f,
-                endTime = 210f,
-                enableSpawning = true,
-                spawnRateMultiplier = 1.5f,
-                showPhaseHint = true,
-                hintText = "🔥 全面进攻！",
-                spawnEntries = new List<EnemySpawnEntry>
-                {
-                    new EnemySpawnEntry { enemyType = EnemyType.Slime, spawnInterval = 1.5f, spawnCount = 4, spawnZone = SpawnZone.AllEdges },
-                    new EnemySpawnEntry { enemyType = EnemyType.Tank, spawnInterval = 3f, spawnCount = 2, spawnZone = SpawnZone.TopRandom },
-                    new EnemySpawnEntry { enemyType = EnemyType.Rusher, spawnInterval = 2f, spawnCount = 5, spawnZone = SpawnZone.SideRandom },
-                    new EnemySpawnEntry { enemyType = EnemyType.Drifter, spawnInterval = 2.5f, spawnCount = 3, spawnZone = SpawnZone.AllEdges }
-                }
-            });
-            
-            // 宝箱时刻 (3:30 - 3:45)
-            phases.Add(new PhaseConfig
-            {
-                phase = GamePhase.TreasureTime,
-                displayName = "宝箱时刻",
-                description = "刷一群宝箱怪或金币怪（不攻击）。惊喜：纯爽，送资源。",
-                startTime = 210f,
-                endTime = 225f,
-                enableSpawning = true,
-                spawnRateMultiplier = 1.0f,
-                showPhaseHint = true,
-                hintText = "💰 宝箱时刻！",
-                spawnEntries = new List<EnemySpawnEntry>
-                {
-                    // 宝箱怪从左侧或右侧上半部分生成
-                    new EnemySpawnEntry { enemyType = EnemyType.Treasure, spawnInterval = 7f, spawnCount = 1, spawnZone = SpawnZone.LeftSideUpper },
-                    new EnemySpawnEntry { enemyType = EnemyType.Treasure, spawnInterval = 7f, spawnCount = 1, spawnZone = SpawnZone.RightSideUpper }
-                }
-            });
-            
-            // 最终死守 (3:45 - 4:45)
-            phases.Add(new PhaseConfig
-            {
-                phase = GamePhase.FinalStand,
-                displayName = "最终死守",
-                description = "刷新率MAX，全屏怪潮。极限：此时不看策略，只看火力覆盖。",
-                startTime = 225f,
-                endTime = 285f,
-                enableSpawning = true,
-                spawnRateMultiplier = 2.0f,
-                showPhaseHint = true,
-                hintText = "💀 最终死守！",
-                spawnEntries = new List<EnemySpawnEntry>
-                {
-                    new EnemySpawnEntry { enemyType = EnemyType.Slime, spawnInterval = 1f, spawnCount = 5, spawnZone = SpawnZone.AllEdges, speedMultiplier = 1.3f },
-                    new EnemySpawnEntry { enemyType = EnemyType.Tank, spawnInterval = 2.5f, spawnCount = 2, spawnZone = SpawnZone.TopRandom },
-                    new EnemySpawnEntry { enemyType = EnemyType.Rusher, spawnInterval = 1.5f, spawnCount = 6, spawnZone = SpawnZone.SideRandom, speedMultiplier = 1.5f },
-                    new EnemySpawnEntry { enemyType = EnemyType.Drifter, spawnInterval = 2f, spawnCount = 4, spawnZone = SpawnZone.AllEdges }
-                }
-            });
-            
-            // 暴风雨前的宁静 (4:45 - 5:00)
-            phases.Add(new PhaseConfig
-            {
-                phase = GamePhase.CalmBeforeStorm,
-                displayName = "暴风雨前的宁静",
-                description = "全图清空/停止刷新。警报声起。恐惧：为BOSS登场做铺垫。",
-                startTime = 285f,
-                endTime = 300f,
-                enableSpawning = false,
-                spawnRateMultiplier = 0f,
-                showPhaseHint = true,
-                hintText = "...",
-                onPhaseStart = PhaseEvent.ClearAllEnemies,
-                onPhaseEnd = PhaseEvent.PlayWarningSound
-            });
-            
-            // BOSS战 (5:00+)
-            phases.Add(new PhaseConfig
-            {
-                phase = GamePhase.BossFight,
-                displayName = "BOSS战",
-                description = "只有BOSS和它召唤的小弟。决战：目标明确，击杀即胜利。",
-                startTime = 300f,
-                endTime = 360f,
-                enableSpawning = false, // BOSS单独处理
-                spawnRateMultiplier = 0f,
-                showPhaseHint = true,
-                hintText = "👹 BOSS 降临！",
-                onPhaseStart = PhaseEvent.SpawnBoss
-            });
-            
-            Debug.Log("[WaveConfig] 默认配置已生成！");
+                waveNumber = number,
+                displayName = name,
+                description = hint,
+                hintText = hint,
+                difficultyMultiplier = difficulty,
+                isBossWave = isBoss,
+                spawnGroups = new List<SpawnGroup>(groups)
+            };
+            return wave;
         }
         
         [ContextMenu("验证配置")]
@@ -424,32 +372,24 @@ namespace LightVsDecay.Data.SO
         {
             Debug.Log("=== 波次配置验证 ===");
             
-            float lastEndTime = 0f;
             int errorCount = 0;
             
-            for (int i = 0; i < phases.Count; i++)
+            for (int i = 0; i < waves.Count; i++)
             {
-                var phase = phases[i];
+                var wave = waves[i];
                 
-                // 检查时间连续性
-                if (phase.startTime < lastEndTime)
+                if (wave.waveNumber != i + 1)
                 {
-                    Debug.LogWarning($"[{i}] {phase.displayName}: 开始时间 {phase.startTime} < 上一阶段结束时间 {lastEndTime}");
+                    Debug.LogWarning($"[{i}] 波次编号不匹配: 预期 {i + 1}, 实际 {wave.waveNumber}");
                     errorCount++;
                 }
                 
-                if (phase.endTime <= phase.startTime)
-                {
-                    Debug.LogError($"[{i}] {phase.displayName}: 结束时间必须大于开始时间！");
-                    errorCount++;
-                }
-                
-                Debug.Log($"[{i}] {phase.phase}: {phase.startTime}s - {phase.endTime}s ({phase.Duration}s) | 生成:{phase.enableSpawning} | 倍率:{phase.spawnRateMultiplier}x");
-                
-                lastEndTime = phase.endTime;
+                Debug.Log($"[Wave {wave.waveNumber}] {wave.displayName}: " +
+                          $"{wave.spawnGroups.Count} 组, {wave.TotalEnemyCount} 敌人, " +
+                          $"难度x{wave.difficultyMultiplier:F1}, BOSS={wave.isBossWave}");
             }
             
-            Debug.Log($"=== 验证完成: {phases.Count} 个阶段, {errorCount} 个错误 ===");
+            Debug.Log($"=== 验证完成: {waves.Count} 波, {errorCount} 个错误 ===");
         }
 #endif
     }
