@@ -74,6 +74,8 @@ namespace LightVsDecay.Core
             public static readonly int LiquidFlowSpeed = Shader.PropertyToID("_Flow_Speed");
             public static readonly int LiquidNoiseScale = Shader.PropertyToID("_Noise_Scale");
             public static readonly int LiquidAlpha = Shader.PropertyToID("_Alpha");
+            //护盾shader
+            public static readonly int HitFlash = Shader.PropertyToID("_HitFlash");
         }
     }
 }

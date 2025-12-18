@@ -54,7 +54,9 @@ namespace LightVsDecay.Logic.Player
         [Header("低血量警告阈值")]
         [Tooltip("低血量警告阈值（百分比）")]
         [SerializeField] private float lowHealthThreshold = 0.2f;
-        
+        [Header("闪白效果")]
+        [Tooltip("闪白持续时间")]
+        [SerializeField] private float hitFlashDuration = 0.15f;
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
         
@@ -70,7 +72,8 @@ namespace LightVsDecay.Logic.Player
         
         private int currentHullHP;
         private bool isLowHealth = false; // 追踪低血量状态
-        
+        private Coroutine hitFlashCoroutine;
+        private Material turretMaterial;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -92,6 +95,10 @@ namespace LightVsDecay.Logic.Player
             if (shieldController == null)
             {
                 shieldController = GetComponentInChildren<ShieldController>();
+            }
+            if (turretSprite != null)
+            {
+                turretMaterial = turretSprite.material;
             }
         }
         
@@ -153,7 +160,7 @@ namespace LightVsDecay.Logic.Player
             
             // 扣本体血
             ApplyDamageToHull(damage);
-            
+            TriggerHitFlash();
             return true;
         }
         
@@ -184,6 +191,7 @@ namespace LightVsDecay.Logic.Player
             
             // 溢出伤害扣本体
             ApplyDamageToHull(damage);
+            TriggerHitFlash();
         }
         
         /// <summary>
@@ -303,7 +311,45 @@ namespace LightVsDecay.Logic.Player
                 VFXPoolManager.Instance.Play(VFXType.TowerDamage, transform.position);
             }
         }
+        /// <summary>
+        /// 触发闪白效果
+        /// </summary>
+        private void TriggerHitFlash()
+        {
+            if (hitFlashCoroutine != null)
+            {
+                StopCoroutine(hitFlashCoroutine);
+            }
+            hitFlashCoroutine = StartCoroutine(HitFlashCoroutine());
+        }
+
+        /// <summary>
+        /// 闪白效果协程
+        /// </summary>
+        private IEnumerator HitFlashCoroutine()
+        {
+            if (turretMaterial == null) yield break;
+    
+            // 设置闪白为1（全白）
+            turretMaterial.SetFloat(GameConstants.ShaderProperties.HitFlash, 1f);
+    
+            float elapsed = 0f;
+            while (elapsed < hitFlashDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / hitFlashDuration;
         
+                // 从1渐变到0
+                float flashValue = Mathf.Lerp(1f, 0f, t);
+                turretMaterial.SetFloat(GameConstants.ShaderProperties.HitFlash, flashValue);
+        
+                yield return null;
+            }
+    
+            // 确保最终值为0
+            turretMaterial.SetFloat(GameConstants.ShaderProperties.HitFlash, 0f);
+            hitFlashCoroutine = null;
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件广播
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

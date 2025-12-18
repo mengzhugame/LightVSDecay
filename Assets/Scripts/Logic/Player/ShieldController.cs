@@ -1,13 +1,10 @@
 // ============================================================
-// ShieldController.cs (重构版 v2.0)
+// ShieldController.cs (修复版 v2.1)
 // 文件位置: Assets/Scripts/Logic/Player/ShieldController.cs
 // 用途：能量护盾控制
-// 改动：
-//   - 删除无敌时间功能
-//   - 删除自动恢复功能
-//   - 冲击波改为护盾破碎时触发
-//   - 支持大数值伤害（500护盾值）
-//   - 添加百分比恢复接口
+// 改动 v2.1:
+//   - 【新增】受伤闪白效果 (HitFlash shader)
+//   - 【修改】护盾 <20% 时降低透明度到0.5，去掉颜色变化
 // ============================================================
 
 using UnityEngine;
@@ -55,10 +52,17 @@ namespace LightVsDecay.Logic.Player
         [Header("视觉设置")]
         [Tooltip("护盾正常颜色")]
         [SerializeField] private Color normalColor = new Color(0f, 1f, 1f, 0.5f);
-        [Tooltip("护盾危险颜色（<30%）")]
-        [SerializeField] private Color dangerColor = new Color(1f, 0.5f, 0f, 0.5f);
-        [Tooltip("护盾极度危险颜色（<10%）")]
-        [SerializeField] private Color criticalColor = new Color(1f, 0.2f, 0.2f, 0.5f);
+        
+        [Header("闪白效果")]
+        [Tooltip("闪白持续时间")]
+        [SerializeField] private float hitFlashDuration = 0.15f;
+        
+        [Header("透明度设置")]
+        [Tooltip("护盾低血量阈值（低于此百分比降低透明度）")]
+        [SerializeField] private float lowShieldThreshold = 0.2f;
+        
+        [Tooltip("低血量时的透明度")]
+        [SerializeField] private float lowShieldAlpha = 0.5f;
         
         [Header("冲击波子物体")]
         [SerializeField] private Transform shockwaveTransform;
@@ -84,7 +88,11 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private int currentShieldHP;
-        private bool wasShieldActive = true; // 用于检测护盾破碎
+        private bool wasShieldActive = true;
+        
+        // 闪白效果
+        private Coroutine hitFlashCoroutine;
+        private Material shieldMaterial;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共属性
@@ -114,6 +122,12 @@ namespace LightVsDecay.Logic.Player
                 c.a = 0f;
                 shockwaveRenderer.color = c;
             }
+            
+            // 【新增】缓存 Material（用于闪白效果）
+            if (shieldSprite != null)
+            {
+                shieldMaterial = shieldSprite.material;
+            }
         }
         
         private void Start()
@@ -133,10 +147,27 @@ namespace LightVsDecay.Logic.Player
             if (settings != null)
             {
                 maxShieldHP = settings.maxShieldHP;
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[ShieldController] 从 GameSettings 加载: maxShieldHP = {maxShieldHP}");
+                }
             }
             else
             {
                 maxShieldHP = defaultMaxShieldHP;
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[ShieldController] GameSettings 未设置，使用默认值: maxShieldHP = {maxShieldHP}");
+                }
+            }
+            
+            // 安全检查：防止异常值
+            if (maxShieldHP <= 0 || maxShieldHP > 100000)
+            {
+                Debug.LogWarning($"[ShieldController] ⚠️ maxShieldHP 异常值: {maxShieldHP}，重置为 500");
+                maxShieldHP = 500;
             }
         }
         
@@ -177,6 +208,9 @@ namespace LightVsDecay.Logic.Player
             // 播放受伤特效
             PlayDamageEffect();
             
+            // 【新增】触发闪白效果
+            TriggerHitFlash();
+            
             // 广播状态
             BroadcastShieldStatus();
             
@@ -207,7 +241,6 @@ namespace LightVsDecay.Logic.Player
         /// <returns>溢出伤害</returns>
         public int TakeBossDamage(int damage)
         {
-            // 与普通伤害逻辑相同，但可以添加额外效果
             return TakeDamage(damage);
         }
         
@@ -221,16 +254,60 @@ namespace LightVsDecay.Logic.Player
                 Debug.Log("[ShieldController] 💔 护盾破碎！触发冲击波！");
             }
             
-            // 触发冲击波（击退/击杀小怪）
+            // 触发冲击波
             TriggerShockwave();
             
             // 播放护盾破碎特效
             PlayShieldBreakVFX();
             
-            // 触发护盾破碎事件（用于后处理效果）
+            // 触发护盾破碎事件
             GameEvents.TriggerShieldBroken();
             
             wasShieldActive = false;
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 闪白效果
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 触发闪白效果
+        /// </summary>
+        private void TriggerHitFlash()
+        {
+            if (hitFlashCoroutine != null)
+            {
+                StopCoroutine(hitFlashCoroutine);
+            }
+            hitFlashCoroutine = StartCoroutine(HitFlashCoroutine());
+        }
+        
+        /// <summary>
+        /// 闪白效果协程
+        /// </summary>
+        private IEnumerator HitFlashCoroutine()
+        {
+            if (shieldMaterial == null) yield break;
+            
+            // 设置闪白为1（全白）
+            shieldMaterial.SetFloat(GameConstants.ShaderProperties.HitFlash, 1f);
+            
+            float elapsed = 0f;
+            while (elapsed < hitFlashDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / hitFlashDuration;
+                
+                // 从1渐变到0
+                float flashValue = Mathf.Lerp(1f, 0f, t);
+                shieldMaterial.SetFloat(GameConstants.ShaderProperties.HitFlash, flashValue);
+                
+                yield return null;
+            }
+            
+            // 确保最终值为0
+            shieldMaterial.SetFloat(GameConstants.ShaderProperties.HitFlash, 0f);
+            hitFlashCoroutine = null;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -285,7 +362,6 @@ namespace LightVsDecay.Logic.Player
         
         private void ApplyShockwaveEffect()
         {
-            // 查找范围内的敌人
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius);
             
             foreach (var hit in hits)
@@ -296,10 +372,8 @@ namespace LightVsDecay.Logic.Player
                 Rigidbody2D enemyRb = enemy.GetComponent<Rigidbody2D>();
                 if (enemyRb == null) continue;
                 
-                // 检查是否为小怪（可被击杀）
                 if (enemyRb.mass < shockwaveKillMassThreshold)
                 {
-                    // 小怪直接击杀
                     enemy.TakeDamage(9999f, Vector2.zero, false);
                     
                     if (showDebugInfo)
@@ -309,7 +383,6 @@ namespace LightVsDecay.Logic.Player
                 }
                 else
                 {
-                    // 大怪击退
                     Vector2 direction = (enemy.transform.position - transform.position).normalized;
                     enemyRb.AddForce(direction * shockwaveForce, ForceMode2D.Impulse);
                     
@@ -325,59 +398,60 @@ namespace LightVsDecay.Logic.Player
         // 视觉效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 【修改】更新视觉 - 护盾<20%时降低透明度到0.5，去掉颜色变化
+        /// </summary>
         private void UpdateVisuals()
         {
             if (shieldSprite == null) return;
             
-            float percent = ShieldPercent;
-            
             if (currentShieldHP <= 0)
             {
-                // 护盾破碎 - 隐藏
+                // 护盾破碎 - 完全透明
                 shieldSprite.color = Color.clear;
                 if (shieldCollider != null) shieldCollider.enabled = false;
             }
-            else if (percent < 0.1f)
-            {
-                // 极度危险 (<10%)
-                shieldSprite.color = criticalColor;
-                if (shieldCollider != null) shieldCollider.enabled = true;
-            }
-            else if (percent < 0.3f)
-            {
-                // 危险 (<30%)
-                shieldSprite.color = dangerColor;
-                if (shieldCollider != null) shieldCollider.enabled = true;
-            }
             else
             {
-                // 正常
-                shieldSprite.color = normalColor;
+                // 护盾存在
                 if (shieldCollider != null) shieldCollider.enabled = true;
+                
+                // 计算透明度：护盾 < 20% 时降低透明度到0.5
+                float percent = ShieldPercent;
+                float alpha;
+                
+                if (percent < lowShieldThreshold)
+                {
+                    // 护盾低于阈值，降低透明度
+                    alpha = lowShieldAlpha;
+                }
+                else
+                {
+                    // 正常透明度
+                    alpha = normalColor.a;
+                }
+                
+                // 始终使用 normalColor 的颜色，只调整透明度
+                Color displayColor = normalColor;
+                displayColor.a = alpha;
+                shieldSprite.color = displayColor;
             }
         }
         
         private void PlayDamageEffect()
         {
-            // 使用 VFXPoolManager.Play 方法（高频特效用对象池）
-            // 注：ShieldBreak 用于护盾受击特效
             if (VFXPoolManager.Instance != null)
             {
                 VFXPoolManager.Instance.Play(VFXType.ShieldBreak, transform.position);
             }
         }
         
-        /// <summary>
-        /// 播放护盾破碎特效（低频，不用对象池）
-        /// </summary>
         private void PlayShieldBreakVFX()
         {
             if (shieldBreakVFXPrefab != null)
             {
-                // 直接实例化（低频特效）
                 GameObject vfx = Instantiate(shieldBreakVFXPrefab, transform.position, Quaternion.identity);
                 
-                // 自动销毁
                 ParticleSystem ps = vfx.GetComponent<ParticleSystem>();
                 if (ps != null)
                 {
@@ -398,7 +472,6 @@ namespace LightVsDecay.Logic.Player
         
         private void PlayRecoveryEffect()
         {
-            // 使用 VFXPoolManager.Play 方法
             if (VFXPoolManager.Instance != null)
             {
                 VFXPoolManager.Instance.Play(VFXType.ShieldRecover, transform.position);
@@ -418,9 +491,6 @@ namespace LightVsDecay.Logic.Player
         // 外部接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>
-        /// 恢复护盾（固定数值）
-        /// </summary>
         public void RestoreShield(int amount)
         {
             if (amount <= 0) return;
@@ -429,7 +499,6 @@ namespace LightVsDecay.Logic.Player
             currentShieldHP = Mathf.Min(currentShieldHP + amount, maxShieldHP);
             int actualRestore = currentShieldHP - oldHP;
             
-            // 如果护盾从0恢复，更新状态
             if (oldHP <= 0 && currentShieldHP > 0)
             {
                 wasShieldActive = true;
@@ -439,7 +508,6 @@ namespace LightVsDecay.Logic.Player
             BroadcastShieldStatus();
             PlayRecoveryEffect();
             
-            // 触发恢复飘字事件
             if (actualRestore > 0)
             {
                 GameEvents.TriggerPlayerShieldRestored(actualRestore, transform.position);
@@ -451,19 +519,12 @@ namespace LightVsDecay.Logic.Player
             }
         }
         
-        /// <summary>
-        /// 恢复护盾（百分比）
-        /// </summary>
-        /// <param name="percent">恢复百分比（0-1），例如0.1表示10%</param>
         public void RestoreShieldPercent(float percent)
         {
             int amount = Mathf.RoundToInt(maxShieldHP * percent);
             RestoreShield(amount);
         }
         
-        /// <summary>
-        /// 重置护盾（新游戏）
-        /// </summary>
         public void ResetShield()
         {
             currentShieldHP = maxShieldHP;
@@ -473,9 +534,6 @@ namespace LightVsDecay.Logic.Player
             BroadcastShieldStatus();
         }
         
-        /// <summary>
-        /// 设置最大护盾值（用于养成系统）
-        /// </summary>
         public void SetMaxShieldHP(int newMax)
         {
             float percent = ShieldPercent;

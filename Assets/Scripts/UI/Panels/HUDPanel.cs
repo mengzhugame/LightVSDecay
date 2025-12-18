@@ -100,6 +100,8 @@ namespace LightVsDecay.UI.Panels
         private float bossBufferHP = 1f;
         private Coroutine bossBufferCoroutine;
         private BossHealth cachedBossHealth;  // 缓存 BossHealth 引用
+        private bool isBufferWaiting = false;   // 正在等待0.5秒延迟
+        private bool isBufferChasing = false;   // 正在追赶中
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -168,6 +170,8 @@ namespace LightVsDecay.UI.Panels
             // ═══ 新增：初始化 Boss 血条状态 ═══
             bossCurrentHP = 1f;
             bossBufferHP = 1f;
+            isBufferWaiting = false;
+            isBufferChasing = false;
             // Boss血条（初始隐藏）
             if (bossBloodBarObj != null)
             {
@@ -381,12 +385,16 @@ namespace LightVsDecay.UI.Panels
             bossCurrentHP = normalizedHP;
             UpdateBossHealthDisplay(normalizedHP);
 
-            // 白色缓冲条延迟追赶
-            if (bossBufferCoroutine != null)
+            // 【修复】只有在"既没有等待也没有追赶"时才启动新协程
+            // 如果正在等待或追赶中，协程会自动更新到新的目标值
+            if (!isBufferWaiting && !isBufferChasing)
             {
-                StopCoroutine(bossBufferCoroutine);
+                if (bossBufferCoroutine != null)
+                {
+                    StopCoroutine(bossBufferCoroutine);
+                }
+                bossBufferCoroutine = StartCoroutine(BossBufferCoroutine());
             }
-            bossBufferCoroutine = StartCoroutine(BossBufferCoroutine());
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // UI 更新方法
@@ -647,7 +655,8 @@ namespace LightVsDecay.UI.Panels
 
             bossCurrentHP = 1f;
             bossBufferHP = 1f;
-
+            isBufferWaiting = false;
+            isBufferChasing = false;
             UpdateBossHealthDisplay(1f);
 
             // 同步缓冲条
@@ -696,23 +705,37 @@ namespace LightVsDecay.UI.Panels
         /// <summary>【优化】Boss血条缓冲动画 - 0.5秒延迟 + 0.3秒缓动</summary>
         private IEnumerator BossBufferCoroutine()
         {
-            // 使用配置的延迟
+            // 标记：正在等待延迟
+            isBufferWaiting = true;
+    
+            // 等待0.5秒延迟
             yield return new WaitForSeconds(bossBufferDelay);
-
-            float startBuffer = bossBufferHP;
-            float targetBuffer = bossCurrentHP;
-            float elapsed = 0f;
-
-            while (elapsed < bossBufferDuration)
+    
+            // 等待结束，开始追赶
+            isBufferWaiting = false;
+            isBufferChasing = true;
+    
+            // 持续追赶，直到缓冲条追上当前血量
+            while (Mathf.Abs(bossBufferHP - bossCurrentHP) > 0.001f)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / bossBufferDuration);
+                // 每帧读取最新的目标值（可能在追赶过程中血量继续下降）
+                float targetBuffer = bossCurrentHP;
         
-                // EaseOutCubic 缓动 - 比 EaseOutQuad 更丝滑
-                float easeT = 1f - Mathf.Pow(1f - t, 3f);
+                // 计算本帧移动距离（使用固定速度）
+                float chaseSpeed = 1f / bossBufferDuration; // 每秒追赶的百分比
+                float maxMove = chaseSpeed * Time.deltaTime;
         
-                bossBufferHP = Mathf.Lerp(startBuffer, targetBuffer, easeT);
+                // 向目标移动
+                if (bossBufferHP > targetBuffer)
+                {
+                    bossBufferHP = Mathf.Max(targetBuffer, bossBufferHP - maxMove);
+                }
+                else
+                {
+                    bossBufferHP = Mathf.Min(targetBuffer, bossBufferHP + maxMove);
+                }
         
+                // 更新UI
                 if (bossBloodBuffer != null)
                 {
                     bossBloodBuffer.fillAmount = bossBufferHP;
@@ -720,13 +743,17 @@ namespace LightVsDecay.UI.Panels
         
                 yield return null;
             }
-
+    
             // 确保最终值精确
-            bossBufferHP = targetBuffer;
+            bossBufferHP = bossCurrentHP;
             if (bossBloodBuffer != null)
             {
                 bossBloodBuffer.fillAmount = bossBufferHP;
             }
+    
+            // 追赶结束
+            isBufferChasing = false;
+            bossBufferCoroutine = null;
         }
         /// <summary>【新增】更新Boss血量百分比（带缓冲效果）</summary>
         public void UpdateBossHealthPercent(float normalizedHP, int currentHealth)

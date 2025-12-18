@@ -8,7 +8,7 @@ Shader "LightVsDecay/ShieldShockwave"
     Properties
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
-        _Color ("Color", Color) = (0, 1, 1, 1)
+        _BaseColor ("Color", Color) = (0, 1, 1, 1)
         _RingWidth ("Ring Width", Range(0.01, 0.5)) = 0.1
         _Softness ("Edge Softness", Range(0.01, 0.3)) = 0.05
     }
@@ -38,18 +38,20 @@ Shader "LightVsDecay/ShieldShockwave"
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
+                float4 color:COLOR;
             };
             
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float4 color:TEXCOORD1;
             };
             
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
             CBUFFER_START(UnityPerMaterial)
-                half4 _Color;
+                half4 _BaseColor;
                 half _RingWidth;
                 half _Softness;
             CBUFFER_END
@@ -59,6 +61,7 @@ Shader "LightVsDecay/ShieldShockwave"
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv;
+                output.color = input.color;
                 return output;
             }
             
@@ -78,9 +81,8 @@ Shader "LightVsDecay/ShieldShockwave"
                 ring *= smoothstep(outerEdge + _Softness, outerEdge, dist);
                 
                 // 应用颜色和透明度
-                half4 finalColor = _Color*spriteTex;
+                half4 finalColor = _BaseColor*input.color*spriteTex;
                 finalColor.a *= ring;
-                
                 return finalColor;
             }
             ENDHLSL
