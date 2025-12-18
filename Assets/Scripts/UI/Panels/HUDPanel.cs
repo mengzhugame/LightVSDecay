@@ -57,15 +57,21 @@ namespace LightVsDecay.UI.Panels
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("底部区域 - BottomArea")]
-        [SerializeField] private Image[] heartImages; // 3个红心图标
-        [SerializeField] private Image[] shieldImages; // 3个护盾图标
-        
-        [Header("大招按钮")]
-        [SerializeField] private Button skillButton;
-        [SerializeField] private Image skillProgressImage; // fillAmount 控制
-        
-        [Header("大招就绪特效")]
-        [SerializeField] private GameObject skillReadyEffect;
+        [Header("玩家血条")]
+        [SerializeField] private Image healthBarFill;     // 红色血量条
+        [SerializeField] private Image healthBarBuffer;   // 白色缓冲条
+        [SerializeField] private TextMeshProUGUI healthText; // 可选：显示 "850/1000"
+
+        [Header("玩家护盾条")]
+        [SerializeField] private Image shieldBarFill;     // 青色护盾条
+        [SerializeField] private Image shieldBarBuffer;   // 白色缓冲条
+        [SerializeField] private TextMeshProUGUI shieldText; // 可选：显示 "350/500"
+
+        [Header("血条/护盾条缓冲设置")]
+        [Tooltip("缓冲延迟时间（秒）")]
+        [SerializeField] private float playerBufferDelay = 0.35f;
+        [Tooltip("缓冲缓动时间（秒）")]
+        [SerializeField] private float playerBufferDuration = 0.6f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 关卡设置
@@ -80,7 +86,15 @@ namespace LightVsDecay.UI.Panels
         
         private Coroutine comboFadeCoroutine;
         private bool ultReady = false;
-        
+        // 玩家血条缓冲效果
+        private float healthCurrentPercent = 1f;
+        private float healthBufferPercent = 1f;
+        private Coroutine healthBufferCoroutine;
+
+// 玩家护盾条缓冲效果
+        private float shieldCurrentPercent = 1f;
+        private float shieldBufferPercent = 1f;
+        private Coroutine shieldBufferCoroutine;       
 // Boss血条缓冲效果
         private float bossCurrentHP = 1f;
         private float bossBufferHP = 1f;
@@ -141,13 +155,16 @@ namespace LightVsDecay.UI.Panels
             UpdateGameTimer(0f, 300f);
             
             // 玩家血量
-            UpdateHullHP(3, 3);
-            UpdateShieldHP(3, 3);
-            
-            // 大招
-            UpdateUltEnergy(0, 100);
-            SetUltReady(false);
-            
+            healthCurrentPercent = 1f;
+            healthBufferPercent = 1f;
+            shieldCurrentPercent = 1f;
+            shieldBufferPercent = 1f;
+
+            if (healthBarFill != null) healthBarFill.fillAmount = 1f;
+            if (healthBarBuffer != null) healthBarBuffer.fillAmount = 1f;
+            if (shieldBarFill != null) shieldBarFill.fillAmount = 1f;
+            if (shieldBarBuffer != null) shieldBarBuffer.fillAmount = 1f;
+
             // ═══ 新增：初始化 Boss 血条状态 ═══
             bossCurrentHP = 1f;
             bossBufferHP = 1f;
@@ -164,9 +181,6 @@ namespace LightVsDecay.UI.Panels
             Core.GameEvents.OnExpChanged += OnExpChanged;
             Core.GameEvents.OnLevelUp += OnLevelUp;
             Core.GameEvents.OnCoinChanged += OnCoinChanged;
-            Core.GameEvents.OnUltEnergyChanged += OnUltEnergyChanged;
-            Core.GameEvents.OnUltReady += OnUltReady;
-            Core.GameEvents.OnUltUsed += OnUltUsed;
             Core.GameEvents.OnComboChanged += OnComboChanged;
             Core.GameEvents.OnComboReset += OnComboReset;
             
@@ -187,9 +201,6 @@ namespace LightVsDecay.UI.Panels
             Core.GameEvents.OnExpChanged -= OnExpChanged;
             Core.GameEvents.OnLevelUp -= OnLevelUp;
             Core.GameEvents.OnCoinChanged -= OnCoinChanged;
-            Core.GameEvents.OnUltEnergyChanged -= OnUltEnergyChanged;
-            Core.GameEvents.OnUltReady -= OnUltReady;
-            Core.GameEvents.OnUltUsed -= OnUltUsed;
             Core.GameEvents.OnComboChanged -= OnComboChanged;
             Core.GameEvents.OnComboReset -= OnComboReset;
             
@@ -209,12 +220,6 @@ namespace LightVsDecay.UI.Panels
             if (pauseButton != null)
             {
                 pauseButton.onClick.AddListener(OnPauseButtonClicked);
-            }
-            
-            // 大招按钮
-            if (skillButton != null)
-            {
-                skillButton.onClick.AddListener(OnSkillButtonClicked);
             }
         }
         /// <summary>
@@ -290,22 +295,7 @@ namespace LightVsDecay.UI.Panels
         {
             UpdateCoinDisplay(coins);
         }
-        
-        private void OnUltEnergyChanged(int current, int max)
-        {
-            UpdateUltEnergy(current, max);
-        }
-        
-        private void OnUltReady()
-        {
-            SetUltReady(true);
-        }
-        
-        private void OnUltUsed()
-        {
-            SetUltReady(false);
-        }
-        
+
         private void OnComboChanged(int combo)
         {
             UpdateComboDisplay(combo);
@@ -507,54 +497,124 @@ namespace LightVsDecay.UI.Panels
         /// <summary>更新本体血量（红心）</summary>
         private void UpdateHullHP(int current, int max)
         {
-            if (heartImages == null) return;
-            
-            for (int i = 0; i < heartImages.Length; i++)
+            float normalizedHP = max > 0 ? (float)current / max : 0f;
+    
+            // 红色条瞬间更新
+            healthCurrentPercent = normalizedHP;
+    
+            if (healthBarFill != null)
             {
-                if (heartImages[i] != null)
+                healthBarFill.fillAmount = normalizedHP;
+            }
+    
+            // 更新文本（可选）
+            if (healthText != null)
+            {
+                healthText.text = $"{current}/{max}";
+            }
+    
+            // 白色缓冲条延迟追赶
+            if (healthBufferCoroutine != null)
+            {
+                StopCoroutine(healthBufferCoroutine);
+            }
+            healthBufferCoroutine = StartCoroutine(HealthBufferCoroutine());
+        }
+        /// <summary>血条缓冲动画协程</summary>
+        private IEnumerator HealthBufferCoroutine()
+        {
+            yield return new WaitForSeconds(playerBufferDelay);
+    
+            float startBuffer = healthBufferPercent;
+            float targetBuffer = healthCurrentPercent;
+            float elapsed = 0f;
+    
+            while (elapsed < playerBufferDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / playerBufferDuration);
+        
+                // EaseOutCubic 缓动
+                float easeT = 1f - Mathf.Pow(1f - t, 3f);
+        
+                healthBufferPercent = Mathf.Lerp(startBuffer, targetBuffer, easeT);
+        
+                if (healthBarBuffer != null)
                 {
-                    heartImages[i].gameObject.SetActive(i < current);
+                    healthBarBuffer.fillAmount = healthBufferPercent;
                 }
+        
+                yield return null;
+            }
+    
+            // 确保最终值精确
+            healthBufferPercent = targetBuffer;
+            if (healthBarBuffer != null)
+            {
+                healthBarBuffer.fillAmount = healthBufferPercent;
             }
         }
-        
         /// <summary>更新护盾血量</summary>
         private void UpdateShieldHP(int current, int max)
         {
-            if (shieldImages == null) return;
-            
-            for (int i = 0; i < shieldImages.Length; i++)
+            float normalizedHP = max > 0 ? (float)current / max : 0f;
+    
+            // 青色条瞬间更新
+            shieldCurrentPercent = normalizedHP;
+    
+            if (shieldBarFill != null)
             {
-                if (shieldImages[i] != null)
+                shieldBarFill.fillAmount = normalizedHP;
+            }
+    
+            // 更新文本（可选）
+            if (shieldText != null)
+            {
+                shieldText.text = $"{current}/{max}";
+            }
+    
+            // 白色缓冲条延迟追赶
+            if (shieldBufferCoroutine != null)
+            {
+                StopCoroutine(shieldBufferCoroutine);
+            }
+            shieldBufferCoroutine = StartCoroutine(ShieldBufferCoroutine());
+        }
+        /// <summary>护盾条缓冲动画协程</summary>
+        private IEnumerator ShieldBufferCoroutine()
+        {
+            yield return new WaitForSeconds(playerBufferDelay);
+    
+            float startBuffer = shieldBufferPercent;
+            float targetBuffer = shieldCurrentPercent;
+            float elapsed = 0f;
+    
+            while (elapsed < playerBufferDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / playerBufferDuration);
+        
+                // EaseOutCubic 缓动
+                float easeT = 1f - Mathf.Pow(1f - t, 3f);
+        
+                shieldBufferPercent = Mathf.Lerp(startBuffer, targetBuffer, easeT);
+        
+                if (shieldBarBuffer != null)
                 {
-                    shieldImages[i].gameObject.SetActive(i < current);
+                    shieldBarBuffer.fillAmount = shieldBufferPercent;
                 }
-            }
-        }
         
-        /// <summary>更新大招能量</summary>
-        private void UpdateUltEnergy(int current, int max)
-        {
-            if (skillProgressImage != null)
+                yield return null;
+            }
+    
+            // 确保最终值精确
+            shieldBufferPercent = targetBuffer;
+            if (shieldBarBuffer != null)
             {
-                skillProgressImage.fillAmount = max > 0 ? (float)current / max : 0f;
+                shieldBarBuffer.fillAmount = shieldBufferPercent;
             }
         }
-        
-        /// <summary>设置大招就绪状态</summary>
-        private void SetUltReady(bool ready)
-        {
-            ultReady = ready;
-            
-            // 显示/隐藏就绪特效
-            if (skillReadyEffect != null)
-            {
-                skillReadyEffect.SetActive(ready);
-            }
-            
-            // 可以改变按钮颜色或添加动画
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Boss 血条（带缓冲效果）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

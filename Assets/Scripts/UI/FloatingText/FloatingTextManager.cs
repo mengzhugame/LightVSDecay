@@ -144,6 +144,11 @@ namespace LightVsDecay.UI.FloatingText
             PrewarmType(FloatingTextType.Crit, config.prewarmCount / 4);
             PrewarmType(FloatingTextType.BossShield, 5);
             PrewarmType(FloatingTextType.BossCore, 5);
+            // 预热玩家受击飘字类型
+            PrewarmType(FloatingTextType.PlayerHealthDamage, 3);
+            PrewarmType(FloatingTextType.PlayerShieldDamage, 3);
+            PrewarmType(FloatingTextType.PlayerHealthRestore, 2);
+            PrewarmType(FloatingTextType.PlayerShieldRestore, 2);
         }
         
         /// <summary>
@@ -314,7 +319,47 @@ namespace LightVsDecay.UI.FloatingText
             totalCreated = 0;
             isInitialized = false;
         }
-        
+        /// <summary>
+        /// 显示玩家血量受伤飘字（红色）
+        /// </summary>
+        public void ShowPlayerHealthDamage(Vector3 worldPosition, int damage)
+        {
+            // 调整Y坐标：塔在-10，飘字在-8
+            Vector3 adjustedPos = new Vector3(worldPosition.x, -8f, worldPosition.z);
+            string text = $"-{damage}";
+            Show(adjustedPos, text, FloatingTextType.PlayerHealthDamage);
+        }
+
+        /// <summary>
+        /// 显示玩家护盾受伤飘字（青色）
+        /// </summary>
+        public void ShowPlayerShieldDamage(Vector3 worldPosition, int damage)
+        {
+            // 调整Y坐标：塔在-10，飘字在-8
+            Vector3 adjustedPos = new Vector3(worldPosition.x, -8f, worldPosition.z);
+            string text = $"-{damage}";
+            Show(adjustedPos, text, FloatingTextType.PlayerShieldDamage);
+        }
+
+        /// <summary>
+        /// 显示玩家血量恢复飘字（绿色）
+        /// </summary>
+        public void ShowPlayerHealthRestore(Vector3 worldPosition, int amount)
+        {
+            Vector3 adjustedPos = new Vector3(worldPosition.x, -8f, worldPosition.z);
+            string text = $"+{amount}";
+            Show(adjustedPos, text, FloatingTextType.PlayerHealthRestore);
+        }
+
+        /// <summary>
+        /// 显示玩家护盾恢复飘字（青色+）
+        /// </summary>
+        public void ShowPlayerShieldRestore(Vector3 worldPosition, int amount)
+        {
+            Vector3 adjustedPos = new Vector3(worldPosition.x, -8f, worldPosition.z);
+            string text = $"+{amount}";
+            Show(adjustedPos, text, FloatingTextType.PlayerShieldRestore);
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 私有方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

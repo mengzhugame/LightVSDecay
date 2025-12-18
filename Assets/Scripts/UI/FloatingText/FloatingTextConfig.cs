@@ -114,7 +114,15 @@ namespace LightVsDecay.UI.FloatingText
         
         [Tooltip("状态文本 Prefab（可选，不设置则使用 Normal）")]
         public GameObject statusPrefab;
-        
+        [Header("玩家受击飘字 Prefab")]
+        [Tooltip("玩家血量受伤 Prefab（可选，不设置则使用 Normal）")]
+        public GameObject playerHealthDamagePrefab;
+
+        [Tooltip("玩家护盾受伤 Prefab（可选，不设置则使用 Normal）")]
+        public GameObject playerShieldDamagePrefab;
+
+        [Tooltip("玩家恢复飘字 Prefab（可选，不设置则使用 Normal）")]
+        public GameObject playerRestorePrefab;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 优先级设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -134,7 +142,15 @@ namespace LightVsDecay.UI.FloatingText
         
         [Tooltip("Boss核心伤害优先级")]
         public int bossCorePriority = 2;
-        
+        [Header("玩家受击飘字优先级")]
+        [Tooltip("玩家血量受伤优先级")]
+        public int playerHealthDamagePriority = 4;  // 高优先级
+
+        [Tooltip("玩家护盾受伤优先级")]
+        public int playerShieldDamagePriority = 3;
+
+        [Tooltip("玩家恢复优先级")]
+        public int playerRestorePriority = 2;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 样式配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -239,6 +255,86 @@ namespace LightVsDecay.UI.FloatingText
             sizeMultiplier = 1.3f  // 1.3倍大小
         };
         
+        [Header("玩家血量受伤样式")]
+        public FloatingTextStyle playerHealthDamageStyle = new FloatingTextStyle
+        {
+            textColor = new Color(1f, 0.2f, 0.2f, 1f),     // 红色 #FF3333
+            outlineColor = new Color(0.3f, 0f, 0f, 1f),    // 深红描边
+            fontSize = 38f,
+            isBold = true,
+            outlineWidth = 0.25f,
+            duration = 0.8f,
+            initialUpSpeed = 160f,
+            horizontalRandomRange = 30f,
+            gravity = 150f,
+            fadeStartPercent = 0.5f,
+            useScaleAnimation = true,
+            initialScale = 0.8f,
+            peakScale = 1.3f,
+            scalePeakPercent = 0.2f,
+            sizeMultiplier = 1.2f
+        };
+
+        [Header("玩家护盾受伤样式")]
+        public FloatingTextStyle playerShieldDamageStyle = new FloatingTextStyle
+        {
+            textColor = new Color(0f, 0.9f, 1f, 1f),       // 青色 #00E5FF
+            outlineColor = new Color(0f, 0.3f, 0.4f, 1f), // 深青描边
+            fontSize = 36f,
+            isBold = true,
+            outlineWidth = 0.2f,
+            duration = 0.7f,
+            initialUpSpeed = 150f,
+            horizontalRandomRange = 35f,
+            gravity = 120f,
+            fadeStartPercent = 0.5f,
+            useScaleAnimation = true,
+            initialScale = 0.8f,
+            peakScale = 1.2f,
+            scalePeakPercent = 0.2f,
+            sizeMultiplier = 1.1f
+        };
+
+        [Header("玩家血量恢复样式")]
+        public FloatingTextStyle playerHealthRestoreStyle = new FloatingTextStyle
+        {
+            textColor = new Color(0.2f, 1f, 0.4f, 1f),    // 绿色 #33FF66
+            outlineColor = new Color(0f, 0.3f, 0.1f, 1f), // 深绿描边
+            fontSize = 34f,
+            isBold = true,
+            outlineWidth = 0.2f,
+            duration = 0.9f,
+            initialUpSpeed = 140f,
+            horizontalRandomRange = 20f,
+            gravity = 100f,
+            fadeStartPercent = 0.6f,
+            useScaleAnimation = true,
+            initialScale = 0.9f,
+            peakScale = 1.2f,
+            scalePeakPercent = 0.25f,
+            sizeMultiplier = 1.0f
+        };
+
+        [Header("玩家护盾恢复样式")]
+        public FloatingTextStyle playerShieldRestoreStyle = new FloatingTextStyle
+        {
+            textColor = new Color(0.4f, 1f, 1f, 1f),      // 亮青色 #66FFFF
+            outlineColor = new Color(0f, 0.4f, 0.4f, 1f), // 深青描边
+            fontSize = 34f,
+            isBold = true,
+            outlineWidth = 0.2f,
+            duration = 0.9f,
+            initialUpSpeed = 140f,
+            horizontalRandomRange = 20f,
+            gravity = 100f,
+            fadeStartPercent = 0.6f,
+            useScaleAnimation = true,
+            initialScale = 0.9f,
+            peakScale = 1.2f,
+            scalePeakPercent = 0.25f,
+            sizeMultiplier = 1.0f
+        };
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -258,6 +354,15 @@ namespace LightVsDecay.UI.FloatingText
                     return bossShieldStyle;
                 case FloatingTextType.BossCore:
                     return bossCoreStyle;
+                // ═══ 【新增】玩家受击飘字样式 ═══
+                case FloatingTextType.PlayerHealthDamage:
+                    return playerHealthDamageStyle;
+                case FloatingTextType.PlayerShieldDamage:
+                    return playerShieldDamageStyle;
+                case FloatingTextType.PlayerHealthRestore:
+                    return playerHealthRestoreStyle;
+                case FloatingTextType.PlayerShieldRestore:
+                    return playerShieldRestoreStyle;
                 case FloatingTextType.Normal:
                 default:
                     return normalStyle;
@@ -279,6 +384,14 @@ namespace LightVsDecay.UI.FloatingText
                     return bossShieldPriority;
                 case FloatingTextType.BossCore:
                     return bossCorePriority;
+                // ═══ 【新增】玩家受击飘字优先级 ═══
+                case FloatingTextType.PlayerHealthDamage:
+                    return playerHealthDamagePriority;
+                case FloatingTextType.PlayerShieldDamage:
+                    return playerShieldDamagePriority;
+                case FloatingTextType.PlayerHealthRestore:
+                case FloatingTextType.PlayerShieldRestore:
+                    return playerRestorePriority;
                 case FloatingTextType.Normal:
                 default:
                     return normalPriority;
@@ -300,6 +413,14 @@ namespace LightVsDecay.UI.FloatingText
                     return bossShieldPrefab != null ? bossShieldPrefab : normalPrefab;
                 case FloatingTextType.BossCore:
                     return bossCorePrefab != null ? bossCorePrefab : normalPrefab;
+                // ═══ 【新增】玩家受击飘字 Prefab ═══
+                case FloatingTextType.PlayerHealthDamage:
+                    return playerHealthDamagePrefab != null ? playerHealthDamagePrefab : normalPrefab;
+                case FloatingTextType.PlayerShieldDamage:
+                    return playerShieldDamagePrefab != null ? playerShieldDamagePrefab : normalPrefab;
+                case FloatingTextType.PlayerHealthRestore:
+                case FloatingTextType.PlayerShieldRestore:
+                    return playerRestorePrefab != null ? playerRestorePrefab : normalPrefab;
                 case FloatingTextType.Normal:
                 default:
                     return normalPrefab;

@@ -24,6 +24,20 @@ namespace LightVsDecay.UI.FloatingText
         BossShield,
         
         /// <summary>Boss核心伤害 - 红色大字，眼睛图标（可选）</summary>
-        BossCore
+        BossCore,
+        
+        // ═══ 【新增】玩家受击飘字类型 ═══
+        
+        /// <summary>玩家血量受伤 - 红色</summary>
+        PlayerHealthDamage,
+        
+        /// <summary>玩家护盾受伤 - 青色</summary>
+        PlayerShieldDamage,
+        
+        /// <summary>玩家血量恢复 - 绿色</summary>
+        PlayerHealthRestore,
+        
+        /// <summary>玩家护盾恢复 - 青色+</summary>
+        PlayerShieldRestore
     }
 }

@@ -1,7 +1,12 @@
 // ============================================================
-// TurretHealth.cs (修复版)
+// TurretHealth.cs (重构版 v2.0)
 // 文件位置: Assets/Scripts/Logic/Player/TurretHealth.cs
-// 用途：塔本体生命值 - 修复 VFXPoolManager 调用
+// 用途：塔本体生命值控制
+// 改动：
+//   - 删除无敌时间功能
+//   - 支持大数值伤害（1000血量）
+//   - 添加百分比恢复接口
+//   - 添加低血量警告事件
 // ============================================================
 
 using UnityEngine;
@@ -32,8 +37,7 @@ namespace LightVsDecay.Logic.Player
         [SerializeField] private SpriteRenderer turretSprite;
         
         [Header("血量设置（如果没有 GameSettings）")]
-        [SerializeField] private int defaultMaxHullHP = 3;
-        [SerializeField] private float defaultInvincibilityDuration = 1.0f;
+        [SerializeField] private int defaultMaxHullHP = 1000;
         
         [Header("碰撞设置")]
         [Tooltip("小怪质量阈值（低于此值为小怪，撞击后自爆）")]
@@ -44,8 +48,12 @@ namespace LightVsDecay.Logic.Player
         
         [Header("视觉设置")]
         [SerializeField] private Color normalColor = Color.white;
-        [SerializeField] private Color damagedColor = new Color(1f, 0.3f, 0.3f, 1f);
-        [SerializeField] private float blinkInterval = 0.1f;
+        [SerializeField] private Color dangerColor = new Color(1f, 0.5f, 0.5f, 1f);
+        [SerializeField] private Color criticalColor = new Color(1f, 0.3f, 0.3f, 1f);
+        
+        [Header("低血量警告阈值")]
+        [Tooltip("低血量警告阈值（百分比）")]
+        [SerializeField] private float lowHealthThreshold = 0.2f;
         
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
@@ -55,15 +63,13 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private int maxHullHP;
-        private float invincibilityDuration;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private int currentHullHP;
-        private bool isInvincible = false;
-        private Coroutine invincibilityCoroutine;
+        private bool isLowHealth = false; // 追踪低血量状态
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共属性
@@ -71,9 +77,9 @@ namespace LightVsDecay.Logic.Player
         
         public int CurrentHullHP => currentHullHP;
         public int MaxHullHP => maxHullHP;
-        public bool IsInvincible => isInvincible || (shieldController != null && shieldController.IsInvincible);
         public bool IsDead => currentHullHP <= 0;
         public float HullPercent => maxHullHP > 0 ? (float)currentHullHP / maxHullHP : 0f;
+        public bool IsLowHealth => HullPercent < lowHealthThreshold;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -92,6 +98,7 @@ namespace LightVsDecay.Logic.Player
         private void Start()
         {
             currentHullHP = maxHullHP;
+            isLowHealth = false;
             UpdateVisuals();
             BroadcastHullStatus();
         }
@@ -105,13 +112,10 @@ namespace LightVsDecay.Logic.Player
             if (settings != null)
             {
                 maxHullHP = settings.maxHullHP;
-                invincibilityDuration = settings.invincibilityDuration;
             }
             else
             {
-                // 使用默认值
                 maxHullHP = defaultMaxHullHP;
-                invincibilityDuration = defaultInvincibilityDuration;
             }
         }
         
@@ -120,95 +124,96 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 受到伤害
+        /// 受到伤害（小怪碰撞）
         /// </summary>
+        /// <param name="damage">伤害值</param>
         /// <returns>是否成功造成伤害</returns>
-        public bool TakeDamage(int damage = 1)
+        public bool TakeDamage(int damage)
         {
-            // 检查无敌状态
-            if (IsInvincible)
-            {
-                if (showDebugInfo)
-                {
-                    Debug.Log("[TurretHealth] 无敌中，伤害无效");
-                }
-                return false;
-            }
+            if (damage <= 0) return false;
             
             // 先由护盾承担伤害
             if (shieldController != null && shieldController.CurrentShieldHP > 0)
             {
-                bool shieldDamaged = shieldController.TakeDamage(damage);
-                if (shieldDamaged)
+                int overflow = shieldController.TakeDamage(damage);
+                
+                if (overflow <= 0)
                 {
+                    // 护盾完全吸收
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[TurretHealth] 护盾承担伤害");
+                        Debug.Log($"[TurretHealth] 护盾完全吸收伤害: {damage}");
                     }
                     return true;
                 }
+                
+                // 溢出伤害扣本体
+                damage = overflow;
             }
             
-            // 护盾破了，扣本体血
-            currentHullHP = Mathf.Max(0, currentHullHP - damage);
-            
-            // 播放受伤特效
-            PlayDamageEffect();
-            
-            // 开始无敌
-            StartInvincibility();
-            
-            // 广播状态
-            BroadcastHullStatus();
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[TurretHealth] 本体受伤: {currentHullHP}/{maxHullHP}");
-            }
-            
-            // 检查死亡
-            if (currentHullHP <= 0)
-            {
-                OnDeath();
-            }
+            // 扣本体血
+            ApplyDamageToHull(damage);
             
             return true;
         }
+        
         /// <summary>
         /// 受到BOSS伤害（大数值伤害）
         /// </summary>
         /// <param name="damage">伤害值</param>
         public void TakeBossDamage(int damage)
         {
-            // 检查无敌状态
-            if (IsInvincible)
+            if (damage <= 0) return;
+            
+            // 先由护盾承担伤害
+            if (shieldController != null && shieldController.CurrentShieldHP > 0)
             {
-                if (showDebugInfo)
+                int overflow = shieldController.TakeBossDamage(damage);
+                
+                if (overflow <= 0)
                 {
-                    Debug.Log("[TurretHealth] 无敌中，BOSS伤害无效");
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[TurretHealth] 护盾完全吸收BOSS伤害: {damage}");
+                    }
+                    return;
                 }
-                return;
+                
+                damage = overflow;
             }
             
-            // 扣本体血
+            // 溢出伤害扣本体
+            ApplyDamageToHull(damage);
+        }
+        
+        /// <summary>
+        /// 对本体造成伤害（内部方法）
+        /// </summary>
+        private void ApplyDamageToHull(int damage)
+        {
+            int oldHP = currentHullHP;
             currentHullHP = Mathf.Max(0, currentHullHP - damage);
+            int actualDamage = oldHP - currentHullHP;
             
             // 播放受伤特效
             PlayDamageEffect();
             
-            // 开始无敌
-            StartInvincibility();
-            
-            // 更新视觉
-            UpdateVisuals();
+            // 触发玩家受击飘字事件
+            GameEvents.TriggerPlayerHealthDamaged(actualDamage, transform.position);
             
             // 广播状态
             BroadcastHullStatus();
             
+            // 检查低血量状态
+            CheckLowHealthStatus();
+            
             if (showDebugInfo)
             {
-                Debug.Log($"[TurretHealth] BOSS伤害: -{damage}, 剩余血量: {currentHullHP}/{maxHullHP}");
+                Debug.Log($"[TurretHealth] 本体受伤: -{actualDamage}, 剩余: {currentHullHP}/{maxHullHP}");
             }
+            
+            // 更新视觉
+            UpdateVisuals();
             
             // 检查死亡
             if (currentHullHP <= 0)
@@ -216,42 +221,36 @@ namespace LightVsDecay.Logic.Player
                 OnDeath();
             }
         }
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 无敌帧
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void StartInvincibility()
+        /// <summary>
+        /// 检查并触发低血量状态
+        /// </summary>
+        private void CheckLowHealthStatus()
         {
-            if (invincibilityCoroutine != null)
-            {
-                StopCoroutine(invincibilityCoroutine);
-            }
-            invincibilityCoroutine = StartCoroutine(InvincibilityCoroutine());
-        }
-        
-        private IEnumerator InvincibilityCoroutine()
-        {
-            isInvincible = true;
-            float elapsed = 0f;
-            bool visible = true;
+            bool newLowHealthState = HullPercent < lowHealthThreshold;
             
-            while (elapsed < invincibilityDuration)
+            if (newLowHealthState && !isLowHealth)
             {
-                // 闪烁效果
-                visible = !visible;
-                if (turretSprite != null)
-                {
-                    turretSprite.color = visible ? damagedColor : new Color(1f, 1f, 1f, 0.3f);
-                }
+                // 刚进入低血量状态
+                isLowHealth = true;
+                GameEvents.TriggerLowHealthStart();
                 
-                yield return new WaitForSeconds(blinkInterval);
-                elapsed += blinkInterval;
+                if (showDebugInfo)
+                {
+                    Debug.Log("[TurretHealth] ⚠️ 进入低血量状态！");
+                }
             }
-            
-            isInvincible = false;
-            UpdateVisuals();
-            
-            invincibilityCoroutine = null;
+            else if (!newLowHealthState && isLowHealth)
+            {
+                // 脱离低血量状态
+                isLowHealth = false;
+                GameEvents.TriggerLowHealthEnd();
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log("[TurretHealth] ✓ 脱离低血量状态");
+                }
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -277,12 +276,21 @@ namespace LightVsDecay.Logic.Player
         {
             if (turretSprite == null) return;
             
-            if (currentHullHP <= 1)
+            float percent = HullPercent;
+            
+            if (percent < 0.1f)
             {
-                turretSprite.color = damagedColor;
+                // 极度危险 (<10%)
+                turretSprite.color = criticalColor;
+            }
+            else if (percent < 0.3f)
+            {
+                // 危险 (<30%)
+                turretSprite.color = dangerColor;
             }
             else
             {
+                // 正常
                 turretSprite.color = normalColor;
             }
         }
@@ -294,8 +302,6 @@ namespace LightVsDecay.Logic.Player
             {
                 VFXPoolManager.Instance.Play(VFXType.TowerDamage, transform.position);
             }
-            
-            // TODO: 屏幕震动
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -328,18 +334,42 @@ namespace LightVsDecay.Logic.Player
         }
         
         /// <summary>
-        /// 恢复生命值（消耗品使用）
+        /// 恢复生命值（固定数值）
         /// </summary>
-        public void RestoreHealth(int amount = 1)
+        public void RestoreHealth(int amount)
         {
+            if (amount <= 0) return;
+            
+            int oldHP = currentHullHP;
             currentHullHP = Mathf.Min(currentHullHP + amount, maxHullHP);
+            int actualRestore = currentHullHP - oldHP;
+            
             UpdateVisuals();
             BroadcastHullStatus();
             
+            // 检查是否脱离低血量状态
+            CheckLowHealthStatus();
+            
+            // 触发恢复飘字事件
+            if (actualRestore > 0)
+            {
+                GameEvents.TriggerPlayerHealthRestored(actualRestore, transform.position);
+            }
+            
             if (showDebugInfo)
             {
-                Debug.Log($"[TurretHealth] 恢复生命 +{amount}: {currentHullHP}/{maxHullHP}");
+                Debug.Log($"[TurretHealth] 恢复生命 +{actualRestore}: {currentHullHP}/{maxHullHP}");
             }
+        }
+        
+        /// <summary>
+        /// 恢复生命值（百分比）
+        /// </summary>
+        /// <param name="percent">恢复百分比（0-1），例如0.1表示10%</param>
+        public void RestoreHealthPercent(float percent)
+        {
+            int amount = Mathf.RoundToInt(maxHullHP * percent);
+            RestoreHealth(amount);
         }
         
         /// <summary>
@@ -348,16 +378,24 @@ namespace LightVsDecay.Logic.Player
         public void ResetHealth()
         {
             currentHullHP = maxHullHP;
-            isInvincible = false;
-            
-            if (invincibilityCoroutine != null)
-            {
-                StopCoroutine(invincibilityCoroutine);
-                invincibilityCoroutine = null;
-            }
+            isLowHealth = false;
             
             UpdateVisuals();
             BroadcastHullStatus();
+        }
+        
+        /// <summary>
+        /// 设置最大血量（用于养成系统）
+        /// </summary>
+        public void SetMaxHullHP(int newMax)
+        {
+            float percent = HullPercent;
+            maxHullHP = newMax;
+            currentHullHP = Mathf.RoundToInt(maxHullHP * percent);
+            
+            UpdateVisuals();
+            BroadcastHullStatus();
+            CheckLowHealthStatus();
         }
     }
 }

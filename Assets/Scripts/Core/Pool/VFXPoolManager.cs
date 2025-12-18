@@ -19,10 +19,6 @@ namespace LightVsDecay.Core.Pool
         ShieldBreak,        // 护盾破碎
         ShieldRecover,      // 护盾恢复
         TowerDamage,        // 塔受伤
-        
-        // 技能相关（低频，可选不入池）
-        UltActivate,        // 大招激活
-        UltSweep,           // 大招扫射
     }
     
     /// <summary>

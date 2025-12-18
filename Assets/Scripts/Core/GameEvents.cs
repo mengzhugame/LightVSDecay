@@ -83,7 +83,30 @@ namespace LightVsDecay.Core
         
         /// <summary>本体血量变化 (当前, 最大)</summary>
         public static event Action<int, int> OnHullHPChanged;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 护盾与血量事件（新增）
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>护盾破碎（用于后处理效果）</summary>
+        public static event Action OnShieldBroken;
+
+        /// <summary>低血量开始（血量<20%）</summary>
+        public static event Action OnLowHealthStart;
+
+        /// <summary>低血量结束（血量>=20%）</summary>
+        public static event Action OnLowHealthEnd;
+
+        /// <summary>玩家护盾受伤飘字 (伤害值, 位置)</summary>
+        public static event Action<int, Vector3> OnPlayerShieldDamaged;
+
+        /// <summary>玩家血量受伤飘字 (伤害值, 位置)</summary>
+        public static event Action<int, Vector3> OnPlayerHealthDamaged;
+
+        /// <summary>玩家护盾恢复飘字 (恢复值, 位置)</summary>
+        public static event Action<int, Vector3> OnPlayerShieldRestored;
+
+        /// <summary>玩家血量恢复飘字 (恢复值, 位置)</summary>
+        public static event Action<int, Vector3> OnPlayerHealthRestored;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 技能事件（新增）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -160,6 +183,14 @@ namespace LightVsDecay.Core
         public static void TriggerBossHealthChanged(float percent) => OnBossHealthChanged?.Invoke(percent);
         public static void TriggerBossDeath() => OnBossDeath?.Invoke();
         public static void TriggerBossFightStart() => OnBossFightStart?.Invoke();
+        //护盾血量
+        public static void TriggerShieldBroken() => OnShieldBroken?.Invoke();
+        public static void TriggerLowHealthStart() => OnLowHealthStart?.Invoke();
+        public static void TriggerLowHealthEnd() => OnLowHealthEnd?.Invoke();
+        public static void TriggerPlayerShieldDamaged(int damage, Vector3 pos) => OnPlayerShieldDamaged?.Invoke(damage, pos);
+        public static void TriggerPlayerHealthDamaged(int damage, Vector3 pos) => OnPlayerHealthDamaged?.Invoke(damage, pos);
+        public static void TriggerPlayerShieldRestored(int amount, Vector3 pos) => OnPlayerShieldRestored?.Invoke(amount, pos);
+        public static void TriggerPlayerHealthRestored(int amount, Vector3 pos) => OnPlayerHealthRestored?.Invoke(amount, pos);
         /// <summary>
         /// 清除所有事件订阅（场景切换时调用）
         /// </summary>
@@ -194,6 +225,14 @@ namespace LightVsDecay.Core
             OnBossHealthChanged = null;
             OnBossDeath = null;
             OnBossFightStart = null;
+            //护盾和血量
+            OnShieldBroken = null;
+            OnLowHealthStart = null;
+            OnLowHealthEnd = null;
+            OnPlayerShieldDamaged = null;
+            OnPlayerHealthDamaged = null;
+            OnPlayerShieldRestored = null;
+            OnPlayerHealthRestored = null;
         }
     }
 }
