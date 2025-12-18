@@ -18,7 +18,7 @@ MonoBehaviour:
   maxHealth: 500
   moveSpeed: 0.3
   mass: 10
-  contactDamage: 1
+  contactDamage: 80
   behaviorType: 0
   waveAmplitude: 1
   waveFrequency: 1.5

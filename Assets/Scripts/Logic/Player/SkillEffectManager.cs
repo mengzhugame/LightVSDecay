@@ -202,11 +202,7 @@ namespace LightVsDecay.Logic.Player
                 case SkillType.Repair:
                     ApplyRepairEffect();
                     break;
-                    
-                case SkillType.Charge:
-                    ApplyChargeEffect();
-                    break;
-                    
+
                 case SkillType.Adrenaline:
                     ApplyAdrenalineEffect();
                     break;
@@ -490,25 +486,7 @@ namespace LightVsDecay.Logic.Player
                 Debug.Log("[SkillEffectManager] ✓ Repair - 护盾已回满，生命+1");
             }
         }
-        
-        /// <summary>
-        /// 应用 Charge（能量过载）效果
-        /// 大招能量条 +50%
-        /// </summary>
-        private void ApplyChargeEffect()
-        {
-            if (ProgressManager.Instance != null)
-            {
-                int chargeAmount = ProgressManager.Instance.UltMaxEnergy / 2; // 50%
-                ProgressManager.Instance.AddUltEnergy(chargeAmount);
-            }
-            
-            if (showDebugInfo)
-            {
-                Debug.Log("[SkillEffectManager] ✓ Charge - 大招能量 +50%");
-            }
-        }
-        
+
         /// <summary>
         /// 应用 Adrenaline（肾上腺素）效果
         /// 恢复1点护盾，20秒内转速+50%、击退力+50%

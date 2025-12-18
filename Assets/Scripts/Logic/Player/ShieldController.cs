@@ -360,9 +360,10 @@ namespace LightVsDecay.Logic.Player
         private void PlayDamageEffect()
         {
             // 使用 VFXPoolManager.Play 方法（高频特效用对象池）
+            // 注：ShieldBreak 用于护盾受击特效
             if (VFXPoolManager.Instance != null)
             {
-                VFXPoolManager.Instance.Play(VFXType.ShieldHit, transform.position);
+                VFXPoolManager.Instance.Play(VFXType.ShieldBreak, transform.position);
             }
         }
         

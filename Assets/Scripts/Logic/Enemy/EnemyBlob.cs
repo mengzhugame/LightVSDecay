@@ -820,30 +820,37 @@ namespace LightVsDecay.Logic.Enemy
             {
                 shieldController = shieldObj.GetComponentInParent<ShieldController>();
             }
-    
+
             if (shieldController == null) return;
-    
-            if (shieldController.IsInvincible || shieldController.CurrentShieldHP <= 0)
+
+            // 【修改】删除无敌检查，只检查护盾是否已破
+            if (shieldController.CurrentShieldHP <= 0)
             {
                 return;
             }
+
+            // 【修改】从配置获取碰撞伤害值（字段名是 contactDamage）
+            int damageAmount = data != null ? data.contactDamage : 25;
     
-            // 【关键修复】先对护盾造成伤害！
-            bool damaged = shieldController.TakeDamage(1);
-    
-            if (damaged)
+            // 【修改】TakeDamage 现在返回溢出伤害（int），不再返回 bool
+            // overflow == 0 表示护盾完全吸收
+            // overflow > 0 表示有溢出伤害
+            int overflow = shieldController.TakeDamage(damageAmount);
+
+            // 只要调用了 TakeDamage，就算造成了伤害（无论是否溢出）
+            if (IsSmallEnemy())
             {
-                if (IsSmallEnemy())
-                {
-                    Explode();
-                }
-                else
-                {
-                    Vector2 direction = (transform.position - shieldObj.transform.position).normalized;
-                    rb.AddForce(direction * 500f, ForceMode2D.Impulse);
-                }
+                // 小怪撞击后自爆
+                Explode();
+            }
+            else
+            {
+                // 大怪被反弹
+                Vector2 direction = (transform.position - shieldObj.transform.position).normalized;
+                rb.AddForce(direction * 500f, ForceMode2D.Impulse);
             }
         }
+
         
         private void HandleTowerCollision(GameObject towerObj)
         {
@@ -853,26 +860,27 @@ namespace LightVsDecay.Logic.Enemy
             {
                 turretHealth = towerObj.GetComponentInParent<TurretHealth>();
             }
-    
+
             if (turretHealth == null)
             {
                 Debug.LogWarning($"[EnemyBlob] 找不到 TurretHealth: {towerObj.name}");
                 return;
             }
+
+            // 【修改】从配置获取碰撞伤害值（字段名是 contactDamage）
+            int damageAmount = data != null ? data.contactDamage : 25;
     
-            // 对塔造成伤害
-            bool damaged = turretHealth.TakeDamage(1);
-    
+            // 对塔造成伤害（TurretHealth.TakeDamage 仍返回 bool）
+            bool damaged = turretHealth.TakeDamage(damageAmount);
+
             if (damaged)
             {
-                if (turretHealth.IsSmallEnemy(GetMass()))
+                if (IsSmallEnemy())
                 {
-                    // 小怪自爆
                     Explode();
                 }
                 else
                 {
-                    // 大怪弹开
                     Vector2 direction = (transform.position - towerObj.transform.position).normalized;
                     rb.AddForce(direction * turretHealth.GetBounceForce(), ForceMode2D.Impulse);
                 }

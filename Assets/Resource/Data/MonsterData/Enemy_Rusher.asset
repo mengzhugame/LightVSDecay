@@ -18,7 +18,11 @@ MonoBehaviour:
   maxHealth: 10
   moveSpeed: 1.5
   mass: 0.5
-  contactDamage: 1
+  contactDamage: 150
+  behaviorType: 0
+  waveAmplitude: 1
+  waveFrequency: 1.5
+  outOfBoundsLifetime: 1
   canBeKnockedBack: 0
   knockbackMultiplier: 1
   knockbackDrag: 2
@@ -36,6 +40,11 @@ MonoBehaviour:
   xpReward: 1
   coinReward: 0
   ultEnergyReward: 1
+  dropCoinOnHit: 0
+  coinPerHit: 1
+  deathCoinBurst: 0
+  lowLevelBonusXP: 0
+  lowLevelThreshold: 12
   collisionBehavior: 0
   bounceForce: 300
   bounceStunDuration: 1

@@ -19,11 +19,17 @@ MonoBehaviour:
   bossShieldPrefab: {fileID: 8951767721941194616, guid: 14704d5b81a539345837d12000bda4a6, type: 3}
   bossCorePrefab: {fileID: 8951767721941194616, guid: 8eef231d29e85c544bcb135ae85d7b83, type: 3}
   statusPrefab: {fileID: 8951767721941194616, guid: 83a3ec4eea9fd0641bef603d2369352f, type: 3}
+  playerHealthDamagePrefab: {fileID: 8951767721941194616, guid: c8afe0179f13c2f428f90165c96c1406, type: 3}
+  playerShieldDamagePrefab: {fileID: 8951767721941194616, guid: 86af4718758729948b8707fc1689c49a, type: 3}
+  playerRestorePrefab: {fileID: 8951767721941194616, guid: 12f1db1b23c93554baedabf69770161a, type: 3}
   normalPriority: 0
   critPriority: 2
   statusPriority: 1
   bossShieldPriority: 1
   bossCorePriority: 2
+  playerHealthDamagePriority: 4
+  playerShieldDamagePriority: 3
+  playerRestorePriority: 2
   normalStyle:
     textColor: {r: 0.87358487, g: 1, b: 0.99543864, a: 1}
     outlineColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
@@ -104,3 +110,67 @@ MonoBehaviour:
     peakScale: 1.3
     scalePeakPercent: 0.2
     sizeMultiplier: 1.3
+  playerHealthDamageStyle:
+    textColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+    outlineColor: {r: 0.3, g: 0, b: 0, a: 1}
+    fontSize: 38
+    isBold: 1
+    outlineWidth: 0.25
+    duration: 0.8
+    initialUpSpeed: 160
+    horizontalRandomRange: 30
+    gravity: 150
+    fadeStartPercent: 0.5
+    useScaleAnimation: 1
+    initialScale: 0.8
+    peakScale: 1.3
+    scalePeakPercent: 0.2
+    sizeMultiplier: 1.2
+  playerShieldDamageStyle:
+    textColor: {r: 0, g: 0.9, b: 1, a: 1}
+    outlineColor: {r: 0, g: 0.3, b: 0.4, a: 1}
+    fontSize: 36
+    isBold: 1
+    outlineWidth: 0.2
+    duration: 0.7
+    initialUpSpeed: 150
+    horizontalRandomRange: 35
+    gravity: 120
+    fadeStartPercent: 0.5
+    useScaleAnimation: 1
+    initialScale: 0.8
+    peakScale: 1.2
+    scalePeakPercent: 0.2
+    sizeMultiplier: 1.1
+  playerHealthRestoreStyle:
+    textColor: {r: 0.2, g: 1, b: 0.4, a: 1}
+    outlineColor: {r: 0, g: 0.3, b: 0.1, a: 1}
+    fontSize: 34
+    isBold: 1
+    outlineWidth: 0.2
+    duration: 0.9
+    initialUpSpeed: 140
+    horizontalRandomRange: 20
+    gravity: 100
+    fadeStartPercent: 0.6
+    useScaleAnimation: 1
+    initialScale: 0.9
+    peakScale: 1.2
+    scalePeakPercent: 0.25
+    sizeMultiplier: 1
+  playerShieldRestoreStyle:
+    textColor: {r: 0.4, g: 1, b: 1, a: 1}
+    outlineColor: {r: 0, g: 0.4, b: 0.4, a: 1}
+    fontSize: 34
+    isBold: 1
+    outlineWidth: 0.2
+    duration: 0.9
+    initialUpSpeed: 140
+    horizontalRandomRange: 20
+    gravity: 100
+    fadeStartPercent: 0.6
+    useScaleAnimation: 1
+    initialScale: 0.9
+    peakScale: 1.2
+    scalePeakPercent: 0.25
+    sizeMultiplier: 1

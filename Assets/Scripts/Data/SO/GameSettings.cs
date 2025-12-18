@@ -40,30 +40,7 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("最大等级")]
         public int maxLevel = 20;
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 大招系统
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("大招系统")]
-        [Tooltip("大招最大能量")]
-        public int ultMaxEnergy = 100;
-        
-        [Tooltip("每次击杀获得的大招能量（小怪）")]
-        public int ultEnergyPerKill = 2;
-        
-        [Tooltip("精英怪击杀获得的大招能量（Tank）")]
-        public int ultEnergyPerEliteKill = 5;
-        
-        [Tooltip("大招持续时间（秒）")]
-        public float ultDuration = 5f;
-        
-        [Tooltip("大招激光宽度倍率")]
-        public float ultLaserWidthMultiplier = 2f;
-        
-        [Tooltip("大招旋转速度（度/秒）")]
-        public float ultRotationSpeed = 360f;
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 连击系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -109,17 +86,9 @@ namespace LightVsDecay.Data.SO
         
         [Header("护盾系统")]
         [Tooltip("护盾最大值")]
-        public int maxShieldHP = 3;
-        
-        [Tooltip("护盾恢复时间（秒）")]
-        public float shieldRecoveryTime = 12f;
-        
+        public int maxShieldHP = 500;
         [Tooltip("本体最大生命值")]
-        public int maxHullHP = 3;
-        
-        [Tooltip("无敌帧时长（秒）")]
-        public float invincibilityDuration = 1.0f;
-        
+        public int maxHullHP = 1000;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 便捷方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

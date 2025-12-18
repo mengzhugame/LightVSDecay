@@ -55,12 +55,7 @@ namespace LightVsDecay.Logic
         
         public int SessionCoins => session.coins;
         public int TotalCoins => session.coins; // 兼容旧代码
-        
-        public int UltEnergy => session.ultEnergy;
-        public int UltMaxEnergy => settings.ultMaxEnergy;
-        public float UltProgress => session.UltProgress(settings.ultMaxEnergy);
-        public bool IsUltReady => session.ultReady;
-        
+
         public int TotalKills => session.totalKills;
         public int CurrentCombo => session.currentCombo;
         public int MaxCombo => session.maxCombo;
@@ -219,46 +214,7 @@ namespace LightVsDecay.Logic
                 Debug.Log($"[ProgressManager] +{amount} 金币, 总计: {session.coins}");
             }
         }
-        
-        /// <summary>增加大招能量</summary>
-        public void AddUltEnergy(int amount)
-        {
-            if (session.ultReady) return;
-            
-            session.ultEnergy = Mathf.Min(session.ultEnergy + amount, settings.ultMaxEnergy);
-            GameEvents.TriggerUltEnergyChanged(session.ultEnergy, settings.ultMaxEnergy);
-            
-            if (!session.ultReady && session.ultEnergy >= settings.ultMaxEnergy)
-            {
-                session.ultReady = true;
-                GameEvents.TriggerUltReady();
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log("[ProgressManager] 大招已准备就绪！");
-                }
-            }
-        }
-        
-        /// <summary>使用大招</summary>
-        public bool UseUlt()
-        {
-            if (!session.ultReady) return false;
-            
-            session.ultEnergy = 0;
-            session.ultReady = false;
-            
-            GameEvents.TriggerUltUsed();
-            GameEvents.TriggerUltEnergyChanged(session.ultEnergy, settings.ultMaxEnergy);
-            
-            if (showDebugInfo)
-            {
-                Debug.Log("[ProgressManager] 大招已使用！");
-            }
-            
-            return true;
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 击杀/连击系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -302,15 +258,10 @@ namespace LightVsDecay.Logic
             AddKill();
 
             if (coin > 0) AddCoins(coin);
-            
-            int ultGain = (type == EnemyType.Tank) 
-                ? settings.ultEnergyPerEliteKill 
-                : settings.ultEnergyPerKill;
-            AddUltEnergy(ultGain);
-            
+
             if (showDebugInfo)
             {
-                Debug.Log($"[ProgressManager] 敌人死亡: {type}, XP:{xp}, Coin:{coin}, UltEnergy:{ultGain}");
+                Debug.Log($"[ProgressManager] 敌人死亡: {type}, XP:{xp}, Coin:{coin}");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -438,7 +389,6 @@ namespace LightVsDecay.Logic
         {
             GameEvents.TriggerExpChanged(session.exp, session.expToNextLevel);
             GameEvents.TriggerCoinChanged(session.coins);
-            GameEvents.TriggerUltEnergyChanged(session.ultEnergy, settings.ultMaxEnergy);
             GameEvents.TriggerKillCountChanged(session.totalKills);
             GameEvents.TriggerComboChanged(session.currentCombo);
         }
@@ -458,14 +408,12 @@ namespace LightVsDecay.Logic
             GUILayout.Label("=== Session ===");
             GUILayout.Label($"Lv.{session.level} ({session.exp}/{session.expToNextLevel})");
             GUILayout.Label($"Coins: {session.coins}");
-            GUILayout.Label($"Ult: {session.ultEnergy}/{settings.ultMaxEnergy} {(session.ultReady ? "[READY]" : "")}");
             GUILayout.Label($"Kills: {session.totalKills}");
             GUILayout.Label($"Combo: {session.currentCombo} (Max:{session.maxCombo})");
             
             GUILayout.Space(5);
             if (GUILayout.Button("+100 XP")) AddExp(100);
             if (GUILayout.Button("+50 Coins")) AddCoins(50);
-            if (GUILayout.Button("+50 Ult")) AddUltEnergy(50);
             if (GUILayout.Button("+100 Gold")) AddGoldCoins(100);
             
             GUILayout.EndArea();

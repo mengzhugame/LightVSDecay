@@ -33,5 +33,5 @@ MonoBehaviour:
   baseLaserWidth: 0.5
   maxShieldHP: 500
   shieldRecoveryTime: 12
-  maxHullHP: 2147483647
+  maxHullHP: 1000
   invincibilityDuration: 1

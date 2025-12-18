@@ -510,7 +510,7 @@ namespace LightVsDecay.UI.Panels
             // 更新文本（可选）
             if (healthText != null)
             {
-                healthText.text = $"{current}/{max}";
+                healthText.text = $"{current}";
             }
     
             // 白色缓冲条延迟追赶
@@ -570,7 +570,7 @@ namespace LightVsDecay.UI.Panels
             // 更新文本（可选）
             if (shieldText != null)
             {
-                shieldText.text = $"{current}/{max}";
+                shieldText.text = $"{current}";
             }
     
             // 白色缓冲条延迟追赶
@@ -751,30 +751,7 @@ namespace LightVsDecay.UI.Panels
             // 暂停功能暂不实现
             Debug.Log("[HUDController] 暂停按钮点击（功能暂未实现）");
         }
-        
-        private void OnSkillButtonClicked()
-        {
-            if (!ultReady)
-            {
-                Debug.Log("[HUDController] 大招尚未准备好");
-                return;
-            }
-            
-            // 通过 PlayerProgressManager 使用大招
-            if (ProgressManager.Instance != null)
-            {
-                if (ProgressManager.Instance.UseUlt())
-                {
-                    // 触发激光控制器的大招
-                    var laserController = FindObjectOfType<LaserController>();
-                    if (laserController != null)
-                    {
-                        laserController.ActivateUlt();
-                    }
-                }
-            }
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
