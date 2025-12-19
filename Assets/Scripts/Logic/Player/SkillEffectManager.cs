@@ -49,7 +49,9 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+        // Wide 技能配置
+        private const float WIDE_WIDTH_PER_LEVEL = 0.25f;  // 每级增加的绝对宽度
+        private const float BASE_LASER_WIDTH = 0.5f;        // 基础宽度（从 GameSettings 读取更好）
         // 当前技能等级缓存
         private int prismLevel = 0;
         private int focusLevel = 0;
@@ -340,24 +342,70 @@ namespace LightVsDecay.Logic.Player
         
         /// <summary>
         /// 应用 Wide（广域透镜）效果 - +激光宽度
-        /// 每级增加 +15% 激光宽度
+        /// 每级增加 0.25 绝对激光宽度
         /// </summary>
         private void ApplyWideEffect(int level)
         {
             wideLevel = level;
             
-            // 计算总宽度加成（每级 +30%）
-            totalWidthBonus = level * 0.30f;
+            // 计算绝对宽度增量
+            float widthIncrease = level * WIDE_WIDTH_PER_LEVEL;
+            
+            // 计算为倍率（相对于基础宽度）
+            // 例: 基础0.5，增加0.25 = 0.75，倍率 = 0.75/0.5 = 1.5
+            float baseWidth = BASE_LASER_WIDTH;
+            if (laserController != null)
+            {
+                // 如果有 GameSettings 引用，从那里读取基础宽度
+                // baseWidth = gameSettings.baseLaserWidth;
+            }
+            
+            float newWidth = baseWidth + widthIncrease;
+            float widthMultiplier = newWidth / baseWidth;
+            
+            // 保存用于显示
+            totalWidthBonus = widthMultiplier - 1f;  // 转换为百分比显示
             
             // 应用到激光
-            UpdateWidthMultiplier();
+            if (laserController != null)
+            {
+                laserController.SetWidthMultiplier(widthMultiplier);
+            }
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} - 宽度 +{totalWidthBonus:P0}");
+                Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} - 宽度: {baseWidth:F2} → {newWidth:F2} (x{widthMultiplier:F2})");
             }
         }
-        
+        /// <summary>
+        /// 从 SkillData 读取 Wide 效果参数
+        /// </summary>
+        private void ApplyWideEffectFromData(int level, SkillData skillData)
+        {
+            if (skillData == null || skillData.levelData == null) 
+            {
+                ApplyWideEffect(level); // 回退到硬编码
+                return;
+            }
+            
+            wideLevel = level;
+            
+            // 从配置读取宽度倍率
+            var levelData = skillData.GetLevelData(level);
+            float widthMultiplier = levelData.widthMultiplier;
+            
+            totalWidthBonus = widthMultiplier - 1f;
+            
+            if (laserController != null)
+            {
+                laserController.SetWidthMultiplier(widthMultiplier);
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} - 宽度倍率: x{widthMultiplier:F2} (从配置读取)");
+            }
+        }
         /// <summary>
         /// 更新伤害倍率（考虑 Focus + Power）
         /// </summary>

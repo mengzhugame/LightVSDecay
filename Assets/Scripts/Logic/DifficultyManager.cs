@@ -1,7 +1,8 @@
 // ============================================================
-// DifficultyManager.cs
+// DifficultyManager.cs (简化版)
 // 文件位置: Assets/Scripts/Logic/DifficultyManager.cs
-// 用途：时间难度系数管理 - 随游戏时间增加敌人属性
+// 用途：难度管理器 - 只使用波次难度，删除时间难度
+// 更新：根据数值框架确认，避免"死亡螺旋"
 // ============================================================
 
 using UnityEngine;
@@ -11,59 +12,50 @@ namespace LightVsDecay.Logic
 {
     /// <summary>
     /// 难度数据结构（传递给敌人）
+    /// 现在只返回默认值 1.0，实际难度由 WaveConfig.difficultyMultiplier 控制
     /// </summary>
     public struct DifficultyModifiers
     {
-        public float hpMultiplier;      // 血量倍率（无上限）
-        public float speedMultiplier;   // 速度倍率（封顶 1.5）
-        public float massMultiplier;    // 质量倍率（封顶 1.3）
+        public float hpMultiplier;      // 血量倍率
+        public float speedMultiplier;   // 速度倍率
+        public float massMultiplier;    // 质量倍率
+        public float damageMultiplier;  // 伤害倍率（新增）
         
         public static DifficultyModifiers Default => new DifficultyModifiers
         {
             hpMultiplier = 1f,
             speedMultiplier = 1f,
-            massMultiplier = 1f
+            massMultiplier = 1f,
+            damageMultiplier = 1f
         };
     }
     
     /// <summary>
-    /// 难度管理器
-    /// 职责：
-    /// - 维护战斗计时器（仅在战斗中且非暂停时累加）
-    /// - 计算并提供当前难度系数
+    /// 难度管理器（简化版）
+    /// 
+    /// 设计决策：只使用波次难度，删除时间难度
+    /// 理由：避免"死亡螺旋" - 当玩家 DPS 不足时，
+    ///       时间拖得越久怪越强，形成无解死局。
+    /// 
+    /// 现在：
+    /// - 敌人强度由 WaveConfig.difficultyMultiplier 决定
+    /// - Wave 1 的怪永远是 Wave 1 的强度
+    /// - 压力来源是"怪越堆越多"而非"单只怪变强"
     /// </summary>
     public class DifficultyManager : Singleton<DifficultyManager>
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 难度配置
+        // 配置（保留但不再使用，便于未来可能的需求）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("HP 系数配置")]
-        [Tooltip("HP 增长速率：每 60 秒增加的倍率")]
-        [SerializeField] private float hpGrowthPerMinute = 0.5f;
-        
-        [Header("速度系数配置")]
-        [Tooltip("速度增长速率：每 120 秒增加的倍率")]
-        [SerializeField] private float speedGrowthPer2Minutes = 0.25f;
-        
-        [Tooltip("速度倍率上限")]
-        [SerializeField] private float speedMaxMultiplier = 1.5f;
-        
-        [Header("质量系数配置")]
-        [Tooltip("质量增长速率：每 180 秒增加的倍率")]
-        [SerializeField] private float massGrowthPer3Minutes = 0.15f;
-        
-        [Tooltip("质量倍率上限")]
-        [SerializeField] private float massMaxMultiplier = 1.3f;
         
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 运行时状态
+        // 运行时状态（保留用于统计）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>战斗计时器（仅在战斗中累加）</summary>
+        /// <summary>战斗计时器（仅用于统计，不影响难度）</summary>
         private float battleTimer = 0f;
         
         /// <summary>是否正在战斗</summary>
@@ -73,26 +65,20 @@ namespace LightVsDecay.Logic
         // 公共属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>当前战斗时间（秒）</summary>
+        /// <summary>当前战斗时间（秒）- 仅用于统计</summary>
         public float BattleTime => battleTimer;
         
         /// <summary>当前战斗时间（分钟）</summary>
         public float BattleTimeMinutes => battleTimer / 60f;
         
-        /// <summary>当前 HP 倍率</summary>
-        public float CurrentHPMultiplier => 1f + (battleTimer / 60f) * hpGrowthPerMinute;
+        /// <summary>HP 倍率 - 始终返回 1.0</summary>
+        public float CurrentHPMultiplier => 1f;
         
-        /// <summary>当前速度倍率</summary>
-        public float CurrentSpeedMultiplier => Mathf.Min(
-            1f + (battleTimer / 120f) * speedGrowthPer2Minutes,
-            speedMaxMultiplier
-        );
+        /// <summary>速度倍率 - 始终返回 1.0</summary>
+        public float CurrentSpeedMultiplier => 1f;
         
-        /// <summary>当前质量倍率</summary>
-        public float CurrentMassMultiplier => Mathf.Min(
-            1f + (battleTimer / 180f) * massGrowthPer3Minutes,
-            massMaxMultiplier
-        );
+        /// <summary>质量倍率 - 始终返回 1.0</summary>
+        public float CurrentMassMultiplier => 1f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -113,8 +99,7 @@ namespace LightVsDecay.Logic
         
         private void Update()
         {
-            // 仅在战斗中且非暂停时累加计时器
-            // Time.timeScale == 0 时 Time.deltaTime 也为 0，但为了明确性还是检查一下
+            // 仅用于统计战斗时间，不影响难度
             if (isInBattle && Time.timeScale > 0f)
             {
                 battleTimer += Time.deltaTime;
@@ -127,25 +112,18 @@ namespace LightVsDecay.Logic
         
         private void OnGameStart()
         {
-            // 重置战斗计时器
             battleTimer = 0f;
             isInBattle = true;
             
             if (showDebugInfo)
             {
-                Debug.Log("[DifficultyManager] 战斗开始，计时器重置");
+                Debug.Log("[DifficultyManager] 战斗开始，计时器重置（注：时间难度已禁用）");
             }
         }
         
         private void OnGameStateChanged(GameState state)
         {
-            // 只有 Playing 状态才算"战斗中"
             isInBattle = (state == GameState.Playing);
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[DifficultyManager] 状态变化: {state}, 战斗中: {isInBattle}");
-            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -153,20 +131,34 @@ namespace LightVsDecay.Logic
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 获取当前难度系数（供敌人生成时调用）
+        /// 获取当前难度系数
+        /// 现在始终返回默认值 1.0
+        /// 实际难度由 WaveConfig.difficultyMultiplier 在生成时控制
         /// </summary>
         public DifficultyModifiers GetCurrentModifiers()
         {
+            // 返回默认值，不再基于时间计算
+            return DifficultyModifiers.Default;
+        }
+        
+        /// <summary>
+        /// 获取指定波次的难度修正
+        /// 供 WaveManager 调用
+        /// </summary>
+        /// <param name="waveDifficultyMultiplier">波次配置的难度倍率</param>
+        public DifficultyModifiers GetWaveModifiers(float waveDifficultyMultiplier)
+        {
             return new DifficultyModifiers
             {
-                hpMultiplier = CurrentHPMultiplier,
-                speedMultiplier = CurrentSpeedMultiplier,
-                massMultiplier = CurrentMassMultiplier
+                hpMultiplier = waveDifficultyMultiplier,
+                speedMultiplier = Mathf.Min(1f + (waveDifficultyMultiplier - 1f) * 0.3f, 1.5f), // 速度增幅较小，封顶1.5
+                massMultiplier = 1f + (waveDifficultyMultiplier - 1f) * 0.2f, // 质量增幅更小
+                damageMultiplier = 1f + (waveDifficultyMultiplier - 1f) * 0.5f // 伤害增幅中等
             };
         }
         
         /// <summary>
-        /// 重置难度（用于测试或重新开始）
+        /// 重置难度（用于重新开始）
         /// </summary>
         public void ResetDifficulty()
         {
@@ -174,7 +166,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log("[DifficultyManager] 难度已重置");
+                Debug.Log("[DifficultyManager] 计时器已重置");
             }
         }
         
@@ -187,13 +179,11 @@ namespace LightVsDecay.Logic
         {
             if (!showDebugInfo || !Application.isPlaying) return;
             
-            GUILayout.BeginArea(new Rect(10, 580, 220, 120));
-            GUILayout.Label("=== Difficulty ===");
+            GUILayout.BeginArea(new Rect(10, 580, 220, 80));
+            GUILayout.Label("=== Difficulty (波次模式) ===");
             GUILayout.Label($"Battle Time: {battleTimer:F1}s ({BattleTimeMinutes:F2} min)");
-            GUILayout.Label($"HP Mult: x{CurrentHPMultiplier:F2}");
-            GUILayout.Label($"Speed Mult: x{CurrentSpeedMultiplier:F2} (cap {speedMaxMultiplier})");
-            GUILayout.Label($"Mass Mult: x{CurrentMassMultiplier:F2} (cap {massMaxMultiplier})");
-            GUILayout.Label($"In Battle: {isInBattle}");
+            GUILayout.Label($"时间难度: 已禁用");
+            GUILayout.Label($"难度来源: WaveConfig.difficultyMultiplier");
             GUILayout.EndArea();
         }
 #endif

@@ -48,9 +48,16 @@ namespace LightVsDecay.Data.SO
         [Min(0.1f)]
         public float mass = 1.0f;
         
-        [Tooltip("碰撞伤害（对玩家）")]
-        public int contactDamage = 1;
+        [Tooltip("接触伤害（碰撞玩家时造成的伤害）")]
+        [Min(0)]
+        public int contactDamage = 30;
         
+        [Tooltip("攻击间隔（秒，0表示只攻击一次如自爆怪）")]
+        [Min(0f)]
+        public float attackInterval = 1.0f;
+        
+        [Tooltip("是否为自爆型（碰撞后自毁）")]
+        public bool isSuicide = false;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 行为设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -137,11 +144,7 @@ namespace LightVsDecay.Data.SO
         [Tooltip("击杀获得的金币")]
         [Min(0)]
         public int coinReward = 1;
-        
-        [Tooltip("击杀获得的大招能量")]
-        [Min(0)]
-        public int ultEnergyReward = 2;
-        
+
         [Header("宝箱怪特殊掉落")]
         [Tooltip("被击中时掉落金币")]
         public bool dropCoinOnHit = false;

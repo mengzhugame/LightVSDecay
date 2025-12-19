@@ -386,21 +386,37 @@ namespace LightVsDecay.Logic
         }
         
         /// <summary>
-        /// 应用难度修正
+        /// 应用波次难度修正
         /// </summary>
         private void ApplyDifficultyModifiers(EnemyBlob enemy, SpawnGroup group)
         {
-            float globalMultiplier = currentWaveData.difficultyMultiplier;
+            if (enemy == null || currentWaveData == null) return;
             
-            // 应用速度倍率
-            if (group.speedMultiplier != 1f)
+            // 获取波次基础难度倍率
+            float waveDifficulty = currentWaveData.difficultyMultiplier;
+            
+            // 获取刷怪组的额外倍率
+            float groupHealthMult = group.healthMultiplier;
+            float groupSpeedMult = group.speedMultiplier;
+            float groupDamageMult = group.damageMultiplier;
+            
+            // 计算最终难度修正
+            DifficultyModifiers modifiers = new DifficultyModifiers
             {
-                enemy.SetSpeedMultiplier(group.speedMultiplier);
-            }
+                hpMultiplier = waveDifficulty * groupHealthMult,
+                speedMultiplier = Mathf.Min(waveDifficulty * groupSpeedMult, 2.0f), // 速度封顶2倍
+                massMultiplier = 1f + (waveDifficulty - 1f) * 0.3f, // 质量增幅较小
+                damageMultiplier = waveDifficulty * groupDamageMult
+            };
             
-            // TODO: 应用血量、伤害倍率（需要 EnemyBlob 支持）
-            // enemy.SetHealthMultiplier(group.healthMultiplier * globalMultiplier);
-            // enemy.SetDamageMultiplier(group.damageMultiplier * globalMultiplier);
+            // 应用到敌人
+            enemy.SetWaveModifiers(modifiers);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[WaveManager] 应用难度: HP={modifiers.hpMultiplier:F2}x, " +
+                          $"Speed={modifiers.speedMultiplier:F2}x, Dmg={modifiers.damageMultiplier:F2}x");
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

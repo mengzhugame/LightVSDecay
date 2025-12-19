@@ -64,14 +64,7 @@ namespace LightVsDecay.Logic.Player
         
         [Tooltip("Boss核心检测层（EnemyEyes Layer）")]
         [SerializeField] private LayerMask bossEyesLayer;
-        
-        [Header("暴击设置")]
-        [Tooltip("基础暴击率（0-1）")]
-        [SerializeField] private float baseCritRate = 0.1f; // 10%
-        
-        [Tooltip("暴击伤害倍率")]
-        [SerializeField] private float critDamageMultiplier = 2.0f; // 200%
-        
+
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
         
@@ -84,7 +77,10 @@ namespace LightVsDecay.Logic.Player
         private float baseKnockbackForce = 10f;
         private float maxLaserLength = 20f;
         private float baseLaserWidth = 1.0f;
-        
+
+        private float baseCritRate = 0.1f;
+
+        private float critDamageMultiplier = 2.0f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -202,6 +198,9 @@ namespace LightVsDecay.Logic.Player
                 baseKnockbackForce = settings.baseKnockbackForce;
                 maxLaserLength = settings.maxLaserLength;
                 baseLaserWidth = settings.baseLaserWidth;
+                // 从 GameSettings 读取暴击配置
+                baseCritRate = settings.baseCritRate;
+                critDamageMultiplier = settings.critDamageMultiplier;
             }
             
             // 初始化主激光

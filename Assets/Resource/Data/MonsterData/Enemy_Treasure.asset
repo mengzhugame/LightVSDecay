@@ -19,6 +19,8 @@ MonoBehaviour:
   moveSpeed: 0.8
   mass: 10
   contactDamage: 0
+  attackInterval: 1
+  isSuicide: 0
   behaviorType: 1
   waveAmplitude: 1.5
   waveFrequency: 2
@@ -37,9 +39,8 @@ MonoBehaviour:
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 30
-  coinReward: 5
-  ultEnergyReward: 0
+  xpReward: 0
+  coinReward: 50
   dropCoinOnHit: 1
   coinPerHit: 1
   deathCoinBurst: 25

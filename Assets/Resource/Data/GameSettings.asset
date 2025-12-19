@@ -12,17 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48f8786be12a6274da7cebb81259e9af, type: 3}
   m_Name: GameSettings
   m_EditorClassIdentifier: 
-  gameDuration: 300
-  bossBattleTimeLimit: 60
-  expBase: 10
-  expGrowth: 5
+  expBase: 100
+  expGrowth: 50
   maxLevel: 20
-  ultMaxEnergy: 100
-  ultEnergyPerKill: 2
-  ultEnergyPerEliteKill: 5
-  ultDuration: 5
-  ultLaserWidthMultiplier: 2
-  ultRotationSpeed: 360
   comboTimeout: 2
   maxEnergy: 5
   energyRecoveryInterval: 600
@@ -31,7 +23,9 @@ MonoBehaviour:
   baseKnockbackForce: 10
   maxLaserLength: 15
   baseLaserWidth: 0.5
+  baseCritRate: 0.1
+  critDamageMultiplier: 2
   maxShieldHP: 500
-  shieldRecoveryTime: 12
   maxHullHP: 1000
-  invincibilityDuration: 1
+  shieldRecoveryDelay: 12
+  shieldRecoveryRate: 50

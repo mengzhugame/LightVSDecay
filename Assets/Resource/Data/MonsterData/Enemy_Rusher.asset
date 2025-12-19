@@ -15,10 +15,12 @@ MonoBehaviour:
   type: 2
   displayName: "\u98DE\u901F\u602A"
   description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8840\u5C11\uFF0C\u901F\u5EA6\u5FEB"
-  maxHealth: 10
+  maxHealth: 40
   moveSpeed: 1.5
   mass: 0.5
-  contactDamage: 150
+  contactDamage: 20
+  attackInterval: 1
+  isSuicide: 1
   behaviorType: 0
   waveAmplitude: 1
   waveFrequency: 1.5
@@ -37,9 +39,8 @@ MonoBehaviour:
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 1
-  coinReward: 0
-  ultEnergyReward: 1
+  xpReward: 8
+  coinReward: 3
   dropCoinOnHit: 0
   coinPerHit: 1
   deathCoinBurst: 0
