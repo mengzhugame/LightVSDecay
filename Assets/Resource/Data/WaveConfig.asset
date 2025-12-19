@@ -18,94 +18,615 @@ MonoBehaviour:
   waves:
   - waveNumber: 1
     displayName: "\u7B2C\u4E00\u6CE2"
-    description: "\u7B2C\u4E00\u6CE2\u602A\u7269"
+    description: "\u6781\u6162\uFF0C\u8BA9\u73A9\u5BB6\u8BD5\u5C04\u6FC0\u5149"
     spawnGroups:
     - spawnTime: 0
       enemyType: 0
-      count: 0
+      count: 5
+      pattern: 0
+      customInterval: 2
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 3
+      eliteDamageMultiplier: 2
+    - spawnTime: 12
+      enemyType: 0
+      count: 5
+      pattern: 0
+      customInterval: 1.5
       spawnZone: 2
-      healthMultiplier: 0
-      speedMultiplier: 0
-      damageMultiplier: 0
-    difficultyMultiplier: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 3
+      eliteDamageMultiplier: 2
+    - spawnTime: 26
+      enemyType: 0
+      count: 10
+      pattern: 1
+      customInterval: 1
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 3
+      eliteDamageMultiplier: 2
+    difficultyMultiplier: 1
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 2
+    displayName: "\u7B2C\u4E8C\u6CE2"
+    description: "\u5F15\u5165\u901F\u5EA6\u53D8\u5316\uFF0C\u9700\u8981\u5FEB\u901F\u5212\u52A8"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 0
+      count: 10
+      pattern: 1
+      customInterval: 1
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 3
+      eliteDamageMultiplier: 2
+    - spawnTime: 15
+      enemyType: 3
+      count: 5
+      pattern: 2
+      customInterval: 0.8
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 3
+      eliteDamageMultiplier: 2
+    - spawnTime: 25
+      enemyType: 0
+      count: 10
+      pattern: 1
+      customInterval: 1
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 3
+      eliteDamageMultiplier: 2
+    difficultyMultiplier: 1
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 3
+    displayName: "\u7B2C\u4E09\u6CE2"
+    description: "\u6DF7\u5408\u7EC3\u4E60"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 0
+      count: 8
+      pattern: 1
+      customInterval: 1
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 10
+      enemyType: 3
+      count: 8
+      pattern: 3
+      customInterval: 0.5
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 20
+      enemyType: 0
+      count: 10
+      pattern: 1
+      customInterval: 1
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    difficultyMultiplier: 1
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 4
+    displayName: "\u7B2C\u56DB\u6CE2"
+    description: "\u7B2C\u4E00\u6B21\u5077\u88AD\uFF01Rusher\u6765\u88AD\uFF01"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 0
+      count: 10
+      pattern: 1
+      customInterval: 1
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 10
+      enemyType: 2
+      count: 2
+      pattern: 2
+      customInterval: 0.2
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 15
+      enemyType: 0
+      count: 10
+      pattern: 1
+      customInterval: 1
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 30
+      enemyType: 2
+      count: 3
+      pattern: 2
+      customInterval: 0.5
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    difficultyMultiplier: 1.1
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 5
+    displayName: "\u7B2C\u4E94\u6CE2"
+    description: "Rusher\u5BC6\u5EA6\u589E\u52A0"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 0
+      count: 10
+      pattern: 1
+      customInterval: 1
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 8
+      enemyType: 2
+      count: 3
+      pattern: 2
+      customInterval: 0.2
+      spawnZone: 5
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 15
+      enemyType: 3
+      count: 6
+      pattern: 3
+      customInterval: 0.5
+      spawnZone: 6
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 25
+      enemyType: 2
+      count: 4
+      pattern: 2
+      customInterval: 0.2
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    difficultyMultiplier: 1.2
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 6
+    displayName: "\u7B2C\u516D\u6CE2"
+    description: "Elite Tank \u51FA\u73B0\uFF01\u6E05\u7A7A\u6742\u5175\uFF0C\u5355\u6311\u7CBE\u82F1"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 1
+      count: 2
+      pattern: 1
+      customInterval: 1.5
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 0
+      enemyType: 0
+      count: 20
+      pattern: 3
+      customInterval: 0.5
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 35
+      enemyType: 1
+      count: 0
+      pattern: 5
+      customInterval: 0
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 1
+      eliteHealthMultiplier: 5
+      eliteDamageMultiplier: 2
+    - spawnTime: 40
+      enemyType: 2
+      count: 4
+      pattern: 2
+      customInterval: 0.5
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    difficultyMultiplier: 1.3
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 7
+    displayName: "\u7B2C\u4E03\u6CE2"
+    description: "Tank \u6210\u7FA4\uFF0CRusher \u9A9A\u6270"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 1
+      count: 3
+      pattern: 1
+      customInterval: 2
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 5
+      enemyType: 0
+      count: 15
+      pattern: 3
+      customInterval: 0.5
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 15
+      enemyType: 2
+      count: 4
+      pattern: 2
+      customInterval: 0.2
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 25
+      enemyType: 1
+      count: 2
+      pattern: 1
+      customInterval: 1
+      spawnZone: 2
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    difficultyMultiplier: 1.4
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 8
+    displayName: "\u7B2C\u516B\u6CE2"
+    description: "\u5F00\u5C40\u5C31\u662F\u6EE1\u5C4F\u4E71\u98DE"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 3
+      count: 5
+      pattern: 3
+      customInterval: 0.5
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 5
+      enemyType: 0
+      count: 20
+      pattern: 2
+      customInterval: 0.3
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 20
+      enemyType: 3
+      count: 0
+      pattern: 5
+      customInterval: 0
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 1
+      eliteHealthMultiplier: 4
+      eliteDamageMultiplier: 1.5
+    - spawnTime: 25
+      enemyType: 3
+      count: 10
+      pattern: 3
+      customInterval: 0.5
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    difficultyMultiplier: 1.5
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 9
+    displayName: "\u7B2C\u4E5D\u6CE2"
+    description: "\u6781\u9650\u538B\u529B\u6D4B\u8BD5"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 1
+      count: 4
+      pattern: 1
+      customInterval: 1.5
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 5
+      enemyType: 2
+      count: 4
+      pattern: 2
+      customInterval: 0.2
+      spawnZone: 5
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 5
+      enemyType: 2
+      count: 4
+      pattern: 2
+      customInterval: 0.2
+      spawnZone: 6
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 15
+      enemyType: 0
+      count: 20
+      pattern: 3
+      customInterval: 0.5
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 25
+      enemyType: 2
+      count: 6
+      pattern: 2
+      customInterval: 0.2
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    difficultyMultiplier: 1.6
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 10
+    displayName: "\u7B2C\u5341\u6CE2"
+    description: "\u5168\u9762\u8FDB\u653B\uFF01"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 1
+      count: 5
+      pattern: 1
+      customInterval: 1
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 3
+      enemyType: 2
+      count: 8
+      pattern: 2
+      customInterval: 0.3
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 10
+      enemyType: 0
+      count: 30
+      pattern: 3
+      customInterval: 0.5
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 20
+      enemyType: 3
+      count: 10
+      pattern: 3
+      customInterval: 0.5
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 30
+      enemyType: 2
+      count: 6
+      pattern: 2
+      customInterval: 0.2
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    difficultyMultiplier: 1.8
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
-    spawnGroups: []
-    difficultyMultiplier: 0
+  - waveNumber: 11
+    displayName: "\u7B2C\u5341\u4E00\u6CE2"
+    description: "\u6FC0\u5149\u5272\u8349\u7684\u6781\u81F4\u723D\u611F\uFF01"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 1
+      count: 5
+      pattern: 1
+      customInterval: 1
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 5
+      enemyType: 2
+      count: 10
+      pattern: 2
+      customInterval: 0.3
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 15
+      enemyType: 0
+      count: 50
+      pattern: 4
+      customInterval: 0.1
+      spawnZone: 0
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 30
+      enemyType: 1
+      count: 5
+      pattern: 1
+      customInterval: 1
+      spawnZone: 1
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    - spawnTime: 35
+      enemyType: 2
+      count: 10
+      pattern: 2
+      customInterval: 0.3
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+      isElite: 0
+      eliteHealthMultiplier: 0
+      eliteDamageMultiplier: 0
+    difficultyMultiplier: 2
     isBossWave: 0
     hintText: 
-  - waveNumber: 0
-    displayName: 
-    description: 
+  - waveNumber: 12
+    displayName: "\u7B2C\u5341\u4E8C\u6CE2"
+    description: "\u6C61\u67D3\u4E4B\u6838 The Corruptor \u964D\u4E34\uFF01"
     spawnGroups: []
-    difficultyMultiplier: 0
-    isBossWave: 0
+    difficultyMultiplier: 2.5
+    isBossWave: 1
     hintText: 
   bossHealth: 50000
   bossMoveSpeed: 0.2

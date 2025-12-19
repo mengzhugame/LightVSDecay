@@ -6,6 +6,7 @@
 
 using UnityEngine;
 using LightVsDecay.Core;
+using LightVsDecay.Logic.Boss;
 using LightVsDecay.UI.FloatingText;
 
 namespace LightVsDecay.Logic.Enemy
@@ -159,7 +160,12 @@ namespace LightVsDecay.Logic.Enemy
             }
             
             ApplyDamage(actualDamage);
-            
+
+            BossController controller = GetComponent<BossController>();
+            if (controller != null)
+            {
+                controller.OnDamageReceived();
+            }
             // 显示飘字
             ShowCoreDamagePopup(actualDamage, hitPosition, isCrit);
             

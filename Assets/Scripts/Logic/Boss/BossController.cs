@@ -101,7 +101,11 @@ namespace LightVsDecay.Logic.Boss
         
         // Charge (快招) 相关
         private bool chargeInterrupted = false;
-        
+        // 战术召唤相关（新增）
+        private float continuousDamageTimer = 0f;           // 连续受伤计时器
+        private const float TACTICAL_SUMMON_THRESHOLD = 5f; // 触发阈值：连续受伤5秒
+        private bool tacticalSummonCooldown = false;        // 战术召唤冷却标记
+        private const float TACTICAL_SUMMON_CD = 10f;       // 战术召唤冷却时间
         // Press (慢招/角力) 相关
         private bool isPressing = false;            // 是否正在碾压/角力
         private Vector2 accumulatedPushForce;       // 累积的激光推力
@@ -120,7 +124,9 @@ namespace LightVsDecay.Logic.Boss
         
         // 协程引用
         private Coroutine stateCoroutine;
-        
+        // 在 Update 中检测连续受伤
+        private float lastDamageTime = 0f;
+        private const float DAMAGE_GAP_THRESHOLD = 0.5f; // 超过0.5秒未受伤则重置
 #if DOTWEEN
         private Tweener moveTweener;
         private Tweener shakeTweener;
@@ -184,7 +190,11 @@ namespace LightVsDecay.Logic.Boss
         {
             // 更新召唤冷却
             UpdateSummonCooldown();
+            // 更新连续受伤计时器
+            UpdateContinuousDamageTimer();
             
+            // 检查战术召唤
+            CheckTacticalSummon();
 #if UNITY_EDITOR
             // 调试快捷键
             if (Input.GetKeyDown(KeyCode.K))
@@ -556,20 +566,90 @@ namespace LightVsDecay.Logic.Boss
             ChangeState(BossState.Idle);
         }
         
+        /// <summary>
+        /// 记录受伤（供 BossHealth 调用）
+        /// </summary>
+        public void OnDamageReceived()
+        {
+            // 累加连续受伤时间
+            // 如果每帧都受伤，计时器会持续增加
+            // 实际实现：在 Update 中递增，这里重置"未受伤"标记
+            lastDamageTime = Time.time;
+        }
+        /// <summary>
+        /// 更新连续受伤计时器（在 Update 中调用）
+        /// </summary>
+        private void UpdateContinuousDamageTimer()
+        {
+            float timeSinceLastDamage = Time.time - lastDamageTime;
+            
+            if (timeSinceLastDamage < DAMAGE_GAP_THRESHOLD)
+            {
+                // 持续受伤中
+                continuousDamageTimer += Time.deltaTime;
+            }
+            else
+            {
+                // 超时，重置计时器
+                if (continuousDamageTimer > 0f)
+                {
+                    continuousDamageTimer = 0f;
+                    if (showDebugInfo)
+                    {
+                        Debug.Log("[BossController] 连续受伤中断，计时器重置");
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// 生成小怪（支持狂暴状态动态调整）
+        /// HP > 30%: 4只 Rusher
+        /// HP < 30%: 6只 Rusher + 速度加成
+        /// </summary>
         private void SpawnMinions()
         {
             if (EnemyPoolManager.Instance == null) return;
             
             Vector2 leftOffset = config != null ? config.summonLeftOffset : new Vector2(-3f, -1f);
             Vector2 rightOffset = config != null ? config.summonRightOffset : new Vector2(3f, -1f);
-            int perSide = config != null ? config.summonRusherPerSide : 2;
+            
+            // 根据血量决定召唤数量
+            int perSide;
+            float speedBonus = 1f;
+            
+            if (IsEnraged) // HP < 30%
+            {
+                perSide = 3; // 每侧3只 = 共6只
+                speedBonus = 1.5f; // 速度+50%
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log("[BossController] 🔥 狂暴召唤！数量增加，速度加快！");
+                }
+            }
+            else
+            {
+                perSide = config != null ? config.summonRusherPerSide : 2; // 每侧2只 = 共4只
+            }
             
             // 左侧
             for (int i = 0; i < perSide; i++)
             {
                 if (EnemyPoolManager.Instance.IsAtGlobalCapacity) break;
                 Vector3 pos = transform.position + new Vector3(leftOffset.x, leftOffset.y + i * 0.5f, 0);
-                EnemyPoolManager.Instance.Spawn(EnemyType.Rusher, pos);
+                EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(EnemyType.Rusher, pos);
+                
+                // 狂暴状态：加速
+                if (enemy != null && speedBonus > 1f)
+                {
+                    enemy.SetWaveModifiers(new DifficultyModifiers
+                    {
+                        hpMultiplier = 1f,
+                        speedMultiplier = speedBonus,
+                        massMultiplier = 1f,
+                        damageMultiplier = 1f
+                    });
+                }
             }
             
             // 右侧
@@ -577,15 +657,71 @@ namespace LightVsDecay.Logic.Boss
             {
                 if (EnemyPoolManager.Instance.IsAtGlobalCapacity) break;
                 Vector3 pos = transform.position + new Vector3(rightOffset.x, rightOffset.y + i * 0.5f, 0);
-                EnemyPoolManager.Instance.Spawn(EnemyType.Rusher, pos);
+                EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(EnemyType.Rusher, pos);
+                
+                if (enemy != null && speedBonus > 1f)
+                {
+                    enemy.SetWaveModifiers(new DifficultyModifiers
+                    {
+                        hpMultiplier = 1f,
+                        speedMultiplier = speedBonus,
+                        massMultiplier = 1f,
+                        damageMultiplier = 1f
+                    });
+                }
             }
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 生成 {perSide * 2} 只 Rusher");
+                Debug.Log($"[BossController] 生成 {perSide * 2} 只 Rusher (狂暴: {IsEnraged})");
+            }
+        }
+        /// <summary>
+        /// 检查战术召唤（玩家太安逸时触发）
+        /// 逻辑：如果 BOSS 连续 5秒 受到伤害（玩家一直站桩输出），
+        ///       强制打断 Idle，触发一次召唤打断玩家节奏
+        /// </summary>
+        private void CheckTacticalSummon()
+        {
+            // 只在 Idle 状态检查
+            if (currentState != BossState.Idle) return;
+            
+            // 冷却中
+            if (tacticalSummonCooldown) return;
+            
+            // 检查是否达到阈值
+            if (continuousDamageTimer >= TACTICAL_SUMMON_THRESHOLD)
+            {
+                if (showDebugInfo)
+                {
+                    Debug.Log("[BossController] ⚡ 战术召唤触发！玩家输出太安逸了！");
+                }
+                
+                // 重置计时器
+                continuousDamageTimer = 0f;
+                
+                // 进入冷却
+                tacticalSummonCooldown = true;
+                StartCoroutine(TacticalSummonCooldownRoutine());
+                
+                // 强制进入召唤状态（不占用常规 CD）
+                ChangeState(BossState.Summon);
             }
         }
         
+        /// <summary>
+        /// 战术召唤冷却协程
+        /// </summary>
+        private IEnumerator TacticalSummonCooldownRoutine()
+        {
+            yield return new WaitForSeconds(TACTICAL_SUMMON_CD);
+            tacticalSummonCooldown = false;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 战术召唤冷却结束");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Pollution (污秽喷吐)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
