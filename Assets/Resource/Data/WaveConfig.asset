@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: WaveConfig
   m_EditorClassIdentifier: 
   totalWaves: 12
-  waveInterval: 10
+  waveInterval: 3
   globalEnemyLimit: 200
   waves:
   - waveNumber: 1

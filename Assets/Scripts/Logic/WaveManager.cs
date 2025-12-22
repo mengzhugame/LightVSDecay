@@ -74,9 +74,10 @@ namespace LightVsDecay.Logic
         private int enemiesKilled;
         private int totalEnemiesInWave;
         
-        // 协程管理
+// 协程管理
         private Coroutine waveIntervalCoroutine;
         private List<Coroutine> activeSpawnCoroutines = new List<Coroutine>();
+        private int activeSpawnCoroutineCount = 0;  // ★ 新增：追踪活跃协程数量
         
         // BOSS 相关
         private bool bossSpawned = false;
@@ -262,6 +263,8 @@ namespace LightVsDecay.Logic
             
             // 停止所有进行中的刷怪协程
             StopAllSpawnCoroutines();
+            // ★ 重置协程计数器
+            activeSpawnCoroutineCount = 0;
         }
         
         /// <summary>
@@ -351,15 +354,18 @@ namespace LightVsDecay.Logic
                 }
             }
             
-            // 所有组都已开始生成，检查是否全部完成
-            if (allGroupsStarted && activeSpawnCoroutines.Count == 0)
+            if (allGroupsStarted && activeSpawnCoroutineCount == 0)
             {
                 if (showDebugInfo)
                 {
                     Debug.Log($"[WaveManager] 所有敌人已生成！共 {enemiesSpawned} 只");
                 }
-                
+    
                 ChangeState(WaveState.Battle);
+    
+                // ★ BUG FIX: 切换到 Battle 后立即检查波次是否已完成
+                // 避免敌人在 Spawning 阶段就被击杀完毕导致无法进入下一波
+                CheckWaveComplete();
             }
         }
         
@@ -378,6 +384,7 @@ namespace LightVsDecay.Logic
             else
             {
                 // 间隔生成
+                activeSpawnCoroutineCount++;  // ★ 计数器+1
                 Coroutine co = StartCoroutine(SpawnWithInterval(group));
                 activeSpawnCoroutines.Add(co);
             }
@@ -413,32 +420,37 @@ namespace LightVsDecay.Logic
         private IEnumerator SpawnWithInterval(SpawnGroup group)
         {
             float interval = group.GetInterval();
-            
+    
             for (int i = 0; i < group.count; i++)
             {
                 if (currentState != WaveState.Spawning && currentState != WaveState.Battle)
                 {
                     // 状态改变，停止生成
-                    yield break;
+                    break;  // ★ 改为 break，确保执行 finally 逻辑
                 }
-                
+        
                 if (EnemyPoolManager.Instance.IsAtGlobalCapacity)
                 {
                     Debug.LogWarning("[WaveManager] 达到全局敌人上限！");
-                    yield break;
+                    break;  // ★ 改为 break，确保执行 finally 逻辑
                 }
-                
+        
                 SpawnSingleEnemy(group);
-                
+        
                 // 最后一只不需要等待
                 if (i < group.count - 1)
                 {
                     yield return new WaitForSeconds(interval);
                 }
             }
-            
-            // 从活动列表移除
-            // 注意：协程结束时自动清理
+    
+            // ★ 协程结束时，计数器-1
+            activeSpawnCoroutineCount--;
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[WaveManager] 刷怪组完成: {group.enemyType} x{group.count}, 剩余活跃协程: {activeSpawnCoroutineCount}");
+            }
         }
         
         /// <summary>
