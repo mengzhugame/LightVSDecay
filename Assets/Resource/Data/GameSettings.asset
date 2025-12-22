@@ -21,11 +21,9 @@ MonoBehaviour:
   baseDPS: 100
   tickRate: 0.1
   baseKnockbackForce: 10
-  maxLaserLength: 15
+  maxLaserLength: 20
   baseLaserWidth: 0.5
   baseCritRate: 0.1
   critDamageMultiplier: 2
   maxShieldHP: 500
   maxHullHP: 1000
-  shieldRecoveryDelay: 12
-  shieldRecoveryRate: 50

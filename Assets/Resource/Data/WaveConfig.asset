@@ -628,5 +628,5 @@ MonoBehaviour:
     difficultyMultiplier: 2.5
     isBossWave: 1
     hintText: 
-  bossHealth: 50000
+  bossHealth: 500000
   bossMoveSpeed: 0.2

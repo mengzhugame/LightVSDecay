@@ -627,6 +627,12 @@ namespace LightVsDecay.Logic
             float x = 0f, y = 0f;
             float offset = spawnOffset;
             
+            // ★ 关键修复：定义安全Y坐标下限（塔的位置通常在屏幕下方）
+            // 假设塔在 Y=screenMin.y 附近，敌人应该从塔上方生成
+            // 左右两侧的最低点不应低于屏幕中间偏上的位置
+            float towerY = screenMin.y; // 塔的大致Y位置
+            float minSideY = towerY + (screenMax.y - towerY) * 0.3f; // 左右侧最低生成点（塔上方30%处）
+            
             switch (zone)
             {
                 case SpawnZone.TopOnly:
@@ -641,12 +647,14 @@ namespace LightVsDecay.Logic
                     
                 case SpawnZone.LeftSide:
                     x = screenMin.x - offset;
-                    y = Random.Range(screenMin.y * 0.5f, screenMax.y * 0.8f);
+                    // ★ 修复：Y下限提高到塔上方，确保在激光攻击范围内
+                    y = Random.Range(minSideY, screenMax.y + offset * 0.5f);
                     break;
                     
                 case SpawnZone.RightSide:
                     x = screenMax.x + offset;
-                    y = Random.Range(screenMin.y * 0.5f, screenMax.y * 0.8f);
+                    // ★ 修复：Y下限提高到塔上方
+                    y = Random.Range(minSideY, screenMax.y + offset * 0.5f);
                     break;
                     
                 case SpawnZone.SideRandom:
@@ -658,42 +666,41 @@ namespace LightVsDecay.Logic
                     {
                         x = screenMax.x + offset;
                     }
-                    y = Random.Range(screenMin.y * 0.5f, screenMax.y * 0.8f);
+                    // ★ 修复：Y下限提高到塔上方
+                    y = Random.Range(minSideY, screenMax.y + offset * 0.5f);
                     break;
                     
                 case SpawnZone.BottomCorners:
+                    // ★ 修复：底部角落改为侧面中上方（不再从底部生成）
                     if (Random.value < 0.5f)
                     {
                         x = screenMin.x - offset;
-                        y = screenMin.y - offset;
                     }
                     else
                     {
                         x = screenMax.x + offset;
-                        y = screenMin.y - offset;
                     }
+                    // 在侧面中间偏上的位置
+                    y = Random.Range(minSideY, screenMax.y * 0.5f);
                     break;
                     
                 case SpawnZone.AllEdges:
                 default:
-                    int edge = Random.Range(0, 4);
+                    // ★ 修复：只有3边（上、左、右），移除底部
+                    int edge = Random.Range(0, 3); // 改为0-2，移除底部
                     switch (edge)
                     {
                         case 0: // 上
                             x = Random.Range(screenMin.x, screenMax.x);
                             y = screenMax.y + offset;
                             break;
-                        case 1: // 右
+                        case 1: // 右（上半部分）
                             x = screenMax.x + offset;
-                            y = Random.Range(screenMin.y, screenMax.y);
+                            y = Random.Range(minSideY, screenMax.y + offset * 0.5f);
                             break;
-                        case 2: // 下
-                            x = Random.Range(screenMin.x, screenMax.x);
-                            y = screenMin.y - offset;
-                            break;
-                        default: // 左
+                        default: // 左（上半部分）
                             x = screenMin.x - offset;
-                            y = Random.Range(screenMin.y, screenMax.y);
+                            y = Random.Range(minSideY, screenMax.y + offset * 0.5f);
                             break;
                     }
                     break;

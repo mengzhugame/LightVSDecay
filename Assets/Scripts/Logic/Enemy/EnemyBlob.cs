@@ -188,6 +188,7 @@ namespace LightVsDecay.Logic.Enemy
             if (isDead) return;
             
             UpdateShaderWobble();
+            UpdateStunTimer(); 
         }
         
         private void FixedUpdate()
