@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Enemy_Tank
+  m_Name: Enemy_EliteDrifter
   m_EditorClassIdentifier: 
-  type: 1
-  displayName: "\u5766\u514B"
-  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8089\u76FE\u602A\uFF0C\u8840\u9AD8\uFF0C\u8D28\u91CF\u5927\uFF0C\u6FC0\u5149\u63A8\u4E0D\u52A8"
-  maxHealth: 800
-  moveSpeed: 0.9
-  mass: 10
-  contactDamage: 80
+  type: 3
+  displayName: "\u6F02\u6D41\u8005"
+  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u88AB\u6FC0\u5149\u51FB\u6253\uFF0C\u4F1A\u5411\u540E\u5F39\u98DE"
+  maxHealth: 1250
+  moveSpeed: 1
+  mass: 1
+  contactDamage: 750
   attackInterval: 1
   isSuicide: 0
   behaviorType: 0
@@ -26,30 +26,30 @@ MonoBehaviour:
   waveFrequency: 1.5
   outOfBoundsLifetime: 1
   canBeKnockedBack: 1
-  knockbackMultiplier: 0.3
-  knockbackDrag: 3
-  knockbackStunDuration: 0.3
-  knockbackStunMoveMultiplier: 0.3
+  knockbackMultiplier: 1
+  knockbackDrag: 1
+  knockbackStunDuration: 0
+  knockbackStunMoveMultiplier: 0
   drifterDeflectionAngle: 45
-  drifterKnockbackMultiplier: 2
-  knockbackMinDuration: 0.5
-  drifterMaxSpeed: 15
-  knockbackSpeedThreshold: 2
+  drifterKnockbackMultiplier: 1
+  knockbackMinDuration: 0.3
+  drifterMaxSpeed: 12
+  knockbackSpeedThreshold: 4
   minScale: 0.3
   deathFadeDuration: 1
-  normalFlowSpeed: 0.1
-  normalNoiseScale: 0.5
+  normalFlowSpeed: 0.3
+  normalNoiseScale: 0.2
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 50
-  coinReward: 25
+  xpReward: 100
+  coinReward: 10
   dropCoinOnHit: 0
   coinPerHit: 1
   deathCoinBurst: 0
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
-  collisionBehavior: 0
-  isBouncing: 0
-  bounceForce: 300
+  collisionBehavior: 1
+  isBouncing: 1
+  bounceForce: 200
   bounceStunDuration: 1

@@ -117,6 +117,8 @@ namespace LightVsDecay.Logic.Enemy
         private float cachedNoiseScale = 0f;    
         // 精英怪标记
         private bool isElite = false;
+        // 精英怪经验倍率
+        private const float ELITE_XP_MULTIPLIER = 5f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // IPoolable 实现
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -840,7 +842,6 @@ namespace LightVsDecay.Logic.Enemy
         {
             if (isDead) return;
             isDead = true;
-            
             rb.velocity = Vector2.zero;
             
             if (circleCollider != null)
@@ -859,15 +860,24 @@ namespace LightVsDecay.Logic.Enemy
             }
             // 计算实际经验值（考虑低保机制）
             int actualXP = xpReward;
+            int actualCoin = coinReward;
+            // 精英怪经验加成
+            if (isElite)
+            {
+                actualXP = Mathf.RoundToInt(xpReward * ELITE_XP_MULTIPLIER);
+                actualCoin = Mathf.RoundToInt(coinReward * ELITE_XP_MULTIPLIER);
+            }
+            // 低保机制（如果有）
             if (lowLevelBonusXP > 0 && ProgressManager.Instance != null)
             {
                 if (ProgressManager.Instance.CurrentLevel < lowLevelThreshold)
                 {
-                    actualXP = lowLevelBonusXP;
+                    actualXP = Mathf.Max(actualXP, lowLevelBonusXP);
                 }
             }
-            // 触发敌人死亡事件
-            GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
+
+            // 【修改】触发敌人死亡事件，使用计算后的经验值
+            GameEvents.TriggerEnemyDied(enemyType, transform.position, actualXP, actualCoin);
             
             // 播放死亡特效
             if (VFXPoolManager.Instance != null)

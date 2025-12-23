@@ -305,7 +305,7 @@ GameObject:
   - component: {fileID: 2236089286846062727}
   m_Layer: 6
   m_HasEditorInfo: 1
-  m_Name: Elite_Phantom
+  m_Name: Elite_Drifter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

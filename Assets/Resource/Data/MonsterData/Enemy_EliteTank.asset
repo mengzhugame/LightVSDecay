@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Enemy_Tank
+  m_Name: Enemy_EliteTank
   m_EditorClassIdentifier: 
   type: 1
   displayName: "\u5766\u514B"
   description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8089\u76FE\u602A\uFF0C\u8840\u9AD8\uFF0C\u8D28\u91CF\u5927\uFF0C\u6FC0\u5149\u63A8\u4E0D\u52A8"
-  maxHealth: 800
-  moveSpeed: 0.9
+  maxHealth: 4000
+  moveSpeed: 1
   mass: 10
-  contactDamage: 80
+  contactDamage: 160
   attackInterval: 1
   isSuicide: 0
   behaviorType: 0
@@ -42,7 +42,7 @@ MonoBehaviour:
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 50
+  xpReward: 250
   coinReward: 25
   dropCoinOnHit: 0
   coinPerHit: 1
