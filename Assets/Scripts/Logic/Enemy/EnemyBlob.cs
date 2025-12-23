@@ -102,7 +102,16 @@ namespace LightVsDecay.Logic.Enemy
         private bool isStunned = false;
         private float stunTimer = 0f;
         private float stunDuration = 0f;
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Drifter 弹飞状态
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+        private bool isBeingKnockedBack = false;      // 是否正在弹飞
+        private float knockbackStartTime = 0f;        // 弹飞开始时间
+        private float knockbackMinDuration = 0.3f;    // 最小弹飞时间（防止立即恢复）
+        private float knockbackSpeedThreshold = 2.0f; // 速度低于此值视为弹飞结束
+        private bool hasFullyEnteredScreen = false;
+        private float drifterMaxSpeed = 15f;
 // 僵直时的 Shader 参数缓存
         private float cachedFlowSpeed = 0f;
         private float cachedNoiseScale = 0f;    
@@ -149,6 +158,14 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         public bool IsElite => isElite;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Layer 切换（弹跳怪入境签证）
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private bool isBouncing = false;
+        private bool hasEnteredScreen = false;
+        private int enemyLayerIndex;
+        private int bouncingEnemyLayerIndex;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
@@ -176,6 +193,9 @@ namespace LightVsDecay.Logic.Enemy
             // 【新增】缓存 Layer（避免每次碰撞都调用 NameToLayer）
             shieldLayer = LayerMask.NameToLayer("Shield");
             towerLayer = LayerMask.NameToLayer("Tower");
+            
+            enemyLayerIndex = LayerMask.NameToLayer(GameConstants.ENEMY_LAYER);
+            bouncingEnemyLayerIndex = LayerMask.NameToLayer(GameConstants.BOUNCING_ENEMY_LAYER);
         }
         
         private void Start()
@@ -188,13 +208,33 @@ namespace LightVsDecay.Logic.Enemy
             if (isDead) return;
             
             UpdateShaderWobble();
-            UpdateStunTimer(); 
+            UpdateStunTimer();
         }
         
         private void FixedUpdate()
         {
             if (isDead) return;
-            
+            // 【新增】检查弹飞状态
+            if (enemyType == EnemyType.Drifter)
+            {
+                CheckKnockbackEnd();
+                // 【新增】速度限制（防止异常加速）
+                if (rb.velocity.magnitude > drifterMaxSpeed)
+                {
+                    rb.velocity = rb.velocity.normalized * drifterMaxSpeed;
+                }
+                // 弹飞中，跳过移动逻辑
+                if (isBeingKnockedBack)
+                {
+                    return;
+                }
+            }
+            // 僵直状态检查
+            if (isStunned)
+            {
+                // ... 原有僵直逻辑 ...
+                return;
+            }
             MoveTowardsTower();
         }
         private void UpdateStunTimer()
@@ -237,11 +277,14 @@ namespace LightVsDecay.Logic.Enemy
                 knockbackDrag = data.knockbackDrag;
                 knockbackStunDuration = data.knockbackStunDuration;
                 knockbackStunMoveMultiplier = data.knockbackStunMoveMultiplier;
-                
+                // 弹跳设置
+                isBouncing = data.isBouncing;
                 // Drifter 特殊
                 drifterDeflectionAngle = data.drifterDeflectionAngle;
                 drifterKnockbackMultiplier = data.drifterKnockbackMultiplier;
-                
+                knockbackMinDuration = data.knockbackMinDuration;
+                knockbackSpeedThreshold = data.knockbackSpeedThreshold;
+                drifterMaxSpeed = data.drifterMaxSpeed;
                 // 视觉
                 minScale = data.minScale;
                 deathFadeDuration = data.deathFadeDuration;
@@ -266,6 +309,7 @@ namespace LightVsDecay.Logic.Enemy
                 deathCoinBurst = data.deathCoinBurst;
                 lowLevelBonusXP = data.lowLevelBonusXP;
                 lowLevelThreshold = data.lowLevelThreshold;
+
             }
             // 否则使用默认值（已在字段声明时初始化）
         }
@@ -280,6 +324,18 @@ namespace LightVsDecay.Logic.Enemy
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             rb.bodyType = RigidbodyType2D.Dynamic;
             rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+            // 【新增】Drifter 特殊配置：低阻力，保持动量
+            if (enemyType == EnemyType.Drifter)
+            {
+                rb.drag = 0f;                    // 线性阻力 = 0
+                rb.angularDrag = 0f;             // 角阻力 = 0
+                rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous; // 防止高速穿墙
+            }
+            else
+            {
+                rb.drag = knockbackDrag;         // 普通怪使用配置的阻力
+                rb.angularDrag = 0.5f;
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -337,6 +393,16 @@ namespace LightVsDecay.Logic.Enemy
             outOfBoundsTimer = 0f;
             isStunned = false;
             stunTimer = 0f;
+            // 【新增】重置弹飞状态
+            isBeingKnockedBack = false;
+            knockbackStartTime = 0f;
+            hasFullyEnteredScreen = false;
+            // 【新增】弹跳怪入境签证：出生时使用 Enemy Layer
+            hasEnteredScreen = false;
+            if (isBouncing)
+            {
+                gameObject.layer = enemyLayerIndex;
+            }
         }
         /// <summary>
         /// 应用难度系数（生成时调用）
@@ -621,6 +687,11 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         private void ApplyKnockbackByType(Vector2 knockbackForce)
         {
+            // 【新增】Drifter 弹飞中不接受新的击退（防止速度叠加）
+            if (enemyType == EnemyType.Drifter && isBeingKnockedBack)
+            {
+                return; // 忽略击退，只受伤不加速
+            }
             // 计算基础击退力（考虑质量缩放）
             float massScale = 1f;
             if (rb.mass > GameConstants.KNOCKBACK_MASS_THRESHOLD)
@@ -637,30 +708,95 @@ namespace LightVsDecay.Logic.Enemy
             // Drifter 特殊处理：随机往左后或右后漂移
             if (enemyType == EnemyType.Drifter)
             {
+                // 【关键】只有完全入境才触发弹飞状态
+                if (hasFullyEnteredScreen)
+                {
+                    EnterKnockbackState();
+                }
+    
+                // 计算偏移方向
                 float deflectionDirection = Random.value > 0.5f ? 1f : -1f;
                 float angleRad = drifterDeflectionAngle * Mathf.Deg2Rad * deflectionDirection;
-                
+    
                 float cos = Mathf.Cos(angleRad);
                 float sin = Mathf.Sin(angleRad);
                 Vector2 deflectedForce = new Vector2(
                     knockbackForce.x * cos - knockbackForce.y * sin,
                     knockbackForce.x * sin + knockbackForce.y * cos
                 );
-                
+    
                 finalForce = deflectedForce * massScale * knockbackMultiplier * drifterKnockbackMultiplier;
+    
+                // 使用 Impulse 产生瞬间弹飞
+                rb.AddForce(finalForce, ForceMode2D.Impulse);
+    
+#if UNITY_EDITOR
+                Debug.Log($"[EnemyBlob] Drifter 弹飞! Force: {finalForce.magnitude:F1}, FullyEntered: {hasFullyEnteredScreen}");
+#endif
+    
+                return; // 提前返回
             }
             else
             {
                 finalForce = knockbackForce * massScale * knockbackMultiplier;
+                float impulseRatio = 0.3f; // 30% 的力作为瞬时冲击
+                rb.AddForce(finalForce * (1f - impulseRatio), ForceMode2D.Force);
+                rb.AddForce(finalForce * impulseRatio, ForceMode2D.Impulse);
             }
-            
-            // 【新增】混合使用 Force 和 Impulse，让击退更有冲击感
-            // Impulse 提供瞬时冲击，Force 提供持续推力
-            float impulseRatio = 0.3f; // 30% 的力作为瞬时冲击
-            rb.AddForce(finalForce * (1f - impulseRatio), ForceMode2D.Force);
-            rb.AddForce(finalForce * impulseRatio, ForceMode2D.Impulse);
         }
-        
+        /// <summary>
+        /// 进入弹飞状态（暂停移动AI）
+        /// </summary>
+        private void EnterKnockbackState()
+        {
+            // 【关键】只有完全入境的 Drifter 才能弹飞
+            if (!hasFullyEnteredScreen)
+            {
+#if UNITY_EDITOR
+                Debug.Log($"[EnemyBlob] {gameObject.name} 尚未完全入境，不触发弹飞");
+#endif
+                return;
+            }
+    
+            isBeingKnockedBack = true;
+            knockbackStartTime = Time.time;
+    
+            // 设置 drag = 0，保持动量
+            rb.drag = 0f;
+            rb.angularDrag = 0f;
+    
+#if UNITY_EDITOR
+            Debug.Log($"[EnemyBlob] {gameObject.name} 进入弹飞状态");
+#endif
+        }
+
+        /// <summary>
+        /// 退出弹飞状态（恢复移动AI）
+        /// </summary>
+        private void ExitKnockbackState()
+        {
+            isBeingKnockedBack = false;
+#if UNITY_EDITOR
+            Debug.Log($"[EnemyBlob] Drifter 弹飞结束，恢复移动");
+#endif
+        }
+
+        /// <summary>
+        /// 检查弹飞是否结束
+        /// </summary>
+        private void CheckKnockbackEnd()
+        {
+            if (!isBeingKnockedBack) return;
+    
+            float elapsed = Time.time - knockbackStartTime;
+            float currentSpeed = rb.velocity.magnitude;
+    
+            // 条件：经过最小时间 且 速度低于阈值
+            if (elapsed >= knockbackMinDuration && currentSpeed < knockbackSpeedThreshold)
+            {
+                ExitKnockbackState();
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Shader 效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1123,6 +1259,28 @@ namespace LightVsDecay.Logic.Enemy
                 Destroy(eliteEffectInstance);
                 eliteEffectInstance = null;
             }
+        }
+        /// <summary>
+        /// 设置已完全进入屏幕（由 DrifterSpawnHelper 调用）
+        /// </summary>
+        public void SetFullyEnteredScreen()
+        {
+            hasFullyEnteredScreen = true;
+            hasEnteredScreen = true; // 同时设置原有的入境标记
+    
+            // Drifter 直接使用 BouncingEnemy Layer（已在 DrifterSpawnHelper 中设置）
+    
+#if UNITY_EDITOR
+            Debug.Log($"[EnemyBlob] {gameObject.name} 已完全入境，可以弹飞");
+#endif
+        }
+
+        /// <summary>
+        /// 检查是否可以触发弹飞（必须完全入境）
+        /// </summary>
+        public bool CanBeKnockedBackAsDrifter()
+        {
+            return enemyType == EnemyType.Drifter && hasFullyEnteredScreen;
         }
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Frost Debuff 接口

@@ -109,9 +109,18 @@ namespace LightVsDecay.Data.SO
         public float drifterDeflectionAngle = 45f;
         
         [Tooltip("Drifter 击退力度倍率")]
-        [Range(1f, 3f)]
-        public float drifterKnockbackMultiplier = 1.5f;
-        
+        [Range(1f, 20f)]
+        public float drifterKnockbackMultiplier = 5.0f;
+        // 【新增】弹飞状态参数
+        [Tooltip("最小弹飞时间（秒）- 防止立即恢复移动")]
+        [Range(0.1f, 2f)]
+        public float knockbackMinDuration = 0.5f;
+        [Tooltip("Drifter 最大速度限制")]
+        [Range(5f, 30f)]
+        public float drifterMaxSpeed = 15f;
+        [Tooltip("弹飞结束速度阈值 - 速度低于此值时恢复移动")]
+        [Range(0.5f, 10f)]
+        public float knockbackSpeedThreshold = 2.0f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 视觉设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -171,7 +180,8 @@ namespace LightVsDecay.Data.SO
         [Header("碰撞行为")]
         [Tooltip("撞击玩家后的行为")]
         public EnemyCollisionBehavior collisionBehavior = EnemyCollisionBehavior.Suicide;
-        
+        [Tooltip("是否为弹跳怪（进入屏幕后会与空气墙碰撞）")]
+        public bool isBouncing = false;
         [Tooltip("大怪被弹开时的力度")]
         public float bounceForce = 300f;
         

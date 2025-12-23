@@ -463,24 +463,72 @@ namespace LightVsDecay.Logic
                 Debug.LogWarning($"[WaveManager] 敌人类型 {group.enemyType} 没有对象池！");
                 return;
             }
-            
+    
+            // 【新增】Drifter 使用特殊生成逻辑
+            if (group.enemyType == EnemyType.Drifter)
+            {
+                SpawnDrifterSpecial(group);
+                return;
+            }
+    
+            // 普通敌人：原有逻辑
             Vector3 position = GetSpawnPosition(group.spawnZone);
             EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(group.enemyType, position);
-            
+    
             if (enemy != null)
             {
                 ApplyDifficultyModifiers(enemy, group);
-                
+        
                 // 精英怪特殊标记
                 if (group.isElite)
                 {
                     enemy.SetEliteStatus(true);
                 }
-                
+        
                 enemiesSpawned++;
             }
         }
-        
+        /// <summary>
+        /// Drifter 特殊生成（屏幕内 + 传送门特效）
+        /// </summary>
+        private void SpawnDrifterSpecial(SpawnGroup group)
+        {
+            if (DrifterSpawnHelper.Instance == null)
+            {
+                Debug.LogError("[WaveManager] DrifterSpawnHelper 不存在！使用普通生成");
+                // 降级：使用普通生成
+                Vector3 position = GetSpawnPosition(group.spawnZone);
+                EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(group.enemyType, position);
+                if (enemy != null)
+                {
+                    ApplyDifficultyModifiers(enemy, group);
+                    if (group.isElite) enemy.SetEliteStatus(true);
+                    enemiesSpawned++;
+                }
+                return;
+            }
+    
+            // 使用 DrifterSpawnHelper 生成
+            DrifterSpawnHelper.Instance.SpawnDrifter((drifter) =>
+            {
+                if (drifter != null)
+                {
+                    ApplyDifficultyModifiers(drifter, group);
+            
+                    if (group.isElite)
+                    {
+                        drifter.SetEliteStatus(true);
+                    }
+            
+                    enemiesSpawned++;
+            
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[WaveManager] Drifter 特殊生成完成 @ {drifter.transform.position}");
+                    }
+                }
+            });
+        }
         /// <summary>
         /// 应用波次难度修正
         /// </summary>

@@ -26,12 +26,15 @@ MonoBehaviour:
   waveFrequency: 1.5
   outOfBoundsLifetime: 1
   canBeKnockedBack: 1
-  knockbackMultiplier: 2
+  knockbackMultiplier: 1
   knockbackDrag: 1
-  knockbackStunDuration: 0.5
-  knockbackStunMoveMultiplier: 0.5
+  knockbackStunDuration: 0
+  knockbackStunMoveMultiplier: 0
   drifterDeflectionAngle: 45
-  drifterKnockbackMultiplier: 2
+  drifterKnockbackMultiplier: 1
+  knockbackMinDuration: 0.3
+  drifterMaxSpeed: 12
+  knockbackSpeedThreshold: 4
   minScale: 0.3
   deathFadeDuration: 1
   normalFlowSpeed: 0.3
@@ -46,6 +49,7 @@ MonoBehaviour:
   deathCoinBurst: 0
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
-  collisionBehavior: 0
-  bounceForce: 300
+  collisionBehavior: 1
+  isBouncing: 1
+  bounceForce: 200
   bounceStunDuration: 1

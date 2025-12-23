@@ -2369,8 +2369,8 @@ MonoBehaviour:
   bossPrefab: {fileID: 7651956220622171640, guid: 5b037580938be1f40998b30cf4c7c9e2, type: 3}
   bossSpawnPoint: {fileID: 1331392165}
   spawnOffset: 1.5
-  showDebugInfo: 1
-  showSpawnArea: 1
+  showDebugInfo: 0
+  showSpawnArea: 0
 --- !u!1 &307729488
 GameObject:
   m_ObjectHideFlags: 0
@@ -2506,6 +2506,61 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 307729488}
   m_CullTransparentMesh: 1
+--- !u!1 &329294767
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 329294768}
+  - component: {fileID: 329294769}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: DrifterSpawnHelper
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &329294768
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329294767}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 361127107}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &329294769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329294767}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36857992ca81fbc4890778c532da7228, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config:
+    minDistanceFromTower: 6
+    minDistanceFromWall: 1.5
+    spawnInUpperHalf: 1
+    portalEffectDuration: 0.5
+    scaleAnimDuration: 0.3
+    portalEffectPrefab: {fileID: 152368, guid: 023211deead76c94dad691d75c768a7d, type: 3}
+  towerTransform: {fileID: 7209561176920752722}
+  showDebugInfo: 1
+  showGizmos: 1
 --- !u!1 &334690570
 GameObject:
   m_ObjectHideFlags: 0
@@ -2621,6 +2676,8 @@ Transform:
   - {fileID: 1473873900}
   - {fileID: 1775796606}
   - {fileID: 944346165}
+  - {fileID: 2121936017}
+  - {fileID: 329294768}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &376488525
@@ -13522,6 +13579,59 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!1 &2121936015
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 2121936017}
+  - component: {fileID: 2121936016}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: ScreenBoundaryManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2121936016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2121936015}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56d997baa120f3a4ca61fba11f25c41a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameCamera: {fileID: 961739752}
+  wallThickness: 1
+  wallExtension: 0.5
+  enableBottomWall: 1
+  wallPhysicsMaterial: {fileID: 6200000, guid: 993f6521d9cd47a40b7241167185a4e4, type: 2}
+  wallVisualPrefab: {fileID: 0}
+  showDebugInfo: 1
+  showGizmos: 1
+--- !u!4 &2121936017
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2121936015}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 361127107}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2141947542
 GameObject:
   m_ObjectHideFlags: 0
@@ -13865,6 +13975,9 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 64
+  bouncingEnemyLayer:
+    serializedVersion: 2
+    m_Bits: 16384
   bossEyesLayer:
     serializedVersion: 2
     m_Bits: 256

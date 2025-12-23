@@ -61,7 +61,8 @@ namespace LightVsDecay.Logic.Player
         [Header("检测设置")]
         [Tooltip("敌人检测层（Enemy Layer - 普通敌人 + Boss护甲）")]
         [SerializeField] private LayerMask enemyLayer;
-        
+        [Tooltip("弹跳敌人检测层（BouncingEnemy Layer - Drifter等）")]
+        [SerializeField] private LayerMask bouncingEnemyLayer;
         [Tooltip("Boss核心检测层（EnemyEyes Layer）")]
         [SerializeField] private LayerMask bossEyesLayer;
 
@@ -117,6 +118,7 @@ namespace LightVsDecay.Logic.Player
         
         // Layer 缓存
         private int enemyLayerIndex;
+        private int bouncingEnemyLayerIndex;  // 【新增】
         private int bossEyesLayerIndex;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -224,15 +226,17 @@ namespace LightVsDecay.Logic.Player
             }
             
             // 合并检测层 (Enemy + BossEyes)
-            combinedDetectionLayer = enemyLayer | bossEyesLayer;
+            combinedDetectionLayer = enemyLayer | bouncingEnemyLayer| bossEyesLayer;
             
             // 缓存 Layer 索引
             enemyLayerIndex = LayerMask.NameToLayer("Enemy");
+            bouncingEnemyLayerIndex = LayerMask.NameToLayer(GameConstants.BOUNCING_ENEMY_LAYER);  // 【新增】
             bossEyesLayerIndex = LayerMask.NameToLayer("EnemyEyes");
             
             if (showDebugInfo)
             {
                 Debug.Log($"[LaserController] 检测层初始化 - Enemy: {enemyLayer.value}, BossEyes: {bossEyesLayer.value}");
+                Debug.Log($"[LaserController] 检测层初始化 - Enemy: {enemyLayer.value}, BouncingEnemy: {bouncingEnemyLayer.value}, BossEyes: {bossEyesLayer.value}");
                 Debug.Log($"[LaserController] 暴击率: {CurrentCritRate:P0}, 暴击倍率: {critDamageMultiplier:P0}");
             }
         }
@@ -419,7 +423,7 @@ namespace LightVsDecay.Logic.Player
                 // ═══════════════════════════════════════════════════
                 // Enemy Layer 检测（普通敌人 + Boss护甲）
                 // ═══════════════════════════════════════════════════
-                if (colliderLayer == enemyLayerIndex)
+                if (colliderLayer == enemyLayerIndex|| colliderLayer == bouncingEnemyLayerIndex)
                 {
                     // 先检查是否是 Boss 护甲
                     BossHealth bossHealth = collider.GetComponent<BossHealth>();

@@ -47,7 +47,11 @@ namespace LightVsDecay.Logic.Player
         
         // 当前击中的目标
         private RaycastHit2D currentHit;
-        
+        // 技能系统激活折射
+        private int reflectionLevel = 0; // 0=无折射, 1=1次, 2=2次
+
+// Raycast 时检测 Wall Layer
+        private LayerMask hitLayers; // 包含 Enemy + Wall
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -61,7 +65,7 @@ namespace LightVsDecay.Logic.Player
             laserMaterial = renderer.material;
             
             // 获取敌人Layer
-            enemyLayerMask = LayerMask.GetMask(GameConstants.ENEMY_LAYER);
+            enemyLayerMask = LayerMask.GetMask(GameConstants.ENEMY_LAYER, GameConstants.BOUNCING_ENEMY_LAYER);
             
             // 初始化缓存值
             cachedHitDistance = maxLength;

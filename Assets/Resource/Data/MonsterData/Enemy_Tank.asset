@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "\u5766\u514B"
   description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8089\u76FE\u602A\uFF0C\u8840\u9AD8\uFF0C\u8D28\u91CF\u5927\uFF0C\u6FC0\u5149\u63A8\u4E0D\u52A8"
   maxHealth: 800
-  moveSpeed: 0.5
+  moveSpeed: 0.8
   mass: 10
   contactDamage: 80
   attackInterval: 1
@@ -32,6 +32,9 @@ MonoBehaviour:
   knockbackStunMoveMultiplier: 0.3
   drifterDeflectionAngle: 45
   drifterKnockbackMultiplier: 2
+  knockbackMinDuration: 0.5
+  drifterMaxSpeed: 15
+  knockbackSpeedThreshold: 2
   minScale: 0.3
   deathFadeDuration: 1
   normalFlowSpeed: 0.1
@@ -47,5 +50,6 @@ MonoBehaviour:
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
   collisionBehavior: 0
+  isBouncing: 0
   bounceForce: 300
   bounceStunDuration: 1

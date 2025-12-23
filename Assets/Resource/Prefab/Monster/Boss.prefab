@@ -583,7 +583,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58b616f6f1c8d0a4e843e871bc09a97e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 5000
+  maxHealth: 100000
   armorDamageMultiplier: 0.3
   coreDamageMultiplier: 2
   coreCollider: {fileID: 8982475681369856819}

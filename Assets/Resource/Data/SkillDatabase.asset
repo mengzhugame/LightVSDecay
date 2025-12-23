@@ -20,10 +20,8 @@ MonoBehaviour:
   passiveSkills:
   - {fileID: 11400000, guid: 0085b7f339c34f9469de88a2832fbb88, type: 2}
   - {fileID: 11400000, guid: a962a4479b9ea114eb514cb630a6ce84, type: 2}
-  consumables:
-  - {fileID: 11400000, guid: b7462ed376670344e81b06eb30359566, type: 2}
-  - {fileID: 11400000, guid: 3edac1ab4fedbf34db5b6f4a53ed4aea, type: 2}
-  - {fileID: 11400000, guid: dc3ab58a15e0d304fb63c5a991a6b92c, type: 2}
+  consumables: []
   choiceCount: 3
   consumableChance: 0.3
   passiveChance: 0.25
+  showDebugInfo: 0

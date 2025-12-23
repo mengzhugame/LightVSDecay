@@ -37,7 +37,12 @@ namespace LightVsDecay.Core
         
         /// <summary>敌人Layer名称</summary>
         public const string ENEMY_LAYER = "Enemy";
-        
+        /// <summary>弹跳敌人Layer名称（弹跳怪 - 撞墙反弹）</summary>
+        public const string BOUNCING_ENEMY_LAYER = "BouncingEnemy";
+        /// <summary>空气墙Layer名称</summary>
+        public const string WALL_LAYER = "Wall";
+        /// <summary>空气墙Tag名称</summary>
+        public const string WALL_TAG = "Wall";
         /// <summary>Raycast检测间隔（秒）- 性能优化</summary>
         public const float RAYCAST_INTERVAL = 0.1f;
         

@@ -5,6 +5,7 @@
 // 状态：【新建文件】
 // ============================================================
 
+using LightVsDecay.Core;
 using UnityEngine;
 using LightVsDecay.Logic.Player;
 
@@ -200,7 +201,16 @@ namespace LightVsDecay.Logic.Boss
                 Debug.Log($"[PollutionProjectile] 触发碰撞: {other.gameObject.name}, Layer: {layerName}");
                 Debug.Log($"[PollutionProjectile] playerTowerLayer.value = {playerTowerLayer.value}, 检测位 = {(1 << otherLayer)}");
             }
-    
+            // 【新增】墙体碰撞 - 直接销毁
+            if (layerName == GameConstants.WALL_LAYER || other.CompareTag(GameConstants.WALL_TAG))
+            {
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[PollutionProjectile] 撞击空气墙，销毁");
+                }
+                DestroyProjectile(false); // 不触发伤害效果
+                return;
+            }
             // 【方案A】直接用 Layer 名称判断（更可靠）
             if (layerName == "Shield" || layerName == "Tower")
             {
