@@ -14,7 +14,9 @@ namespace LightVsDecay.Core.Pool
         Tank,       // B - 硬壳 - 高血量
         Rusher,     // C - 速攻虫 - 快速小型
         Drifter,     // D - 漂流者 - 被击退时随机左后/右后漂移
-        Treasure    // T - 宝箱怪 - 横穿屏幕，高奖励
+        Treasure,    // T - 宝箱怪 - 横穿屏幕，高奖励
+        EliteTank,      // 精英坦克 - 独立预制体，不走对象池
+        EliteDrifter    // 精英漂流者 - 独立预制体，不走对象池
     }
     
     /// <summary>

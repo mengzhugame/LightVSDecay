@@ -213,7 +213,7 @@ GameObject:
   - component: {fileID: 4654772212161519296}
   m_Layer: 8
   m_HasEditorInfo: 1
-  m_Name: Body (1)
+  m_Name: Body02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -321,7 +321,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_LocalScale: {x: 1.8, y: 1.8, z: 1.8}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3407135762594810643}
@@ -365,7 +365,7 @@ CircleCollider2D:
   m_GameObject: {fileID: 6171739888601257571}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: ff4f4be2f0ed01943a1793024c2b3f6d, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -404,12 +404,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
-  enemyType: 3
+  enemyType: 6
   eliteEffectPrefab: {fileID: 0}
-  eliteTintColor: {r: 1, g: 0.5, b: 0, a: 1}
+  eliteTintColor: {r: 1, g: 1, b: 1, a: 1}
   bodySprite: {fileID: 4335784821728048696}
   eyesController: {fileID: 6691269152021299885}
   decorations:
+  - {fileID: 5850622431092275405}
   - {fileID: 3203237212370406469}
 --- !u!114 &2236089286846062727
 MonoBehaviour:

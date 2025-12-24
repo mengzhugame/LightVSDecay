@@ -88,19 +88,7 @@ namespace LightVsDecay.Data.SO
         [Tooltip("伤害倍率")]
         [Range(0.5f, 3f)]
         public float damageMultiplier = 1f;
-        
-        [Header("精英标记（新增）")]
-        [Tooltip("是否为精英怪（高血量+高伤害+特殊视觉）")]
-        public bool isElite = false;
-        
-        [Tooltip("精英怪血量倍率（叠加在 healthMultiplier 之上）")]
-        [Range(1f, 10f)]
-        public float eliteHealthMultiplier = 3f;
-        
-        [Tooltip("精英怪伤害倍率")]
-        [Range(1f, 5f)]
-        public float eliteDamageMultiplier = 2f;
-        
+
         // 运行时标记（不序列化）
         [System.NonSerialized]
         public bool hasSpawned = false;
@@ -128,23 +116,7 @@ namespace LightVsDecay.Data.SO
                 _ => 1.0f
             };
         }
-        
-        /// <summary>
-        /// 获取最终血量倍率（考虑精英加成）
-        /// </summary>
-        public float GetFinalHealthMultiplier()
-        {
-            return isElite ? healthMultiplier * eliteHealthMultiplier : healthMultiplier;
-        }
-        
-        /// <summary>
-        /// 获取最终伤害倍率（考虑精英加成）
-        /// </summary>
-        public float GetFinalDamageMultiplier()
-        {
-            return isElite ? damageMultiplier * eliteDamageMultiplier : damageMultiplier;
-        }
-        
+
         /// <summary>
         /// 获取本组刷怪总耗时（从第一只到最后一只）
         /// </summary>
@@ -397,9 +369,9 @@ namespace LightVsDecay.Data.SO
                     pattern = SpawnPattern.Normal, customInterval = 1.5f, spawnZone = SpawnZone.TopOnly },
                 new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 20, 
                     pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.AllEdges },
-                new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.Tank, count = 1, 
+                new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.EliteTank, count = 1, 
                     pattern = SpawnPattern.Instant, spawnZone = SpawnZone.TopOnly,
-                    isElite = true, eliteHealthMultiplier = 5f, eliteDamageMultiplier = 2f },
+                    healthMultiplier = 5f, damageMultiplier = 2f },
                 new SpawnGroup { spawnTime = 40f, enemyType = EnemyType.Rusher, count = 4, 
                     pattern = SpawnPattern.Burst, customInterval = 0.5f, spawnZone = SpawnZone.SideRandom }
             ));
@@ -449,9 +421,9 @@ namespace LightVsDecay.Data.SO
                     pattern = SpawnPattern.Burst, customInterval = 0.2f, spawnZone = SpawnZone.RightSide },
                 new SpawnGroup { spawnTime = 12f, enemyType = EnemyType.Slime, count = 25, 
                     pattern = SpawnPattern.Swarm, customInterval = 0.3f, spawnZone = SpawnZone.AllEdges },
-                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.Drifter, count = 1, 
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.EliteDrifter, count = 1, 
                     pattern = SpawnPattern.Instant, spawnZone = SpawnZone.TopOnly,
-                    isElite = true, eliteHealthMultiplier = 5f, speedMultiplier = 1.5f },
+                    healthMultiplier = 5f, speedMultiplier = 1.5f },
                 new SpawnGroup { spawnTime = 28f, enemyType = EnemyType.Slime, count = 15, 
                     pattern = SpawnPattern.Flood, customInterval = 0.2f, spawnZone = SpawnZone.AllEdges },
                 new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.Rusher, count = 6, 
@@ -564,11 +536,6 @@ namespace LightVsDecay.Data.SO
                 totalEnemies += waveEnemies;
                 
                 int eliteCount = 0;
-                foreach (var group in wave.spawnGroups)
-                {
-                    if (group.isElite) eliteCount += group.count;
-                }
-                
                 string eliteStr = eliteCount > 0 ? $", 精英x{eliteCount}" : "";
                 
                 Debug.Log($"[Wave {wave.waveNumber}] {wave.displayName}: " +

@@ -55,7 +55,12 @@ namespace LightVsDecay.Logic
         [Header("生成设置")]
         [Tooltip("生成区域边界偏移（相对于屏幕边缘）")]
         [SerializeField] private float spawnOffset = 1.5f;
-        
+        [Header("精英怪预制体（不走对象池）")]
+        [Tooltip("精英坦克预制体")]
+        [SerializeField] private GameObject eliteTankPrefab;
+
+        [Tooltip("精英漂流者预制体")]
+        [SerializeField] private GameObject eliteDrifterPrefab;
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = true;
         [SerializeField] private bool showSpawnArea = false;
@@ -392,8 +397,7 @@ namespace LightVsDecay.Logic
             if (showDebugInfo)
             {
                 string patternStr = interval <= 0 ? "Instant" : $"{group.pattern}({interval}s)";
-                string eliteStr = group.isElite ? " [ELITE]" : "";
-                Debug.Log($"[WaveManager] 刷怪组: {group.enemyType}{eliteStr} x{group.count} @ {group.spawnTime}s | {patternStr}");
+                Debug.Log($"[WaveManager] 刷怪组: {group.enemyType} x{group.count} @ {group.spawnTime}s | {patternStr}");
             }
         }
         
@@ -458,33 +462,35 @@ namespace LightVsDecay.Logic
         /// </summary>
         private void SpawnSingleEnemy(SpawnGroup group)
         {
+            // ★ 精英怪：直接 Instantiate，不走对象池（必须放在最前面！）
+            if (group.enemyType == EnemyType.EliteTank || group.enemyType == EnemyType.EliteDrifter)
+            {
+                SpawnEliteEnemy(group);
+                return;
+            }
+
+            // ★ 检查对象池（仅对普通敌人）
             if (!EnemyPoolManager.Instance.HasPool(group.enemyType))
             {
                 Debug.LogWarning($"[WaveManager] 敌人类型 {group.enemyType} 没有对象池！");
                 return;
             }
-    
-            // 【新增】Drifter 使用特殊生成逻辑
+
+            // ★ Drifter：使用特殊生成逻辑（屏幕内 + 传送门）
             if (group.enemyType == EnemyType.Drifter)
             {
                 SpawnDrifterSpecial(group);
                 return;
             }
-    
-            // 普通敌人：原有逻辑
+
+            // ★ 普通敌人：走对象池
             Vector3 position = GetSpawnPosition(group.spawnZone);
             EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(group.enemyType, position);
-    
+
             if (enemy != null)
             {
                 ApplyDifficultyModifiers(enemy, group);
-        
-                // 精英怪特殊标记
-                if (group.isElite)
-                {
-                    enemy.SetEliteStatus(true);
-                }
-        
+
                 enemiesSpawned++;
             }
         }
@@ -502,7 +508,6 @@ namespace LightVsDecay.Logic
                 if (enemy != null)
                 {
                     ApplyDifficultyModifiers(enemy, group);
-                    if (group.isElite) enemy.SetEliteStatus(true);
                     enemiesSpawned++;
                 }
                 return;
@@ -514,12 +519,7 @@ namespace LightVsDecay.Logic
                 if (drifter != null)
                 {
                     ApplyDifficultyModifiers(drifter, group);
-            
-                    if (group.isElite)
-                    {
-                        drifter.SetEliteStatus(true);
-                    }
-            
+
                     enemiesSpawned++;
             
                     if (showDebugInfo)
@@ -528,6 +528,53 @@ namespace LightVsDecay.Logic
                     }
                 }
             });
+        }
+        /// <summary>
+        /// 生成精英怪（直接 Instantiate，不走对象池）
+        /// </summary>
+        private void SpawnEliteEnemy(SpawnGroup group)
+        {
+            GameObject prefab = null;
+    
+            switch (group.enemyType)
+            {
+                case EnemyType.EliteTank:
+                    prefab = eliteTankPrefab;
+                    break;
+                case EnemyType.EliteDrifter:
+                    prefab = eliteDrifterPrefab;
+                    break;
+            }
+    
+            if (prefab == null)
+            {
+                Debug.LogError($"[WaveManager] 精英怪预制体未设置: {group.enemyType}，请在 Inspector 中配置！");
+                return;
+            }
+    
+            Vector3 position = GetSpawnPosition(group.spawnZone);
+            GameObject eliteObj = Instantiate(prefab, position, Quaternion.identity);
+    
+            EnemyBlob enemy = eliteObj.GetComponent<EnemyBlob>();
+            if (enemy != null)
+            {
+                // 应用难度倍率
+                ApplyDifficultyModifiers(enemy, group);
+        
+                // 标记为精英（确保视觉效果）
+                enemy.SetEliteStatus(true);
+        
+                enemiesSpawned++;
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[WaveManager] ⭐ 精英怪已生成: {group.enemyType} @ {position}");
+                }
+            }
+            else
+            {
+                Debug.LogError($"[WaveManager] 精英怪预制体缺少 EnemyBlob 组件: {group.enemyType}");
+            }
         }
         /// <summary>
         /// 应用波次难度修正
@@ -541,18 +588,13 @@ namespace LightVsDecay.Logic
             // 计算最终难度修正（考虑精英加成）
             DifficultyModifiers modifiers = new DifficultyModifiers
             {
-                hpMultiplier = waveDifficulty * group.GetFinalHealthMultiplier(),
+                hpMultiplier = waveDifficulty,
                 speedMultiplier = Mathf.Min(waveDifficulty * group.speedMultiplier, 2.5f),
                 massMultiplier = 1f + (waveDifficulty - 1f) * 0.3f,
-                damageMultiplier = waveDifficulty * group.GetFinalDamageMultiplier()
+                damageMultiplier = waveDifficulty
             };
             
             enemy.SetWaveModifiers(modifiers);
-            
-            if (showDebugInfo && group.isElite)
-            {
-                Debug.Log($"[WaveManager] 精英怪难度: HP={modifiers.hpMultiplier:F2}x, Dmg={modifiers.damageMultiplier:F2}x");
-            }
         }
         
         /// <summary>

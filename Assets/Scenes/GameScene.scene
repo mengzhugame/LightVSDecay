@@ -2369,8 +2369,10 @@ MonoBehaviour:
   bossPrefab: {fileID: 7651956220622171640, guid: 5b037580938be1f40998b30cf4c7c9e2, type: 3}
   bossSpawnPoint: {fileID: 1331392165}
   spawnOffset: 1.5
-  showDebugInfo: 0
-  showSpawnArea: 0
+  eliteTankPrefab: {fileID: 7283361689419196302, guid: bc8ffc78722db7043ada0f88f923ac8c, type: 3}
+  eliteDrifterPrefab: {fileID: 6171739888601257571, guid: c569fce9dc16d314a85667fe27f16cc2, type: 3}
+  showDebugInfo: 1
+  showSpawnArea: 1
 --- !u!1 &307729488
 GameObject:
   m_ObjectHideFlags: 0
@@ -2559,8 +2561,8 @@ MonoBehaviour:
     scaleAnimDuration: 0.3
     portalEffectPrefab: {fileID: 152368, guid: 023211deead76c94dad691d75c768a7d, type: 3}
   towerTransform: {fileID: 7209561176920752722}
-  showDebugInfo: 1
-  showGizmos: 1
+  showDebugInfo: 0
+  showGizmos: 0
 --- !u!1 &334690570
 GameObject:
   m_ObjectHideFlags: 0
@@ -9226,7 +9228,7 @@ MonoBehaviour:
   turretController: {fileID: 8715888216377999216}
   turretHealth: {fileID: 3751590522006977898}
   shieldController: {fileID: 6960895871992148850}
-  vfxColorSync: {fileID: 0}
+  vfxColorSync: {fileID: 7547185026885081181}
   showDebugInfo: 0
 --- !u!1 &1476883934
 GameObject:
@@ -13615,8 +13617,8 @@ MonoBehaviour:
   enableBottomWall: 1
   wallPhysicsMaterial: {fileID: 6200000, guid: 993f6521d9cd47a40b7241167185a4e4, type: 2}
   wallVisualPrefab: {fileID: 0}
-  showDebugInfo: 1
-  showGizmos: 1
+  showDebugInfo: 0
+  showGizmos: 0
 --- !u!4 &2121936017
 Transform:
   m_ObjectHideFlags: 0
@@ -14644,7 +14646,7 @@ MonoBehaviour:
   rotationSmoothness: 15
   minAngle: -90
   maxAngle: 90
-  disableInputDuringUlt: 1
+  disableInputDuringUlt: 0
   showDebugInfo: 0
 --- !u!4 &9049615404208062035
 Transform:
