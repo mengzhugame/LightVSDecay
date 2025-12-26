@@ -709,28 +709,38 @@ namespace LightVsDecay.Logic.Player
                 Debug.LogError("[LaserController] Prefab 或 Pivot 未设置！");
                 return;
             }
-            
+    
             GameObject subLaserObj = Instantiate(laserBeamPrefab, laserPivot);
             subLaserObj.name = $"LaserBeam_Sub_{subLasers.Count}";
             subLaserObj.transform.localPosition = Vector3.zero;
             subLaserObj.transform.localRotation = Quaternion.Euler(0, 0, angle);
-            
+    
             LaserBeam beam = subLaserObj.GetComponent<LaserBeam>();
             if (beam == null)
             {
+                Debug.LogError($"[LaserController] 副激光 Prefab 缺少 LaserBeam 组件！");
                 Destroy(subLaserObj);
                 return;
             }
-            
+    
+            // 【关键】设置副激光的旋转参考节点为自身
+            // 这样副激光会使用自己的 Transform（包含角度偏移）来计算激光方向
+            beam.SetLaserPivot(subLaserObj.transform);
+    
             float subLength = maxLaserLength * lengthMultiplier;
             beam.SetMaxLength(subLength);
             beam.SetLaserWidth(CurrentSubLaserWidth);
-            
+            // 【新增】同步反射状态
+            if (reflexEnabled)
+            {
+                beam.SetReflectionEnabled(true);
+            }
+            // 同步颜色
             if (hasCustomColor)
             {
                 beam.SetColor(mainLaserColor);
             }
-            
+    
             subLasers.Add(new SubLaserData
             {
                 beam = beam,
@@ -738,6 +748,11 @@ namespace LightVsDecay.Logic.Player
                 damageMultiplier = damageMultiplier,
                 lengthMultiplier = lengthMultiplier
             });
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] 创建副激光: 角度={angle}°, 伤害倍率={damageMultiplier:P0}, 长度={subLength:F1}");
+            }
         }
         
         public void ClearAllSubLasers()
@@ -933,6 +948,17 @@ namespace LightVsDecay.Logic.Player
                     mainLaserBeam.SetReflectionEnabled(false);
                     mainLaserBeam.SetMaxLength(maxLaserLength);
                 }
+                // 【新增】关闭所有副激光反射
+                foreach (var subLaser in subLasers)
+                {
+                    if (subLaser.beam != null)
+                    {
+                        subLaser.beam.SetReflectionEnabled(false);
+                        // 恢复副激光原始长度
+                        float subLength = maxLaserLength * subLaser.lengthMultiplier;
+                        subLaser.beam.SetMaxLength(subLength);
+                    }
+                }
             }
             else
             {
@@ -967,13 +993,24 @@ namespace LightVsDecay.Logic.Player
                         reflexLengthBonus = 0f;
                         break;
                 }
-                
+                // 计算新的激光长度
+                float newLength = maxLaserLength * (1f + reflexLengthBonus);
                 // 应用到主激光
                 if (mainLaserBeam != null)
                 {
                     mainLaserBeam.SetReflectionEnabled(true);
-                    float newLength = maxLaserLength * (1f + reflexLengthBonus);
                     mainLaserBeam.SetMaxLength(newLength);
+                }
+                // 【新增】应用到所有副激光
+                foreach (var subLaser in subLasers)
+                {
+                    if (subLaser.beam != null)
+                    {
+                        subLaser.beam.SetReflectionEnabled(true);
+                        // 副激光长度 = 新基础长度 * 副激光长度倍率
+                        float subLength = newLength * subLaser.lengthMultiplier;
+                        subLaser.beam.SetMaxLength(subLength);
+                    }
                 }
             }
             
