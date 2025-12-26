@@ -221,7 +221,20 @@ namespace LightVsDecay.Logic
             
             // 获取波次配置
             currentWaveData = waveConfig?.GetWave(currentWaveNumber);
-            
+            // ★★★ 调试：打印所有 SpawnGroup 的详细信息 ★★★
+            if (showDebugInfo && currentWaveData != null)
+            {
+                Debug.Log($"[WaveManager] ====== 波次 {currentWaveNumber} SpawnGroups 详情 ======");
+                Debug.Log($"[WaveManager] WaveConfig 资源: {waveConfig.name}");
+                Debug.Log($"[WaveManager] SpawnGroups 数量: {currentWaveData.spawnGroups.Count}");
+    
+                for (int i = 0; i < currentWaveData.spawnGroups.Count; i++)
+                {
+                    var g = currentWaveData.spawnGroups[i];
+                    Debug.Log($"[WaveManager]   [{i}] {g.enemyType} x{g.count} @ {g.spawnTime}s | Pattern={g.pattern}");
+                }
+                Debug.Log($"[WaveManager] ================================================");
+            }
             if (currentWaveData == null)
             {
                 Debug.LogError($"[WaveManager] 找不到波次 {currentWaveNumber} 的配置！");

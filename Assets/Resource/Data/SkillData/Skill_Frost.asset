@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4e18ec0e0bd528438a29401d6451dfa, type: 3}
   m_Name: Skill_Frost
   m_EditorClassIdentifier: 
-  type: 3
+  type: 4
   category: 0
   cardType: 0
   displayName: "\u6781\u5BD2\u5149\u675F"
@@ -35,10 +35,9 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    shieldRestore: 0
-    hullRestore: 0
-    ultEnergyPercent: 0
-    buffDuration: 0
+    reflexDamageMultiplier: 0.5
+    reflexLengthBonus: 0
+    critRateBonus: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00FF00>30%</color>\n\u6301\u7EED
@@ -54,10 +53,9 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    shieldRestore: 0
-    hullRestore: 0
-    ultEnergyPercent: 0
-    buffDuration: 0
+    reflexDamageMultiplier: 0.5
+    reflexLengthBonus: 0
+    critRateBonus: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00FF00>40%</color>\n\u6301\u7EED
@@ -73,10 +71,9 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    shieldRestore: 0
-    hullRestore: 0
-    ultEnergyPercent: 0
-    buffDuration: 0
+    reflexDamageMultiplier: 0.5
+    reflexLengthBonus: 0
+    critRateBonus: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00FF00>50%</color>\n\u6301\u7EED
@@ -92,10 +89,9 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    shieldRestore: 0
-    hullRestore: 0
-    ultEnergyPercent: 0
-    buffDuration: 0
+    reflexDamageMultiplier: 0.5
+    reflexLengthBonus: 0
+    critRateBonus: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51CF\u901F <color=#00FF00>50%</color>\n<color=#00FF00>20%</color>
@@ -111,10 +107,9 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    shieldRestore: 0
-    hullRestore: 0
-    ultEnergyPercent: 0
-    buffDuration: 0
+    reflexDamageMultiplier: 0.5
+    reflexLengthBonus: 0
+    critRateBonus: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   baseWeight: 100

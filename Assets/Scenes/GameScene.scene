@@ -2550,8 +2550,8 @@ MonoBehaviour:
   spawnOffset: 1.5
   eliteTankPrefab: {fileID: 7283361689419196302, guid: bc8ffc78722db7043ada0f88f923ac8c, type: 3}
   eliteDrifterPrefab: {fileID: 6171739888601257571, guid: c569fce9dc16d314a85667fe27f16cc2, type: 3}
-  showDebugInfo: 0
-  showSpawnArea: 0
+  showDebugInfo: 1
+  showSpawnArea: 1
 --- !u!1 &307729488
 GameObject:
   m_ObjectHideFlags: 0
@@ -34204,8 +34204,8 @@ MonoBehaviour:
   enableBottomWall: 1
   wallPhysicsMaterial: {fileID: 6200000, guid: 993f6521d9cd47a40b7241167185a4e4, type: 2}
   wallVisualPrefab: {fileID: 0}
-  showDebugInfo: 1
-  showGizmos: 1
+  showDebugInfo: 0
+  showGizmos: 0
 --- !u!4 &2121936017
 Transform:
   m_ObjectHideFlags: 0
