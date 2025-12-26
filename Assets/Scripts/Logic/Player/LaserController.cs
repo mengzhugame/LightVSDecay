@@ -220,7 +220,20 @@ namespace LightVsDecay.Logic.Player
                 mainLaserBeam.SetLaserWidth(CurrentLaserWidth);
                 mainLaserBeam.SetMaxLength(maxLaserLength);
             }
-            
+            // 传递 LaserPivot 引用给 LaserBeam（关键！）
+            if (mainLaserBeam != null && laserPivot != null)
+            {
+                mainLaserBeam.SetLaserPivot(laserPivot);
+    
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[LaserController] 已将 LaserPivot 传递给 LaserBeam: {laserPivot.name}");
+                }
+            }
+            else
+            {
+                Debug.LogError($"[LaserController] 无法传递 LaserPivot! mainLaserBeam={mainLaserBeam != null}, laserPivot={laserPivot != null}");
+            }
             // 验证 LaserPivot
             if (laserPivot == null && mainLaserBeam != null)
             {

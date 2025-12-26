@@ -323,39 +323,39 @@ namespace LightVsDecay.Logic.Player
     
             if (showDebugInfo)
             {
-                string damageInfo = level > 0 ? GetReflexDamagePercent(level) : "0%";
-                string lengthInfo = level > 0 ? GetReflexLengthBonus(level) : "+0%";
+                string damageInfo = level > 0 ? $"{GetReflexDamagePercent(level)}%" : "0%";
+                string lengthInfo = level > 0 ? $"+{GetReflexLengthPercent(level)}%" : "+0%";
                 Debug.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} - 反射伤害: {damageInfo}, 长度: {lengthInfo}");
             }
         }
         /// <summary>
         /// 获取 Reflex 反射伤害百分比（用于显示）
         /// </summary>
-        private string GetReflexDamagePercent(int level)
+        private int GetReflexDamagePercent(int level)
         {
             switch (level)
             {
-                case 1: return "50%";
-                case 2: return "60%";
-                case 3: return "70%";
-                case 4: return "80%";
-                case 5: return "100%";
-                default: return "0%";
+                case 1: return 50;
+                case 2: return 60;
+                case 3: return 70;
+                case 4: return 80;
+                case 5: return 100;
+                default: return 0;
             }
         }
         /// <summary>
         /// 获取 Reflex 长度加成（用于显示）
         /// </summary>
-        private string GetReflexLengthBonus(int level)
+        private int GetReflexLengthPercent(int level)
         {
             switch (level)
             {
-                case 1: return "+0%";
-                case 2: return "+10%";
-                case 3: return "+20%";
-                case 4: return "+40%";
-                case 5: return "+60%";
-                default: return "+0%";
+                case 1: return 0;
+                case 2: return 10;
+                case 3: return 20;
+                case 4: return 40;
+                case 5: return 60;
+                default: return 0;
             }
         }
         /// <summary>

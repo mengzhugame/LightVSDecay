@@ -253,8 +253,7 @@ namespace LightVsDecay.UI.Panels
             int currentLv = currentLevels.GetValueOrDefault(skill.type, 0);
             int nextLv = currentLv + 1;
             bool isMaxLevel = nextLv >= skill.maxLevel;
-            bool isConsumable = skill.IsConsumable;
-            
+
             // ========== 1. 设置卡片背景 ==========
             if (card.cardBackground != null)
             {
@@ -289,10 +288,10 @@ namespace LightVsDecay.UI.Panels
             }
             
             // ========== 5. 设置 NewTag ==========
-            SetupNewTag(card, nextLv, isMaxLevel, isConsumable);
+            SetupNewTag(card, nextLv, isMaxLevel);
             
             // ========== 6. 设置 Upgrade 菱形 ==========
-            SetupUpgradeDiamonds(card, nextLv, isConsumable);
+            SetupUpgradeDiamonds(card, nextLv);
             
             if (showDebugInfo)
             {
@@ -303,17 +302,10 @@ namespace LightVsDecay.UI.Panels
         /// <summary>
         /// 设置 NewTag 显示
         /// </summary>
-        private void SetupNewTag(SkillCardUI card, int nextLv, bool isMaxLevel, bool isConsumable)
+        private void SetupNewTag(SkillCardUI card, int nextLv, bool isMaxLevel)
         {
             if (card.newTagObj == null) return;
-            
-            // 消耗品永远不显示 NewTag
-            if (isConsumable)
-            {
-                card.newTagObj.SetActive(false);
-                return;
-            }
-            
+
             // 等级1显示 "NEW"，等级5显示 "MAX"，其他隐藏
             if (nextLv == 1)
             {
@@ -340,17 +332,10 @@ namespace LightVsDecay.UI.Panels
         /// <summary>
         /// 设置 Upgrade 菱形显示
         /// </summary>
-        private void SetupUpgradeDiamonds(SkillCardUI card, int nextLv, bool isConsumable)
+        private void SetupUpgradeDiamonds(SkillCardUI card, int nextLv)
         {
             if (card.upgradeObj == null) return;
-            
-            // 消耗品永远不显示 Upgrade
-            if (isConsumable)
-            {
-                card.upgradeObj.SetActive(false);
-                return;
-            }
-            
+
             // 显示 Upgrade
             card.upgradeObj.SetActive(true);
             

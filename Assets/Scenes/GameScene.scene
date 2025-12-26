@@ -34576,8 +34576,9 @@ MonoBehaviour:
   baseWidth: 0.5
   baseVFXScale: 1
   raycastInterval: 0.1
-  showDebugGizmos: 1
-  showDebugLogs: 1
+  showDebugGizmos: 0
+  showDebugLogs: 0
+  laserPivot: {fileID: 8535393363888997607}
 --- !u!1 &510106183738356821
 GameObject:
   m_ObjectHideFlags: 0
@@ -74160,7 +74161,7 @@ MonoBehaviour:
   minAngle: -90
   maxAngle: 90
   disableInputDuringUlt: 0
-  showDebugInfo: 1
+  showDebugInfo: 0
 --- !u!1 &8773048937885977364
 GameObject:
   m_ObjectHideFlags: 0

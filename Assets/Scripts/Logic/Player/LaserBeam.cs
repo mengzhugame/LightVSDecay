@@ -82,12 +82,15 @@ namespace LightVsDecay.Logic.Player
         [SerializeField] private bool showDebugGizmos = true;
         [SerializeField] private bool showDebugLogs = false;
         
+        [Header("旋转控制")]
+        [Tooltip("旋转控制节点（LaserPivot）- 如果为空则自动查找")]
+        [SerializeField] private Transform laserPivot;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 私有变量
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private Transform cachedTransform;
-        private Transform laserPivot;  // 父级旋转控制节点
         
         // Raycast 优化
         private float lastRaycastTime;
@@ -114,43 +117,16 @@ namespace LightVsDecay.Logic.Player
         private void Awake()
         {
             cachedTransform = transform;
+            
             // 自动查找 LineRenderer
             if (lineRenderer == null)
             {
                 lineRenderer = GetComponentInChildren<LineRenderer>();
             }
-            // 自动查找 LaserPivot（如果未手动设置）
-            if (laserPivot == null)
-            {
-                // 层级：LaserBeam -> Tower_Background -> LaserPivot
-                if (cachedTransform.parent != null && cachedTransform.parent.parent != null)
-                {
-                    laserPivot = cachedTransform.parent.parent;
-                    Debug.Log($"[LaserBeam] 自动找到 LaserPivot: {laserPivot.name}");
-                }
-                else
-                {
-                    // 备用方案：向上查找名为 "LaserPivot" 的节点
-                    Transform current = cachedTransform.parent;
-                    while (current != null)
-                    {
-                        if (current.name.Contains("LaserPivot") || current.name.Contains("Pivot"))
-                        {
-                            laserPivot = current;
-                            Debug.Log($"[LaserBeam] 通过名称找到 LaserPivot: {laserPivot.name}");
-                            break;
-                        }
-                        current = current.parent;
-                    }
-                }
-        
-                if (laserPivot == null)
-                {
-                    laserPivot = cachedTransform;
-                    Debug.LogWarning("[LaserBeam] 未找到 LaserPivot，使用自身作为旋转节点！激光将无法旋转！");
-                }
-            }
-
+            
+            // 注意：laserPivot 将由 LaserController 通过 SetLaserPivot() 传递
+            // 这里不再自动查找，避免找错节点
+            
             // 初始化 Layer
             if (wallLayer == 0)
             {
@@ -169,6 +145,7 @@ namespace LightVsDecay.Logic.Player
         
         private void Update()
         {
+            // 每帧都计算激光路径（确保实时响应旋转）
             CalculateLaserPath();
             UpdateLaserVisuals();
         }
@@ -208,6 +185,7 @@ namespace LightVsDecay.Logic.Player
         
         /// <summary>
         /// 计算激光路径（包含反射）
+        /// 使用 TransformPoint 将本地坐标转换为世界坐标
         /// </summary>
         private void CalculateLaserPath()
         {
@@ -221,17 +199,28 @@ namespace LightVsDecay.Logic.Player
                 Debug.LogError("[LaserBeam] laserPivot 为空！无法计算激光路径");
                 return;
             }
-            // 调试：打印旋转信息（可以在确认正常后删除）
-            if (showDebugLogs)
-            {
-                Debug.Log($"[LaserBeam] Pivot位置: {laserPivot.position}, 方向: {laserPivot.up}, 旋转: {laserPivot.eulerAngles.z}");
-            }
-            // 起点（世界坐标）- LaserPivot 的位置
-            Vector3 startPoint = laserPivot.position;
+            
+            // ═══════════════════════════════════════════════════
+            // 使用 TransformPoint 计算起点和终点（关键！）
+            // 本地坐标 (0, 0, 0) -> 世界坐标起点
+            // 本地坐标 (0, maxLength, 0) -> 世界坐标终点（无遮挡时）
+            // ═══════════════════════════════════════════════════
+            
+            // 起点（本地 0,0,0 转换为世界坐标）
+            Vector3 startPoint = laserPivot.TransformPoint(Vector3.zero);
             laserPoints.Add(startPoint);
             
-            // 初始方向（LaserPivot 的本地 Y 轴方向）
-            Vector3 currentDirection = laserPivot.up;
+            // 计算激光方向（本地 Y 轴在世界空间中的方向）
+            Vector3 localEndPoint = new Vector3(0, maxLength, 0);
+            Vector3 worldEndPoint = laserPivot.TransformPoint(localEndPoint);
+            Vector3 currentDirection = (worldEndPoint - startPoint).normalized;
+            
+            // 调试：打印旋转信息
+            if (showDebugLogs)
+            {
+                Debug.Log($"[LaserBeam] 起点: {startPoint}, 终点: {worldEndPoint}, 方向: {currentDirection}, Pivot旋转Z: {laserPivot.eulerAngles.z:F1}°");
+            }
+            
             Vector3 currentPoint = startPoint;
             float remainingLength = maxLength;
             bool isFirstSegment = true;
@@ -556,11 +545,20 @@ namespace LightVsDecay.Logic.Player
         public bool HasHitEnemy() => hitEnemy;
         
         /// <summary>
-        /// 手动设置 LaserPivot（供外部配置）
+        /// 手动设置 LaserPivot（由 LaserController 调用）
         /// </summary>
         public void SetLaserPivot(Transform pivot)
         {
             laserPivot = pivot;
+            
+            if (pivot != null)
+            {
+                Debug.Log($"[LaserBeam] LaserPivot 已设置: {pivot.name} (位置: {pivot.position})");
+            }
+            else
+            {
+                Debug.LogError("[LaserBeam] SetLaserPivot 收到空引用！");
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

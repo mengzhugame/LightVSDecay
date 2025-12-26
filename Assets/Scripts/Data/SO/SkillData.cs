@@ -96,22 +96,19 @@ namespace LightVsDecay.Data.SO
         [Header("宽度相关")]
         [Tooltip("宽度倍率")]
         public float widthMultiplier = 1.0f;
+        [Header("反射相关（反射透镜）")]
+        [Tooltip("反射段伤害倍率 (0.5 = 50%)")]
+        [Range(0f, 2f)]
+        public float reflexDamageMultiplier = 0.5f;
         
-        [Header("消耗品效果")]
-        [Tooltip("恢复护盾数量")]
-        public int shieldRestore = 0;
-        
-        [Tooltip("恢复生命数量")]
-        public int hullRestore = 0;
-        
-        [Tooltip("大招能量恢复百分比")]
+        [Tooltip("激光总长度加成 (0.1 = +10%)")]
         [Range(0f, 1f)]
-        public float ultEnergyPercent = 0f;
+        public float reflexLengthBonus = 0f;
         
-        [Header("肾上腺素效果")]
-        [Tooltip("增益持续时间")]
-        public float buffDuration = 0f;
-        
+        [Header("暴击相关（致命暴击）")]
+        [Tooltip("暴击率加成 (0.05 = +5%)")]
+        [Range(0f, 0.5f)]
+        public float critRateBonus = 0f;
         [Tooltip("激光转速加成")]
         public float rotationSpeedBonus = 0f;
         
@@ -210,12 +207,7 @@ namespace LightVsDecay.Data.SO
         /// 是否为被动技能
         /// </summary>
         public bool IsPassive => category == SkillCategory.Passive;
-        
-        /// <summary>
-        /// 是否为消耗品
-        /// </summary>
-        public bool IsConsumable => category == SkillCategory.Consumable;
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 编辑器支持
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -260,15 +252,18 @@ namespace LightVsDecay.Data.SO
             switch (type)
             {
                 // 主动输出技能 - 红色
-                case SkillType.Prism:
-                case SkillType.Focus:
-                case SkillType.Impact:
+                case SkillType.Prism://分裂棱镜
+                case SkillType.Focus://聚能透镜
+                case SkillType.Impact://冲击模块
+                case SkillType.Reflex://反射透镜
+                case SkillType.Frost://极寒光束
                     cardType = SkillCardType.Attack;
                     break;
                     
                 // 被动/控制技能 - 蓝色
                 case SkillType.Power:
                 case SkillType.Wide:
+                case SkillType.Crit: 
                     cardType = SkillCardType.Passive;
                     break;
             }
