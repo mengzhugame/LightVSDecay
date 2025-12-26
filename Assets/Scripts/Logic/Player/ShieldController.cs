@@ -258,8 +258,8 @@ namespace LightVsDecay.Logic.Player
             TriggerShockwave();
             
             // 播放护盾破碎特效
-            PlayShieldBreakVFX();
-            
+            PlayBreakEffect();
+
             // 触发护盾破碎事件
             GameEvents.TriggerShieldBroken();
             
@@ -442,39 +442,22 @@ namespace LightVsDecay.Logic.Player
         {
             if (VFXPoolManager.Instance != null)
             {
-                VFXPoolManager.Instance.Play(VFXType.ShieldBreak, transform.position);
+                VFXPoolManager.Instance?.PlayShieldHit(transform.position);
             }
         }
-        
-        private void PlayShieldBreakVFX()
+        private void PlayBreakEffect()
         {
-            if (shieldBreakVFXPrefab != null)
+            if (VFXPoolManager.Instance != null)
             {
-                GameObject vfx = Instantiate(shieldBreakVFXPrefab, transform.position, Quaternion.identity);
-                
-                ParticleSystem ps = vfx.GetComponent<ParticleSystem>();
-                if (ps != null)
-                {
-                    float lifetime = ps.main.duration + ps.main.startLifetime.constantMax;
-                    Destroy(vfx, lifetime);
-                }
-                else
-                {
-                    Destroy(vfx, 3f);
-                }
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log("[ShieldController] 播放护盾破碎特效");
-                }
+                VFXPoolManager.Instance?.PlayShieldBreak(transform.position);
             }
         }
-        
+
         private void PlayRecoveryEffect()
         {
             if (VFXPoolManager.Instance != null)
             {
-                VFXPoolManager.Instance.Play(VFXType.ShieldRecover, transform.position);
+                VFXPoolManager.Instance?.PlayShieldRecover(transform.position);
             }
         }
         

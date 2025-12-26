@@ -8,17 +8,29 @@ namespace LightVsDecay.Core.Pool
     /// </summary>
     public enum VFXType
     {
+        // ━━━ 高频特效（使用对象池） ━━━
         // 敌人相关
         EnemySteam,         // 敌人死亡蒸发
         EnemyExplosion,     // 敌人撞塔爆炸
-        
+    
         // 激光相关
         LaserHit,           // 激光击中特效
-        
-        // 塔相关
-        ShieldBreak,        // 护盾破碎
-        ShieldRecover,      // 护盾恢复
+    
+        // ━━━ 低频特效（直接实例化） ━━━
+        // 护盾相关
+        ShieldHit,//护盾受击
+        ShieldBreak,        // 护盾破碎（低频）
+        ShieldRecover,      // 护盾恢复（低频）
         TowerDamage,        // 塔受伤
+    
+        // Boss相关
+        BossSpawn,          // Boss出场
+        BossSkill,          // Boss技能
+        BossDeath,          // Boss死亡
+        BossPhaseChange,    // Boss阶段转换
+    
+        // 其他低频特效
+        LevelUp,            // 升级特效
     }
     
     /// <summary>
@@ -29,15 +41,20 @@ namespace LightVsDecay.Core.Pool
     {
         public VFXType type;
         public GameObject prefab;
-        
-        [Tooltip("预热数量")]
-        public int prewarmCount = 10;
-        
-        [Tooltip("最大数量")]
-        public int maxCount = 50;
-        
-        [Tooltip("是否使用对象池（false则使用普通Instantiate）")]
+    
+        [Header("对象池设置")]
+        [Tooltip("是否使用对象池（false则直接Instantiate）")]
         public bool usePool = true;
+    
+        [Tooltip("预热数量（仅池化有效）")]
+        public int prewarmCount = 10;
+    
+        [Tooltip("最大数量（仅池化有效）")]
+        public int maxCount = 50;
+    
+        [Header("非池化设置")]
+        [Tooltip("自定义销毁延迟（<=0则自动检测粒子时长）")]
+        public float customDestroyDelay = -1f;
     }
     
     /// <summary>
@@ -171,7 +188,27 @@ namespace LightVsDecay.Core.Pool
             else
             {
                 GameObject go = Instantiate(config.prefab, position, rotation);
-                Destroy(go, nonPooledDestroyDelay);
+    
+                // 确定销毁时间
+                float destroyDelay;
+                if (config.customDestroyDelay > 0f)
+                {
+                    // 使用自定义时间
+                    destroyDelay = config.customDestroyDelay;
+                }
+                else
+                {
+                    // 自动检测粒子系统时长
+                    destroyDelay = CalculateParticleDuration(go);
+                }
+    
+                Destroy(go, destroyDelay);
+    
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[VFXPoolManager] 播放非池化VFX: {config.type}, 将在 {destroyDelay:F2}s 后销毁");
+                }
+    
                 return go;
             }
         }
@@ -255,7 +292,13 @@ namespace LightVsDecay.Core.Pool
         {
             Play(VFXType.ShieldBreak, position);
         }
-        
+        /// <summary>
+        /// 播放护盾受击特效
+        /// </summary>
+        public void PlayShieldHit(Vector3 position)
+        {
+            Play(VFXType.ShieldHit, position);
+        }
         /// <summary>
         /// 播放护盾恢复特效
         /// </summary>
@@ -271,6 +314,81 @@ namespace LightVsDecay.Core.Pool
         {
             Play(VFXType.TowerDamage, position);
         } 
+        /// <summary>
+        /// 播放Boss出场特效
+        /// </summary>
+        public void PlayBossSpawn(Vector3 position)
+        {
+            Play(VFXType.BossSpawn, position);
+        }
+
+        /// <summary>
+        /// 播放Boss技能特效
+        /// </summary>
+        public void PlayBossSkill(Vector3 position, Quaternion rotation = default)
+        {
+            Play(VFXType.BossSkill, position, rotation);
+        }
+
+        /// <summary>
+        /// 播放Boss死亡特效
+        /// </summary>
+        public void PlayBossDeath(Vector3 position)
+        {
+            Play(VFXType.BossDeath, position);
+        }
+
+        /// <summary>
+        /// 播放Boss阶段转换特效
+        /// </summary>
+        public void PlayBossPhaseChange(Vector3 position)
+        {
+            Play(VFXType.BossPhaseChange, position);
+        }
+
+        /// <summary>
+        /// 播放升级特效
+        /// </summary>
+        public void PlayLevelUp(Vector3 position)
+        {
+            Play(VFXType.LevelUp, position);
+        }
+        
+        /// <summary>
+        /// 计算粒子系统总时长（用于非池化VFX）
+        /// </summary>
+        private float CalculateParticleDuration(GameObject vfxObject)
+        {
+            ParticleSystem[] particleSystems = vfxObject.GetComponentsInChildren<ParticleSystem>(true);
+    
+            if (particleSystems.Length == 0)
+            {
+                return nonPooledDestroyDelay;
+            }
+    
+            float maxDuration = 0f;
+    
+            foreach (var ps in particleSystems)
+            {
+                if (ps == null) continue;
+        
+                var main = ps.main;
+        
+                // 跳过循环粒子
+                if (main.loop) continue;
+        
+                float totalTime = main.startDelay.constantMax + main.duration + main.startLifetime.constantMax;
+        
+                if (totalTime > maxDuration)
+                {
+                    maxDuration = totalTime;
+                }
+            }
+    
+            // 添加0.5秒缓冲
+            return maxDuration > 0f ? maxDuration + 0.5f : nonPooledDestroyDelay;
+        }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
