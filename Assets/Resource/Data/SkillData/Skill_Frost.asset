@@ -17,7 +17,7 @@ MonoBehaviour:
   cardType: 0
   displayName: "\u6781\u5BD2\u5149\u675F"
   icon: {fileID: 21300000, guid: 8635c8f43427b044cac3b175fa344f12, type: 3}
-  description: "\u51CF\u901F\u6548\u679C"
+  description: "\u51B0\u51BB\u51CF\u901F\u6548\u679C"
   skillColor: {r: 0, g: 0.51651424, b: 4.594794, a: 1}
   maxLevel: 5
   isRepeatable: 0

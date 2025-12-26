@@ -17,16 +17,13 @@ namespace LightVsDecay.Data.SO
         Prism,      // 折射棱镜 - AOE清怪
         Focus,      // 聚能透镜 - 单体攻坚
         Impact,     // 冲击模块 - 控制/防近身
+        Reflex,     // 反射透镜 - 墙壁反射
         
         // 被动技能（最多5级）- 青色/蓝色卡
         Frost,      // 极寒光束 - 减速辅助
         Power,      // 功率超频 - +DPS
         Wide,       // 广域透镜 - +激光宽度
-        
-        // 消耗品（无限重复）- 绿色卡
-        Repair,     // 紧急抢修 - 回复护盾+1血
-        Charge,     // 能量过载 - 大招+50%
-        Adrenaline  // 肾上腺素 - 恢复护盾+20秒增益
+        Crit,       // 致命暴击 - +暴击率
     }
     
     /// <summary>
@@ -273,13 +270,6 @@ namespace LightVsDecay.Data.SO
                 case SkillType.Power:
                 case SkillType.Wide:
                     cardType = SkillCardType.Passive;
-                    break;
-                    
-                // 消耗品 - 绿色
-                case SkillType.Repair:
-                case SkillType.Charge:
-                case SkillType.Adrenaline:
-                    cardType = SkillCardType.Recovery;
                     break;
             }
         }

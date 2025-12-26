@@ -1,18 +1,54 @@
+// ============================================================
+// LaserBeam.cs (重构版 - LineRenderer + 反射)
+// 文件位置: Assets/Scripts/Logic/Player/LaserBeam.cs
+// 用途：单个激光光束组件 - 支持墙壁反射
+// ============================================================
+
 using UnityEngine;
+using System.Collections.Generic;
 using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
 {
     /// <summary>
-    /// 单个激光光束组件
-    /// 负责：长度伸缩、击中检测、Shader参数更新
+    /// 激光光束段数据
     /// </summary>
-    [RequireComponent(typeof(SpriteRenderer))]
+    public struct LaserSegment
+    {
+        public Vector3 startPoint;
+        public Vector3 endPoint;
+        public float length;
+        public bool isReflected;  // 是否是反射段
+        
+        public Vector3 Direction => (endPoint - startPoint).normalized;
+    }
+    
+    /// <summary>
+    /// 单个激光光束组件（重构版）
+    /// 使用 LineRenderer 实现，支持墙壁反射
+    /// </summary>
     public class LaserBeam : MonoBehaviour
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 可配置参数
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("组件引用")]
+        [Tooltip("LineRenderer 组件")]
+        [SerializeField] private LineRenderer lineRenderer;
+        
+        [Tooltip("起点粒子特效")]
+        [SerializeField] private Transform startVFX;
+        
+        [Tooltip("终点粒子特效")]
+        [SerializeField] private Transform endVFX;
+        
+        [Header("VFX 子节点引用（用于缩放）")]
+        [Tooltip("StartVFX 下需要缩放的子节点")]
+        [SerializeField] private Transform[] startVFXChildren;
+        
+        [Tooltip("EndVFX 下需要缩放的子节点")]
+        [SerializeField] private Transform[] endVFXChildren;
         
         [Header("激光属性")]
         [Tooltip("激光最大长度")]
@@ -21,37 +57,56 @@ namespace LightVsDecay.Logic.Player
         [Tooltip("激光宽度")]
         [SerializeField] private float laserWidth = GameConstants.LASER_DEFAULT_WIDTH;
         
-        [Tooltip("击中光晕颜色")]
-        [SerializeField] private Color glowColor = new Color(1f, 1f, 0.5f, 1f); // 黄色
-        // 在 GameConstants.cs 的 ShaderProperties 中添加：
-        public static readonly int LaserColor = Shader.PropertyToID("_Color");
+        [Header("反射设置")]
+        [Tooltip("是否启用反射")]
+        [SerializeField] private bool reflectionEnabled = false;
+        
+        [Tooltip("墙壁检测层")]
+        [SerializeField] private LayerMask wallLayer;
+        
+        [Tooltip("敌人检测层")]
+        [SerializeField] private LayerMask enemyLayer;
+        
+        [Header("VFX 缩放")]
+        [Tooltip("基础宽度（对应VFX缩放为1）")]
+        [SerializeField] private float baseWidth = 0.5f;
+        
+        [Tooltip("基础VFX缩放值")]
+        [SerializeField] private float baseVFXScale = 1f;
         
         [Header("性能优化")]
         [Tooltip("Raycast检测间隔（秒）")]
-        [SerializeField] private float raycastInterval = GameConstants.RAYCAST_INTERVAL;
+        [SerializeField] private float raycastInterval = GameConstants.REFLEX_RAYCAST_INTERVAL;
         
         [Header("调试")]
         [SerializeField] private bool showDebugGizmos = true;
+        [SerializeField] private bool showDebugLogs = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 私有变量
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private Material laserMaterial;
         private Transform cachedTransform;
+        private Transform laserPivot;  // 父级旋转控制节点
         
-        // Raycast优化
+        // Raycast 优化
         private float lastRaycastTime;
-        private float cachedHitDistance;
-        private LayerMask enemyLayerMask;
         
-        // 当前击中的目标
+        // 激光路径点（世界坐标）
+        private List<Vector3> laserPoints = new List<Vector3>();
+        
+        // 激光段数据（供伤害检测使用）
+        private List<LaserSegment> laserSegments = new List<LaserSegment>();
+        
+        // 击中状态
+        private bool hitEnemy = false;
+        private Vector3 hitPoint;
         private RaycastHit2D currentHit;
-        // 技能系统激活折射
-        private int reflectionLevel = 0; // 0=无折射, 1=1次, 2=2次
-
-// Raycast 时检测 Wall Layer
-        private LayerMask hitLayers; // 包含 Enemy + Wall
+        
+        // 反射状态
+        private bool hasReflection = false;
+        private Vector3 reflectionPoint;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -59,110 +114,353 @@ namespace LightVsDecay.Logic.Player
         private void Awake()
         {
             cachedTransform = transform;
-            
-            // 获取Material实例（重要：不要用sharedMaterial）
-            SpriteRenderer renderer = GetComponent<SpriteRenderer>();
-            laserMaterial = renderer.material;
-            
-            // 获取敌人Layer
-            enemyLayerMask = LayerMask.GetMask(GameConstants.ENEMY_LAYER, GameConstants.BOUNCING_ENEMY_LAYER);
-            
-            // 初始化缓存值
-            cachedHitDistance = maxLength;
-            
-            // 设置初始Shader参数
-            UpdateShaderProperties();
+            // 自动查找 LineRenderer
+            if (lineRenderer == null)
+            {
+                lineRenderer = GetComponentInChildren<LineRenderer>();
+            }
+            // 自动查找 LaserPivot（如果未手动设置）
+            if (laserPivot == null)
+            {
+                // 层级：LaserBeam -> Tower_Background -> LaserPivot
+                if (cachedTransform.parent != null && cachedTransform.parent.parent != null)
+                {
+                    laserPivot = cachedTransform.parent.parent;
+                    Debug.Log($"[LaserBeam] 自动找到 LaserPivot: {laserPivot.name}");
+                }
+                else
+                {
+                    // 备用方案：向上查找名为 "LaserPivot" 的节点
+                    Transform current = cachedTransform.parent;
+                    while (current != null)
+                    {
+                        if (current.name.Contains("LaserPivot") || current.name.Contains("Pivot"))
+                        {
+                            laserPivot = current;
+                            Debug.Log($"[LaserBeam] 通过名称找到 LaserPivot: {laserPivot.name}");
+                            break;
+                        }
+                        current = current.parent;
+                    }
+                }
+        
+                if (laserPivot == null)
+                {
+                    laserPivot = cachedTransform;
+                    Debug.LogWarning("[LaserBeam] 未找到 LaserPivot，使用自身作为旋转节点！激光将无法旋转！");
+                }
+            }
+
+            // 初始化 Layer
+            if (wallLayer == 0)
+            {
+                wallLayer = LayerMask.GetMask(GameConstants.WALL_LAYER);
+            }
+            if (enemyLayer == 0)
+            {
+                enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, GameConstants.BOUNCING_ENEMY_LAYER);
+            }
+        }
+        
+        private void Start()
+        {
+            InitializeLaser();
         }
         
         private void Update()
         {
-            // 定期检测击中距离
-            PerformRaycastCheck();
-            
-            // 更新激光长度和Shader
-            UpdateLaserLength();
+            CalculateLaserPath();
+            UpdateLaserVisuals();
         }
         
-        private void OnDestroy()
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 初始化
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void InitializeLaser()
         {
-            // 销毁Material实例，避免内存泄漏
-            if (laserMaterial != null)
+            if (lineRenderer == null)
             {
-                Destroy(laserMaterial);
+                Debug.LogError("[LaserBeam] LineRenderer 未找到！");
+                return;
+            }
+            
+            // 确保使用世界空间
+            lineRenderer.useWorldSpace = true;
+            
+            // 初始化路径点列表
+            laserPoints.Clear();
+            laserSegments.Clear();
+            
+            // 立即计算一次路径
+            CalculateLaserPath();
+            UpdateLaserVisuals();
+            
+            if (showDebugLogs)
+            {
+                Debug.Log($"[LaserBeam] 初始化完成 - 反射: {(reflectionEnabled ? "启用" : "禁用")}");
             }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 核心逻辑
+        // 激光路径计算
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 定期执行Raycast检测（性能优化）
+        /// 计算激光路径（包含反射）
         /// </summary>
-        private void PerformRaycastCheck()
+        private void CalculateLaserPath()
         {
-            // if (Time.time - lastRaycastTime < raycastInterval)
-            //     return;
+            laserPoints.Clear();
+            laserSegments.Clear();
+            hitEnemy = false;
+            hasReflection = false;
             
-            lastRaycastTime = Time.time;
-            
-            // 从Quad的底部（Pivot）向上发射射线
-            Vector2 origin = cachedTransform.position;
-            Vector2 direction = cachedTransform.up; // Quad的up方向就是激光方向
-            
-            // 射线检测
-            currentHit = Physics2D.Raycast(origin, direction, maxLength, enemyLayerMask);
-            
-            if (currentHit.collider != null)
+            if (laserPivot == null)
             {
-                // 击中敌人，记录距离
-                cachedHitDistance = currentHit.distance;
+                Debug.LogError("[LaserBeam] laserPivot 为空！无法计算激光路径");
+                return;
             }
-            else
+            // 调试：打印旋转信息（可以在确认正常后删除）
+            if (showDebugLogs)
             {
-                // 未击中，激光延伸到最大长度
-                cachedHitDistance = maxLength;
+                Debug.Log($"[LaserBeam] Pivot位置: {laserPivot.position}, 方向: {laserPivot.up}, 旋转: {laserPivot.eulerAngles.z}");
+            }
+            // 起点（世界坐标）- LaserPivot 的位置
+            Vector3 startPoint = laserPivot.position;
+            laserPoints.Add(startPoint);
+            
+            // 初始方向（LaserPivot 的本地 Y 轴方向）
+            Vector3 currentDirection = laserPivot.up;
+            Vector3 currentPoint = startPoint;
+            float remainingLength = maxLength;
+            bool isFirstSegment = true;
+            
+            // 最多处理2段（主激光 + 1次反射）
+            int maxIterations = reflectionEnabled ? 2 : 1;
+            
+            for (int i = 0; i < maxIterations && remainingLength > 0.1f; i++)
+            {
+                // 执行射线检测
+                RaycastResult result = PerformRaycast(currentPoint, currentDirection, remainingLength);
+                
+                if (result.hitSomething)
+                {
+                    // 添加击中点
+                    laserPoints.Add(result.hitPoint);
+                    
+                    // 记录激光段
+                    laserSegments.Add(new LaserSegment
+                    {
+                        startPoint = currentPoint,
+                        endPoint = result.hitPoint,
+                        length = result.hitDistance,
+                        isReflected = !isFirstSegment
+                    });
+                    
+                    remainingLength -= result.hitDistance;
+                    
+                    if (result.hitEnemy)
+                    {
+                        // 击中敌人，停止
+                        hitEnemy = true;
+                        hitPoint = result.hitPoint;
+                        currentHit = result.raycastHit;
+                        
+                        if (showDebugLogs)
+                        {
+                            Debug.Log($"[LaserBeam] 击中敌人 - 位置: {result.hitPoint}");
+                        }
+                        break;
+                    }
+                    else if (result.hitWall && reflectionEnabled && isFirstSegment)
+                    {
+                        // 击中墙壁且允许反射
+                        hasReflection = true;
+                        reflectionPoint = result.hitPoint;
+                        
+                        // 计算反射方向
+                        currentDirection = Vector3.Reflect(currentDirection, result.hitNormal);
+                        // 偏移一点避免重复检测
+                        currentPoint = result.hitPoint + currentDirection * GameConstants.REFLEX_POINT_OFFSET;
+                        isFirstSegment = false;
+                        
+                        if (showDebugLogs)
+                        {
+                            Debug.Log($"[LaserBeam] 墙壁反射 - 位置: {result.hitPoint}, 新方向: {currentDirection}");
+                        }
+                    }
+                    else
+                    {
+                        // 击中墙壁但不反射，停止
+                        break;
+                    }
+                }
+                else
+                {
+                    // 没有击中任何东西，延伸到最大长度
+                    Vector3 endPoint = currentPoint + currentDirection * remainingLength;
+                    laserPoints.Add(endPoint);
+                    
+                    // 记录激光段
+                    laserSegments.Add(new LaserSegment
+                    {
+                        startPoint = currentPoint,
+                        endPoint = endPoint,
+                        length = remainingLength,
+                        isReflected = !isFirstSegment
+                    });
+                    
+                    break;
+                }
+            }
+            
+            // 确保至少有2个点
+            if (laserPoints.Count < 2)
+            {
+                Vector3 endPoint = startPoint + laserPivot.up * maxLength;
+                laserPoints.Add(endPoint);
+                
+                laserSegments.Add(new LaserSegment
+                {
+                    startPoint = startPoint,
+                    endPoint = endPoint,
+                    length = maxLength,
+                    isReflected = false
+                });
             }
         }
         
         /// <summary>
-        /// 更新激光的视觉长度和Shader参数
+        /// 执行射线检测
         /// </summary>
-        private void UpdateLaserLength()
+        private RaycastResult PerformRaycast(Vector3 origin, Vector3 direction, float maxDistance)
         {
-            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            // SpriteRenderer专用：需要考虑Sprite的原始尺寸
-            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+            RaycastResult result = new RaycastResult();
             
-            // 获取Sprite在Unity中的实际高度（Unity单位）
-            // bounds.size.y = Sprite像素高度 / Pixels Per Unit
-            float spriteUnitHeight = spriteRenderer.sprite.bounds.size.y;
+            // 分别检测敌人和墙壁
+            RaycastHit2D enemyHit = Physics2D.Raycast(origin, direction, maxDistance, enemyLayer);
+            RaycastHit2D wallHit = Physics2D.Raycast(origin, direction, maxDistance, wallLayer);
             
-            // 计算正确的Scale
-            // Scale.y = 需要的Unity长度 / Sprite的Unity高度
-            float scaleY = cachedHitDistance / spriteUnitHeight;
+            bool hasEnemyHit = enemyHit.collider != null;
+            bool hasWallHit = wallHit.collider != null;
             
-            cachedTransform.localScale = new Vector3(
-                laserWidth,           // X轴宽度
-                scaleY,               // Y轴长度（修正后）
-                1f                    // Z轴不变
-            );
+            // 优先敌人（无论距离）
+            if (hasEnemyHit && hasWallHit)
+            {
+                // 两者都击中，优先敌人
+                result.hitSomething = true;
+                result.hitEnemy = true;
+                result.hitPoint = enemyHit.point;
+                result.hitNormal = enemyHit.normal;
+                result.hitDistance = enemyHit.distance;
+                result.hitCollider = enemyHit.collider;
+                result.raycastHit = enemyHit;
+            }
+            else if (hasEnemyHit)
+            {
+                result.hitSomething = true;
+                result.hitEnemy = true;
+                result.hitPoint = enemyHit.point;
+                result.hitNormal = enemyHit.normal;
+                result.hitDistance = enemyHit.distance;
+                result.hitCollider = enemyHit.collider;
+                result.raycastHit = enemyHit;
+            }
+            else if (hasWallHit)
+            {
+                result.hitSomething = true;
+                result.hitWall = true;
+                result.hitPoint = wallHit.point;
+                result.hitNormal = wallHit.normal;
+                result.hitDistance = wallHit.distance;
+                result.hitCollider = wallHit.collider;
+                result.raycastHit = wallHit;
+            }
             
-            // 更新Shader的HitHeight参数
-            // 归一化到0~1范围（UV坐标系）
-            float normalizedHitHeight = Mathf.Clamp01(cachedHitDistance / maxLength);
-            laserMaterial.SetFloat(GameConstants.ShaderProperties.HitHeight, normalizedHitHeight);
+            return result;
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 视觉更新
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 更新激光视觉效果
+        /// </summary>
+        private void UpdateLaserVisuals()
+        {
+            if (lineRenderer == null || laserPoints.Count < 2) return;
+            
+            // 更新 LineRenderer 点数
+            lineRenderer.positionCount = laserPoints.Count;
+            
+            // 设置所有点的位置
+            for (int i = 0; i < laserPoints.Count; i++)
+            {
+                lineRenderer.SetPosition(i, laserPoints[i]);
+            }
+            
+            // 更新宽度
+            lineRenderer.startWidth = laserWidth;
+            lineRenderer.endWidth = laserWidth;
+            
+            // 更新 VFX 位置
+            UpdateVFXPositions();
+            
+            // 更新 VFX 缩放
+            UpdateVFXScale();
         }
         
         /// <summary>
-        /// 更新Shader属性（初始化或动态修改时调用）
+        /// 更新 VFX 位置
         /// </summary>
-        private void UpdateShaderProperties()
+        private void UpdateVFXPositions()
         {
-            if (laserMaterial == null) return;
+            if (laserPoints.Count < 2) return;
             
-            laserMaterial.SetColor(GameConstants.ShaderProperties.GlowColor, glowColor);
+            // StartVFX 在激光起点
+            if (startVFX != null)
+            {
+                startVFX.position = laserPoints[0];
+            }
+            
+            // EndVFX 在激光终点
+            if (endVFX != null)
+            {
+                endVFX.position = laserPoints[laserPoints.Count - 1];
+            }
+        }
+        
+        /// <summary>
+        /// 更新 VFX 子节点缩放
+        /// </summary>
+        private void UpdateVFXScale()
+        {
+            float widthRatio = laserWidth / baseWidth;
+            float targetScale = baseVFXScale * widthRatio;
+            
+            if (startVFXChildren != null)
+            {
+                foreach (var child in startVFXChildren)
+                {
+                    if (child != null)
+                    {
+                        child.localScale = Vector3.one * targetScale;
+                    }
+                }
+            }
+            
+            if (endVFXChildren != null)
+            {
+                foreach (var child in endVFXChildren)
+                {
+                    if (child != null)
+                    {
+                        child.localScale = Vector3.one * targetScale;
+                    }
+                }
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -170,76 +468,150 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
+        /// 设置激光宽度
+        /// </summary>
+        public void SetLaserWidth(float width)
+        {
+            laserWidth = Mathf.Max(0.01f, width);
+        }
+        
+        /// <summary>
+        /// 设置最大长度
+        /// </summary>
+        public void SetMaxLength(float length)
+        {
+            maxLength = Mathf.Max(0.1f, length);
+        }
+        
+        /// <summary>
+        /// 启用/禁用反射
+        /// </summary>
+        public void SetReflectionEnabled(bool enabled)
+        {
+            reflectionEnabled = enabled;
+            if (showDebugLogs)
+            {
+                Debug.Log($"[LaserBeam] 反射 {(enabled ? "启用" : "禁用")}");
+            }
+        }
+        
+        /// <summary>
+        /// 设置激光颜色
+        /// </summary>
+        public void SetColor(Color color)
+        {
+            if (lineRenderer != null)
+            {
+                lineRenderer.startColor = color;
+                lineRenderer.endColor = color;
+            }
+        }
+        
+        /// <summary>
+        /// 设置光晕颜色（兼容旧接口）
+        /// </summary>
+        public void SetGlowColor(Color color)
+        {
+            SetColor(color);
+        }
+        
+        /// <summary>
         /// 获取当前击中的目标
         /// </summary>
         public RaycastHit2D GetCurrentHit() => currentHit;
         
         /// <summary>
-        /// 设置激光宽度（用于技能升级）
-        /// </summary>
-        public void SetLaserWidth(float width)
-        {
-            laserWidth = width;
-        }
-        
-        /// <summary>
-        /// 设置最大长度（用于技能升级）
-        /// </summary>
-        public void SetMaxLength(float length)
-        {
-            maxLength = length;
-        }
-        
-        /// <summary>
-        /// 动态修改光晕颜色
-        /// </summary>
-        public void SetGlowColor(Color color)
-        {
-            glowColor = color;
-            UpdateShaderProperties();
-        }
-        // 在 LaserBeam.cs 的公共接口区域添加：
-
-        /// <summary>
-        /// 设置激光颜色（用于技能效果，如 Focus 变红）
-        /// </summary>
-        public void SetColor(Color color)
-        {
-            if (laserMaterial != null)
-            {
-                laserMaterial.SetColor(GameConstants.ShaderProperties.LaserColor, color);
-            }
-        }
-
-        /// <summary>
         /// 获取当前激光宽度
         /// </summary>
         public float GetLaserWidth() => laserWidth;
-
+        
         /// <summary>
         /// 获取当前最大长度
         /// </summary>
         public float GetMaxLength() => maxLength;
+        
+        /// <summary>
+        /// 获取所有激光段数据（供伤害检测使用）
+        /// </summary>
+        public List<LaserSegment> GetLaserSegments() => laserSegments;
+        
+        /// <summary>
+        /// 获取激光路径点
+        /// </summary>
+        public List<Vector3> GetLaserPoints() => laserPoints;
+        
+        /// <summary>
+        /// 是否有反射
+        /// </summary>
+        public bool HasReflection() => hasReflection;
+        
+        /// <summary>
+        /// 获取反射点
+        /// </summary>
+        public Vector3 GetReflectionPoint() => reflectionPoint;
+        
+        /// <summary>
+        /// 是否击中敌人
+        /// </summary>
+        public bool HasHitEnemy() => hitEnemy;
+        
+        /// <summary>
+        /// 手动设置 LaserPivot（供外部配置）
+        /// </summary>
+        public void SetLaserPivot(Transform pivot)
+        {
+            laserPivot = pivot;
+        }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 调试可视化
+        // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private void OnDrawGizmos()
         {
             if (!showDebugGizmos || !Application.isPlaying) return;
+            if (laserPoints == null || laserPoints.Count < 2) return;
             
-            // 绘制Raycast检测线
-            Gizmos.color = currentHit.collider != null ? Color.red : Color.green;
-            Vector3 origin = transform.position;
-            Vector3 direction = transform.up;
-            Gizmos.DrawLine(origin, origin + direction * cachedHitDistance);
-            
-            // 绘制击中点
-            if (currentHit.collider != null)
+            for (int i = 0; i < laserPoints.Count; i++)
             {
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawWireSphere(currentHit.point, 0.2f);
+                // 绘制点
+                if (i == 0)
+                {
+                    Gizmos.color = Color.green;
+                }
+                else if (i == laserPoints.Count - 1)
+                {
+                    Gizmos.color = hitEnemy ? Color.red : new Color(1f, 0.5f, 0f);
+                }
+                else
+                {
+                    Gizmos.color = Color.blue;
+                }
+                Gizmos.DrawWireSphere(laserPoints[i], 0.2f);
+                
+                // 绘制线段
+                if (i < laserPoints.Count - 1)
+                {
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawLine(laserPoints[i], laserPoints[i + 1]);
+                }
             }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 内部结构
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private struct RaycastResult
+        {
+            public bool hitSomething;
+            public bool hitEnemy;
+            public bool hitWall;
+            public Vector3 hitPoint;
+            public Vector3 hitNormal;
+            public float hitDistance;
+            public Collider2D hitCollider;
+            public RaycastHit2D raycastHit;
         }
     }
 }

@@ -120,7 +120,17 @@ namespace LightVsDecay.Logic.Player
         private int enemyLayerIndex;
         private int bouncingEnemyLayerIndex;  // 【新增】
         private int bossEyesLayerIndex;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Reflex 反射相关【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private bool reflexEnabled = false;           // 是否启用反射
+        private int reflexLevel = 0;                  // Reflex 技能等级
+        private float reflexDamageMultiplier = 0.5f;  // 反射段伤害倍率
+        private float reflexLengthBonus = 0f;         // 反射长度加成
+
+        // Crit 暴击相关【新增】
+        private int critLevel = 0;                    // Crit 技能等级
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 常量
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -149,16 +159,15 @@ namespace LightVsDecay.Logic.Player
         
         /// <summary>暴击倍率</summary>
         public float CritMultiplier => critDamageMultiplier;
-        
-        /// <summary>大招伤害倍率</summary>
-        public float UltDamageMultiplier => isUltMode ? ultDamageMultiplier : 1f;
-        
-        /// <summary>大招击退倍率</summary>
-        public float UltKnockbackMultiplier => isUltMode ? (ultKnockbackMultiplier * 2f) : 1f;
-        
+
         /// <summary>副激光数量</summary>
         public int SubLaserCount => subLasers.Count;
         
+        /// <summary>反射段伤害倍率</summary>
+        public float ReflexDamageMultiplier => reflexDamageMultiplier;
+
+        /// <summary>是否启用反射</summary>
+        public bool IsReflexEnabled => reflexEnabled;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -304,7 +313,7 @@ namespace LightVsDecay.Logic.Player
             hitBosses.Clear();
             
             // 1. 主激光伤害检测
-            DetectAndDamageEnemies(mainLaserBeam, firePoint, CurrentDamagePerTick, 1f);
+            DetectAndDamageEnemiesSegmented(mainLaserBeam,  CurrentDamagePerTick, 1f);
             
             // 2. 副激光伤害检测
             foreach (var subLaser in subLasers)
@@ -312,11 +321,129 @@ namespace LightVsDecay.Logic.Player
                 if (subLaser.beam != null)
                 {
                     float subDamage = CurrentDamagePerTick * subLaser.damageMultiplier;
-                    DetectAndDamageEnemies(subLaser.beam, subLaser.beam.transform, subDamage, subLaser.damageMultiplier);
+                    DetectAndDamageEnemiesSegmented(subLaser.beam,  subDamage, subLaser.damageMultiplier);
                 }
             }
         }
         
+        /// <summary>
+        /// 分段检测并对敌人造成伤害（支持反射段独立伤害）
+        /// </summary>
+        private void DetectAndDamageEnemiesSegmented(LaserBeam beam, float baseDamage, float knockbackMultiplier)
+        {
+            if (beam == null) return;
+    
+            var segments = beam.GetLaserSegments();
+            if (segments == null || segments.Count == 0) return;
+    
+            float width = beam.GetLaserWidth();
+    
+            foreach (var segment in segments)
+            {
+                // 计算该段的实际伤害
+                float segmentDamage = baseDamage;
+                if (segment.isReflected)
+                {
+                    // 反射段使用反射伤害倍率
+                    segmentDamage = baseDamage * reflexDamageMultiplier;
+                }
+        
+                // 对该段进行伤害检测
+                DetectAndDamageInSegment(segment, width, segmentDamage, knockbackMultiplier);
+            }
+        }
+        /// <summary>
+        /// 对单个激光段进行伤害检测
+        /// </summary>
+        private void DetectAndDamageInSegment(LaserSegment segment, float width, float damage, float knockbackMultiplier)
+        {
+            // 计算检测盒
+            Vector2 segmentCenter = (segment.startPoint + segment.endPoint) / 2f;
+            Vector2 segmentDir = segment.Direction;
+            float angle = Mathf.Atan2(segmentDir.y, segmentDir.x) * Mathf.Rad2Deg - 90f;
+            Vector2 boxSize = new Vector2(width, segment.length);
+            
+            // 使用合并的检测层
+            int hitCount = Physics2D.OverlapBoxNonAlloc(segmentCenter, boxSize, angle, hitBuffer, combinedDetectionLayer);
+            
+            for (int i = 0; i < hitCount; i++)
+            {
+                var collider = hitBuffer[i];
+                if (collider == null) continue;
+                
+                int colliderLayer = collider.gameObject.layer;
+                
+                // Boss 核心检测
+                if (colliderLayer == bossEyesLayerIndex)
+                {
+                    BossHealth bossHealth = collider.GetComponentInParent<BossHealth>();
+                    if (bossHealth != null && !hitBosses.Contains(bossHealth))
+                    {
+                        hitBosses.Add(bossHealth);
+                        
+                        bool isCrit = RollCrit();
+                        bossHealth.TakeCoreDamage(damage, collider.transform.position, isCrit, critDamageMultiplier);
+                        
+                        // 角力系统
+                        BossController bossController = bossHealth.GetComponent<BossController>();
+                        if (bossController != null)
+                        {
+                            int impactLevel = SkillEffectManager.Instance != null 
+                                ? SkillEffectManager.Instance.GetImpactLevel() : 0;
+                            
+                            // === 情况1: 蓄力阶段 - 尝试打断 ===
+                            if (bossController.IsInChargeTelegraph)
+                            {
+                                bool canInterrupt = SkillEffectManager.Instance != null
+                                    ? SkillEffectManager.Instance.CanInterruptBossCharge(isUltMode)
+                                    : (impactLevel >= 5 || isUltMode);
+                                
+                                if (canInterrupt)
+                                {
+                                    bossController.InterruptCharge();
+                                    
+                                    if (showDebugInfo)
+                                    {
+                                        Debug.Log("[LaserController] 🛑 打断 BOSS 蓄力！");
+                                    }
+                                }
+                            }
+                            // === 情况2: 冲撞阶段 - 施加推力（角力核心） ===
+                            else if (bossController.IsPressing)
+                            {
+                                float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
+                                Vector2 pushDirection = Vector2.up;
+                                Vector2 pushForce = pushDirection * pushMagnitude;
+                                bossController.ApplyLaserPushForce(pushForce);
+                                
+                                if (showDebugInfo)
+                                {
+                                    Debug.Log($"[LaserController] ⚡ 对冲撞中的 BOSS 施加推力: {pushMagnitude:F2}");
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
+                
+                // 普通敌人检测
+                EnemyBlob enemy = collider.GetComponentInParent<EnemyBlob>();
+                if (enemy == null || hitEnemies.Contains(enemy)) continue;
+                
+                hitEnemies.Add(enemy);
+                
+                bool enemyCrit = RollCrit();
+                float finalDamage = enemyCrit ? damage * critDamageMultiplier : damage;
+                
+                Vector2 knockbackDir = ((Vector2)enemy.transform.position - (Vector2)segment.startPoint).normalized;
+                Vector2 knockbackForce = knockbackDir * CurrentKnockbackForce * knockbackMultiplier;
+                
+                enemy.TakeDamage(finalDamage, knockbackForce, enemyCrit);
+                
+                // Frost 效果
+                ApplyFrostEffect(enemy);
+            }
+        }
         /// <summary>
         /// 检测并对敌人/Boss造成伤害（支持穿透 + 暴击）
         /// 使用 Layer 检测，不使用 Tag
@@ -769,6 +896,110 @@ namespace LightVsDecay.Logic.Player
                 }
             }
         }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Reflex 反射技能接口【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 设置 Reflex（反射透镜）等级
+        /// </summary>
+        public void SetReflexLevel(int level)
+        {
+            reflexLevel = level;
+            
+            if (level <= 0)
+            {
+                // 关闭反射
+                reflexEnabled = false;
+                reflexDamageMultiplier = 0f;
+                reflexLengthBonus = 0f;
+                
+                if (mainLaserBeam != null)
+                {
+                    mainLaserBeam.SetReflectionEnabled(false);
+                    mainLaserBeam.SetMaxLength(maxLaserLength);
+                }
+            }
+            else
+            {
+                // 启用反射
+                reflexEnabled = true;
+                
+                // 根据等级设置参数
+                switch (level)
+                {
+                    case 1:
+                        reflexDamageMultiplier = 0.50f;
+                        reflexLengthBonus = 0f;
+                        break;
+                    case 2:
+                        reflexDamageMultiplier = 0.60f;
+                        reflexLengthBonus = 0.10f;
+                        break;
+                    case 3:
+                        reflexDamageMultiplier = 0.70f;
+                        reflexLengthBonus = 0.20f;
+                        break;
+                    case 4:
+                        reflexDamageMultiplier = 0.80f;
+                        reflexLengthBonus = 0.40f;
+                        break;
+                    case 5:
+                        reflexDamageMultiplier = 1.00f;
+                        reflexLengthBonus = 0.60f;
+                        break;
+                    default:
+                        reflexDamageMultiplier = 0.50f;
+                        reflexLengthBonus = 0f;
+                        break;
+                }
+                
+                // 应用到主激光
+                if (mainLaserBeam != null)
+                {
+                    mainLaserBeam.SetReflectionEnabled(true);
+                    float newLength = maxLaserLength * (1f + reflexLengthBonus);
+                    mainLaserBeam.SetMaxLength(newLength);
+                }
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] Reflex Lv.{level} - 反射: {(reflexEnabled ? "启用" : "禁用")}, 反射伤害: {reflexDamageMultiplier:P0}, 长度加成: {reflexLengthBonus:P0}");
+            }
+        }
+
+        /// <summary>
+        /// 获取 Reflex 等级
+        /// </summary>
+        public int GetReflexLevel() => reflexLevel;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Crit 暴击技能接口【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 设置 Crit（致命暴击）等级
+        /// </summary>
+        public void SetCritLevel(int level)
+        {
+            critLevel = level;
+            
+            // 每级 +5% 暴击率
+            float critBonus = level * 0.05f;
+            critRateBonus = critBonus;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] Crit Lv.{level} - 暴击率加成: +{critBonus:P0}, 总暴击率: {CurrentCritRate:P0}");
+            }
+        }
+
+        /// <summary>
+        /// 获取 Crit 等级
+        /// </summary>
+        public int GetCritLevel() => critLevel;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试

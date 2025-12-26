@@ -63,6 +63,17 @@ namespace LightVsDecay.Core
         public const float KNOCKBACK_SCALE_MAX = 2.0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 激光反射系统【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        /// <summary>反射次数（Reflex技能固定1次）</summary>
+        public const int REFLEX_MAX_REFLECTIONS = 1;
+
+        /// <summary>反射点偏移量（避免重复检测同一墙壁）</summary>
+        public const float REFLEX_POINT_OFFSET = 0.01f;
+
+        /// <summary>反射检测间隔（秒）</summary>
+        public const float REFLEX_RAYCAST_INTERVAL = 0.02f;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Shader属性名（避免硬编码字符串）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         

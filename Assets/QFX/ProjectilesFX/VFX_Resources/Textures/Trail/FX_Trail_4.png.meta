@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: WywYt3z8Vnh5pdWMBw2HyQIIpHNwj+6ynfbo0qqjwtWo7hHOE9I61mY=
+guid: WykWsCypV3xEDFNqv0W/EN22qvePBaQ3/mWo03iCvai+FYmqREAlTMg=
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -54,7 +54,7 @@ TextureImporter:
   spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
-  alphaUsage: 2
+  alphaUsage: 1
   alphaIsTransparency: 1
   spriteTessellationDetail: -1
   textureType: 8
@@ -68,7 +68,7 @@ TextureImporter:
   ignorePngGamma: 0
   applyGammaDecoding: 0
   swizzle: 50462976
-  cookieLightType: 1
+  cookieLightType: 0
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform

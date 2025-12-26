@@ -63,7 +63,10 @@ namespace LightVsDecay.Logic.Player
         // 被动技能累计加成
         private float totalDamageBonus = 0f;   // Power 累计伤害加成
         private float totalWidthBonus = 0f;    // Wide 累计宽度加成
-        
+        // Reflex 反射【新增】
+        private int reflexLevel = 0;
+        // Crit 暴击【新增】
+        private int critLevel = 0;
         // Adrenaline buff 状态
         private bool isAdrenalineActive = false;
         private float adrenalineTimer = 0f;
@@ -136,13 +139,7 @@ namespace LightVsDecay.Logic.Player
                 Instance = null;
             }
         }
-        
-        private void Update()
-        {
-            // 更新 Adrenaline buff
-            UpdateAdrenalineBuff();
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件订阅
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -190,7 +187,9 @@ namespace LightVsDecay.Logic.Player
                 case SkillType.Frost:
                     ApplyFrostEffect(newLevel);
                     break;
-                    
+                case SkillType.Reflex:  // 【新增】
+                    ApplyReflexEffect(newLevel);
+                    break;
                 // ========== 被动技能 ==========
                 case SkillType.Power:
                     ApplyPowerEffect(newLevel);
@@ -199,14 +198,8 @@ namespace LightVsDecay.Logic.Player
                 case SkillType.Wide:
                     ApplyWideEffect(newLevel);
                     break;
-                    
-                // ========== 消耗品 ==========
-                case SkillType.Repair:
-                    ApplyRepairEffect();
-                    break;
-
-                case SkillType.Adrenaline:
-                    ApplyAdrenalineEffect();
+                case SkillType.Crit:  // 【新增】
+                    ApplyCritEffect(newLevel);
                     break;
             }
         }
@@ -315,7 +308,60 @@ namespace LightVsDecay.Logic.Player
                 default: return 1.0f;
             }
         }
-        
+        /// <summary>
+        /// 应用 Reflex（反射透镜）效果
+        /// 固定1次反射，等级影响反射段伤害和激光总长度
+        /// </summary>
+        private void ApplyReflexEffect(int level)
+        {
+            reflexLevel = level;
+    
+            if (laserController != null)
+            {
+                laserController.SetReflexLevel(level);
+            }
+    
+            if (showDebugInfo)
+            {
+                string damageInfo = level > 0 ? GetReflexDamagePercent(level) : "0%";
+                string lengthInfo = level > 0 ? GetReflexLengthBonus(level) : "+0%";
+                Debug.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} - 反射伤害: {damageInfo}, 长度: {lengthInfo}");
+            }
+        }
+        /// <summary>
+        /// 获取 Reflex 反射伤害百分比（用于显示）
+        /// </summary>
+        private string GetReflexDamagePercent(int level)
+        {
+            switch (level)
+            {
+                case 1: return "50%";
+                case 2: return "60%";
+                case 3: return "70%";
+                case 4: return "80%";
+                case 5: return "100%";
+                default: return "0%";
+            }
+        }
+        /// <summary>
+        /// 获取 Reflex 长度加成（用于显示）
+        /// </summary>
+        private string GetReflexLengthBonus(int level)
+        {
+            switch (level)
+            {
+                case 1: return "+0%";
+                case 2: return "+10%";
+                case 3: return "+20%";
+                case 4: return "+40%";
+                case 5: return "+60%";
+                default: return "+0%";
+            }
+        }
+        /// <summary>
+        /// 获取 Reflex 等级
+        /// </summary>
+        public int GetReflexLevel() => reflexLevel;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 被动技能效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -507,102 +553,31 @@ namespace LightVsDecay.Logic.Player
             GetFrostData(out slowPercent, out duration);
         }
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 消耗品效果
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
         /// <summary>
-        /// 应用 Repair（紧急抢修）效果
-        /// 立刻回复护盾并恢复1点生命
+        /// 应用 Crit（致命暴击）效果
+        /// 每级 +5% 暴击率
         /// </summary>
-        private void ApplyRepairEffect()
+        private void ApplyCritEffect(int level)
         {
-            // 恢复护盾（回满）
-            if (shieldController != null)
+            critLevel = level;
+    
+            if (laserController != null)
             {
-                shieldController.ResetShield();
+                laserController.SetCritLevel(level);
             }
-            
-            // 恢复1点生命
-            if (turretHealth != null)
-            {
-                turretHealth.RestoreHealth(1);
-            }
-            
+    
             if (showDebugInfo)
             {
-                Debug.Log("[SkillEffectManager] ✓ Repair - 护盾已回满，生命+1");
+                float critBonus = level * 0.05f;
+                Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} - 暴击率: +{critBonus:P0}");
             }
         }
 
         /// <summary>
-        /// 应用 Adrenaline（肾上腺素）效果
-        /// 恢复1点护盾，20秒内转速+50%、击退力+50%
+        /// 获取 Crit 等级
         /// </summary>
-        private void ApplyAdrenalineEffect()
-        {
-            // 恢复1点护盾
-            if (shieldController != null)
-            {
-                shieldController.RestoreShield(1);
-            }
-            
-            // 激活 buff
-            isAdrenalineActive = true;
-            adrenalineTimer = ADRENALINE_DURATION;
-            
-            // 应用效果
-            ApplyAdrenalineBuffs(true);
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[SkillEffectManager] ✓ Adrenaline - 20秒增益开始");
-            }
-        }
-        
-        /// <summary>
-        /// 更新 Adrenaline buff 状态
-        /// </summary>
-        private void UpdateAdrenalineBuff()
-        {
-            if (!isAdrenalineActive) return;
-            
-            adrenalineTimer -= Time.deltaTime;
-            
-            if (adrenalineTimer <= 0f)
-            {
-                isAdrenalineActive = false;
-                ApplyAdrenalineBuffs(false);
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log("[SkillEffectManager] Adrenaline buff 结束");
-                }
-            }
-        }
-        
-        /// <summary>
-        /// 应用/移除 Adrenaline buffs
-        /// </summary>
-        private void ApplyAdrenalineBuffs(bool active)
-        {
-            float multiplier = active ? 1.5f : 1.0f;
-            
-            // 转速 +50%（通过修改旋转灵敏度实现）
-            if (turretController != null)
-            {
-                turretController.SetSensitivity(originalSensitivity * multiplier);
-            }
-            
-            // 击退力 +50%（叠加到 Impact 效果上）
-            float baseKnockback = GetImpactKnockbackMultiplier(impactLevel);
-            float finalKnockback = baseKnockback * multiplier;
-            
-            if (laserController != null)
-            {
-                laserController.SetKnockbackMultiplier(finalKnockback);
-            }
-        }
+        public int GetCritLevel() => critLevel;
+
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共接口
