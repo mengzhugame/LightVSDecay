@@ -2,11 +2,14 @@
 // SkillEffectManager.cs
 // 文件位置: Assets/Scripts/Logic/Player/SkillEffectManager.cs
 // 用途：技能效果管理器 - 监听技能选择并应用效果
+// 修改：Step 1 - 添加 SkillDatabase 引用，从配置读取参数
 // ============================================================
 
 using UnityEngine;
 using LightVsDecay.Core;
+using LightVsDecay.Core.Pool;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Logic.Enemy;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -15,7 +18,8 @@ namespace LightVsDecay.Logic.Player
     /// 职责：
     /// - 监听技能选择事件
     /// - 根据技能类型调用对应的效果实现
-    /// - 管理 Prism/Focus/Impact/Frost/Power/Wide 等效果
+    /// - 管理 Prism/Focus/Impact/Frost/Power/Wide/Reflex/Crit 等效果
+    /// - 【Step 1】从 SkillDatabase 配置读取参数
     /// </summary>
     public class SkillEffectManager : MonoBehaviour
     {
@@ -35,8 +39,22 @@ namespace LightVsDecay.Logic.Player
         
         [Tooltip("护盾控制器（用于 Repair/Adrenaline 恢复）")]
         [SerializeField] private ShieldController shieldController;
+        
         [Tooltip("VFX颜色同步组件（可选，用于 Frost 效果）")]
         [SerializeField] private LaserVFXColorSync vfxColorSync;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】技能数据库引用
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("技能数据库【新增】")]
+        [Tooltip("技能配置数据库（通过 Inspector 拖拽）")]
+        [SerializeField] private SkillDatabase skillDatabase;
+        
+        [Header("爆炸特效【新增】")]
+        [Tooltip("Focus Lv5 击杀爆炸特效预制体")]
+        [SerializeField] private GameObject explosionVFXPrefab;
+        
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = true;
         
@@ -47,36 +65,64 @@ namespace LightVsDecay.Logic.Player
         public static SkillEffectManager Instance { get; private set; }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 运行时状态
+        // 运行时状态 - 常量
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Wide 技能配置
-        private const float WIDE_WIDTH_PER_LEVEL = 0.25f;  // 每级增加的绝对宽度
-        private const float BASE_LASER_WIDTH = 0.5f;        // 基础宽度（从 GameSettings 读取更好）
-        // 当前技能等级缓存
+        
+        // Wide 技能配置（保留旧逻辑作为回退）
+        private const float WIDE_WIDTH_PER_LEVEL = 0.25f;
+        private const float BASE_LASER_WIDTH = 0.5f;
+        
+        // Adrenaline 配置
+        private const float ADRENALINE_DURATION = 20f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 运行时状态 - 技能等级
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         private int prismLevel = 0;
         private int focusLevel = 0;
         private int impactLevel = 0;
         private int frostLevel = 0;
         private int powerLevel = 0;
         private int wideLevel = 0;
+        private int reflexLevel = 0;
+        private int critLevel = 0;
         
-        // 被动技能累计加成
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 运行时状态 - 累计加成
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         private float totalDamageBonus = 0f;   // Power 累计伤害加成
         private float totalWidthBonus = 0f;    // Wide 累计宽度加成
-        // Reflex 反射【新增】
-        private int reflexLevel = 0;
-        // Crit 暴击【新增】
-        private int critLevel = 0;
-        // Adrenaline buff 状态
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 运行时状态 - Adrenaline
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         private bool isAdrenalineActive = false;
         private float adrenalineTimer = 0f;
-        private const float ADRENALINE_DURATION = 20f;
-        
-        // TurretController 原始灵敏度（用于恢复）
         private float originalSensitivity = 180f;
-        private static readonly Color DEFAULT_LASER_COLOR = new Color(0f, 3f, 3f, 1f);  // 青色 HDR
-        private static readonly Color FOCUS_LASER_COLOR = new Color(3f, 0.3f, 0.2f, 1f); // 红色 HDR
-        private static readonly Color FROST_VFX_COLOR = new Color(0.3f, 0.7f, 3f, 1f);   // 蓝色 HDR
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 运行时状态 - 缓存的配置数据【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+// Focus 配置缓存
+        private float cachedFocusDamageBonus = 0f;  // 【改名】存储加成值，不是倍率
+        private float cachedFocusBossDamageBonus = 0f;
+        private bool cachedFocusExplosionOnKill = false;
+        private float cachedFocusExplosionDamage = 100f;
+        private float cachedFocusExplosionRadius = 2f;
+        
+        // Frost 配置缓存
+        private float cachedFrostSlowPercent = 0f;
+        private float cachedFrostSlowDuration = 0f;
+        private float cachedFrostFreezeThreshold = 0f;
+        private float cachedFrostFreezeDuration = 0f;
+        
+        // Impact 配置缓存
+        private float cachedImpactKnockbackMultiplier = 1f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -117,17 +163,37 @@ namespace LightVsDecay.Logic.Player
             {
                 shieldController = FindObjectOfType<ShieldController>();
             }
+            
             if (vfxColorSync == null && laserController != null)
             {
-                // 尝试从 LaserController 的子物体查找
                 var mainLaserBeam = laserController.GetComponentInChildren<LaserBeam>();
                 if (mainLaserBeam != null)
                 {
                     vfxColorSync = mainLaserBeam.GetComponent<LaserVFXColorSync>();
                 }
             }
+            
+            // 验证 SkillDatabase
+            if (skillDatabase == null)
+            {
+                Debug.LogWarning("[SkillEffectManager] ⚠️ SkillDatabase 未设置！将使用硬编码参数作为回退");
+            }
+            
             // 订阅事件
             SubscribeEvents();
+        }
+        
+        private void Update()
+        {
+            // 更新 Adrenaline 计时
+            if (isAdrenalineActive)
+            {
+                adrenalineTimer -= Time.deltaTime;
+                if (adrenalineTimer <= 0f)
+                {
+                    EndAdrenaline();
+                }
+            }
         }
         
         private void OnDestroy()
@@ -146,22 +212,20 @@ namespace LightVsDecay.Logic.Player
         
         private void SubscribeEvents()
         {
-            // 监听技能应用事件
             GameEvents.OnSkillApplied += OnSkillApplied;
+            GameEvents.OnEnemyDied += OnEnemyDied; // 【新增】监听敌人死亡，处理 Focus Lv5 爆炸
         }
         
         private void UnsubscribeEvents()
         {
             GameEvents.OnSkillApplied -= OnSkillApplied;
+            GameEvents.OnEnemyDied -= OnEnemyDied;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 技能应用回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>
-        /// 技能应用事件回调
-        /// </summary>
         private void OnSkillApplied(SkillType skillType, int newLevel)
         {
             if (showDebugInfo)
@@ -169,39 +233,70 @@ namespace LightVsDecay.Logic.Player
                 Debug.Log($"[SkillEffectManager] 收到技能应用: {skillType} -> Lv.{newLevel}");
             }
             
+            // 获取技能配置
+            SkillData skillData = GetSkillData(skillType);
+            
             switch (skillType)
             {
                 // ========== 主动技能 ==========
                 case SkillType.Prism:
-                    ApplyPrismEffect(newLevel);
+                    ApplyPrismEffect(newLevel, skillData);
                     break;
                     
                 case SkillType.Focus:
-                    ApplyFocusEffect(newLevel);
+                    ApplyFocusEffect(newLevel, skillData);
                     break;
                     
                 case SkillType.Impact:
-                    ApplyImpactEffect(newLevel);
+                    ApplyImpactEffect(newLevel, skillData);
                     break;
                     
                 case SkillType.Frost:
-                    ApplyFrostEffect(newLevel);
+                    ApplyFrostEffect(newLevel, skillData);
                     break;
-                case SkillType.Reflex:  // 【新增】
-                    ApplyReflexEffect(newLevel);
+                    
+                case SkillType.Reflex:
+                    ApplyReflexEffect(newLevel, skillData);
                     break;
+                    
                 // ========== 被动技能 ==========
                 case SkillType.Power:
-                    ApplyPowerEffect(newLevel);
+                    ApplyPowerEffect(newLevel, skillData);
                     break;
                     
                 case SkillType.Wide:
-                    ApplyWideEffect(newLevel);
+                    ApplyWideEffect(newLevel, skillData);
                     break;
-                case SkillType.Crit:  // 【新增】
-                    ApplyCritEffect(newLevel);
+                    
+                case SkillType.Crit:
+                    ApplyCritEffect(newLevel, skillData);
                     break;
             }
+            
+            // 更新颜色（考虑 Focus + Frost 组合）
+            UpdateLaserColor();
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】配置读取辅助方法
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 从 SkillDatabase 获取技能配置
+        /// </summary>
+        private SkillData GetSkillData(SkillType type)
+        {
+            if (skillDatabase == null) return null;
+            return skillDatabase.GetData(type);
+        }
+        
+        /// <summary>
+        /// 获取指定技能的等级数据
+        /// </summary>
+        private SkillLevelData GetLevelData(SkillData skillData, int level)
+        {
+            if (skillData == null || level <= 0) return null;
+            return skillData.GetLevelData(level);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -209,285 +304,603 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 应用 Prism（折射棱镜）效果 - AOE 清怪
+        /// 应用 Prism（折射棱镜）效果
         /// </summary>
-        private void ApplyPrismEffect(int level)
+        private void ApplyPrismEffect(int level, SkillData skillData)
         {
             prismLevel = level;
             
-            if (laserController != null)
-            {
-                laserController.SetPrismLevel(level);
-            }
+            if (laserController == null) return;
             
-            if (showDebugInfo)
+            // 从配置读取参数
+            var levelData = GetLevelData(skillData, level);
+            if (levelData != null)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Prism Lv.{level} - 副激光已更新");
+                laserController.SetPrismLevelFromConfig(
+                    level,
+                    levelData.splitCount,
+                    levelData.splitDamageMultiplier,
+                    levelData.splitLength
+                );
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Prism Lv.{level} (配置) - " +
+                              $"分裂数:{levelData.splitCount}, 伤害:{levelData.splitDamageMultiplier:P0}, 长度:{levelData.splitLength}");
+                }
+            }
+            else
+            {
+                // 回退到硬编码
+                laserController.SetPrismLevel(level);
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Prism Lv.{level} (硬编码回退)");
+                }
             }
         }
         
         /// <summary>
-        /// 应用 Focus（聚能透镜）效果 - 单体攻坚
+        /// 应用 Focus（聚能透镜）效果
         /// </summary>
-        private void ApplyFocusEffect(int level)
+        private void ApplyFocusEffect(int level, SkillData skillData)
         {
             focusLevel = level;
             
-            if (laserController != null)
+            var levelData = GetLevelData(skillData, level);
+            
+            if (levelData != null)
             {
-                laserController.SetFocusLevel(level, FOCUS_LASER_COLOR);
+                // 缓存配置数据
+                cachedFocusDamageBonus = levelData.damageMultiplier - 1f;
+                cachedFocusBossDamageBonus = levelData.bossDamageBonus;
+                cachedFocusExplosionOnKill = levelData.explosionOnKill;
+                cachedFocusExplosionDamage = levelData.explosionDamage;
+                cachedFocusExplosionRadius = levelData.explosionRadius;
+                
+                // 应用到 LaserController
+                if (laserController != null)
+                {
+                    // 宽度：只有 Lv1 首次选择时减少 50%
+                    float widthMultiplier = (level == 1) ? levelData.widthMultiplier : 1f;
+                    
+                    laserController.SetFocusLevelFromConfig(
+                        level,
+                        cachedFocusDamageBonus,
+                        widthMultiplier
+                    );
+                }
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} (配置) - " +
+                              $"伤害:{cachedFocusDamageBonus:P0}, BOSS加成:{cachedFocusBossDamageBonus:P0}, " +
+                              $"爆炸:{cachedFocusExplosionOnKill}");
+                }
+            }
+            else
+            {
+                // 回退到硬编码
+                cachedFocusDamageBonus = GetFocusDamageMultiplierFallback(level) - 1f;
+                cachedFocusBossDamageBonus = (level >= 3) ? 0.2f : 0f;
+                cachedFocusExplosionOnKill = (level >= 5);
+                cachedFocusExplosionDamage = 100f;
+                cachedFocusExplosionRadius = 2f;
+                
+                if (laserController != null)
+                {
+                    laserController.SetFocusLevel(level);
+                }
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} (硬编码回退)");
+                }
             }
             
-            // 重新计算伤害和宽度（因为 Focus 会影响基础值）
+            // 更新伤害倍率
             UpdateDamageMultiplier();
-
-            if (showDebugInfo)
-            {
-                Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} - 主激光已强化");
-            }
+            // 【新增】更新宽度倍率（Focus 会影响基础宽度）
+            UpdateWidthMultiplier();
         }
         
         /// <summary>
-        /// 应用 Impact（冲击模块）效果 - 控制/防近身
+        /// 应用 Impact（冲击模块）效果
         /// </summary>
-        private void ApplyImpactEffect(int level)
+        private void ApplyImpactEffect(int level, SkillData skillData)
         {
             impactLevel = level;
-            
-            // 计算击退力倍率
-            float knockbackMultiplier = GetImpactKnockbackMultiplier(level);
     
-            if (laserController != null)
+            var levelData = GetLevelData(skillData, level);
+    
+            if (levelData != null)
             {
-                laserController.SetKnockbackMultiplier(knockbackMultiplier);
+                cachedImpactKnockbackMultiplier = levelData.knockbackMultiplier;
+        
+                if (laserController != null)
+                {
+                    laserController.SetKnockbackMultiplier(cachedImpactKnockbackMultiplier);
+                }
+        
+                if (showDebugInfo)
+                {
+                    string canPushBoss = (level >= 5) ? "，可推BOSS" : "";
+                    Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} (配置) - 击退力:{cachedImpactKnockbackMultiplier:F2}x{canPushBoss}");
+                }
             }
-    
-            if (showDebugInfo)
+            else
             {
-                float stunChance = GetImpactStunChance(level);
-                Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} - 击退力 x{knockbackMultiplier:F2}, 僵直概率 {stunChance:P0}");
+                // 回退到硬编码
+                cachedImpactKnockbackMultiplier = GetImpactKnockbackMultiplierFallback(level);
+        
+                if (laserController != null)
+                {
+                    laserController.SetKnockbackMultiplier(cachedImpactKnockbackMultiplier);
+                }
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} (硬编码回退)");
+                }
             }
         }
         
         /// <summary>
-        /// 应用 Frost（极寒光束）效果 - 减速辅助
+        /// 应用 Frost（极寒光束）效果
         /// </summary>
-        private void ApplyFrostEffect(int level)
+        private void ApplyFrostEffect(int level, SkillData skillData)
         {
             frostLevel = level;
             
-            // 【修改】只修改 VFX 特效颜色，不修改激光颜色
-            if (vfxColorSync != null)
+            var levelData = GetLevelData(skillData, level);
+            
+            if (levelData != null)
             {
-                vfxColorSync.SetVFXColor(FROST_VFX_COLOR);
+                // 缓存配置数据
+                cachedFrostSlowPercent = levelData.slowPercent;
+                cachedFrostSlowDuration = levelData.slowDuration;
+                cachedFrostFreezeThreshold = levelData.freezeThreshold;
+                cachedFrostFreezeDuration = levelData.freezeDuration;
+                
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Frost Lv.{level} (配置) - " +
+                              $"减速:{cachedFrostSlowPercent:P0}/{cachedFrostSlowDuration:F1}s, " +
+                              $"冰冻阈值:{cachedFrostFreezeThreshold:F1}s");
+                }
             }
-            else if (laserController != null)
+            else
             {
-                // 备用：如果没有 VFX 组件，调用 LaserController 的 SetVFXColor
-                laserController.SetVFXColor(FROST_VFX_COLOR);
-            }
-    
-            if (showDebugInfo)
-            {
-                Debug.Log($"[SkillEffectManager] ✓ Frost Lv.{level} - VFX特效变蓝，减速效果已启用");
+                // 回退到硬编码
+                GetFrostDataFallback(level, out cachedFrostSlowPercent, out cachedFrostSlowDuration);
+                cachedFrostFreezeThreshold = (level >= 5) ? 1.5f : 0f;
+                cachedFrostFreezeDuration = (level >= 5) ? 1.0f : 0f;
+
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Frost Lv.{level} (硬编码回退)");
+                }
             }
         }
         
         /// <summary>
-        /// 获取 Impact 击退力倍率
-        /// </summary>
-        private float GetImpactKnockbackMultiplier(int level)
-        {
-            switch (level)
-            {
-                case 1: return 1.30f;
-                case 2: return 1.60f;
-                case 3: return 2.00f;
-                case 4: return 2.50f;
-                case 5: return 4.00f; // 可推开 BOSS
-                default: return 1.0f;
-            }
-        }
-        /// <summary>
         /// 应用 Reflex（反射透镜）效果
-        /// 固定1次反射，等级影响反射段伤害和激光总长度
         /// </summary>
-        private void ApplyReflexEffect(int level)
+        private void ApplyReflexEffect(int level, SkillData skillData)
         {
             reflexLevel = level;
-    
-            if (laserController != null)
+            
+            var levelData = GetLevelData(skillData, level);
+            
+            if (levelData != null && laserController != null)
             {
-                laserController.SetReflexLevel(level);
+                laserController.SetReflexLevelFromConfig(
+                    level,
+                    levelData.reflexDamageMultiplier,
+                    levelData.reflexLengthBonus
+                );
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} (配置) - " +
+                              $"反射伤害:{levelData.reflexDamageMultiplier:P0}, 长度加成:{levelData.reflexLengthBonus:P0}");
+                }
             }
-    
-            if (showDebugInfo)
+            else
             {
-                string damageInfo = level > 0 ? $"{GetReflexDamagePercent(level)}%" : "0%";
-                string lengthInfo = level > 0 ? $"+{GetReflexLengthPercent(level)}%" : "+0%";
-                Debug.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} - 反射伤害: {damageInfo}, 长度: {lengthInfo}");
-            }
-        }
-        /// <summary>
-        /// 获取 Reflex 反射伤害百分比（用于显示）
-        /// </summary>
-        private int GetReflexDamagePercent(int level)
-        {
-            switch (level)
-            {
-                case 1: return 50;
-                case 2: return 60;
-                case 3: return 70;
-                case 4: return 80;
-                case 5: return 100;
-                default: return 0;
-            }
-        }
-        /// <summary>
-        /// 获取 Reflex 长度加成（用于显示）
-        /// </summary>
-        private int GetReflexLengthPercent(int level)
-        {
-            switch (level)
-            {
-                case 1: return 0;
-                case 2: return 10;
-                case 3: return 20;
-                case 4: return 40;
-                case 5: return 60;
-                default: return 0;
+                // 回退到硬编码
+                if (laserController != null)
+                {
+                    laserController.SetReflexLevel(level);
+                }
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} (硬编码回退)");
+                }
             }
         }
-        /// <summary>
-        /// 获取 Reflex 等级
-        /// </summary>
-        public int GetReflexLevel() => reflexLevel;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 被动技能效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 应用 Power（功率超频）效果 - +DPS
-        /// 每级增加 +20% 基础 DPS
+        /// 应用 Power（功率超频）效果
         /// </summary>
-        private void ApplyPowerEffect(int level)
+        private void ApplyPowerEffect(int level, SkillData skillData)
         {
             powerLevel = level;
             
-            // 计算总伤害加成（每级 +20%）
-            totalDamageBonus = level * 0.20f;
+            var levelData = GetLevelData(skillData, level);
             
-            // 应用到激光（叠加到现有倍率上）
+            if (levelData != null)
+            {
+                // 从配置读取伤害倍率，转换为加成值
+                // 配置中 damageMultiplier = 1.2 表示 +20%
+                totalDamageBonus = levelData.damageMultiplier - 1f;
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Power Lv.{level} (配置) - 伤害加成:{totalDamageBonus:P0}");
+                }
+            }
+            else
+            {
+                // 回退：每级 +20%
+                totalDamageBonus = level * 0.20f;
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Power Lv.{level} (硬编码回退) - 伤害加成:{totalDamageBonus:P0}");
+                }
+            }
+            
             UpdateDamageMultiplier();
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[SkillEffectManager] ✓ Power Lv.{level} - 伤害 +{totalDamageBonus:P0}");
-            }
         }
         
         /// <summary>
-        /// 应用 Wide（广域透镜）效果 - +激光宽度
-        /// 每级增加 0.25 绝对激光宽度
+        /// 应用 Wide（广域透镜）效果
         /// </summary>
-        private void ApplyWideEffect(int level)
+        private void ApplyWideEffect(int level, SkillData skillData)
         {
             wideLevel = level;
-            
-            // 计算绝对宽度增量
-            float widthIncrease = level * WIDE_WIDTH_PER_LEVEL;
-            
-            // 计算为倍率（相对于基础宽度）
-            // 例: 基础0.5，增加0.25 = 0.75，倍率 = 0.75/0.5 = 1.5
-            float baseWidth = BASE_LASER_WIDTH;
-            if (laserController != null)
+    
+            var levelData = GetLevelData(skillData, level);
+    
+            if (levelData != null)
             {
-                // 如果有 GameSettings 引用，从那里读取基础宽度
-                // baseWidth = gameSettings.baseLaserWidth;
-            }
-            
-            float newWidth = baseWidth + widthIncrease;
-            float widthMultiplier = newWidth / baseWidth;
-            
-            // 保存用于显示
-            totalWidthBonus = widthMultiplier - 1f;  // 转换为百分比显示
-            
-            // 应用到激光
-            if (laserController != null)
-            {
-                laserController.SetWidthMultiplier(widthMultiplier);
-            }
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} - 宽度: {baseWidth:F2} → {newWidth:F2} (x{widthMultiplier:F2})");
-            }
-        }
-        /// <summary>
-        /// 从 SkillData 读取 Wide 效果参数
-        /// </summary>
-        private void ApplyWideEffectFromData(int level, SkillData skillData)
-        {
-            if (skillData == null || skillData.levelData == null) 
-            {
-                ApplyWideEffect(level); // 回退到硬编码
-                return;
-            }
-            
-            wideLevel = level;
-            
-            // 从配置读取宽度倍率
-            var levelData = skillData.GetLevelData(level);
-            float widthMultiplier = levelData.widthMultiplier;
-            
-            totalWidthBonus = widthMultiplier - 1f;
-            
-            if (laserController != null)
-            {
-                laserController.SetWidthMultiplier(widthMultiplier);
-            }
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} - 宽度倍率: x{widthMultiplier:F2} (从配置读取)");
-            }
-        }
-        /// <summary>
-        /// 更新伤害倍率（考虑 Focus + Power）
-        /// </summary>
-        private void UpdateDamageMultiplier()
-        {
-            if (laserController == null) return;
-            
-            // Focus 的伤害倍率（基础值）
-            float focusMultiplier = GetFocusDamageMultiplier(focusLevel);
-            
-            // Power 的累加加成
-            float powerBonus = totalDamageBonus;
-            
-            // 最终倍率 = Focus基础 + Power加成
-            float finalMultiplier = focusMultiplier + powerBonus;
-            
-            laserController.SetDamageMultiplier(finalMultiplier);
-        }
+                // 从配置读取宽度倍率（1.4 = +40%）
+                // 这个倍率是相对于【当前基础宽度】的加成
+                float wideBonus = levelData.widthMultiplier - 1f; // 转换为加成值
+                totalWidthBonus = wideBonus;
         
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} (配置) - 宽度加成:{wideBonus:P0}");
+                }
+            }
+            else
+            {
+                // 回退：每级 +40%
+                totalWidthBonus = level * 0.40f;
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} (硬编码回退) - 宽度加成:{totalWidthBonus:P0}");
+                }
+            }
+    
+            // 更新最终宽度
+            UpdateWidthMultiplier();
+        }
         /// <summary>
-        /// 更新宽度倍率（考虑 Focus + Wide）
+        /// 更新宽度倍率
+        /// 计算公式：最终宽度倍率 = Focus宽度倍率 * (1 + Wide加成)
+        /// 例如：Focus Lv1 (0.5x) + Wide Lv1 (+40%) = 0.5 * 1.4 = 0.7x
         /// </summary>
         private void UpdateWidthMultiplier()
         {
             if (laserController == null) return;
-            
-            // Focus 的宽度倍率（基础值，可能是缩小）
-            float finalMultiplier = 1f + totalWidthBonus;
+    
+            // Focus 的宽度倍率（可能是 0.5 表示变细）
+            float focusWidthMultiplier = (focusLevel >= 1) ? 0.5f : 1f;
+    
+            // 如果有配置，从 Focus 配置中读取
+            var focusData = GetSkillData(SkillType.Focus);
+            if (focusData != null && focusLevel >= 1)
+            {
+                var focusLevelData = GetLevelData(focusData, 1); // 只有 Lv1 会变细
+                if (focusLevelData != null && focusLevelData.widthMultiplier < 1f)
+                {
+                    focusWidthMultiplier = focusLevelData.widthMultiplier;
+                }
+            }
+    
+            // Wide 的累加加成
+            float wideBonus = totalWidthBonus;
+    
+            // 最终宽度倍率 = Focus宽度 * (1 + Wide加成)
+            float finalMultiplier = focusWidthMultiplier * (1f + wideBonus);
     
             laserController.SetWidthMultiplier(finalMultiplier);
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillEffectManager] 宽度倍率更新: Focus={focusWidthMultiplier:F2}x, Wide=+{wideBonus:P0}, 最终={finalMultiplier:F2}x");
+            }
+        }
+        /// <summary>
+        /// 应用 Crit（致命暴击）效果
+        /// </summary>
+        private void ApplyCritEffect(int level, SkillData skillData)
+        {
+            critLevel = level;
+            
+            var levelData = GetLevelData(skillData, level);
+            
+            if (levelData != null && laserController != null)
+            {
+                laserController.SetCritLevelFromConfig(level, levelData.critRateBonus);
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} (配置) - 暴击率加成:{levelData.critRateBonus:P0}");
+                }
+            }
+            else
+            {
+                // 回退：每级 +5%
+                if (laserController != null)
+                {
+                    laserController.SetCritLevel(level);
+                }
+                
+                if (showDebugInfo)
+                {
+                    float critBonus = level * 0.05f;
+                    Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} (硬编码回退) - 暴击率加成:{critBonus:P0}");
+                }
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】颜色系统
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 更新激光颜色（考虑 Focus + Frost 组合）
+        /// </summary>
+        private void UpdateLaserColor()
+        {
+            if (laserController == null) return;
+            if (skillDatabase == null)
+            {
+                Debug.LogWarning("[SkillEffectManager] SkillDatabase 未设置，无法更新颜色");
+                return;
+            }
+    
+            Color targetColor = skillDatabase.DefaultLaserColor;
+    
+            bool hasFocus = focusLevel > 0;
+            bool hasFrost = frostLevel > 0;
+    
+            // 获取技能配置
+            var focusData = GetSkillData(SkillType.Focus);
+            var frostData = GetSkillData(SkillType.Frost);
+    
+            if (hasFocus && hasFrost)
+            {
+                // 聚能 + 极寒 = 混合紫色
+                targetColor = skillDatabase.FocusFrostMixColor;
+            }
+            else if (hasFocus)
+            {
+                // 仅聚能 = 从 Focus SkillData 读取颜色
+                if (focusData != null && focusData.changeColor)
+                {
+                    targetColor = focusData.skillColor;
+                }
+            }
+            else if (hasFrost)
+            {
+                // 仅极寒 = 从 Frost SkillData 读取颜色
+                if (frostData != null && frostData.changeColor)
+                {
+                    targetColor = frostData.skillColor;
+                }
+            }
+    
+            // 应用颜色到激光
+            laserController.SetLaserColor(targetColor);
+    
+            // VFX颜色与激光颜色保持一致
+            if (vfxColorSync != null)
+            {
+                vfxColorSync.SetVFXColor(targetColor);
+            }
+            else
+            {
+                laserController.SetVFXColor(targetColor);
+            }
+    
+            if (showDebugInfo)
+            {
+                string colorSource = (hasFocus && hasFrost) ? "混合紫色" : 
+                    (hasFocus ? "Focus红色" : 
+                        (hasFrost ? "Frost蓝色" : "默认青色"));
+                Debug.Log($"[SkillEffectManager] 颜色更新 - 来源:{colorSource}");
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】Focus Lv5 爆炸系统
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 敌人死亡回调 - 处理 Focus Lv5 爆炸
+        /// </summary>
+        private void OnEnemyDied(EnemyType type, Vector3 position, int xp, int coin)
+        {
+            // 检查是否启用爆炸
+            if (!cachedFocusExplosionOnKill) return;
+            if (focusLevel < 5) return;
+            
+            TriggerFocusExplosion(position);
         }
         
         /// <summary>
-        /// 获取 Focus 伤害倍率
+        /// 触发 Focus Lv5 聚变爆炸
         /// </summary>
-        private float GetFocusDamageMultiplier(int level)
+        private void TriggerFocusExplosion(Vector3 position)
+        {
+            // 播放爆炸特效
+            if (explosionVFXPrefab != null)
+            {
+                Instantiate(explosionVFXPrefab, position, Quaternion.identity);
+            }
+            
+            // 检测范围内的敌人
+            int enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, "BouncingEnemy");
+            Collider2D[] hits = Physics2D.OverlapCircleAll(position, cachedFocusExplosionRadius, enemyLayer);
+            
+            foreach (var hit in hits)
+            {
+                EnemyBlob enemy = hit.GetComponentInParent<EnemyBlob>();
+                if (enemy != null)
+                {
+                    // 造成爆炸伤害（不触发连锁爆炸）
+                    enemy.TakeDamage(cachedFocusExplosionDamage, Vector2.zero, false);
+                }
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillEffectManager] 💥 Focus Lv5 聚变爆炸! 位置:{position}, 伤害:{cachedFocusExplosionDamage}, 半径:{cachedFocusExplosionRadius}, 命中:{hits.Length}");
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 倍率更新
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void UpdateDamageMultiplier()
+        {
+            if (laserController == null) return;
+    
+            // 区间 A：基础增伤区（加法叠加）
+            // Power 加成（每级 +20%，Lv5 = +100% = 1.0）
+            float powerBonus = totalDamageBonus;
+    
+            // Focus 加成（Lv1=+50%, Lv2=+80%, Lv3=+120%, Lv4=+160%, Lv5=+250%）
+            float focusBonus = cachedFocusDamageBonus;
+    
+            // 最终倍率 = 1 + Power加成 + Focus加成
+            float finalMultiplier = 1f + powerBonus + focusBonus;
+    
+            laserController.SetDamageMultiplier(finalMultiplier);
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillEffectManager] 伤害倍率更新 (加法区): " +
+                          $"基础=1.0, Power=+{powerBonus:P0}, Focus=+{focusBonus:P0}, " +
+                          $"最终={finalMultiplier:F2}x");
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 公共接口
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>获取 Frost 等级</summary>
+        public int GetFrostLevel() => frostLevel;
+        
+        /// <summary>获取 Impact 等级</summary>
+        public int GetImpactLevel() => impactLevel;
+        
+        /// <summary>获取 Reflex 等级</summary>
+        public int GetReflexLevel() => reflexLevel;
+        
+        /// <summary>获取 Crit 等级</summary>
+        public int GetCritLevel() => critLevel;
+        
+        /// <summary>
+        /// 获取 Frost 减速参数
+        /// </summary>
+        public void GetFrostParams(out float slowPercent, out float duration)
+        {
+            slowPercent = cachedFrostSlowPercent;
+            duration = cachedFrostSlowDuration;
+        }
+        
+        /// <summary>
+        /// 兼容旧接口
+        /// </summary>
+        public void GetFrostData(out float slowPercent, out float duration)
+        {
+            GetFrostParams(out slowPercent, out duration);
+        }
+        
+        /// <summary>
+        /// 获取 Frost Lv5 冰冻参数
+        /// </summary>
+        public void GetFrostFreezeParams(out float threshold, out float duration)
+        {
+            threshold = cachedFrostFreezeThreshold;
+            duration = cachedFrostFreezeDuration;
+        }
+        
+        /// <summary>
+        /// Lv.5 Frost 完全冰冻判定（旧接口，基于概率）
+        /// </summary>
+        public bool TryFrostFreeze()
+        {
+            if (frostLevel < 5) return false;
+            return Random.value < 0.20f; // 20% 概率
+        }
+        
+        /// <summary>
+        /// 获取 Focus 对 BOSS 的额外伤害加成
+        /// </summary>
+        public float GetFocusBossDamageBonus()
+        {
+            return cachedFocusBossDamageBonus;
+        }
+
+        /// <summary>
+        /// 判断是否可以打断 BOSS 蓄力
+        /// </summary>
+        public bool CanInterruptBossCharge(bool isUltMode)
+        {
+            return impactLevel >= 5 || isUltMode;
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Adrenaline 效果（保留旧逻辑）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private void EndAdrenaline()
+        {
+            isAdrenalineActive = false;
+            
+            if (turretController != null)
+            {
+                turretController.SetSensitivity(originalSensitivity);
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[SkillEffectManager] Adrenaline 效果结束");
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 硬编码回退方法
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        private float GetFocusDamageMultiplierFallback(int level)
         {
             switch (level)
             {
@@ -500,100 +913,23 @@ namespace LightVsDecay.Logic.Player
                 default: return 1.0f;
             }
         }
-
-        /// <summary>
-        /// 获取 Impact 僵直概率（Lv4-5 才有）
-        /// </summary>
-        public float GetImpactStunChance(int level)
+        
+        private float GetImpactKnockbackMultiplierFallback(int level)
         {
             switch (level)
             {
-                case 4: return 0.05f; // 5% 概率
-                case 5: return 0.10f; // 10% 概率
-                default: return 0f;
+                case 1: return 1.50f;
+                case 2: return 2.00f;
+                case 3: return 2.50f;
+                case 4: return 3.00f;
+                case 5: return 5.00f;
+                default: return 1.0f;
             }
         }
 
-        /// <summary>
-        /// 获取 Impact 僵直持续时间
-        /// </summary>
-        public float GetImpactStunDuration(int level)
+        private void GetFrostDataFallback(int level, out float slowPercent, out float duration)
         {
             switch (level)
-            {
-                case 4: return 0.8f;  // 0.8秒
-                case 5: return 1.0f;  // 1.0秒
-                default: return 0f;
-            }
-        }
-
-        /// <summary>
-        /// 尝试触发 Impact 僵直（由 LaserController 伤害检测调用）
-        /// </summary>
-        public bool TryTriggerImpactStun(out float stunDuration)
-        {
-            stunDuration = 0f;
-    
-            if (impactLevel < 4) return false;
-    
-            float chance = GetImpactStunChance(impactLevel);
-            if (Random.value < chance)
-            {
-                stunDuration = GetImpactStunDuration(impactLevel);
-                return true;
-            }
-    
-            return false;
-        }
-        /// <summary>
-        /// 获取 Frost 减速参数（兼容两种命名）
-        /// </summary>
-        public void GetFrostParams(out float slowPercent, out float duration)
-        {
-            GetFrostData(out slowPercent, out duration);
-        }
-
-        /// <summary>
-        /// 应用 Crit（致命暴击）效果
-        /// 每级 +5% 暴击率
-        /// </summary>
-        private void ApplyCritEffect(int level)
-        {
-            critLevel = level;
-    
-            if (laserController != null)
-            {
-                laserController.SetCritLevel(level);
-            }
-    
-            if (showDebugInfo)
-            {
-                float critBonus = level * 0.05f;
-                Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} - 暴击率: +{critBonus:P0}");
-            }
-        }
-
-        /// <summary>
-        /// 获取 Crit 等级
-        /// </summary>
-        public int GetCritLevel() => critLevel;
-
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 公共接口
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        /// <summary>
-        /// 获取当前 Frost 等级（用于敌人受击时判断减速）
-        /// </summary>
-        public int GetFrostLevel() => frostLevel;
-        
-        /// <summary>
-        /// 获取 Frost 减速数据
-        /// </summary>
-        public void GetFrostData(out float slowPercent, out float duration)
-        {
-            switch (frostLevel)
             {
                 case 1:
                     slowPercent = 0.20f;
@@ -613,124 +949,13 @@ namespace LightVsDecay.Logic.Player
                     break;
                 case 5:
                     slowPercent = 0.50f;
-                    duration = 1.0f; // Lv.5 有 20% 概率完全冰冻
+                    duration = 1.0f;
                     break;
                 default:
                     slowPercent = 0f;
                     duration = 0f;
                     break;
             }
-        }
-        
-        /// <summary>
-        /// Lv.5 Frost 是否触发完全冰冻（20% 概率）
-        /// </summary>
-        public bool TryFrostFreeze()
-        {
-            if (frostLevel >= 5)
-            {
-                return Random.value < 0.20f; // 20% 概率
-            }
-            return false;
-        }
-        
-        /// <summary>
-        /// 设置原始灵敏度（用于 Adrenaline buff 恢复）
-        /// 应在游戏初始化时调用
-        /// </summary>
-        public void SetOriginalSensitivity(float sensitivity)
-        {
-            originalSensitivity = sensitivity;
-        }
-        
-        /// <summary>
-        /// 重置所有技能效果（新游戏开始时调用）
-        /// </summary>
-        public void ResetAllEffects()
-        {
-            prismLevel = 0;
-            focusLevel = 0;
-            impactLevel = 0;
-            frostLevel = 0;
-            powerLevel = 0;
-            wideLevel = 0;
-    
-            totalDamageBonus = 0f;
-            totalWidthBonus = 0f;
-    
-            isAdrenalineActive = false;
-            adrenalineTimer = 0f;
-    
-            if (laserController != null)
-            {
-                laserController.ClearAllSubLasers();
-                laserController.SetDamageMultiplier(1f);
-                laserController.SetKnockbackMultiplier(1f);
-                laserController.SetWidthMultiplier(1f);
-                laserController.SetLaserColor(DEFAULT_LASER_COLOR); // 【修改】使用默认青色
-            }
-    
-            // 【新增】重置 VFX 颜色
-            if (vfxColorSync != null)
-            {
-                vfxColorSync.ResetVFXColor();
-            }
-            else if (laserController != null)
-            {
-                laserController.ResetVFXColor();
-            }
-    
-            if (turretController != null)
-            {
-                turretController.SetSensitivity(originalSensitivity);
-            }
-    
-            if (showDebugInfo)
-            {
-                Debug.Log("[SkillEffectManager] 所有技能效果已重置");
-            }
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Boss 角力相关查询（供 LaserController 调用）
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        /// <summary>
-        /// 获取当前 Impact 技能等级
-        /// </summary>
-        public int GetImpactLevel()
-        {
-            return impactLevel;
-        }
-        
-        /// <summary>
-        /// 检查是否可以打断 BOSS 蓄力
-        /// 条件：Impact Lv.4+ 或 大招模式
-        /// </summary>
-        /// <param name="isUltMode">是否开启大招</param>
-        /// <returns>是否可以打断</returns>
-        public bool CanInterruptBossCharge(bool isUltMode)
-        {
-            // 大招模式必定可以打断
-            if (isUltMode) return true;
-            
-            // Impact Lv.5+ 可以打断
-            return impactLevel >= 5;
-        }
-        
-        /// <summary>
-        /// 检查是否可以推住冲撞中的 BOSS
-        /// 条件：Impact Lv.4+ 或 大招模式
-        /// </summary>
-        /// <param name="isUltMode">是否开启大招</param>
-        /// <returns>是否有足够推力</returns>
-        public bool CanStopBossCharge(bool isUltMode)
-        {
-            // 大招模式必定可以推住
-            if (isUltMode) return true;
-            
-            // Impact Lv.4+ 可以推住
-            return impactLevel >= 4;
         }
     }
 }

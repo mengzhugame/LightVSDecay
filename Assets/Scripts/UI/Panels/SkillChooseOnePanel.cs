@@ -370,8 +370,6 @@ namespace LightVsDecay.UI.Panels
                     return cardBgAttack;
                 case SkillCardType.Passive:
                     return cardBgPassive;
-                case SkillCardType.Recovery:
-                    return cardBgRecovery;
                 case SkillCardType.MaxLevel:
                     return cardBgMaxLevel;
                 default:

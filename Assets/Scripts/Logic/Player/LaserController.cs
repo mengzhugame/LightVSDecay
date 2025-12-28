@@ -393,9 +393,26 @@ namespace LightVsDecay.Logic.Player
                     if (bossHealth != null && !hitBosses.Contains(bossHealth))
                     {
                         hitBosses.Add(bossHealth);
-                        
+        
                         bool isCrit = RollCrit();
-                        bossHealth.TakeCoreDamage(damage, collider.transform.position, isCrit, critDamageMultiplier);
+        
+                        // 【新增】区间C：BOSS 易伤加成（Focus Lv3+ = +20%）
+                        float bossDamage = damage;
+                        if (SkillEffectManager.Instance != null)
+                        {
+                            float bossBonus = SkillEffectManager.Instance.GetFocusBossDamageBonus();
+                            if (bossBonus > 0f)
+                            {
+                                bossDamage *= (1f + bossBonus);
+                
+                                if (showDebugInfo)
+                                {
+                                    Debug.Log($"[LaserController] BOSS易伤加成: +{bossBonus:P0}, 伤害: {damage:F1} → {bossDamage:F1}");
+                                }
+                            }
+                        }
+        
+                        bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
                         
                         // 角力系统
                         BossController bossController = bossHealth.GetComponent<BossController>();
@@ -457,174 +474,42 @@ namespace LightVsDecay.Logic.Player
                 ApplyFrostEffect(enemy);
             }
         }
-        /// <summary>
-        /// 检测并对敌人/Boss造成伤害（支持穿透 + 暴击）
-        /// 使用 Layer 检测，不使用 Tag
-        /// </summary>
-        private void DetectAndDamageEnemies(LaserBeam beam, Transform origin, float damage, float knockbackMultiplier)
-        {
-            if (beam == null || origin == null) return;
-            
-            float length = beam.GetMaxLength();
-            float width = beam.GetLaserWidth();
-            
-            Vector2 boxCenter = (Vector2)origin.position + (Vector2)origin.up * (length * 0.5f);
-            Vector2 boxSize = new Vector2(width, length);
-            float angle = origin.eulerAngles.z;
-            
-            // 使用合并的检测层（Enemy + BossEyes）
-            int hitCount = Physics2D.OverlapBoxNonAlloc(boxCenter, boxSize, angle, hitBuffer, combinedDetectionLayer);
-            
-            for (int i = 0; i < hitCount; i++)
-            {
-                var collider = hitBuffer[i];
-                if (collider == null) continue;
-                
-                int colliderLayer = collider.gameObject.layer;
-                
-                // ═══════════════════════════════════════════════════
-                // Boss 核心检测（EnemyEyes Layer）
-                // 只有 Boss 眼睛在这个层有 Collider
-                // 【重构】实现完整的角力物理系统
-                // ═══════════════════════════════════════════════════
-                if (colliderLayer == bossEyesLayerIndex)
-                {
-                    BossHealth bossHealth = collider.GetComponentInParent<BossHealth>();
-                    if (bossHealth != null && !hitBosses.Contains(bossHealth))
-                    {
-                        // 判定暴击
-                        bool isCrit = RollCrit();
-                        
-                        // 核心伤害 - 200% 弱点伤害，可叠加暴击
-                        bossHealth.TakeCoreDamage(damage, collider.transform.position, isCrit, critDamageMultiplier);
-                        
-                        // ══════════════════════════════════════════════
-                        // 【角力系统】对 Boss 施加推力 + 打断判定
-                        // ══════════════════════════════════════════════
-                        BossController bossController = bossHealth.GetComponent<BossController>();
-                        if (bossController != null)
-                        {
-                            // 获取技能等级和大招状态
-                            int impactLevel = SkillEffectManager.Instance != null 
-                                ? SkillEffectManager.Instance.GetImpactLevel() 
-                                : 0;
-                            
-                            // === 情况1: 蓄力阶段 - 尝试打断 ===
-                            if (bossController.IsInChargeTelegraph)
-                            {
-                                // 检查是否可以打断（Impact Lv.4+ 或 大招）
-                                bool canInterrupt = SkillEffectManager.Instance != null
-                                    ? SkillEffectManager.Instance.CanInterruptBossCharge(isUltMode)
-                                    : (impactLevel >= 5 || isUltMode);
-                                
-                                if (canInterrupt)
-                                {
-                                    bossController.InterruptCharge();
-                                    
-                                    if (showDebugInfo)
-                                    {
-                                        Debug.Log("[LaserController] 🛑 打断 BOSS 蓄力！");
-                                    }
-                                }
-                            }
-                            // === 情况2: 冲撞阶段 - 施加推力（角力核心） ===
-                            else if (bossController.IsPressing)
-                            {
-                                // 【调试】打印 impactLevel 确认值
-                                Debug.Log($"[LaserController] 推力计算 - impactLevel={impactLevel}, isUltMode={isUltMode}");
-                                // 计算推力
-                                float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
-                                
-                                // 推力方向（向上，与冲撞方向相反）
-                                Vector2 pushDirection = Vector2.up;
-                                Vector2 pushForce = pushDirection * pushMagnitude;
-                                
-                                // 应用推力
-                                bossController.ApplyLaserPushForce(pushForce);
-                                
-                                if (showDebugInfo)
-                                {
-                                    Debug.Log($"[LaserController] ⚡ 对冲撞中的 BOSS 施加推力: {pushMagnitude:F2} (Impact Lv.{impactLevel}, Ult: {isUltMode})");
-                                }
-                            }
-                        }
-                        
-                        hitBosses.Add(bossHealth);
-                        
-                        if (showDebugInfo)
-                        {
-                            string critStr = isCrit ? " [暴击!]" : "";
-                            Debug.Log($"[LaserController] Boss 核心命中{critStr}! 基础伤害: {damage:F1}");
-                        }
-                    }
-                    continue;
-                }
-                
-                // ═══════════════════════════════════════════════════
-                // Enemy Layer 检测（普通敌人 + Boss护甲）
-                // ═══════════════════════════════════════════════════
-                if (colliderLayer == enemyLayerIndex|| colliderLayer == bouncingEnemyLayerIndex)
-                {
-                    // 先检查是否是 Boss 护甲
-                    BossHealth bossHealth = collider.GetComponent<BossHealth>();
-                    if (bossHealth != null && !hitBosses.Contains(bossHealth))
-                    {
-                        // 判定暴击
-                        bool isCrit = RollCrit();
-                        
-                        // 护甲伤害 - 30% 伤害，可叠加暴击
-                        bossHealth.TakeArmorDamage(damage, collider.transform.position, isCrit, critDamageMultiplier);
-                        hitBosses.Add(bossHealth);
-                        
-                        if (showDebugInfo)
-                        {
-                            string critStr = isCrit ? " [暴击!]" : "";
-                            Debug.Log($"[LaserController] Boss 护甲命中{critStr}! 基础伤害: {damage:F1}");
-                        }
-                        continue;
-                    }
-                    
-                    // 普通敌人检测
-                    EnemyBlob enemy = collider.GetComponentInParent<EnemyBlob>();
-                    if (enemy == null || hitEnemies.Contains(enemy)) continue;
-                    
-                    hitEnemies.Add(enemy);
-                    
-                    // 判定暴击
-                    bool enemyCrit = RollCrit();
-                    float finalDamage = enemyCrit ? damage * critDamageMultiplier : damage;
-                    
-                    Vector2 knockbackDir = (enemy.transform.position - origin.position).normalized;
-                    Vector2 knockbackForce = knockbackDir * CurrentKnockbackForce * knockbackMultiplier;
-                    
-                    enemy.TakeDamage(finalDamage, knockbackForce, enemyCrit);
-                    
-                    // 应用 Frost 减速效果
-                    ApplyFrostEffect(enemy);
-                }
-            }
-        }
-        
+
         /// <summary>
         /// 对敌人应用 Frost 减速效果
         /// </summary>
         private void ApplyFrostEffect(EnemyBlob enemy)
         {
             if (SkillEffectManager.Instance == null) return;
-            
+    
             float slowPercent, duration;
             SkillEffectManager.Instance.GetFrostParams(out slowPercent, out duration);
-            
+    
             if (slowPercent <= 0f) return;
     
-            // Lv.5 有 20% 概率完全冰冻
-            if (SkillEffectManager.Instance.TryFrostFreeze())
+            // 应用减速
+            enemy.ApplyFrostSlow(slowPercent, duration);
+    
+            // Lv.5 冰冻检测（基于累计照射时间）
+            float freezeThreshold, freezeDuration;
+            SkillEffectManager.Instance.GetFrostFreezeParams(out freezeThreshold, out freezeDuration);
+    
+            if (freezeThreshold > 0f && freezeDuration > 0f)
             {
-                enemy.ApplyFrostFreeze(1.0f);
-            }
-            else
-            {
-                enemy.ApplyFrostSlow(slowPercent, duration);
+                // 累加照射时间（每 Tick 调用一次）
+                enemy.AddFrostExposureTime(tickRate);
+        
+                // 检查是否达到冰冻阈值
+                if (enemy.GetFrostExposureTime() >= freezeThreshold)
+                {
+                    enemy.ApplyFrostFreeze(freezeDuration);
+                    enemy.ResetFrostExposureTime();
+            
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[LaserController] ❄️ 敌人冰冻! 照射时间达到 {freezeThreshold}s");
+                    }
+                }
             }
         }
         
@@ -861,15 +746,7 @@ namespace LightVsDecay.Logic.Player
                 }
             }
         }
-        
-        public void SetVFXColor(Color color)
-        {
-            if (vfxColorSync != null)
-            {
-                vfxColorSync.SetVFXColor(color);
-            }
-        }
-        
+
         public void ResetVFXColor()
         {
             if (vfxColorSync != null)
@@ -1051,6 +928,236 @@ namespace LightVsDecay.Logic.Player
         /// </summary>
         public int GetCritLevel() => critLevel;
         
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】从配置读取的技能接口
+        // 添加到 LaserController.cs 的技能接口区域
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        #region 配置读取接口
+        /// <summary>
+        /// 从配置设置 Prism（折射棱镜）效果
+        /// </summary>
+        /// <param name="level">技能等级</param>
+        /// <param name="splitCount">分裂数量</param>
+        /// <param name="splitDamageMultiplier">分裂伤害倍率</param>
+        /// <param name="splitLength">分裂长度</param>
+        public void SetPrismLevelFromConfig(int level, int splitCount, float splitDamageMultiplier, float splitLength)
+        {
+            ClearAllSubLasers();
+            
+            if (level <= 0 || splitCount <= 0)
+            {
+                if (showDebugInfo) Debug.Log("[LaserController] Prism 等级为 0 或分裂数为 0，无副激光");
+                return;
+            }
+            
+            // 根据分裂数量计算角度
+            float[] angles = CalculatePrismAngles(splitCount);
+            
+            // 计算长度倍率
+            float lengthMultiplier = splitLength / maxLaserLength;
+            
+            subLaserDamageMultiplier = splitDamageMultiplier;
+            subLaserLengthMultiplier = lengthMultiplier;
+            
+            foreach (float angle in angles)
+            {
+                CreateSubLaser(angle, splitDamageMultiplier, lengthMultiplier);
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] Prism Lv.{level} (配置): 分裂数={splitCount}, 伤害={splitDamageMultiplier:P0}, 长度={splitLength}");
+            }
+        }
+
+        /// <summary>
+        /// 根据分裂数量计算均匀分布的角度
+        /// </summary>
+        private float[] CalculatePrismAngles(int count)
+        {
+            // 根据分裂数量生成对称的角度数组
+            // 例如：2条 -> [-20, 20]，4条 -> [-30, -15, 15, 30]，6条 -> [-40, -25, -10, 10, 25, 40]
+            
+            float[] angles = new float[count];
+            
+            if (count <= 0) return angles;
+            
+            // 最大角度范围
+            float maxAngle = Mathf.Min(15f + count * 5f, 50f); // 根据数量扩展角度范围
+            
+            if (count == 1)
+            {
+                angles[0] = 0f;
+            }
+            else if (count == 2)
+            {
+                angles[0] = -maxAngle * 0.6f;
+                angles[1] = maxAngle * 0.6f;
+            }
+            else
+            {
+                // 均匀分布
+                float step = (maxAngle * 2f) / (count - 1);
+                for (int i = 0; i < count; i++)
+                {
+                    angles[i] = -maxAngle + step * i;
+                }
+            }
+            
+            return angles;
+        }
+
+        /// <summary>
+        /// 从配置设置 Focus（聚能透镜）效果
+        /// </summary>
+        /// <param name="level">技能等级</param>
+        /// <param name="damageMultiplier">伤害倍率</param>
+        /// <param name="widthMultiplier">宽度倍率（仅 Lv1 生效）</param>
+        /// <param name="laserColor">激光颜色</param>
+        public void SetFocusLevelFromConfig(int level, float damageMultiplier, float widthMultiplier)
+        {
+            if (level <= 0)
+            {
+                ResetFocusEffect();
+                return;
+            }
+    
+            // 应用伤害倍率
+            skillDamageMultiplier = damageMultiplier;
+    
+            // 仅在 Lv1 时应用宽度变化（变细）
+            if (level == 1 && widthMultiplier < 1f)
+            {
+                skillWidthMultiplier *= widthMultiplier;
+            }
+    
+            // 颜色由 SkillEffectManager.UpdateLaserColor() 统一处理
+    
+            // 更新激光宽度
+            if (mainLaserBeam != null)
+            {
+                mainLaserBeam.SetLaserWidth(CurrentLaserWidth);
+            }
+    
+            UpdateAllLaserWidths();
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] Focus Lv.{level} (配置): 伤害={damageMultiplier:P0}, 宽度倍率={widthMultiplier:F2}");
+            }
+        }
+
+        /// <summary>
+        /// 从配置设置 Reflex（反射透镜）效果
+        /// </summary>
+        /// <param name="level">技能等级</param>
+        /// <param name="damageMultiplier">反射段伤害倍率</param>
+        /// <param name="lengthBonus">激光长度加成</param>
+        public void SetReflexLevelFromConfig(int level, float damageMultiplier, float lengthBonus)
+        {
+            reflexLevel = level;
+            
+            if (level <= 0)
+            {
+                // 关闭反射
+                reflexEnabled = false;
+                reflexDamageMultiplier = 0f;
+                reflexLengthBonus = 0f;
+                
+                if (mainLaserBeam != null)
+                {
+                    mainLaserBeam.SetReflectionEnabled(false);
+                    mainLaserBeam.SetMaxLength(maxLaserLength);
+                }
+                
+                foreach (var subLaser in subLasers)
+                {
+                    if (subLaser.beam != null)
+                    {
+                        subLaser.beam.SetReflectionEnabled(false);
+                        float subLength = maxLaserLength * subLaser.lengthMultiplier;
+                        subLaser.beam.SetMaxLength(subLength);
+                    }
+                }
+                return;
+            }
+            
+            // 启用反射
+            reflexEnabled = true;
+            reflexDamageMultiplier = damageMultiplier;
+            reflexLengthBonus = lengthBonus;
+            
+            // 计算新的激光长度
+            float newLength = maxLaserLength * (1f + lengthBonus);
+            
+            // 应用到主激光
+            if (mainLaserBeam != null)
+            {
+                mainLaserBeam.SetReflectionEnabled(true);
+                mainLaserBeam.SetMaxLength(newLength);
+            }
+            
+            // 应用到所有副激光
+            foreach (var subLaser in subLasers)
+            {
+                if (subLaser.beam != null)
+                {
+                    subLaser.beam.SetReflectionEnabled(true);
+                    float subLength = newLength * subLaser.lengthMultiplier;
+                    subLaser.beam.SetMaxLength(subLength);
+                }
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] Reflex Lv.{level} (配置): 反射伤害={damageMultiplier:P0}, 长度加成={lengthBonus:P0}");
+            }
+        }
+
+        /// <summary>
+        /// 从配置设置 Crit（致命暴击）等级
+        /// </summary>
+        /// <param name="level">技能等级</param>
+        /// <param name="critBonus">暴击率加成</param>
+        public void SetCritLevelFromConfig(int level, float critBonus)
+        {
+            critLevel = level;
+            critRateBonus = critBonus;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] Crit Lv.{level} (配置): 暴击率加成={critBonus:P0}, 总暴击率={CurrentCritRate:P0}");
+            }
+        }
+
+        /// <summary>
+        /// 设置 VFX 颜色（供 SkillEffectManager 调用）
+        /// </summary>
+        public void SetVFXColor(Color color)
+        {
+            // 如果有 LaserVFXColorSync 组件，通过它设置
+            var vfxSync = mainLaserBeam?.GetComponent<LaserVFXColorSync>();
+            if (vfxSync != null)
+            {
+                vfxSync.SetVFXColor(color);
+            }
+            
+            // 同步到副激光
+            foreach (var subLaser in subLasers)
+            {
+                if (subLaser.beam != null)
+                {
+                    var subVfxSync = subLaser.beam.GetComponent<LaserVFXColorSync>();
+                    if (subVfxSync != null)
+                    {
+                        subVfxSync.SetVFXColor(color);
+                    }
+                }
+            }
+        }
+
+        #endregion
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

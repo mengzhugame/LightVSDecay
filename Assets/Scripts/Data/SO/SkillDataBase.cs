@@ -45,6 +45,25 @@ namespace LightVsDecay.Data.SO
         [Tooltip("被动技能出现的基础概率（已废弃，改用权重系统）")]
         [Range(0f, 1f)]
         public float passiveChance = 0.25f;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 颜色配置【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("默认颜色配置")]
+        [Tooltip("默认激光/VFX颜色（无技能时）")]
+        [ColorUsage(true, true)]
+        [SerializeField] private Color defaultLaserColor = new Color(0f, 3f, 3f, 1f); // 青色 HDR
+
+        [Header("多技能混合颜色")]
+        [Tooltip("聚能透镜 + 极寒光束 混合颜色")]
+        [ColorUsage(true, true)]
+        [SerializeField] private Color focusFrostMixColor = new Color(2f, 0f, 3f, 1f); // 紫色 HDR
+
+        /// <summary>获取默认激光颜色</summary>
+        public Color DefaultLaserColor => defaultLaserColor;
+
+        /// <summary>获取聚能+极寒混合颜色</summary>
+        public Color FocusFrostMixColor => focusFrostMixColor;
         
         [Header("调试")]
         [Tooltip("显示调试日志")]

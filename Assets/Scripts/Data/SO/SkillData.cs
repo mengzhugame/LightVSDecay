@@ -2,6 +2,7 @@
 // SkillData.cs
 // 文件位置: Assets/Scripts/Data/SO/SkillData.cs
 // 用途：技能配置数据（ScriptableObject）
+// 修改：Step 1 - 新增 Focus 爆炸、颜色配置、冰冻阈值等字段
 // ============================================================
 
 using UnityEngine;
@@ -18,9 +19,8 @@ namespace LightVsDecay.Data.SO
         Focus,      // 聚能透镜 - 单体攻坚
         Impact,     // 冲击模块 - 控制/防近身
         Reflex,     // 反射透镜 - 墙壁反射
-        
-        // 被动技能（最多5级）- 青色/蓝色卡
         Frost,      // 极寒光束 - 减速辅助
+        // 被动技能（最多5级）- 青色/蓝色卡
         Power,      // 功率超频 - +DPS
         Wide,       // 广域透镜 - +激光宽度
         Crit,       // 致命暴击 - +暴击率
@@ -33,7 +33,6 @@ namespace LightVsDecay.Data.SO
     {
         Active,     // 主动技能
         Passive,    // 被动技能
-        Consumable  // 消耗品
     }
     
     /// <summary>
@@ -43,7 +42,7 @@ namespace LightVsDecay.Data.SO
     {
         Attack,     // 红色/橙色 - 主动输出技能 (Prism, Focus, Impact)
         Passive,    // 青色/蓝色 - 被动/控制技能 (Frost, Power, Wide)
-        Recovery,   // 绿色 - 消耗品 (Repair, Charge, Adrenaline)
+        // 绿色 - 消耗品 (Repair, Charge, Adrenaline)
         MaxLevel    // 金色 - 满级技能（运行时判断）
     }
     
@@ -57,18 +56,30 @@ namespace LightVsDecay.Data.SO
         [TextArea(1, 2)]
         public string description;
         
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 伤害相关
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         [Header("伤害相关")]
         [Tooltip("伤害倍率 (1.0 = 100%)")]
         public float damageMultiplier = 1.0f;
         
-        [Header("击退相关")]
+        [Tooltip("对BOSS额外伤害倍率 (0.2 = +20%)【新增】")]
+        public float bossDamageBonus = 0f;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 击退相关（冲击模块）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("击退相关（冲击模块）")]
         [Tooltip("击退力倍率")]
         public float knockbackMultiplier = 1.0f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 减速/冰冻相关（极寒光束）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Tooltip("硬直时间（秒）")]
-        public float stunDuration = 0f;
-        
-        [Header("减速相关")]
+        [Header("减速相关（极寒光束）")]
         [Tooltip("减速百分比 (0.2 = 20%)")]
         [Range(0f, 1f)]
         public float slowPercent = 0f;
@@ -76,12 +87,15 @@ namespace LightVsDecay.Data.SO
         [Tooltip("减速持续时间")]
         public float slowDuration = 0f;
         
-        [Tooltip("冰冻概率")]
-        [Range(0f, 1f)]
-        public float freezeChance = 0f;
+        [Tooltip("冰冻触发时间阈值（持续照射X秒后触发）【新增】")]
+        public float freezeThreshold = 0f;
         
         [Tooltip("冰冻持续时间")]
         public float freezeDuration = 0f;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 分裂相关（折射棱镜）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("分裂相关（折射棱镜）")]
         [Tooltip("分裂数量")]
@@ -91,11 +105,20 @@ namespace LightVsDecay.Data.SO
         public float splitDamageMultiplier = 0.3f;
         
         [Tooltip("分裂长度")]
-        public float splitLength = 3f;
+        public float splitLength = 8f;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 宽度相关（广域透镜 / 聚能透镜）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("宽度相关")]
-        [Tooltip("宽度倍率")]
+        [Tooltip("宽度倍率 (1.4 = +40%)")]
         public float widthMultiplier = 1.0f;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 反射相关（反射透镜）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         [Header("反射相关（反射透镜）")]
         [Tooltip("反射段伤害倍率 (0.5 = 50%)")]
         [Range(0f, 2f)]
@@ -105,14 +128,38 @@ namespace LightVsDecay.Data.SO
         [Range(0f, 1f)]
         public float reflexLengthBonus = 0f;
         
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 暴击相关（致命暴击）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         [Header("暴击相关（致命暴击）")]
         [Tooltip("暴击率加成 (0.05 = +5%)")]
         [Range(0f, 0.5f)]
         public float critRateBonus = 0f;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 爆炸相关（聚能透镜 Lv5）【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("爆炸相关（聚能透镜 Lv5）")]
+        [Tooltip("击杀时是否触发爆炸")]
+        public bool explosionOnKill = false;
+        
+        [Tooltip("爆炸伤害")]
+        public float explosionDamage = 100f;
+        
+        [Tooltip("爆炸半径")]
+        public float explosionRadius = 2f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 其他
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("其他")]
         [Tooltip("激光转速加成")]
         public float rotationSpeedBonus = 0f;
         
-        [Tooltip("击退力加成")]
+        [Tooltip("击退力加成（旧字段，保留兼容）")]
         public float knockbackBonus = 0f;
     }
     
@@ -146,9 +193,13 @@ namespace LightVsDecay.Data.SO
         [TextArea(2, 4)]
         public string description;
         
-        [Tooltip("技能颜色（用于激光变色等）")]
+        [Header("颜色设置")]
+        [Tooltip("是否修改激光/VFX颜色")]
+        public bool changeColor = false;
+
+        [Tooltip("技能颜色（HDR，用于激光和VFX变色）")]
         [ColorUsage(true, true)]
-        public Color skillColor = Color.white;
+        public Color skillColor = new Color(0f, 3f, 3f, 1f); // 默认青
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 等级设置
@@ -232,14 +283,7 @@ namespace LightVsDecay.Data.SO
                 }
                 levelData = newData;
             }
-            
-            // 消耗品设置
-            if (category == SkillCategory.Consumable)
-            {
-                isRepeatable = true;
-                maxLevel = 1;
-            }
-            
+
             // 自动设置卡片类型
             AutoSetCardType();
         }
@@ -252,11 +296,11 @@ namespace LightVsDecay.Data.SO
             switch (type)
             {
                 // 主动输出技能 - 红色
-                case SkillType.Prism://分裂棱镜
-                case SkillType.Focus://聚能透镜
-                case SkillType.Impact://冲击模块
-                case SkillType.Reflex://反射透镜
-                case SkillType.Frost://极寒光束
+                case SkillType.Prism:   // 分裂棱镜
+                case SkillType.Focus:   // 聚能透镜
+                case SkillType.Impact:  // 冲击模块
+                case SkillType.Reflex:  // 反射透镜
+                case SkillType.Frost:   // 极寒光束
                     cardType = SkillCardType.Attack;
                     break;
                     

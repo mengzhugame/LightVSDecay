@@ -80,7 +80,12 @@ namespace LightVsDecay.Logic.Enemy
         private int coinReward = 1;
         // 行为设置
         private EnemyBehaviorType behaviorType = EnemyBehaviorType.Chase;
-
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Frost 照射时间追踪【新增】
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        private float frostExposureTime = 0f;
+        private float frostExposureResetTimer = 0f;
+        private const float FROST_EXPOSURE_RESET_DELAY = 0.2f; // 脱离激光0.2秒后重置
 // 横穿屏幕相关
         private Vector3 crossScreenTarget;
         private Vector3 crossScreenStartPos;
@@ -98,10 +103,6 @@ namespace LightVsDecay.Logic.Enemy
         private int lowLevelBonusXP = 0;
         private int lowLevelThreshold = 12;
         
-        // 僵直状态
-        private bool isStunned = false;
-        private float stunTimer = 0f;
-        private float stunDuration = 0f;
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Drifter 弹飞状态
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -210,7 +211,7 @@ namespace LightVsDecay.Logic.Enemy
             if (isDead) return;
             
             UpdateShaderWobble();
-            UpdateStunTimer();
+            UpdateFrostExposure();
         }
         
         private void FixedUpdate()
@@ -231,23 +232,20 @@ namespace LightVsDecay.Logic.Enemy
                     return;
                 }
             }
-            // 僵直状态检查
-            if (isStunned)
-            {
-                // ... 原有僵直逻辑 ...
-                return;
-            }
             MoveTowardsTower();
         }
-        private void UpdateStunTimer()
+
+        // 在 Update 中添加：
+        private void UpdateFrostExposure()
         {
-            if (isStunned)
+            if (frostExposureResetTimer > 0f)
             {
-                stunTimer -= Time.deltaTime;
-                if (stunTimer <= 0f)
-                {
-                    EndStun();
-                }
+                frostExposureResetTimer -= Time.deltaTime;
+            }
+            else if (frostExposureTime > 0f)
+            {
+                // 脱离激光后重置照射时间
+                frostExposureTime = 0f;
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -393,8 +391,6 @@ namespace LightVsDecay.Logic.Enemy
             crossScreenProgress = 0f;
             isOutOfBounds = false;
             outOfBoundsTimer = 0f;
-            isStunned = false;
-            stunTimer = 0f;
             // 【新增】重置弹飞状态
             isBeingKnockedBack = false;
             knockbackStartTime = 0f;
@@ -518,7 +514,7 @@ namespace LightVsDecay.Logic.Enemy
         
         private void MoveTowardsTower()
         {
-            if (isStunned || isFrozen) return;// 僵直或冰冻时不移动
+            if (isFrozen) return;// 僵直或冰冻时不移动
             if (targetTower == null) return;
     
             // 【新增】完全冰冻时不移动
@@ -648,14 +644,7 @@ namespace LightVsDecay.Logic.Enemy
             }
             
             TriggerShaderWobble();
-            if (SkillEffectManager.Instance != null)
-            {
-                float stunTime;
-                if (SkillEffectManager.Instance.TryTriggerImpactStun(out stunTime))
-                {
-                    ApplyStun(stunTime);
-                }
-            }
+
             if (eyesController != null)
             {
                 eyesController.TriggerSquint();
@@ -1083,63 +1072,7 @@ namespace LightVsDecay.Logic.Enemy
         {
             return rb.mass < 2.0f;
         }
-        /// <summary>
-        /// 应用僵直效果（由 Impact 技能触发）
-        /// </summary>
-        /// <param name="duration">僵直持续时间</param>
-        public void ApplyStun(float duration)
-        {
-            if (isDead || isStunned) return;
-    
-            isStunned = true;
-            // // 【新增】显示 STUN 飘字
-            // if (FloatingTextManager.Instance != null)
-            // {
-            //     FloatingTextManager.Instance.ShowStatus(transform.position, "STUN!");
-            // }
-            stunDuration = duration;
-            stunTimer = duration;
-    
-            // 停止移动
-            if (rb != null)
-            {
-                rb.velocity = Vector2.zero;
-            }
-    
-            // 缓存当前 Shader 参数
-            if (bodyMaterial != null)
-            {
-                cachedFlowSpeed = bodyMaterial.GetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed);
-                cachedNoiseScale = bodyMaterial.GetFloat(GameConstants.ShaderProperties.LiquidNoiseScale);
-        
-                // 设置为凝固状态（Flow_Speed = 0）
-                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, 0f);
-                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidNoiseScale, 0f);
-            }
-    
-            Debug.Log($"[EnemyBlob] {gameObject.name} 被僵直 {duration}秒");
-        }
 
-        /// <summary>
-        /// 结束僵直状态
-        /// </summary>
-        private void EndStun()
-        {
-            if (!isStunned) return;
-    
-            isStunned = false;
-            stunTimer = 0f;
-    
-            // 恢复 Shader 参数
-            if (bodyMaterial != null)
-            {
-                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, cachedFlowSpeed);
-                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidNoiseScale, cachedNoiseScale);
-            }
-    
-            Debug.Log($"[EnemyBlob] {gameObject.name} 僵直结束");
-        }
-        
         /// <summary>
         /// 设置波次难度修正（由 WaveManager 在生成时调用）
         /// </summary>
@@ -1166,8 +1099,6 @@ namespace LightVsDecay.Logic.Enemy
         public float GetSpeedMultiplier() => speedMultiplier;
         public bool CanBeKnockedBack => canBeKnockedBack;
         public float KnockbackMultiplier => knockbackMultiplier;
-        public bool IsStunned => isStunned;
-        
         public void SetSpeedMultiplier(float multiplier)
         {
             speedMultiplier = multiplier;
@@ -1291,6 +1222,22 @@ namespace LightVsDecay.Logic.Enemy
         public bool CanBeKnockedBackAsDrifter()
         {
             return enemyType == EnemyType.Drifter && hasFullyEnteredScreen;
+        }
+        
+        /// <summary>累加 Frost 照射时间</summary>
+        public void AddFrostExposureTime(float deltaTime)
+        {
+            frostExposureTime += deltaTime;
+            frostExposureResetTimer = FROST_EXPOSURE_RESET_DELAY;
+        }
+
+        /// <summary>获取当前 Frost 照射时间</summary>
+        public float GetFrostExposureTime() => frostExposureTime;
+
+        /// <summary>重置 Frost 照射时间</summary>
+        public void ResetFrostExposureTime()
+        {
+            frostExposureTime = 0f;
         }
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Frost Debuff 接口
