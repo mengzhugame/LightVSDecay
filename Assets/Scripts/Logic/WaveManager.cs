@@ -11,8 +11,8 @@ using System.Collections.Generic;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Data.SO;
-using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
+using LightVsDecay.Logic.TacticalDrop;
 
 namespace LightVsDecay.Logic
 {
@@ -665,11 +665,23 @@ namespace LightVsDecay.Logic
         /// </summary>
         private void StartWaveInterval()
         {
+            // 【新增】如果有宝箱系统，交给宝箱系统处理
+            // 宝箱系统会在玩家选择后调用 StartNextWave()
+            if (TacticalDropManager.Instance != null)
+            {
+                if (showDebugInfo)
+                {
+                    Debug.Log("[WaveManager] 宝箱系统已激活，等待玩家选择...");
+                }
+                return; // 不启动自动计时，由 TacticalDropManager 触发下一波
+            }
+      
+            // 原有逻辑（没有宝箱系统时使用）
             if (waveIntervalCoroutine != null)
             {
                 StopCoroutine(waveIntervalCoroutine);
             }
-            
+      
             waveIntervalCoroutine = StartCoroutine(WaveIntervalCoroutine());
         }
         
@@ -811,11 +823,27 @@ namespace LightVsDecay.Logic
             
             return new Vector3(x, y, 0f);
         }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 测试方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+        /// <summary>
+        /// 跳过当前宝箱阶段，直接开始下一波（调试用）
+        /// </summary>
+        public void SkipDropPhase()
+        {
+            if (TacticalDropManager.Instance != null && TacticalDropManager.Instance.IsDropPhase)
+            {
+                // 清理宝箱
+                foreach (var crate in FindObjectsOfType<TacticalCrate>())
+                {
+                    Destroy(crate.gameObject);
+                }
+         
+                // 直接开始下一波
+                StartNextWave();
+            }
+        }  
         /// <summary>
         /// 测试：立即生成 BOSS
         /// </summary>

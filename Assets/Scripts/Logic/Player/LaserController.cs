@@ -7,11 +7,10 @@
 using UnityEngine;
 using System.Collections.Generic;
 using LightVsDecay.Core;
-using LightVsDecay.Core.Pool;
-using LightVsDecay.Data;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
+using LightVsDecay.Logic.TacticalDrop;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -112,6 +111,7 @@ namespace LightVsDecay.Logic.Player
         private HashSet<EnemyBlob> hitEnemies = new HashSet<EnemyBlob>();
         private HashSet<BossHealth> hitBosses = new HashSet<BossHealth>();
         private Collider2D[] hitBuffer = new Collider2D[32];
+        private HashSet<TacticalCrate> hitCrates = new HashSet<TacticalCrate>();
         
         // 合并检测层（自动计算）
         private LayerMask combinedDetectionLayer;
@@ -324,6 +324,7 @@ namespace LightVsDecay.Logic.Player
         {
             hitEnemies.Clear();
             hitBosses.Clear();
+            hitCrates.Clear();  
             
             // 1. 主激光伤害检测
             DetectAndDamageEnemiesSegmented(mainLaserBeam,  CurrentDamagePerTick, 1f);
@@ -455,6 +456,23 @@ namespace LightVsDecay.Logic.Player
                     }
                     continue;
                 }
+
+                float finalDamage = 0;
+                // 【新增】宝箱检测（在普通敌人检测之前）
+                TacticalCrate crate = collider.GetComponentInParent<TacticalCrate>();
+                if (crate != null)
+                {
+                    if (!hitCrates.Contains(crate) && crate.CanBeDamaged && !crate.IsDead)
+                    {
+                        hitCrates.Add(crate);
+        
+                        bool crateCrit = RollCrit();
+                        finalDamage = crateCrit ? damage * critDamageMultiplier : damage;
+        
+                        crate.TakeDamage(finalDamage, Vector2.zero, crateCrit);
+                    }
+                    continue;  // 宝箱处理完毕，跳过后续敌人检测
+                }
                 
                 // 普通敌人检测
                 EnemyBlob enemy = collider.GetComponentInParent<EnemyBlob>();
@@ -463,7 +481,7 @@ namespace LightVsDecay.Logic.Player
                 hitEnemies.Add(enemy);
                 
                 bool enemyCrit = RollCrit();
-                float finalDamage = enemyCrit ? damage * critDamageMultiplier : damage;
+                finalDamage = enemyCrit ? damage * critDamageMultiplier : damage;
                 
                 Vector2 knockbackDir = ((Vector2)enemy.transform.position - (Vector2)segment.startPoint).normalized;
                 Vector2 knockbackForce = knockbackDir * CurrentKnockbackForce * knockbackMultiplier;

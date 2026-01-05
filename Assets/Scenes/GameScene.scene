@@ -2680,6 +2680,7 @@ Transform:
   - {fileID: 944346165}
   - {fileID: 2121936017}
   - {fileID: 329294768}
+  - {fileID: 1228544117}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &376488525
@@ -7687,6 +7688,62 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1208708151}
   m_CullTransparentMesh: 1
+--- !u!1 &1228544116
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1228544117}
+  - component: {fileID: 1228544118}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: TacticalDropManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1228544117
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228544116}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 361127107}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1228544118
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228544116}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 223ebbd6649b3ea4a9b7ae4400c5438c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rewardConfig: {fileID: 11400000, guid: 6f1ecfbc7751fcf40b064df92af41bcd, type: 2}
+  supplyCratePrefab: {fileID: 8655628023669831673, guid: 2274c017e0e7b8346abe64dc43ec7d30, type: 3}
+  gachaCratePrefab: {fileID: 1348461392014240080, guid: 9cc2e003c39000a4d891dcd991c9aed4, type: 3}
+  dealCratePrefab: {fileID: 4763801653383767951, guid: cd740626d1f078046a82c8ddcf82652a, type: 3}
+  spawnStartY: 8
+  landingY: 2
+  leftCrateX: -4.5
+  centerCrateX: 0
+  rightCrateX: 4.5
+  turretTransform: {fileID: 7209561176920752722}
+  showDebugInfo: 0
 --- !u!1 &1245219309
 GameObject:
   m_ObjectHideFlags: 0
