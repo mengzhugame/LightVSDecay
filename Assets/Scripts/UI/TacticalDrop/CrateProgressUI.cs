@@ -51,13 +51,7 @@ namespace LightVsDecay.UI.TacticalDrop
         
         [Tooltip("隐藏延迟（停止照射后多久隐藏）")]
         [SerializeField] private float hideDelay = 0.5f;
-        
-        [Tooltip("进度条颜色（起始）")]
-        [SerializeField] private Color fillColorStart = new Color(0f, 0.8f, 1f);
-        
-        [Tooltip("进度条颜色（结束）")]
-        [SerializeField] private Color fillColorEnd = new Color(1f, 0.5f, 0f);
-        
+
         [Tooltip("进度条缩放动画强度")]
         [SerializeField] private float pulseScale = 1.1f;
         
@@ -264,9 +258,6 @@ namespace LightVsDecay.UI.TacticalDrop
             if (fillImage != null)
             {
                 fillImage.fillAmount = currentProgress;
-        
-                // 颜色渐变
-                fillImage.color = Color.Lerp(fillColorStart, fillColorEnd, currentProgress);
             }
     
             // 更新百分比文本

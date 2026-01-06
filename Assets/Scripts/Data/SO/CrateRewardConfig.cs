@@ -147,10 +147,7 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("宝箱下落时间（秒）")]
         public float dropDuration = 0.8f;
-        
-        [Tooltip("飘字飞行时间（秒）")]
-        public float floatTextDuration = 1.2f;
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 蓝色补给箱配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

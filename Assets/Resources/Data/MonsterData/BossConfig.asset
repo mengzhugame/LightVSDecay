@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f08c93735e3ebd468254b7f0b24e8d3, type: 3}
+  m_Name: BossConfig
+  m_EditorClassIdentifier: 
+  spawnDuration: 2.5
+  battleAnchorY: 3.5
+  spawnShakeIntensity: 0.5
+  spawnShakeDuration: 0.5
+  idleDurationMin: 3
+  idleDurationMax: 5
+  rageIdleDurationMin: 1.5
+  rageIdleDurationMax: 2.5
+  rageHealthThreshold: 0.3
+  idleMoveSpeed: 1.5
+  idleMoveRangePercent: 0.8
+  summonCooldown: 15
+  summonCooldownRage: 10
+  summonDuration: 1.5
+  summonShakeIntensity: 0.1
+  summonShakeFrequency: 30
+  summonLeftOffset: {x: -3, y: -1}
+  summonRightOffset: {x: 3, y: -1}
+  summonRusherPerSide: 2
+  pollutionInterval: 4
+  pollutionSpeed: 5
+  pollutionTurnSpeed: 90
+  pollutionShieldDamage: 100
+  pollutionProjectilePrefab: {fileID: 6885822301232714286, guid: 07d35cffddb724d49a566f83902208ac, type: 3}
+  pollutionLifetime: 8
+  chargeTelegraphDuration: 1.5
+  chargeWindupDistance: 0.5
+  chargeDashDuration: 0.3
+  chargeTargetY: -10
+  chargeHitDamage: 300
+  chargeHitShakeIntensity: 0.8
+  chargeHitShakeDuration: 0.3
+  chargeBounceBackDuration: 0.5
+  chargeInterruptRequiredLevel: 5
+  pressJumpDuration: 0.5
+  pressHoverY: -5
+  pressGlareDuration: 1.5
+  pressForce: 80
+  pressForceRageMultiplier: 1.2
+  pressSafeLineY: 3.5
+  pressHitLineY: -10
+  pressMaxDuration: 15
+  pressCounterStunDuration: 3
+  pressSummonCount: 0
+  baseLaserPushForce: 120
+  impactPushMultipliers:
+  - 0.3
+  - 0.6
+  - 0.9
+  - 1.2
+  - 1.5
+  - 2
+  ultPushMultiplier: 2
+  chargeInterruptStunDuration: 3
+  stunDarkenAmount: 0.5
+  stunReturnToAnchor: 1
+  eyeClosedScaleY: 0.1
+  eyeOpenColliderScale: 1.5
+  eyeTransitionDuration: 0.2
+  eyeSlowOpenDuration: 1

@@ -350,9 +350,8 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             // 应用奖励
             ApplyReward(reward);
-            
-            // 显示飘字
-            ShowRewardFloatingText(crate.transform.position, reward.displayText, reward.textColor, reward.isJackpot);
+            // 结束空投阶段
+            EndDropPhase();
         }
         
         /// <summary>
@@ -387,23 +386,15 @@ namespace LightVsDecay.Logic.TacticalDrop
             }
             
             // 处理结果
-            if (resultType == GachaResultType.Nothing)
-            {
-                // 谢谢惠顾
-                ShowRewardFloatingText(crate.transform.position, mockText, rewardConfig.neutralColor, false);
-            }
-            else if (reward != null)
+            if (resultType != GachaResultType.Nothing && reward != null)
             {
                 ApplyReward(reward);
-                
-                Color textColor = resultType == GachaResultType.Negative 
-                    ? rewardConfig.negativeColor 
-                    : (resultType == GachaResultType.Epic ? rewardConfig.jackpotColor : reward.textColor);
-                    
-                bool isJackpot = resultType == GachaResultType.Epic;
-                
-                ShowRewardFloatingText(crate.transform.position, reward.displayText, textColor, isJackpot);
             }
+    
+            // TODO: 后续添加飘字系统
+    
+            // 结束空投阶段
+            EndDropPhase();
         }
         
         /// <summary>
@@ -412,7 +403,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         private void ProcessDealReward(TacticalCrate crate)
         {
             if (rewardConfig == null) return;
-            
+    
             DealEntry deal = rewardConfig.GetRandomDeal();
             if (deal == null)
             {
@@ -420,42 +411,25 @@ namespace LightVsDecay.Logic.TacticalDrop
                 EndDropPhase();
                 return;
             }
-            
+    
             // 先应用代价
             if (deal.cost != null)
             {
                 ApplyReward(deal.cost);
-                ShowRewardFloatingText(
-                    crate.transform.position + Vector3.left * 0.5f, 
-                    deal.cost.displayText, 
-                    rewardConfig.negativeColor, 
-                    false
-                );
             }
-            
-            // 延迟显示收益
-            StartCoroutine(DelayedGainDisplay(crate.transform.position, deal.gain));
-        }
-        
-        /// <summary>
-        /// 延迟显示收益
-        /// </summary>
-        private IEnumerator DelayedGainDisplay(Vector3 position, RewardEntry gain)
-        {
-            yield return new WaitForSeconds(0.3f);
-            
-            if (gain != null)
+    
+            // 再应用收益
+            if (deal.gain != null)
             {
-                ApplyReward(gain);
-                ShowRewardFloatingText(
-                    position + Vector3.right * 0.5f, 
-                    gain.displayText, 
-                    rewardConfig.positiveColor, 
-                    gain.isJackpot
-                );
+                ApplyReward(deal.gain);
             }
+    
+            // TODO: 后续添加飘字系统
+    
+            // 结束空投阶段
+            EndDropPhase();
         }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 奖励应用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -599,80 +573,7 @@ namespace LightVsDecay.Logic.TacticalDrop
                 Debug.Log($"[TacticalDropManager] 应用奖励: {reward.type} = {reward.value}");
             }
         }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 飘字显示
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        /// <summary>
-        /// 显示奖励飘字（飞向光棱塔）
-        /// </summary>
-        private void ShowRewardFloatingText(Vector3 startPos, string text, Color color, bool isJackpot)
-        {
-            StartCoroutine(FloatingTextToTurret(startPos, text, color, isJackpot));
-        }
-        
-        /// <summary>
-        /// 飘字飞向光棱塔协程
-        /// </summary>
-        private IEnumerator FloatingTextToTurret(Vector3 startPos, string text, Color color, bool isJackpot)
-        {
-            // 使用 FloatingTextManager 创建飘字
-            if (FloatingTextManager.Instance != null)
-            {
-                // 先显示飘字（放大效果）
-                if (isJackpot)
-                {
-                    FloatingTextManager.Instance.ShowStatus(startPos, text);
-                }
-                else
-                {
-                    FloatingTextManager.Instance.ShowDamage(startPos, 0, false); // 临时用法
-                }
-            }
-            
-            // 创建临时 UI 对象飞向塔
-            GameObject textObj = new GameObject("RewardText");
-            textObj.transform.position = startPos;
-            
-            // 添加 TextMeshPro 组件
-            var textMesh = textObj.AddComponent<TextMesh>();
-            textMesh.text = text;
-            textMesh.fontSize = isJackpot ? 48 : 36;
-            textMesh.color = color;
-            textMesh.alignment = TextAlignment.Center;
-            textMesh.anchor = TextAnchor.MiddleCenter;
-            
-            // 缩放效果
-            if (isJackpot)
-            {
-                textObj.transform.localScale = Vector3.zero;
-                textObj.transform.DOScale(Vector3.one * 1.5f, 0.3f).SetEase(Ease.OutBack);
-                yield return new WaitForSeconds(0.5f);
-            }
-            else
-            {
-                yield return new WaitForSeconds(0.3f);
-            }
-            
-            // 飞向光棱塔
-            Vector3 targetPos = turretTransform != null ? turretTransform.position : Vector3.zero;
-            float duration = rewardConfig != null ? rewardConfig.floatTextDuration : 1.2f;
-            
-            textObj.transform.DOMove(targetPos, duration)
-                .SetEase(Ease.InQuad);
-            textObj.transform.DOScale(Vector3.zero, duration)
-                .SetEase(Ease.InQuad);
-            
-            yield return new WaitForSeconds(duration);
-            
-            // 销毁
-            Destroy(textObj);
-            
-            // 结束空投阶段
-            EndDropPhase();
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 结束空投
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

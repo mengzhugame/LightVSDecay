@@ -39,10 +39,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         
         [Tooltip("爆炸特效预制体")]
         [SerializeField] private GameObject explosionVFXPrefab;
-        
-        [Tooltip("消失特效预制体")]
-        [SerializeField] private GameObject vanishVFXPrefab;
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -132,33 +129,24 @@ namespace LightVsDecay.Logic.TacticalDrop
         }
         
         /// <summary>
-        /// 播放下落动画
+        /// 播放入场动画（临时空实现，后续替换为无人机入场动画）
         /// </summary>
-        /// <param name="startY">起始Y坐标</param>
-        /// <param name="targetY">目标Y坐标</param>
-        /// <param name="duration">持续时间</param>
-        /// <param name="onComplete">完成回调</param>
         public void PlayDropAnimation(float startY, float targetY, float duration, System.Action onComplete = null)
         {
+            // 直接设置到目标位置
             Vector3 pos = transform.position;
-            pos.y = startY;
+            pos.y = targetY;
             transform.position = pos;
-            
-            originalPosition = new Vector3(pos.x, targetY, pos.z);
-            
-            // 下落动画
-            transform.DOMoveY(targetY, duration)
-                .SetEase(Ease.OutBounce)
-                .OnComplete(() =>
-                {
-                    canBeDamaged = true;
-                    onComplete?.Invoke();
-                    
-                    if (showDebugInfo)
-                    {
-                        Debug.Log($"[TacticalCrate] 落地完成，可以受伤了");
-                    }
-                });
+            originalPosition = pos;
+    
+            // 立即启用伤害
+            canBeDamaged = true;
+            onComplete?.Invoke();
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[TacticalCrate] 入场完成，可以受伤了");
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -296,10 +284,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             {
                 progressUI.HideImmediate();
             }
-            
-            // 播放消失特效
-            PlayVanishVFX();
-            
+
             // 缩小消失动画
             transform.DOScale(Vector3.zero, 0.3f)
                 .SetEase(Ease.InBack)
@@ -341,18 +326,7 @@ namespace LightVsDecay.Logic.TacticalDrop
                 }
             }
         }
-        
-        /// <summary>
-        /// 播放消失特效
-        /// </summary>
-        private void PlayVanishVFX()
-        {
-            if (vanishVFXPrefab != null)
-            {
-                Instantiate(vanishVFXPrefab, transform.position, Quaternion.identity);
-            }
-        }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
