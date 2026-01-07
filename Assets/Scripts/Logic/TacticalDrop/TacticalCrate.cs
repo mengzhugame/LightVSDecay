@@ -133,22 +133,43 @@ namespace LightVsDecay.Logic.TacticalDrop
         /// </summary>
         public void PlayDropAnimation(float startY, float targetY, float duration, System.Action onComplete = null)
         {
-            // 直接设置到目标位置
+            // 设置起始位置
             Vector3 pos = transform.position;
-            pos.y = targetY;
+            pos.y = startY;
             transform.position = pos;
-            originalPosition = pos;
-    
-            // 立即启用伤害
+            
+            // 记录目标位置（用于受击抖动恢复）
+            originalPosition = new Vector3(pos.x, targetY, pos.z);
+            
+            // 入场动画：EaseOutBack 带回弹效果（冲过头再拉回，体现重量感）
+            transform.DOMoveY(targetY, duration)
+                .SetEase(Ease.OutBack)
+                .OnComplete(() =>
+                {
+                    // 更新原始位置
+                    originalPosition = transform.position;
+                    
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[TacticalCrate] 入场动画完成: {crateType}");
+                    }
+                    
+                    // 回调（由管理器统一启用伤害）
+                    onComplete?.Invoke();
+                });
+        }
+        /// <summary>
+        /// 启用伤害接收（由管理器在所有无人机落地后调用）
+        /// </summary>
+        public void EnableDamage()
+        {
             canBeDamaged = true;
-            onComplete?.Invoke();
-    
+            
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalCrate] 入场完成，可以受伤了");
+                Debug.Log($"[TacticalCrate] 已启用伤害: {crateType}");
             }
         }
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 伤害处理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -174,7 +174,12 @@ namespace LightVsDecay.Data.SO
         public int crateHP = 500;
         
         [Tooltip("无人机入场动画时间（秒）")]
-        public float enterDuration = 0.8f;
+        [Range(0.3f, 0.6f)]
+        public float enterDuration = 0.45f;
+        
+        [Tooltip("无人机入场错帧间隔（秒）")]
+        [Range(0.05f, 0.2f)]
+        public float staggerDelay = 0.1f;
         
         [Tooltip("无人机离场动画时间（秒）")]
         public float exitDuration = 0.5f;

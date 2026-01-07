@@ -211,6 +211,9 @@ namespace LightVsDecay.Logic.TacticalDrop
         /// <summary>
         /// 开始空投阶段
         /// </summary>
+        /// <summary>
+        /// 开始空投阶段
+        /// </summary>
         private IEnumerator StartDropPhase()
         {
             isDropPhase = true;
@@ -218,45 +221,88 @@ namespace LightVsDecay.Logic.TacticalDrop
             // 清理旧的宝箱（以防万一）
             ClearAllCrates();
             
-            // 生成3个宝箱
-            SpawnCrates();
+            // 获取配置参数
+            float enterDuration = rewardConfig != null ? rewardConfig.enterDuration : 0.45f;
+            float staggerDelay = rewardConfig != null ? rewardConfig.staggerDelay : 0.1f;
             
-            // 等待所有宝箱落地
-            float dropDuration = rewardConfig != null ? rewardConfig.enterDuration : 0.8f;
-            yield return new WaitForSeconds(dropDuration + 0.1f);
+            // 错帧生成3个无人机
+            yield return StartCoroutine(SpawnCratesStaggered(enterDuration, staggerDelay));
+            
+            // 统一启用所有无人机的伤害
+            EnableAllCratesDamage();
             
             if (showDebugInfo)
             {
-                Debug.Log("[TacticalDropManager] 所有宝箱已落地，等待玩家选择...");
+                Debug.Log("[TacticalDropManager] 所有无人机已落地，等待玩家选择...");
             }
         }
-        
         /// <summary>
-        /// 生成3个宝箱
+        /// 错帧生成3个无人机（左→中→右）
         /// </summary>
-        private void SpawnCrates()
+        private IEnumerator SpawnCratesStaggered(float enterDuration, float staggerDelay)
         {
             int crateHP = rewardConfig != null ? rewardConfig.crateHP : 500;
-            float dropDuration = rewardConfig != null ? rewardConfig.enterDuration : 0.8f;
+            int landedCount = 0;
             
-            // 左：蓝色补给箱
-            SpawnCrate(supplyCratePrefab, CrateType.Supply, leftCrateX, crateHP, dropDuration);
+            // 左：蓝色补给无人机（最先入场）
+            SpawnCrate(supplyCratePrefab, CrateType.Supply, leftCrateX, crateHP, enterDuration, 
+                () => landedCount++);
             
-            // 中：金色问号箱
-            SpawnCrate(gachaCratePrefab, CrateType.Gacha, centerCrateX, crateHP, dropDuration);
+            // 等待错帧间隔
+            yield return new WaitForSeconds(staggerDelay);
             
-            // 右：红色契约箱
-            SpawnCrate(dealCratePrefab, CrateType.Deal, rightCrateX, crateHP, dropDuration);
+            // 中：金色问号无人机
+            SpawnCrate(gachaCratePrefab, CrateType.Gacha, centerCrateX, crateHP, enterDuration,
+                () => landedCount++);
+            
+            // 等待错帧间隔
+            yield return new WaitForSeconds(staggerDelay);
+            
+            // 右：红色契约无人机（最后入场）
+            SpawnCrate(dealCratePrefab, CrateType.Deal, rightCrateX, crateHP, enterDuration,
+                () => landedCount++);
+            
+            // 等待最后一个无人机落地
+            yield return new WaitForSeconds(enterDuration + 0.05f);
+            
+            // 确保所有无人机都已落地
+            while (landedCount < activeCrates.Count)
+            {
+                yield return null;
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[TacticalDropManager] 全部 {landedCount} 个无人机已落地");
+            }
         }
-        
         /// <summary>
-        /// 生成单个宝箱
+        /// 统一启用所有无人机的伤害
         /// </summary>
-        private void SpawnCrate(GameObject prefab, CrateType type, float xPos, int hp, float dropDuration)
+        private void EnableAllCratesDamage()
+        {
+            foreach (var crate in activeCrates)
+            {
+                if (crate != null && !crate.IsDead)
+                {
+                    crate.EnableDamage();
+                }
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[TacticalDropManager] 所有无人机已启用伤害");
+            }
+        }
+
+        /// <summary>
+        /// 生成单个无人机
+        /// </summary>
+        private void SpawnCrate(GameObject prefab, CrateType type, float xPos, int hp, float dropDuration, System.Action onLanded = null)
         {
             if (prefab == null)
             {
-                Debug.LogError($"[TacticalDropManager] 宝箱预制体为空: {type}");
+                Debug.LogError($"[TacticalDropManager] 无人机预制体为空: {type}");
                 return;
             }
             
@@ -273,13 +319,15 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             // 初始化
             crate.Initialize(type, hp);
-            crate.PlayDropAnimation(spawnStartY, landingY, dropDuration);
+            
+            // 播放入场动画（传递落地回调）
+            crate.PlayDropAnimation(spawnStartY, landingY, dropDuration, onLanded);
             
             activeCrates.Add(crate);
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalDropManager] 生成宝箱: {type} @ ({xPos}, {landingY})");
+                Debug.Log($"[TacticalDropManager] 生成无人机: {type} @ ({xPos}, {spawnStartY}) → Y={landingY}");
             }
         }
         
