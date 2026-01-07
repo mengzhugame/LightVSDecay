@@ -38,6 +38,16 @@ namespace LightVsDecay.UI.FloatingText
         PlayerHealthRestore,
         
         /// <summary>玩家护盾恢复 - 青色+</summary>
-        PlayerShieldRestore
+        PlayerShieldRestore,
+        // ═══ 【新增】无人机奖励飘字类型 ═══
+
+        /// <summary>补给无人机奖励 - 蓝绿色</summary>
+        DroneSupply,
+
+        /// <summary>问号无人机奖励 - 根据结果变色</summary>
+        DroneGacha,
+
+        /// <summary>契约无人机奖励 - 代价+收益双行</summary>
+        DroneDeal
     }
 }

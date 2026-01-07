@@ -1,0 +1,203 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06ff4dcc90685344a975580637584ef8, type: 3}
+  m_Name: DroneRewardConfig
+  m_EditorClassIdentifier: 
+  crateHP: 500
+  enterDuration: 0.8
+  exitDuration: 0.5
+  supplyRewards:
+  - type: 0
+    value: 100
+    displayText: HP+100
+    weight: 0
+    isJackpot: 0
+  - type: 0
+    value: 500
+    displayText: HP+500
+    weight: 0
+    isJackpot: 0
+  - type: 1
+    value: 50
+    displayText: SHLD+50
+    weight: 0
+    isJackpot: 0
+  - type: 1
+    value: 200
+    displayText: SHLD+200
+    weight: 0
+    isJackpot: 0
+  gachaResults:
+  - resultType: 0
+    probability: 10
+    rewardPool: []
+    mockTexts:
+    - MISS
+    - BAD LUCK
+  - resultType: 1
+    probability: 10
+    rewardPool:
+    - type: 3
+      value: -0.05
+      displayText: ATK-5%
+      weight: 0
+      isJackpot: 0
+    - type: 3
+      value: -0.1
+      displayText: ATK-10%
+      weight: 0
+      isJackpot: 0
+    - type: 4
+      value: -0.01
+      displayText: CRIT-1%
+      weight: 0
+      isJackpot: 0
+    - type: 4
+      value: -0.02
+      displayText: CRIT-2%
+      weight: 0
+      isJackpot: 0
+    - type: 5
+      value: -0.1
+      displayText: LASER WIDTH-10%
+      weight: 0
+      isJackpot: 0
+    - type: 6
+      value: -1
+      displayText: LASER LENGTH-1
+      weight: 0
+      isJackpot: 0
+    mockTexts: []
+  - resultType: 2
+    probability: 70
+    rewardPool:
+    - type: 3
+      value: 0.05
+      displayText: ATK+5%
+      weight: 1
+      isJackpot: 0
+    - type: 4
+      value: 0.01
+      displayText: CRIT+1%
+      weight: 1
+      isJackpot: 0
+    - type: 5
+      value: 0.05
+      displayText: LASER WIDTH+5%
+      weight: 0
+      isJackpot: 0
+    mockTexts: []
+  - resultType: 3
+    probability: 10
+    rewardPool:
+    - type: 3
+      value: 0.1
+      displayText: ATK+10%
+      weight: 0
+      isJackpot: 0
+    - type: 4
+      value: 0.05
+      displayText: CRIT+5%
+      weight: 0
+      isJackpot: 0
+    - type: 5
+      value: 0.1
+      displayText: LASER WIDTH+10%
+      weight: 0
+      isJackpot: 0
+    - type: 6
+      value: 1
+      displayText: LASER LENGTH+1
+      weight: 0
+      isJackpot: 0
+    mockTexts: []
+  dealEntries:
+  - dealName: "\u8840\u91CF\u6362\u653B\u51FB\u529B"
+    cost:
+      type: 0
+      value: -100
+      displayText: HP-100
+      weight: 1
+      isJackpot: 0
+    gain:
+      type: 3
+      value: 0.1
+      displayText: ATK+10%
+      weight: 1
+      isJackpot: 0
+    weight: 0
+  - dealName: "\u62A4\u76FE\u6362\u653B\u51FB\u529B"
+    cost:
+      type: 1
+      value: -50
+      displayText: SHLD-50
+      weight: 1
+      isJackpot: 0
+    gain:
+      type: 3
+      value: 0.1
+      displayText: ATK+10%
+      weight: 1
+      isJackpot: 0
+    weight: 1
+  - dealName: "\u8840\u91CF\u6362\u66B4\u51FB"
+    cost:
+      type: 0
+      value: -100
+      displayText: HP-100
+      weight: 0
+      isJackpot: 0
+    gain:
+      type: 3
+      value: 0.02
+      displayText: CRIT+2%
+      weight: 0
+      isJackpot: 0
+    weight: 0
+  - dealName: "\u62A4\u76FE\u6362\u66B4\u51FB"
+    cost:
+      type: 1
+      value: -50
+      displayText: SHLD-50
+      weight: 0
+      isJackpot: 0
+    gain:
+      type: 3
+      value: 0.02
+      displayText: CRIT+2%
+      weight: 0
+      isJackpot: 0
+    weight: 0
+  gachaBadLuckProtectionCount: 2
+  laserWidthMinPercent: 0.8
+  laserLengthMinPercent: 0.8
+  healthUpIcon: {fileID: 21300000, guid: 6d2cfc7dc754171449458e858c623c54, type: 3}
+  healthDownIcon: {fileID: 21300000, guid: b811b5133bb47134199ff1f0a4c5b765, type: 3}
+  shieldUpIcon: {fileID: 21300000, guid: c4141a822b9ad7d47bb9643a8074978b, type: 3}
+  shieldDownIcon: {fileID: 21300000, guid: e493b45a547d8254b8c3cdbbc3018582, type: 3}
+  attackUpIcon: {fileID: 21300000, guid: 255019ad986c2c443acdbbcc3af11efb, type: 3}
+  attackDownIcon: {fileID: 21300000, guid: 5c3b5fb50361c8646be9d305cbf72538, type: 3}
+  critUpIcon: {fileID: 21300000, guid: 968ee2fc9215fb94f951a3a1b22c3975, type: 3}
+  critDownIcon: {fileID: 21300000, guid: 875a701a168c387458b412423bf58424, type: 3}
+  laserUpIcon: {fileID: 21300000, guid: 12a1c07e81b89c44f83492925818340f, type: 3}
+  laserDownIcon: {fileID: 21300000, guid: 5d39c4f68e2029a4f8bb02016962cf16, type: 3}
+  nothingIcon: {fileID: 21300000, guid: d3acfda75246fdf4f86eea0021cb491e, type: 3}
+  positiveColor: {r: 0.3, g: 1, b: 0.4, a: 1}
+  negativeColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  neutralColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
+  epicColor: {r: 1, g: 0.84, b: 0, a: 1}
+  supplyTextColor: {r: 0.4, g: 0.9, b: 1, a: 1}
+  supplyTextPrefab: {fileID: 4350696347044824851, guid: 09d75b45b21064c4e8113df5e23a33fd, type: 3}
+  gachaTextPrefab: {fileID: 4853227166549278126, guid: e1eff4caa74ed294cbc4643d16676d94, type: 3}
+  dealTextPrefab: {fileID: 2251835379829043586, guid: 460d1828f385c124e8ff0dfa7f033fa2, type: 3}
+  textPrewarmCount: 3
+  textMaxPoolSize: 10

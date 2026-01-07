@@ -11,7 +11,7 @@ using DG.Tweening;
 using LightVsDecay.Core;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Player;
-using LightVsDecay.UI.FloatingText;
+using LightVsDecay.UI.FloatingText.TacticalDrop;
 
 namespace LightVsDecay.Logic.TacticalDrop
 {
@@ -38,7 +38,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         
         [Header("配置")]
         [Tooltip("奖励配置")]
-        [SerializeField] private CrateRewardConfig rewardConfig;
+        [SerializeField] private DroneRewardConfig rewardConfig;
         
         [Header("预制体")]
         [Tooltip("蓝色补给箱预制体")]
@@ -222,7 +222,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             SpawnCrates();
             
             // 等待所有宝箱落地
-            float dropDuration = rewardConfig != null ? rewardConfig.dropDuration : 0.8f;
+            float dropDuration = rewardConfig != null ? rewardConfig.enterDuration : 0.8f;
             yield return new WaitForSeconds(dropDuration + 0.1f);
             
             if (showDebugInfo)
@@ -237,7 +237,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         private void SpawnCrates()
         {
             int crateHP = rewardConfig != null ? rewardConfig.crateHP : 500;
-            float dropDuration = rewardConfig != null ? rewardConfig.dropDuration : 0.8f;
+            float dropDuration = rewardConfig != null ? rewardConfig.enterDuration : 0.8f;
             
             // 左：蓝色补给箱
             SpawnCrate(supplyCratePrefab, CrateType.Supply, leftCrateX, crateHP, dropDuration);
@@ -339,7 +339,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         private void ProcessSupplyReward(TacticalCrate crate)
         {
             if (rewardConfig == null) return;
-            
+    
             RewardEntry reward = rewardConfig.GetRandomSupplyReward();
             if (reward == null)
             {
@@ -347,9 +347,20 @@ namespace LightVsDecay.Logic.TacticalDrop
                 EndDropPhase();
                 return;
             }
-            
+    
             // 应用奖励
             ApplyReward(reward);
+    
+            // 显示飘字
+            if (DroneRewardTextManager.Instance != null)
+            {
+                DroneRewardTextManager.Instance.ShowSupplyReward(
+                    crate.transform.position + Vector3.up * 0.5f,
+                    reward.type,
+                    reward.displayText
+                );
+            }
+    
             // 结束空投阶段
             EndDropPhase();
         }
@@ -360,17 +371,17 @@ namespace LightVsDecay.Logic.TacticalDrop
         private void ProcessGachaReward(TacticalCrate crate)
         {
             if (rewardConfig == null) return;
-            
+    
             // 检查保底
             bool forceEpic = gachaBadLuckCounter >= rewardConfig.gachaBadLuckProtectionCount;
-            
+    
             var (resultType, reward, mockText) = rewardConfig.GetGachaResult(forceEpic);
-            
+    
             if (showDebugInfo)
             {
                 Debug.Log($"[TacticalDropManager] 金箱结果: {resultType}, 保底触发={forceEpic}");
             }
-            
+    
             // 更新保底计数
             switch (resultType)
             {
@@ -378,20 +389,40 @@ namespace LightVsDecay.Logic.TacticalDrop
                 case GachaResultType.Negative:
                     gachaBadLuckCounter++;
                     break;
-                    
+            
                 case GachaResultType.Normal:
                 case GachaResultType.Epic:
                     gachaBadLuckCounter = 0; // 重置
                     break;
             }
-            
-            // 处理结果
-            if (resultType != GachaResultType.Nothing && reward != null)
+    
+            // 处理结果并显示飘字
+            Vector3 textPos = crate.transform.position + Vector3.up * 0.5f;
+    
+            if (resultType == GachaResultType.Nothing)
+            {
+                // 谢谢惠顾
+                if (DroneRewardTextManager.Instance != null)
+                {
+                    DroneRewardTextManager.Instance.ShowGachaNothing(textPos, mockText);
+                }
+            }
+            else if (reward != null)
             {
                 ApplyReward(reward);
+        
+                bool isEpic = resultType == GachaResultType.Epic;
+        
+                if (DroneRewardTextManager.Instance != null)
+                {
+                    DroneRewardTextManager.Instance.ShowGachaReward(
+                        textPos,
+                        reward.type,
+                        reward.displayText,
+                        isEpic
+                    );
+                }
             }
-    
-            // TODO: 后续添加飘字系统
     
             // 结束空投阶段
             EndDropPhase();
@@ -424,7 +455,18 @@ namespace LightVsDecay.Logic.TacticalDrop
                 ApplyReward(deal.gain);
             }
     
-            // TODO: 后续添加飘字系统
+            // 显示飘字（代价 + 收益）
+            if (DroneRewardTextManager.Instance != null && deal.cost != null && deal.gain != null)
+            {
+                DroneRewardTextManager.Instance.ShowDealReward(
+                    crate.transform.position + Vector3.up * 0.5f,
+                    deal.cost.type,
+                    deal.cost.displayText,
+                    deal.gain.type,
+                    deal.gain.displayText,
+                    deal.gain.isJackpot
+                );
+            }
     
             // 结束空投阶段
             EndDropPhase();
