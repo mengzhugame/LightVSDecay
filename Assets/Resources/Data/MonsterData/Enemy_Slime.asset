@@ -21,6 +21,7 @@ MonoBehaviour:
   contactDamage: 30
   attackInterval: 1
   isSuicide: 0
+  knockbackResistance: 1
   behaviorType: 0
   waveAmplitude: 1
   waveFrequency: 1.5
@@ -32,6 +33,9 @@ MonoBehaviour:
   knockbackStunMoveMultiplier: 0.3
   drifterDeflectionAngle: 45
   drifterKnockbackMultiplier: 2
+  knockbackMinDuration: 0.5
+  drifterMaxSpeed: 15
+  knockbackSpeedThreshold: 2
   minScale: 0.3
   deathFadeDuration: 1
   normalFlowSpeed: 0.3
@@ -47,5 +51,6 @@ MonoBehaviour:
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
   collisionBehavior: 0
+  isBouncing: 0
   bounceForce: 300
   bounceStunDuration: 1

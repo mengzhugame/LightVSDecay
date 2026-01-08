@@ -61,7 +61,7 @@ namespace LightVsDecay.Logic.Enemy
         private float knockbackDrag = 2.0f;
         private float knockbackStunDuration = 0.3f;
         private float knockbackStunMoveMultiplier = 0.3f;
-        
+        private float knockbackResistance = 0f;
         // Drifter 特殊设置
         private float drifterDeflectionAngle = 45f;
         private float drifterKnockbackMultiplier = 2.0f;
@@ -277,6 +277,7 @@ namespace LightVsDecay.Logic.Enemy
                 knockbackDrag = data.knockbackDrag;
                 knockbackStunDuration = data.knockbackStunDuration;
                 knockbackStunMoveMultiplier = data.knockbackStunMoveMultiplier;
+                knockbackResistance = data.knockbackResistance;
                 // 弹跳设置
                 isBouncing = data.isBouncing;
                 // Drifter 特殊
@@ -1117,14 +1118,24 @@ namespace LightVsDecay.Logic.Enemy
         public void ApplyKnockback(Vector2 force)
         {
             if (isDead || !canBeKnockedBack) return;
-            
+    
+            // 【新增】击退抗性计算：实际推力 = 原推力 * (1 - 抗性)
+            float resistanceMultiplier = 1f - knockbackResistance;
+    
+            // 完全免疫时直接返回
+            if (resistanceMultiplier <= 0.001f) return;
+    
+            // 质量缩放
             float knockbackScale = Mathf.Clamp(
                 GameConstants.KNOCKBACK_MASS_SCALE / rb.mass,
                 GameConstants.KNOCKBACK_SCALE_MIN,
                 GameConstants.KNOCKBACK_SCALE_MAX
             );
-            
-            rb.AddForce(force * knockbackScale * knockbackMultiplier, ForceMode2D.Force);
+    
+            // 最终推力 = 力 * 质量缩放 * 抗性倍率 * 技能倍率
+            Vector2 finalForce = force * knockbackScale * resistanceMultiplier * knockbackMultiplier;
+    
+            rb.AddForce(finalForce, ForceMode2D.Force);
         }
         /// <summary>
         /// 设置横穿屏幕的目标位置（由 WaveManager 调用）

@@ -189,11 +189,26 @@ namespace LightVsDecay.Data.SO
         public float baseLaserPushForce = 80f;
         
         [Tooltip("Impact技能等级的推力倍率 [Lv0, Lv1, Lv2, Lv3, Lv4, Lv5]")]
-        public float[] impactPushMultipliers = new float[] { 0.3f, 0.5f, 0.7f, 1.0f, 1.3f, 1.6f };
+        public float[] impactPushMultipliers = new float[] { 0.4f, 0.85f, 1.0f, 1.3f, 1.6f, 2.5f };
         
         [Tooltip("大招激光推力倍率")]
         public float ultPushMultiplier = 2.5f;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 角力摩擦伤害 (Press 专用) 【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("═══ 角力摩擦伤害 ═══")]
+        [Tooltip("Boss 压在护盾上时的每秒伤害")]
+        public float frictionDamagePerSecond = 50f;
+
+        [Tooltip("最大角力持续时间（超时后 Boss 强制撤退）")]
+        public float maxClashDuration = 6f;
+
+        [Tooltip("摩擦伤害触发的 Y 坐标阈值（低于此值开始造成伤害）")]
+        public float frictionTriggerY = -8.5f;
+
+        [Tooltip("Boss 疲劳撤退后的僵直时长（奖励输出时间）")]
+        public float exhaustedStunDuration = 2.5f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Stun (僵直) 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -118,7 +118,11 @@ namespace LightVsDecay.Logic.Boss
         // Press 角力状态
         private bool isPressPhase3Active = false;    // Phase 3 角力是否激活
         private float pressDownForce = 0f;           // 当前下压力
-        
+        // ━━━ 角力摩擦伤害状态 【新增】 ━━━
+        private bool isFrictionDamageActive = false;    // 是否正在造成摩擦伤害
+        private float frictionDamageAccumulator = 0f;   // 摩擦伤害累计器
+        private float clashTimer = 0f;                  // 角力总计时器
+        private ShieldController cachedShieldController;
         // 颜色缓存
         private Color[] originalColors;
         
@@ -240,7 +244,8 @@ namespace LightVsDecay.Logic.Boss
                 {
                     rb.AddForce(Vector2.up * currentPushForce, ForceMode2D.Force);
                 }
-        
+                // 【新增】4. 摩擦伤害检测
+                UpdateFrictionDamage();
                 // 调试日志
                 if (showDebugInfo && Time.frameCount % 30 == 0)
                 {
@@ -937,6 +942,9 @@ namespace LightVsDecay.Logic.Boss
         {
             isPressing = false;
             accumulatedPushForce = Vector2.zero;
+            clashTimer = 0f;                    // 【新增】重置角力计时
+            isFrictionDamageActive = false;     // 【新增】重置摩擦状态
+            frictionDamageAccumulator = 0f;     // 【新增】重置摩擦伤害累计
             
             // ═══════════════════════════════════════════════════
             // Phase 1: Jump Scare (突进贴脸) - 0.5s
@@ -999,11 +1007,11 @@ namespace LightVsDecay.Logic.Boss
             
             yield return new WaitForSeconds(glareDuration);
             
-// ═══════════════════════════════════════════════════
-// Phase 3: Crushing (角力) - 持续直到胜负
-// 眼睛：完全睁开（可被攻击）
-// 物理：Boss 向下压，玩家用激光向上推
-// ═══════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════
+            // Phase 3: Crushing (角力) - 持续直到胜负
+            // 眼睛：完全睁开（可被攻击）
+            // 物理：Boss 向下压，玩家用激光向上推
+            // ═══════════════════════════════════════════════════
 
             if (showDebugInfo)
             {
@@ -1025,6 +1033,17 @@ namespace LightVsDecay.Logic.Boss
             while (crushingElapsed < maxDuration)
             {
                 crushingElapsed += Time.deltaTime;
+                clashTimer += Time.deltaTime;  // 【新增】角力总计时
+    
+                // 【新增】角力超时检测（Boss 疲劳撤退）
+                float maxClash = config != null ? config.maxClashDuration : 6f;
+                if (clashTimer >= maxClash && isFrictionDamageActive)
+                {
+                    isPressPhase3Active = false;
+                    pressDownForce = 0f;
+                    OnPressExhausted();  // 疲劳撤退
+                    yield break;
+                }
     
                 // 注意：不再在这里施加力！力在 FixedUpdate 中统一施加
     
@@ -1139,7 +1158,71 @@ namespace LightVsDecay.Logic.Boss
             isPressing = false;
             StartCoroutine(PressBounceBackRoutine());
         }
-        
+        /// <summary>
+        /// 【新增】Boss 角力疲劳，主动撤退
+        /// </summary>
+        private void OnPressExhausted()
+        {
+            // 重置状态
+            isPressPhase3Active = false;
+            pressDownForce = 0f;
+            currentPushForce = 0f;
+            isReceivingLaserHit = false;
+            isFrictionDamageActive = false;
+            frictionDamageAccumulator = 0f;
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 😤 Boss 角力疲劳！主动撤退！");
+            }
+    
+            // 结束摩擦伤害事件
+            GameEvents.TriggerBossFrictionEnd();
+    
+            rb.velocity = Vector2.zero;
+            isPressing = false;
+    
+            // 显示状态文字
+            ShowCounterText("EXHAUSTED!");
+    
+            // 屏幕震动（轻微）
+            if (CameraShake.Instance != null)
+            {
+                CameraShake.Instance.Shake(0.2f, 0.15f);
+            }
+    
+            // 快速飞回并进入僵直
+            StartCoroutine(ExhaustedRetreatRoutine());
+        }
+
+        private IEnumerator ExhaustedRetreatRoutine()
+        {
+            float duration = 0.4f;  // 快速撤退
+    
+            // 飞回锚点上方一点（表示疲劳后退）
+            Vector3 retreatTarget = battleAnchorPosition + Vector3.up * 1.5f;
+    
+#if DOTWEEN
+            yield return transform.DOMove(retreatTarget, duration)
+                .SetEase(Ease.OutQuad)
+                .WaitForCompletion();
+#else
+    float elapsed = 0f;
+    Vector3 start = transform.position;
+    while (elapsed < duration)
+    {
+        elapsed += Time.deltaTime;
+        transform.position = Vector3.Lerp(start, retreatTarget, elapsed / duration);
+        yield return null;
+    }
+    transform.position = retreatTarget;
+#endif
+    
+            // 进入僵直（奖励时间）- 眼睛睁开（弱点暴露）
+            if (eyeController != null) eyeController.Open();
+    
+            ChangeState(BossState.Stun);
+        }      
         private IEnumerator PressBounceBackRoutine()
         {
             float duration = config != null ? config.chargeBounceBackDuration : 0.5f;
@@ -1283,6 +1366,96 @@ namespace LightVsDecay.Logic.Boss
             }
         }
         
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 角力摩擦伤害系统 【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 更新摩擦伤害（Boss 压在护盾上时）
+        /// </summary>
+        private void UpdateFrictionDamage()
+        {
+            float triggerY = config != null ? config.frictionTriggerY : -8.5f;
+            
+            // 检测是否进入摩擦伤害区域
+            if (transform.position.y <= triggerY)
+            {
+                if (!isFrictionDamageActive)
+                {
+                    isFrictionDamageActive = true;
+                    OnFrictionStart();
+                }
+                
+                // 累计伤害
+                float dps = config != null ? config.frictionDamagePerSecond : 50f;
+                frictionDamageAccumulator += dps * Time.fixedDeltaTime;
+                
+                // 每累计1点伤害就应用一次（避免浮点误差）
+                if (frictionDamageAccumulator >= 1f)
+                {
+                    int damageToApply = Mathf.FloorToInt(frictionDamageAccumulator);
+                    ApplyFrictionDamage(damageToApply);
+                    frictionDamageAccumulator -= damageToApply;
+                }
+            }
+            else
+            {
+                if (isFrictionDamageActive)
+                {
+                    isFrictionDamageActive = false;
+                    OnFrictionEnd();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 开始摩擦伤害
+        /// </summary>
+        private void OnFrictionStart()
+        {
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 🔥 摩擦伤害开始！Boss 压在护盾上！");
+            }
+            
+            // 触发视觉效果事件（供 VFX 系统订阅）
+            GameEvents.TriggerBossFrictionStart();
+        }
+
+        /// <summary>
+        /// 结束摩擦伤害
+        /// </summary>
+        private void OnFrictionEnd()
+        {
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 摩擦伤害结束");
+            }
+            
+            frictionDamageAccumulator = 0f;
+            GameEvents.TriggerBossFrictionEnd();
+        }
+
+        /// <summary>
+        /// 应用摩擦伤害到护盾
+        /// </summary>
+        private void ApplyFrictionDamage(int damage)
+        {
+            if (cachedShieldController == null)
+            {
+                cachedShieldController = FindObjectOfType<ShieldController>();
+            }
+            
+            if (cachedShieldController != null && cachedShieldController.CurrentShieldHP > 0)
+            {
+                cachedShieldController.TakeBossDamage(damage);
+                
+                if (showDebugInfo && Time.frameCount % 30 == 0)
+                {
+                    Debug.Log($"[BossController] 🔥 摩擦伤害: {damage}, 护盾剩余: {cachedShieldController.CurrentShieldHP}");
+                }
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 工具方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

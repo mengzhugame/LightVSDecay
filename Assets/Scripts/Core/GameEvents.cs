@@ -151,6 +151,11 @@ namespace LightVsDecay.Core
         
         /// <summary>Boss 战斗开始</summary>
         public static event Action OnBossFightStart;
+        /// <summary>Boss 摩擦伤害开始（压在护盾上）</summary>
+        public static event Action OnBossFrictionStart;
+
+        /// <summary>Boss 摩擦伤害结束</summary>
+        public static event Action OnBossFrictionEnd;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 波次事件（新增）
@@ -220,7 +225,8 @@ namespace LightVsDecay.Core
         public static void TriggerBossHealthChanged(float percent) => OnBossHealthChanged?.Invoke(percent);
         public static void TriggerBossDeath() => OnBossDeath?.Invoke();
         public static void TriggerBossFightStart() => OnBossFightStart?.Invoke();
-        
+        public static void TriggerBossFrictionStart() => OnBossFrictionStart?.Invoke();
+        public static void TriggerBossFrictionEnd() => OnBossFrictionEnd?.Invoke();
         // 波次事件触发
         public static void TriggerWaveStateChanged(Logic.WaveState state, int wave) 
             => OnWaveStateChanged?.Invoke(state, wave);

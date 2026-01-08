@@ -58,6 +58,10 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("是否为自爆型（碰撞后自毁）")]
         public bool isSuicide = false;
+        [Header("═══ 击退抗性 ═══")]
+        [Tooltip("击退抗性 (0=无抗性，1=完全免疫)")]
+        [Range(0f, 1f)]
+        public float knockbackResistance = 0f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 行为设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

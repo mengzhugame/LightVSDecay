@@ -58,13 +58,17 @@ MonoBehaviour:
   pressSummonCount: 0
   baseLaserPushForce: 120
   impactPushMultipliers:
-  - 0.3
-  - 0.6
-  - 0.9
-  - 1.2
-  - 1.5
-  - 2
+  - 0.4
+  - 0.85
+  - 1
+  - 1.3
+  - 1.6
+  - 2.5
   ultPushMultiplier: 2
+  frictionDamagePerSecond: 50
+  maxClashDuration: 6
+  frictionTriggerY: -8.5
+  exhaustedStunDuration: 2.5
   chargeInterruptStunDuration: 3
   stunDarkenAmount: 0.5
   stunReturnToAnchor: 1

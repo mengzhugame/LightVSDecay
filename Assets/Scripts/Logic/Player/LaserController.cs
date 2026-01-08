@@ -474,6 +474,32 @@ namespace LightVsDecay.Logic.Player
                     continue;  // 宝箱处理完毕，跳过后续敌人检测
                 }
                 
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                // 【新增】Boss 身体角力推力检测
+                // 当 Boss 处于 Press 状态时，命中 Boss 身体也能施加推力
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                if (colliderLayer == enemyLayerIndex)
+                {
+                    BossController bossController = collider.GetComponentInParent<BossController>();
+                    if (bossController != null && bossController.IsPressing)
+                    {
+                        // 施加推力
+                        int impactLevel = SkillEffectManager.Instance != null 
+                            ? SkillEffectManager.Instance.GetImpactLevel() : 0;
+        
+                        float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
+                        Vector2 pushForce = Vector2.up * pushMagnitude;
+                        bossController.ApplyLaserPushForce(pushForce);
+        
+                        if (showDebugInfo)
+                        {
+                            Debug.Log($"[LaserController] ⚡ 命中 Boss 身体，施加角力推力: {pushMagnitude:F2} (Impact Lv.{impactLevel})");
+                        }
+        
+                        // 注意：这里不 continue，让后续代码继续处理伤害
+                        // 但需要跳过 EnemyBlob 检测（Boss 不是 EnemyBlob）
+                    }
+                }
                 // 普通敌人检测
                 EnemyBlob enemy = collider.GetComponentInParent<EnemyBlob>();
                 if (enemy == null || hitEnemies.Contains(enemy)) continue;
