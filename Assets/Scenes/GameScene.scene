@@ -6787,6 +6787,12 @@ MonoBehaviour:
     prewarmCount: 1
     maxCount: 1
     customDestroyDelay: -1
+  - type: 12
+    prefab: {fileID: 5083885827842376499, guid: 48071183221e77344a3c3f84ba05035c, type: 3}
+    usePool: 0
+    prewarmCount: 1
+    maxCount: 1
+    customDestroyDelay: -1
   nonPooledDestroyDelay: 3
   showDebugInfo: 0
 --- !u!1 &1149961730

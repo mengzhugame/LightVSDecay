@@ -31,6 +31,8 @@ namespace LightVsDecay.Core.Pool
     
         // 其他低频特效
         LevelUp,            // 升级特效
+        // 无人机相关（低频）
+        DroneExplosion,         // 无人机爆炸
     }
     
     /// <summary>
@@ -353,7 +355,13 @@ namespace LightVsDecay.Core.Pool
         {
             Play(VFXType.LevelUp, position);
         }
-        
+        /// <summary>
+        /// 播放无人机爆炸特效
+        /// </summary>
+        public void PlayDroneExplosion(Vector3 position)
+        {
+            Play(VFXType.DroneExplosion, position);
+        }
         /// <summary>
         /// 计算粒子系统总时长（用于非池化VFX）
         /// </summary>

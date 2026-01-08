@@ -36,9 +36,6 @@ namespace LightVsDecay.Logic.TacticalDrop
         
         [Tooltip("圆环进度条UI（子物体）")]
         [SerializeField] private CrateProgressUI progressUI;
-        
-        [Tooltip("爆炸特效预制体")]
-        [SerializeField] private GameObject explosionVFXPrefab;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 配置
@@ -321,30 +318,9 @@ namespace LightVsDecay.Logic.TacticalDrop
         /// </summary>
         private void PlayExplosionVFX()
         {
-            if (explosionVFXPrefab != null)
-            {
-                Instantiate(explosionVFXPrefab, transform.position, Quaternion.identity);
-            }
-            
-            // 也可以使用 VFXPoolManager
             if (VFXPoolManager.Instance != null)
             {
-                // 根据宝箱类型播放不同特效
-                switch (crateType)
-                {
-                    case CrateType.Supply:
-                        // 蓝绿色医疗特效
-                        VFXPoolManager.Instance.PlayShieldRecover(transform.position);
-                        break;
-                    case CrateType.Gacha:
-                        // 金色烟花特效
-                        VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
-                        break;
-                    case CrateType.Deal:
-                        // 红黑色邪恶特效
-                        VFXPoolManager.Instance.PlayShieldBreak(transform.position);
-                        break;
-                }
+                VFXPoolManager.Instance.PlayDroneExplosion(transform.position);
             }
         }
 
