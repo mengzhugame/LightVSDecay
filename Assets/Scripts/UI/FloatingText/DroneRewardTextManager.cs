@@ -374,15 +374,16 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         private void OnTextComplete(DroneRewardText text)
         {
             if (text == null) return;
-            
+    
             activeTexts.Remove(text);
             text.Reset();
-            
-            // 返回对应类型的池
-            // 这里简单处理，全部返回到 Supply 池（实际应该根据类型返回）
-            // 由于预制体可能不同，这里需要识别类型
-            // 简化处理：直接禁用，下次需要时重新获取
             text.gameObject.SetActive(false);
+    
+            // 返回到通用池（Supply池）以便复用
+            if (pools.ContainsKey(DroneTextType.Supply))
+            {
+                pools[DroneTextType.Supply].Enqueue(text);
+            }
         }
         
         /// <summary>

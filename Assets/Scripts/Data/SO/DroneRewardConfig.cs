@@ -384,13 +384,19 @@ namespace LightVsDecay.Data.SO
             int roll = UnityEngine.Random.Range(0, totalWeight);
             int cumulative = 0;
             
+            // 调试日志
+            Debug.Log($"[DroneRewardConfig] 契约抽取: 池大小={dealEntries.Count}, 总权重={totalWeight}, 随机值={roll}");
+            
+            int index = 0;
             foreach (var entry in dealEntries)
             {
                 cumulative += entry.weight;
                 if (roll < cumulative)
                 {
+                    Debug.Log($"[DroneRewardConfig] 抽中第 {index} 个: {entry.dealName}, 代价={entry.cost?.displayText}, 收益={entry.gain?.displayText}");
                     return entry;
                 }
+                index++;
             }
             
             return dealEntries[0];

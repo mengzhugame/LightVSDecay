@@ -21,7 +21,7 @@ MonoBehaviour:
   contactDamage: 160
   attackInterval: 1
   isSuicide: 0
-  knockbackResistance: 0.85
+  knockbackResistance: 0.15
   behaviorType: 0
   waveAmplitude: 1
   waveFrequency: 1.5

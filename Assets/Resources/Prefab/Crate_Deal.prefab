@@ -133,8 +133,6 @@ MonoBehaviour:
   fadeInDuration: 0.2
   fadeOutDuration: 0.3
   hideDelay: 0.5
-  fillColorStart: {r: 0, g: 0.8, b: 1, a: 1}
-  fillColorEnd: {r: 1, g: 0.5, b: 0, a: 1}
   pulseScale: 1.1
   showDebugInfo: 0
 --- !u!1 &2197910288502721744
@@ -500,12 +498,10 @@ MonoBehaviour:
   spriteRenderer: {fileID: 6079482215141870086}
   crateCollider: {fileID: 6258694705270250431}
   progressUI: {fileID: 5962633215078708625}
-  explosionVFXPrefab: {fileID: 4415721636402723352, guid: 97f28842c3022904f9ab678bfb8fc4ca, type: 3}
-  vanishVFXPrefab: {fileID: 0}
   crateType: 2
   hitShakeStrength: 0.1
   hitGlowIntensity: 0.5
-  showDebugInfo: 0
+  showDebugInfo: 1
 --- !u!1 &5680097765377453487
 GameObject:
   m_ObjectHideFlags: 0
