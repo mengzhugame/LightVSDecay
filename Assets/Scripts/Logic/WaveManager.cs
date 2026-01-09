@@ -573,10 +573,7 @@ namespace LightVsDecay.Logic
             {
                 // 应用难度倍率
                 ApplyDifficultyModifiers(enemy, group);
-        
-                // 标记为精英（确保视觉效果）
-                enemy.SetEliteStatus(true);
-        
+
                 enemiesSpawned++;
         
                 if (showDebugInfo)

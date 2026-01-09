@@ -348,7 +348,6 @@ namespace LightVsDecay.Logic.Enemy
             isDead = false;
             // 重置精英状态（新增）
             isElite = false;
-            RemoveEliteVisuals();
             // 重置波次难度为默认（等待 WaveManager 设置）
             waveModifiers = DifficultyModifiers.Default;
             
@@ -1147,70 +1146,6 @@ namespace LightVsDecay.Logic.Enemy
             crossScreenProgress = 0f;
             isOutOfBounds = false;
             outOfBoundsTimer = 0f;
-        }
-        /// <summary>
-        /// 设置精英怪状态
-        /// </summary>
-        public void SetEliteStatus(bool elite)
-        {
-            isElite = elite;
-            
-            if (isElite)
-            {
-                ApplyEliteVisuals();
-            }
-            else
-            {
-                RemoveEliteVisuals();
-            }
-        }
-        /// <summary>
-        /// 应用精英怪视觉效果
-        /// </summary>
-        private void ApplyEliteVisuals()
-        {
-            // 1. 缩放增大（精英怪比普通怪大一圈）
-            transform.localScale = originalScale * 1.3f;
-            
-            // 2. 颜色染色（偏橙/金色）
-            SpriteRenderer sr = GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
-            {
-                originalColor = sr.color;
-                sr.color = eliteTintColor;
-            }
-            
-            // 3. 特效（如果有预制体）
-            if (eliteEffectPrefab != null && eliteEffectInstance == null)
-            {
-                eliteEffectInstance = Instantiate(eliteEffectPrefab, transform);
-                eliteEffectInstance.transform.localPosition = Vector3.zero;
-            }
-            
-            // 4. 可选：添加发光描边（需要 Shader 支持）
-            // ...
-        }
-        /// <summary>
-        /// 移除精英怪视觉效果
-        /// </summary>
-        private void RemoveEliteVisuals()
-        {
-            // 恢复缩放
-            transform.localScale = originalScale;
-            
-            // 恢复颜色
-            SpriteRenderer sr = GetComponentInChildren<SpriteRenderer>();
-            if (sr != null && originalColor != default)
-            {
-                sr.color = originalColor;
-            }
-            
-            // 销毁特效
-            if (eliteEffectInstance != null)
-            {
-                Destroy(eliteEffectInstance);
-                eliteEffectInstance = null;
-            }
         }
         /// <summary>
         /// 设置已完全进入屏幕（由 DrifterSpawnHelper 调用）
