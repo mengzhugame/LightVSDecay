@@ -1,11 +1,11 @@
 // ============================================================
 // DroneRewardTextManager.cs
 // 文件位置: Assets/Scripts/UI/TacticalDrop/DroneRewardTextManager.cs
-// 用途：无人机奖励飘字管理器（单例 + 对象池）
+// 用途：无人机奖励飘字管理器（简化版 - 直接Instantiate）
+// 改动：移除对象池，使用直接实例化 + 自动销毁
 // ============================================================
 
 using UnityEngine;
-using System.Collections.Generic;
 using LightVsDecay.Core;
 using LightVsDecay.Data.SO;
 
@@ -22,7 +22,8 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
     }
     
     /// <summary>
-    /// 无人机奖励飘字管理器
+    /// 无人机奖励飘字管理器（简化版）
+    /// 低频场景使用直接 Instantiate，动画完成后自动销毁
     /// </summary>
     public class DroneRewardTextManager : Singleton<DroneRewardTextManager>
     {
@@ -42,14 +43,9 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         [SerializeField] private bool showDebugInfo = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 运行时数据
+        // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private Dictionary<DroneTextType, Queue<DroneRewardText>> pools = 
-            new Dictionary<DroneTextType, Queue<DroneRewardText>>();
-        private List<DroneRewardText> activeTexts = new List<DroneRewardText>();
-        private Transform poolContainer;
-        private int totalCreated = 0;
         private bool isInitialized = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -97,95 +93,17 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
                 return;
             }
             
-            // 创建池容器
-            GameObject containerGO = new GameObject("[DroneRewardTextPool]");
-            containerGO.transform.SetParent(transform, false);
-            
-            RectTransform rt = containerGO.AddComponent<RectTransform>();
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.sizeDelta = Vector2.zero;
-            rt.anchoredPosition = Vector2.zero;
-            
-            poolContainer = containerGO.transform;
-            
-            // 初始化对象池
-            InitializePools();
-            
             isInitialized = true;
             
             if (showDebugInfo)
             {
-                Debug.Log("[DroneRewardTextManager] 初始化完成");
-            }
-        }
-        
-        private void InitializePools()
-        {
-            // 为每种类型创建队列
-            pools[DroneTextType.Supply] = new Queue<DroneRewardText>();
-            pools[DroneTextType.Gacha] = new Queue<DroneRewardText>();
-            pools[DroneTextType.Deal] = new Queue<DroneRewardText>();
-            
-            // 预热
-            PrewarmType(DroneTextType.Supply, config.textPrewarmCount);
-            PrewarmType(DroneTextType.Gacha, config.textPrewarmCount);
-            PrewarmType(DroneTextType.Deal, config.textPrewarmCount);
-        }
-        
-        private void PrewarmType(DroneTextType type, int count)
-        {
-            GameObject prefab = GetPrefab(type);
-            if (prefab == null) return;
-            
-            for (int i = 0; i < count; i++)
-            {
-                DroneRewardText instance = CreateInstance(type, prefab);
-                if (instance != null)
-                {
-                    instance.gameObject.SetActive(false);
-                    pools[type].Enqueue(instance);
-                }
-            }
-        }
-        
-        private DroneRewardText CreateInstance(DroneTextType type, GameObject prefab)
-        {
-            if (prefab == null || poolContainer == null) return null;
-            
-            GameObject go = Instantiate(prefab, poolContainer);
-            go.name = $"DroneText_{type}_{totalCreated:D3}";
-            
-            DroneRewardText text = go.GetComponent<DroneRewardText>();
-            if (text == null)
-            {
-                text = go.AddComponent<DroneRewardText>();
-            }
-            
-            totalCreated++;
-            return text;
-        }
-        
-        private GameObject GetPrefab(DroneTextType type)
-        {
-            if (config == null) return null;
-            
-            switch (type)
-            {
-                case DroneTextType.Supply:
-                    return config.supplyTextPrefab;
-                case DroneTextType.Gacha:
-                    return config.gachaTextPrefab;
-                case DroneTextType.Deal:
-                    return config.dealTextPrefab;
-                default:
-                    return null;
+                Debug.Log("[DroneRewardTextManager] 初始化完成（简化版）");
             }
         }
         
         protected override void OnSingletonDestroy()
         {
-            ClearAll();
+            // 简化版无需清理
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -195,22 +113,18 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         /// <summary>
         /// 显示补给无人机奖励飘字
         /// </summary>
-        /// <param name="worldPosition">世界坐标</param>
-        /// <param name="rewardType">奖励类型</param>
-        /// <param name="displayText">显示文本（如 "+100"）</param>
         public void ShowSupplyReward(Vector3 worldPosition, RewardType rewardType, string displayText)
         {
             if (!EnsureInitialized()) return;
             
-            DroneRewardText text = GetInstance(DroneTextType.Supply);
+            DroneRewardText text = CreateText(DroneTextType.Supply);
             if (text == null) return;
             
             RewardIconType iconType = config.GetIconTypeFromRewardType(rewardType);
             Sprite icon = config.GetIcon(iconType);
             Color color = config.supplyTextColor;
             
-            text.PlaySingle(worldPosition, icon, displayText, color, OnTextComplete);
-            activeTexts.Add(text);
+            text.PlaySingle(worldPosition, icon, displayText, color);
             
             if (showDebugInfo)
             {
@@ -225,23 +139,18 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         /// <summary>
         /// 显示问号无人机奖励飘字
         /// </summary>
-        /// <param name="worldPosition">世界坐标</param>
-        /// <param name="rewardType">奖励类型</param>
-        /// <param name="displayText">显示文本</param>
-        /// <param name="isEpic">是否为史诗大奖</param>
         public void ShowGachaReward(Vector3 worldPosition, RewardType rewardType, string displayText, bool isEpic = false)
         {
             if (!EnsureInitialized()) return;
             
-            DroneRewardText text = GetInstance(DroneTextType.Gacha);
+            DroneRewardText text = CreateText(DroneTextType.Gacha);
             if (text == null) return;
             
             RewardIconType iconType = config.GetIconTypeFromRewardType(rewardType);
             Sprite icon = config.GetIcon(iconType);
             Color color = config.GetRewardColor(rewardType, isEpic);
             
-            text.PlaySingle(worldPosition, icon, displayText, color, OnTextComplete);
-            activeTexts.Add(text);
+            text.PlaySingle(worldPosition, icon, displayText, color);
             
             if (showDebugInfo)
             {
@@ -256,14 +165,13 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         {
             if (!EnsureInitialized()) return;
             
-            DroneRewardText text = GetInstance(DroneTextType.Gacha);
+            DroneRewardText text = CreateText(DroneTextType.Gacha);
             if (text == null) return;
             
             Sprite icon = config.GetIcon(RewardIconType.Nothing);
             Color color = config.neutralColor;
             
-            text.PlaySingle(worldPosition, icon, mockText, color, OnTextComplete);
-            activeTexts.Add(text);
+            text.PlaySingle(worldPosition, icon, mockText, color);
             
             if (showDebugInfo)
             {
@@ -278,12 +186,6 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         /// <summary>
         /// 显示契约无人机奖励飘字（代价 + 收益）
         /// </summary>
-        /// <param name="worldPosition">世界坐标</param>
-        /// <param name="costType">代价类型</param>
-        /// <param name="costText">代价文本（如 "HP -100"）</param>
-        /// <param name="gainType">收益类型</param>
-        /// <param name="gainText">收益文本（如 "ATK +10%"）</param>
-        /// <param name="isEpic">收益是否为史诗</param>
         public void ShowDealReward(
             Vector3 worldPosition,
             RewardType costType,
@@ -294,7 +196,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         {
             if (!EnsureInitialized()) return;
             
-            DroneRewardText text = GetInstance(DroneTextType.Deal);
+            DroneRewardText text = CreateText(DroneTextType.Deal);
             if (text == null) return;
             
             // 代价（始终红色）
@@ -310,10 +212,8 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             text.PlayDual(
                 worldPosition,
                 costIcon, costText, costColor,
-                gainIcon, gainText, gainColor,
-                OnTextComplete
+                gainIcon, gainText, gainColor
             );
-            activeTexts.Add(text);
             
             if (showDebugInfo)
             {
@@ -334,87 +234,46 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             return isInitialized;
         }
         
-        private DroneRewardText GetInstance(DroneTextType type)
-        {
-            if (!pools.ContainsKey(type))
-            {
-                pools[type] = new Queue<DroneRewardText>();
-            }
-            
-            var pool = pools[type];
-            
-            // 从池中取
-            if (pool.Count > 0)
-            {
-                return pool.Dequeue();
-            }
-            
-            // 动态创建
-            if (totalCreated < config.textMaxPoolSize)
-            {
-                GameObject prefab = GetPrefab(type);
-                if (prefab != null)
-                {
-                    return CreateInstance(type, prefab);
-                }
-            }
-            
-            // 回收最旧的
-            if (activeTexts.Count > 0)
-            {
-                DroneRewardText oldest = activeTexts[0];
-                activeTexts.RemoveAt(0);
-                oldest.ForceStop();
-                return oldest;
-            }
-            
-            return null;
-        }
-        
-        private void OnTextComplete(DroneRewardText text)
-        {
-            if (text == null) return;
-    
-            activeTexts.Remove(text);
-            text.Reset();
-            text.gameObject.SetActive(false);
-    
-            // 返回到通用池（Supply池）以便复用
-            if (pools.ContainsKey(DroneTextType.Supply))
-            {
-                pools[DroneTextType.Supply].Enqueue(text);
-            }
-        }
-        
         /// <summary>
-        /// 清空所有
+        /// 创建飘字实例（直接 Instantiate，动画完成后自动销毁）
         /// </summary>
-        public void ClearAll()
+        private DroneRewardText CreateText(DroneTextType type)
         {
-            foreach (var text in activeTexts)
+            GameObject prefab = GetPrefab(type);
+            if (prefab == null)
             {
-                if (text != null)
-                {
-                    text.ForceStop();
-                }
+                Debug.LogError($"[DroneRewardTextManager] 找不到 {type} 类型的 Prefab！");
+                return null;
             }
-            activeTexts.Clear();
             
-            foreach (var pool in pools.Values)
+            GameObject go = Instantiate(prefab, targetCanvas.transform);
+            DroneRewardText text = go.GetComponent<DroneRewardText>();
+            
+            if (text == null)
             {
-                while (pool.Count > 0)
-                {
-                    var text = pool.Dequeue();
-                    if (text != null)
-                    {
-                        Destroy(text.gameObject);
-                    }
-                }
+                Debug.LogError($"[DroneRewardTextManager] Prefab 缺少 DroneRewardText 组件！");
+                Destroy(go);
+                return null;
             }
-            pools.Clear();
             
-            totalCreated = 0;
-            isInitialized = false;
+            return text;
+        }
+        
+        private GameObject GetPrefab(DroneTextType type)
+        {
+            if (config == null) return null;
+            
+            switch (type)
+            {
+                case DroneTextType.Supply:
+                    return config.supplyTextPrefab;
+                case DroneTextType.Gacha:
+                    return config.gachaTextPrefab;
+                case DroneTextType.Deal:
+                    return config.dealTextPrefab;
+                default:
+                    return null;
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

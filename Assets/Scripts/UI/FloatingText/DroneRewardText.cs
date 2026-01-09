@@ -92,7 +92,6 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         
         private bool isPlaying = false;
         private Sequence animSequence;
-        private System.Action<DroneRewardText> onComplete;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
@@ -142,12 +141,9 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             Vector3 worldPosition,
             Sprite icon,
             string text,
-            Color textColor,
-            System.Action<DroneRewardText> completeCallback = null)
+            Color textColor)
         {
             if (isPlaying) return;
-            
-            onComplete = completeCallback;
             
             // 隐藏双行组件
             SetDualRowActive(false);
@@ -195,12 +191,9 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             Color costColor,
             Sprite gainIcon,
             string gainText,
-            Color gainColor,
-            System.Action<DroneRewardText> completeCallback = null)
+            Color gainColor)
         {
             if (isPlaying) return;
-            
-            onComplete = completeCallback;
             
             // 隐藏单行组件
             SetSingleRowActive(false);
@@ -239,41 +232,6 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             // 播放动画
             PlayAnimation();
         }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 控制方法
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        /// <summary>
-        /// 强制停止
-        /// </summary>
-        public void ForceStop()
-        {
-            animSequence?.Kill();
-            Complete();
-        }
-        
-        /// <summary>
-        /// 重置状态（对象池回收时调用）
-        /// </summary>
-        public void Reset()
-        {
-            isPlaying = false;
-            animSequence?.Kill();
-            
-            if (canvasGroup != null)
-            {
-                canvasGroup.alpha = 1f;
-            }
-            
-            if (rectTransform != null)
-            {
-                rectTransform.localScale = Vector3.one;
-            }
-            
-            gameObject.SetActive(false);
-        }
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 私有方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -338,13 +296,12 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         }
         
         /// <summary>
-        /// 动画完成
+        /// 动画完成，自动销毁
         /// </summary>
         private void Complete()
         {
             isPlaying = false;
-            gameObject.SetActive(false);
-            onComplete?.Invoke(this);
+            Destroy(gameObject);
         }
         
         /// <summary>
