@@ -593,22 +593,15 @@ namespace LightVsDecay.Logic.TacticalDrop
                     
                 // ═══ 负面类 ═══
                 case RewardType.HealthLoss:
-                    if (turretHealth != null && turretHealth.CurrentHullHP > 0)
+                    if (turretHealth != null && turretHealth.CurrentHullHP > 1)
                     {
                         int loss = Mathf.RoundToInt(reward.value);
-                        // 保底1点血量（不会被扣到0）
-                        if (turretHealth.CurrentHullHP - loss < 1)
-                        {
-                            loss = turretHealth.CurrentHullHP - 1;
-                        }
-                        if (loss > 0)
-                        {
-                            turretHealth.TakeBossDamage(loss);
-                        }
+                        // 使用直接扣血方法（不经过护盾，保底1点血）
+                        int actualLoss = turretHealth.TakeDirectDamage(loss, 1);
         
                         if (showDebugInfo)
                         {
-                            Debug.Log($"[TacticalDropManager] 血量扣除: -{loss}, 剩余: {turretHealth.CurrentHullHP}");
+                            Debug.Log($"[TacticalDropManager] 血量扣除: -{actualLoss}, 剩余: {turretHealth.CurrentHullHP}");
                         }
                     }
                     break;

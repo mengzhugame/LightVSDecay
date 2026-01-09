@@ -483,5 +483,53 @@ namespace LightVsDecay.Logic.Player
             BroadcastHullStatus();
             CheckLowHealthStatus();
         }
+        /// <summary>
+        /// 直接扣除血量（不经过护盾，用于契约代价等）
+        /// </summary>
+        /// <param name="damage">扣除数值</param>
+        /// <param name="minRemaining">保底剩余血量（默认1）</param>
+        /// <returns>实际扣除的血量</returns>
+        public int TakeDirectDamage(int damage, int minRemaining = 1)
+        {
+            if (damage <= 0 || currentHullHP <= minRemaining) return 0;
+    
+            // 计算实际扣除量（保底剩余 minRemaining 点血）
+            int maxLoss = currentHullHP - minRemaining;
+            int actualLoss = Mathf.Min(damage, maxLoss);
+    
+            if (actualLoss <= 0) return 0;
+    
+            // 直接扣血，不经过护盾
+            currentHullHP -= actualLoss;
+    
+            // 播放受伤特效
+            PlayDamageEffect();
+            TriggerHitFlash();
+    
+            // 触发玩家受击飘字事件
+            GameEvents.TriggerPlayerHealthDamaged(actualLoss, transform.position);
+    
+            // 广播状态
+            BroadcastHullStatus();
+    
+            // 检查低血量状态
+            CheckLowHealthStatus();
+    
+            // 更新视觉
+            UpdateVisuals();
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[TurretHealth] 直接扣血: -{actualLoss}, 剩余: {currentHullHP}/{maxHullHP}");
+            }
+    
+            // 检查死亡（理论上保底1血不会触发）
+            if (currentHullHP <= 0)
+            {
+                OnDeath();
+            }
+    
+            return actualLoss;
+        }
     }
 }
