@@ -20,23 +20,28 @@ MonoBehaviour:
   - type: 0
     value: 100
     displayText: HP+100
-    weight: 0
+    weight: 40
     isJackpot: 0
   - type: 0
     value: 500
     displayText: HP+500
-    weight: 0
+    weight: 40
     isJackpot: 0
   - type: 1
     value: 50
     displayText: SHLD+50
-    weight: 0
+    weight: 40
     isJackpot: 0
   - type: 1
     value: 200
     displayText: SHLD+200
-    weight: 0
+    weight: 40
     isJackpot: 0
+  - type: 2
+    value: 500
+    displayText: SHLD+500
+    weight: 20
+    isJackpot: 1
   gachaResults:
   - resultType: 0
     probability: 10
@@ -135,7 +140,7 @@ MonoBehaviour:
       displayText: ATK+10%
       weight: 1
       isJackpot: 0
-    weight: 0
+    weight: 1
   - dealName: "\u62A4\u76FE\u6362\u653B\u51FB\u529B"
     cost:
       type: 8
@@ -155,15 +160,15 @@ MonoBehaviour:
       type: 7
       value: 100
       displayText: HP-100
-      weight: 0
+      weight: 1
       isJackpot: 0
     gain:
       type: 3
       value: 0.02
       displayText: CRIT+2%
-      weight: 0
+      weight: 1
       isJackpot: 0
-    weight: 0
+    weight: 1
   - dealName: "\u62A4\u76FE\u6362\u66B4\u51FB"
     cost:
       type: 8
@@ -177,7 +182,7 @@ MonoBehaviour:
       displayText: CRIT+2%
       weight: 0
       isJackpot: 0
-    weight: 0
+    weight: 1
   gachaBadLuckProtectionCount: 2
   laserWidthMinPercent: 0.8
   laserLengthMinPercent: 0.8

@@ -388,7 +388,10 @@ namespace LightVsDecay.Logic.TacticalDrop
         {
             if (rewardConfig == null) return;
     
-            RewardEntry reward = rewardConfig.GetRandomSupplyReward();
+            // 检查护盾状态
+            bool isShieldBroken = shieldController == null || shieldController.CurrentShieldHP <= 0;
+
+            RewardEntry reward = rewardConfig.GetRandomSupplyReward(isShieldBroken);
             if (reward == null)
             {
                 Debug.LogWarning("[TacticalDropManager] 补给箱奖励池为空！");
@@ -483,7 +486,10 @@ namespace LightVsDecay.Logic.TacticalDrop
         {
             if (rewardConfig == null) return;
     
-            DealEntry deal = rewardConfig.GetRandomDeal();
+            // 检查护盾状态
+            bool isShieldBroken = shieldController == null || shieldController.CurrentShieldHP <= 0;
+
+            DealEntry deal = rewardConfig.GetRandomDeal(isShieldBroken);
             if (deal == null)
             {
                 Debug.LogWarning("[TacticalDropManager] 契约箱交易池为空！");
@@ -587,10 +593,10 @@ namespace LightVsDecay.Logic.TacticalDrop
                     
                 // ═══ 负面类 ═══
                 case RewardType.HealthLoss:
-                    if (turretHealth != null)
+                    if (turretHealth != null && turretHealth.CurrentHullHP > 0)
                     {
                         int loss = Mathf.RoundToInt(reward.value);
-                        // 保底1血
+                        // 保底1点血量（不会被扣到0）
                         if (turretHealth.CurrentHullHP - loss < 1)
                         {
                             loss = turretHealth.CurrentHullHP - 1;
@@ -599,13 +605,32 @@ namespace LightVsDecay.Logic.TacticalDrop
                         {
                             turretHealth.TakeBossDamage(loss);
                         }
+        
+                        if (showDebugInfo)
+                        {
+                            Debug.Log($"[TacticalDropManager] 血量扣除: -{loss}, 剩余: {turretHealth.CurrentHullHP}");
+                        }
                     }
                     break;
                     
                 case RewardType.ShieldLoss:
-                    if (shieldController != null)
+                    if (shieldController != null && shieldController.CurrentShieldHP > 0)
                     {
-                        shieldController.TakeDamage(Mathf.RoundToInt(reward.value));
+                        int loss = Mathf.RoundToInt(reward.value);
+                        // 保底1点护盾（不会被扣到0）
+                        if (shieldController.CurrentShieldHP - loss < 1)
+                        {
+                            loss = shieldController.CurrentShieldHP - 1;
+                        }
+                        if (loss > 0)
+                        {
+                            shieldController.TakeDamage(loss);
+                        }
+        
+                        if (showDebugInfo)
+                        {
+                            Debug.Log($"[TacticalDropManager] 护盾扣除: -{loss}, 剩余: {shieldController.CurrentShieldHP}");
+                        }
                     }
                     break;
                     

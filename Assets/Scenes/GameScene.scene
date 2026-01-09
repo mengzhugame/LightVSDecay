@@ -1004,7 +1004,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -71, y: 0}
   m_SizeDelta: {x: 128, y: 128}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &82930340
@@ -2371,8 +2371,8 @@ MonoBehaviour:
   spawnOffset: 1.5
   eliteTankPrefab: {fileID: 7283361689419196302, guid: bc8ffc78722db7043ada0f88f923ac8c, type: 3}
   eliteDrifterPrefab: {fileID: 6171739888601257571, guid: c569fce9dc16d314a85667fe27f16cc2, type: 3}
-  showDebugInfo: 1
-  showSpawnArea: 1
+  showDebugInfo: 0
+  showSpawnArea: 0
 --- !u!1 &307729488
 GameObject:
   m_ObjectHideFlags: 0
@@ -7750,7 +7750,7 @@ MonoBehaviour:
   centerCrateX: 0
   rightCrateX: 4.5
   turretTransform: {fileID: 7209561176920752722}
-  showDebugInfo: 0
+  showDebugInfo: 1
 --- !u!1 &1245219309
 GameObject:
   m_ObjectHideFlags: 0
@@ -9930,7 +9930,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1568450558
 Transform:
   m_ObjectHideFlags: 0

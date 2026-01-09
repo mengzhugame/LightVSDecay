@@ -407,7 +407,47 @@ namespace LightVsDecay.Logic.Player
                 Debug.Log($"[TurretHealth] 恢复生命 +{actualRestore}: {currentHullHP}/{maxHullHP}");
             }
         }
-        
+        /// <summary>
+        /// 直接扣除本体血量（忽略护盾，用于契约代价等）
+        /// </summary>
+        /// <param name="amount">扣除的血量</param>
+        /// <param name="allowDeath">是否允许扣死（false则保底1血）</param>
+        public void DirectDamageToHull(int amount, bool allowDeath = false)
+        {
+            if (amount <= 0) return;
+    
+            // 保底检查
+            if (!allowDeath && currentHullHP - amount < 1)
+            {
+                amount = currentHullHP - 1;
+            }
+    
+            if (amount <= 0) return;
+    
+            int oldHP = currentHullHP;
+            currentHullHP = Mathf.Max(0, currentHullHP - amount);
+            int actualDamage = oldHP - currentHullHP;
+    
+            // 广播状态
+            BroadcastHullStatus();
+    
+            // 检查低血量状态
+            CheckLowHealthStatus();
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[TurretHealth] 直接扣血: -{actualDamage}, 剩余: {currentHullHP}/{maxHullHP}");
+            }
+    
+            // 更新视觉
+            UpdateVisuals();
+    
+            // 检查死亡（如果允许）
+            if (allowDeath && currentHullHP <= 0)
+            {
+                OnDeath();
+            }
+        }
         /// <summary>
         /// 恢复生命值（百分比）
         /// </summary>

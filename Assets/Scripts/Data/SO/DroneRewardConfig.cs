@@ -314,9 +314,41 @@ namespace LightVsDecay.Data.SO
         /// <summary>
         /// 从补给箱奖励池随机抽取
         /// </summary>
-        public RewardEntry GetRandomSupplyReward()
+        /// <param name="isShieldBroken">护盾是否已破碎</param>
+        public RewardEntry GetRandomSupplyReward(bool isShieldBroken = false)
         {
-            return GetWeightedRandom(supplyRewards);
+            // 构建过滤后的奖励池
+            List<RewardEntry> filteredPool = new List<RewardEntry>();
+    
+            foreach (var entry in supplyRewards)
+            {
+                if (isShieldBroken)
+                {
+                    // 护盾破碎时：剔除 ShieldRestore（加护盾值），保留 ShieldFull（护盾重启）
+                    if (entry.type == RewardType.ShieldRestore)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    // 护盾未破碎时：剔除 ShieldFull（护盾重启），保留 ShieldRestore
+                    if (entry.type == RewardType.ShieldFull)
+                    {
+                        continue;
+                    }
+                }
+        
+                filteredPool.Add(entry);
+            }
+    
+            if (filteredPool.Count == 0)
+            {
+                Debug.LogWarning("[DroneRewardConfig] 补给箱过滤后奖励池为空！");
+                return null;
+            }
+    
+            return GetWeightedRandom(filteredPool);
         }
         
         /// <summary>
@@ -371,24 +403,45 @@ namespace LightVsDecay.Data.SO
         /// <summary>
         /// 获取契约箱交易
         /// </summary>
-        public DealEntry GetRandomDeal()
+        /// <param name="isShieldBroken">护盾是否已破碎</param>
+        public DealEntry GetRandomDeal(bool isShieldBroken = false)
         {
             if (dealEntries.Count == 0) return null;
-            
-            int totalWeight = 0;
+    
+            // 构建过滤后的交易池
+            List<DealEntry> filteredPool = new List<DealEntry>();
+    
             foreach (var entry in dealEntries)
+            {
+                // 护盾破碎时，剔除代价为扣护盾的交易
+                if (isShieldBroken && entry.cost != null && entry.cost.type == RewardType.ShieldLoss)
+                {
+                    continue;
+                }
+        
+                filteredPool.Add(entry);
+            }
+    
+            if (filteredPool.Count == 0)
+            {
+                Debug.LogWarning("[DroneRewardConfig] 契约箱过滤后交易池为空！");
+                return null;
+            }
+    
+            int totalWeight = 0;
+            foreach (var entry in filteredPool)
             {
                 totalWeight += entry.weight;
             }
-            
+    
             int roll = UnityEngine.Random.Range(0, totalWeight);
             int cumulative = 0;
-            
+    
             // 调试日志
-            Debug.Log($"[DroneRewardConfig] 契约抽取: 池大小={dealEntries.Count}, 总权重={totalWeight}, 随机值={roll}");
-            
+            Debug.Log($"[DroneRewardConfig] 契约抽取: 池大小={filteredPool.Count}, 总权重={totalWeight}, 随机值={roll}, 护盾破碎={isShieldBroken}");
+    
             int index = 0;
-            foreach (var entry in dealEntries)
+            foreach (var entry in filteredPool)
             {
                 cumulative += entry.weight;
                 if (roll < cumulative)
@@ -398,8 +451,8 @@ namespace LightVsDecay.Data.SO
                 }
                 index++;
             }
-            
-            return dealEntries[0];
+    
+            return filteredPool[0];
         }
         
         /// <summary>
