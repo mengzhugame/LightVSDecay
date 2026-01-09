@@ -98,7 +98,7 @@ namespace LightVsDecay.Logic.XP
             if (isCollected) return;
             
             // 使用 unscaledDeltaTime 以确保暂停时也能继续飞行
-            float deltaTime = Time.unscaledDeltaTime;
+            float deltaTime = Time.deltaTime;
             timer += deltaTime;
             
             if (!isFlying)

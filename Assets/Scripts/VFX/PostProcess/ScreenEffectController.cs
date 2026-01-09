@@ -126,6 +126,9 @@ namespace LightVsDecay.VFX.PostProcess
             GameEvents.OnLowHealthStart += OnLowHealthStart;
             GameEvents.OnLowHealthEnd += OnLowHealthEnd;
             GameEvents.OnShieldBroken += OnShieldBroken;
+            // 【新增】订阅游戏结束事件
+            GameEvents.OnGameVictory += OnGameEnd;
+            GameEvents.OnGameDefeat += OnGameEnd;
         }
         
         private void OnDisable()
@@ -134,7 +137,9 @@ namespace LightVsDecay.VFX.PostProcess
             GameEvents.OnLowHealthStart -= OnLowHealthStart;
             GameEvents.OnLowHealthEnd -= OnLowHealthEnd;
             GameEvents.OnShieldBroken -= OnShieldBroken;
-            
+            // 【新增】取消订阅游戏结束事件
+            GameEvents.OnGameVictory -= OnGameEnd;
+            GameEvents.OnGameDefeat -= OnGameEnd;
             // 停止协程
             StopAllEffects();
         }
@@ -238,7 +243,18 @@ namespace LightVsDecay.VFX.PostProcess
             
             PlayGlassCrack();
         }
-        
+        /// <summary>
+        /// 游戏结束时停止所有效果
+        /// </summary>
+        private void OnGameEnd()
+        {
+            if (showDebugInfo)
+            {
+                Debug.Log("[ScreenEffectController] 游戏结束，停止所有效果");
+            }
+    
+            StopAllEffects();
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 低血量心跳效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

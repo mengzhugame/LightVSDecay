@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 using LightVsDecay.Logic;
+using LightVsDecay.VFX.PostProcess;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -61,7 +62,20 @@ namespace LightVsDecay.UI.Panels
             // 设置按钮回调
             SetupButtons();
         }
-
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】确保面板显示时游戏暂停
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        private void OnEnable()
+        {
+            // 确保游戏暂停（与 SkillChooseOnePanel 保持一致）
+            Time.timeScale = 0f;
+    
+            // 停止全屏特效（如心跳闪红）
+            if (ScreenEffectController.Instance != null)
+            {
+                ScreenEffectController.Instance.StopAllEffects();
+            }
+        }
         private void SetupButtons()
         {
             if (doubleReceivedButton != null)

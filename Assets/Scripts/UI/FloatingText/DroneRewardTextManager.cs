@@ -99,7 +99,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             
             // 创建池容器
             GameObject containerGO = new GameObject("[DroneRewardTextPool]");
-            containerGO.transform.SetParent(targetCanvas.transform, false);
+            containerGO.transform.SetParent(transform, false);
             
             RectTransform rt = containerGO.AddComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;

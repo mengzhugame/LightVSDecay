@@ -187,8 +187,14 @@ namespace LightVsDecay.Logic.Player
         
         private void Update()
         {
+            // 【新增】非 Playing 状态时不执行伤害检测
+            if (GameManager.Instance != null && !GameManager.Instance.IsPlaying)
+            {
+                return;
+            }
+    
             tickTimer += Time.deltaTime;
-            
+    
             if (tickTimer >= tickRate)
             {
                 tickTimer = 0f;
