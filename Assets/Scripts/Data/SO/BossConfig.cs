@@ -241,7 +241,57 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("眼睛缓慢睁开动画时长（Press用）")]
         public float eyeSlowOpenDuration = 1.0f;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 甲壳机制
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        [Header("═══ 甲壳机制 ═══")]
+        [Tooltip("闭眼时减伤比例（0.8 = 80%减伤，只造成20%伤害）")]
+        [Range(0f, 0.95f)]
+        public float armorDamageReduction = 0.8f;
+
+        [Tooltip("被动眨眼持续时间（秒）")]
+        public float blinkDuration = 0.75f;
+
+        [Header("═══ V3.0 连体Buff ═══")]
+        [Tooltip("连体Buff最大叠层（每只Rusher +1层）")]
+        public int linkedBuffMaxStacks = 5;
+
+        [Tooltip("每层减伤加成（0.1 = +10%减伤）")]
+        [Range(0f, 0.2f)]
+        public float linkedBuffDamageReductionPerStack = 0.1f;
+
+        [Tooltip("每层Charge速度加成（0.1 = +10%速度）")]
+        [Range(0f, 0.2f)]
+        public float linkedBuffChargeSpeedPerStack = 0.1f;
+
+        [Header("═══ V3.0 Charge频率打断 ═══")]
+        [Tooltip("触发频率打断的受击次数阈值")]
+        public int chargeHitCountThreshold = 30;
+
+        [Header("═══ V3.0 Press过载机制 ═══")]
+        [Tooltip("过载检测时间窗口（秒）")]
+        public float pressOverloadWindow = 1.5f;
+
+        [Tooltip("过载伤害阈值（窗口内累计伤害达到此值触发撤退）")]
+        public float pressOverloadDamageThreshold = 2000f;
+
+        [Header("═══ V3.0 短僵直 ═══")]
+        [Tooltip("短僵直时长（毒球反弹、过载撤退）")]
+        public float shortStunDuration = 1.5f;
+
+        [Header("═══ V3.0 污秽球物理 ═══")]
+        [Tooltip("污秽球血量")]
+        public float pollutionBallHP = 200f;
+
+        [Tooltip("污秽球质量（影响被推动的难度）")]
+        public float pollutionBallMass = 3f;
+
+        [Tooltip("反弹伤害（Boss最大HP的百分比）")]
+        [Range(0.01f, 0.2f)]
+        public float pollutionBossDamagePercent = 0.05f;
+
+        [Tooltip("最大同时存在的污秽球数量")]
+        public int pollutionMaxCount = 3;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 便捷方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

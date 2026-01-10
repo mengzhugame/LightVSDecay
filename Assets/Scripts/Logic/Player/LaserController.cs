@@ -120,6 +120,7 @@ namespace LightVsDecay.Logic.Player
         private int enemyLayerIndex;
         private int bouncingEnemyLayerIndex;  // 【新增】
         private int bossEyesLayerIndex;
+        private int bossPollutionBallLayerIndex;  // 污秽球Layer
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Reflex 反射相关【新增】
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -254,13 +255,14 @@ namespace LightVsDecay.Logic.Player
             }
             
             // 合并检测层 (Enemy + BossEyes)
-            combinedDetectionLayer = enemyLayer | bouncingEnemyLayer| bossEyesLayer;
+            LayerMask pollutionBallLayer = 1 << LayerMask.NameToLayer("BossPollutionBall");
+            combinedDetectionLayer = enemyLayer | bouncingEnemyLayer | bossEyesLayer | pollutionBallLayer;
             
             // 缓存 Layer 索引
             enemyLayerIndex = LayerMask.NameToLayer("Enemy");
             bouncingEnemyLayerIndex = LayerMask.NameToLayer(GameConstants.BOUNCING_ENEMY_LAYER);  // 【新增】
             bossEyesLayerIndex = LayerMask.NameToLayer("EnemyEyes");
-            
+            bossPollutionBallLayerIndex = LayerMask.NameToLayer("BossPollutionBall");
             if (showDebugInfo)
             {
                 Debug.Log($"[LaserController] 检测层初始化 - Enemy: {enemyLayer.value}, BossEyes: {bossEyesLayer.value}");
@@ -373,7 +375,7 @@ namespace LightVsDecay.Logic.Player
             }
         }
         /// <summary>
-        /// 对单个激光段进行伤害检测
+        /// 对单个激光段进行伤害检测 (V3.0 重构)
         /// </summary>
         private void DetectAndDamageInSegment(LaserSegment segment, float width, float damage, float knockbackMultiplier)
         {
@@ -393,17 +395,41 @@ namespace LightVsDecay.Logic.Player
                 
                 int colliderLayer = collider.gameObject.layer;
                 
-                // Boss 核心检测
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                // V3.0: 污秽球检测（最高优先级）
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                if (colliderLayer == bossPollutionBallLayerIndex)
+                {
+                    BossPollutionProjectile ball = collider.GetComponent<BossPollutionProjectile>();
+                    if (ball != null && !ball.IsDestroyed)
+                    {
+                        // 计算推力方向（激光方向）
+                        Vector2 pushDir = segmentDir;
+                        float pushMagnitude = CurrentKnockbackForce * 2f;  // 推力放大
+                        
+                        ball.TakeDamage(damage, pushDir * pushMagnitude);
+                        
+                        if (showDebugInfo)
+                        {
+                            Debug.Log($"[LaserController] 🟣 命中污秽球！伤害={damage:F0}, 推力={pushMagnitude:F0}");
+                        }
+                    }
+                    continue;  // 污秽球处理完毕
+                }
+                
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                // Boss 眼睛检测（弱点）
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 if (colliderLayer == bossEyesLayerIndex)
                 {
                     BossHealth bossHealth = collider.GetComponentInParent<BossHealth>();
                     if (bossHealth != null && !hitBosses.Contains(bossHealth))
                     {
                         hitBosses.Add(bossHealth);
-        
+            
                         bool isCrit = RollCrit();
-        
-                        // 【新增】区间C：BOSS 易伤加成（Focus Lv3+ = +20%）
+            
+                        // BOSS 易伤加成（Focus Lv3+ = +20%）
                         float bossDamage = damage;
                         if (SkillEffectManager.Instance != null)
                         {
@@ -411,14 +437,15 @@ namespace LightVsDecay.Logic.Player
                             if (bossBonus > 0f)
                             {
                                 bossDamage *= (1f + bossBonus);
-                
+                    
                                 if (showDebugInfo)
                                 {
                                     Debug.Log($"[LaserController] BOSS易伤加成: +{bossBonus:P0}, 伤害: {damage:F1} → {bossDamage:F1}");
                                 }
                             }
                         }
-        
+            
+                        // V3.0: 调用眼睛伤害（自动计算连体Buff）
                         bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
                         
                         // 角力系统
@@ -428,97 +455,121 @@ namespace LightVsDecay.Logic.Player
                             int impactLevel = SkillEffectManager.Instance != null 
                                 ? SkillEffectManager.Instance.GetImpactLevel() : 0;
                             
-                            // === 情况1: 蓄力阶段 - 尝试打断 ===
+                            // 情况1: 蓄力阶段 - 尝试打断
                             if (bossController.IsInChargeTelegraph)
                             {
                                 bool canInterrupt = SkillEffectManager.Instance != null
                                     ? SkillEffectManager.Instance.CanInterruptBossCharge(isUltMode)
                                     : (impactLevel >= 5 || isUltMode);
                                 
-                                if (canInterrupt)
+                                if (canInterrupt || isUltMode)
                                 {
                                     bossController.InterruptCharge();
                                     
                                     if (showDebugInfo)
                                     {
-                                        Debug.Log("[LaserController] 🛑 打断 BOSS 蓄力！");
+                                        Debug.Log($"[LaserController] ⚡ 打断Boss蓄力！(Impact Lv.{impactLevel}, ULT={isUltMode})");
                                     }
                                 }
                             }
-                            // === 情况2: 冲撞阶段 - 施加推力（角力核心） ===
-                            else if (bossController.IsPressing)
+                            
+                            // 情况2: Press角力阶段 - 施加推力
+                            if (bossController.IsPressing)
                             {
                                 float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
-                                Vector2 pushDirection = Vector2.up;
-                                Vector2 pushForce = pushDirection * pushMagnitude;
+                                Vector2 pushForce = Vector2.up * pushMagnitude;
                                 bossController.ApplyLaserPushForce(pushForce);
-                                
-                                if (showDebugInfo)
-                                {
-                                    Debug.Log($"[LaserController] ⚡ 对冲撞中的 BOSS 施加推力: {pushMagnitude:F2}");
-                                }
                             }
                         }
                     }
-                    continue;
-                }
-
-                float finalDamage = 0;
-                // 【新增】宝箱检测（在普通敌人检测之前）
-                TacticalCrate crate = collider.GetComponentInParent<TacticalCrate>();
-                if (crate != null)
-                {
-                    if (!hitCrates.Contains(crate) && crate.CanBeDamaged && !crate.IsDead)
-                    {
-                        hitCrates.Add(crate);
-        
-                        bool crateCrit = RollCrit();
-                        finalDamage = crateCrit ? damage * critDamageMultiplier : damage;
-        
-                        crate.TakeDamage(finalDamage, Vector2.zero, crateCrit);
-                    }
-                    continue;  // 宝箱处理完毕，跳过后续敌人检测
+                    continue;  // 眼睛处理完毕，不再检测身体
                 }
                 
                 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // 【新增】Boss 身体角力推力检测
-                // 当 Boss 处于 Press 状态时，命中 Boss 身体也能施加推力
+                // 宝箱检测
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                TacticalCrate crate = collider.GetComponent<TacticalCrate>();
+                if (crate != null)
+                {
+                    if (!hitCrates.Contains(crate))
+                    {
+                        hitCrates.Add(crate);
+                        
+                        bool crateCrit = RollCrit();
+                        float finalDamage = crateCrit ? damage * critDamageMultiplier : damage;
+            
+                        crate.TakeDamage(finalDamage, Vector2.zero, crateCrit);
+                    }
+                    continue;  // 宝箱处理完毕
+                }
+                
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                // V3.0: Boss 身体检测（Enemy层但是Boss）
                 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 if (colliderLayer == enemyLayerIndex)
                 {
                     BossController bossController = collider.GetComponentInParent<BossController>();
-                    if (bossController != null && bossController.IsPressing)
+                    if (bossController != null)
                     {
-                        // 施加推力
-                        int impactLevel = SkillEffectManager.Instance != null 
-                            ? SkillEffectManager.Instance.GetImpactLevel() : 0;
-        
-                        float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
-                        Vector2 pushForce = Vector2.up * pushMagnitude;
-                        bossController.ApplyLaserPushForce(pushForce);
-        
-                        if (showDebugInfo)
+                        BossHealth bossHealth = bossController.GetComponent<BossHealth>();
+                        
+                        // V3.0: 对身体造成减伤伤害
+                        if (bossHealth != null && !hitBosses.Contains(bossHealth))
                         {
-                            Debug.Log($"[LaserController] ⚡ 命中 Boss 身体，施加角力推力: {pushMagnitude:F2} (Impact Lv.{impactLevel})");
+                            hitBosses.Add(bossHealth);
+                            
+                            bool isCrit = RollCrit();
+                            
+                            // BOSS 易伤加成
+                            float bossDamage = damage;
+                            if (SkillEffectManager.Instance != null)
+                            {
+                                float bossBonus = SkillEffectManager.Instance.GetFocusBossDamageBonus();
+                                if (bossBonus > 0f)
+                                {
+                                    bossDamage *= (1f + bossBonus);
+                                }
+                            }
+                            
+                            // V3.0: 调用身体伤害（80%减伤 + 连体Buff）
+                            bossHealth.TakeBodyDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
+                            
+                            if (showDebugInfo)
+                            {
+                                Debug.Log($"[LaserController] 🛡️ 命中Boss身体（甲壳），伤害: {bossDamage:F1}");
+                            }
                         }
-        
-                        // 注意：这里不 continue，让后续代码继续处理伤害
-                        // 但需要跳过 EnemyBlob 检测（Boss 不是 EnemyBlob）
+                        
+                        // Press角力推力（身体也能施加推力）
+                        if (bossController.IsPressing)
+                        {
+                            int impactLevel = SkillEffectManager.Instance != null 
+                                ? SkillEffectManager.Instance.GetImpactLevel() : 0;
+            
+                            float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
+                            Vector2 pushForce = Vector2.up * pushMagnitude;
+                            bossController.ApplyLaserPushForce(pushForce);
+                        }
+                        
+                        continue;  // Boss身体处理完毕，跳过普通敌人检测
                     }
                 }
+                
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 // 普通敌人检测
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 EnemyBlob enemy = collider.GetComponentInParent<EnemyBlob>();
                 if (enemy == null || hitEnemies.Contains(enemy)) continue;
                 
                 hitEnemies.Add(enemy);
                 
                 bool enemyCrit = RollCrit();
-                finalDamage = enemyCrit ? damage * critDamageMultiplier : damage;
+                float finalEnemyDamage = enemyCrit ? damage * critDamageMultiplier : damage;
                 
                 Vector2 knockbackDir = ((Vector2)enemy.transform.position - (Vector2)segment.startPoint).normalized;
                 Vector2 knockbackForce = knockbackDir * CurrentKnockbackForce * knockbackMultiplier;
                 
-                enemy.TakeDamage(finalDamage, knockbackForce, enemyCrit);
+                enemy.TakeDamage(finalEnemyDamage, knockbackForce, enemyCrit);
                 
                 // Frost 效果
                 ApplyFrostEffect(enemy);

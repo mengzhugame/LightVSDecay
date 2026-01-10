@@ -125,7 +125,19 @@ namespace LightVsDecay.Logic.Boss
         private ShieldController cachedShieldController;
         // 颜色缓存
         private Color[] originalColors;
-        
+        // Charge 频率打断
+        private int chargeHitCount = 0;                     // 蓄力+冲锋期间累计受击次数
+
+// Press 过载检测
+        private float pressOverloadDamage = 0f;             // 过载窗口内累计伤害
+        private float pressOverloadTimer = 0f;              // 过载计时器
+
+// 污秽球管理
+        private System.Collections.Generic.List<BossPollutionProjectile> activePollutionBalls = 
+            new System.Collections.Generic.List<BossPollutionProjectile>();
+
+// 短僵直标记
+        private float stunDurationOverride = -1f;           // 如果>0，使用此值覆盖默认僵直时长
         // 协程引用
         private Coroutine stateCoroutine;
         // 在 Update 中检测连续受伤
@@ -549,7 +561,11 @@ namespace LightVsDecay.Logic.Boss
             {
                 Debug.Log("[BossController] 🐙 召唤爪牙！身体收缩震动...");
             }
-            
+            float blinkDuration = config != null ? config.blinkDuration : 0.75f;
+            if (eyeController != null)
+            {
+                eyeController.Blink(blinkDuration);
+            }
             // 身体震动效果
 #if DOTWEEN
             if (bodyTransform != null)
@@ -739,19 +755,51 @@ namespace LightVsDecay.Logic.Boss
                 if (showDebugInfo) Debug.LogWarning("[BossController] Pollution Prefab 未设置！");
                 return;
             }
-            
+            int maxCount = config != null ? config.pollutionMaxCount : 3;
+            // 清理已销毁的引用
+            activePollutionBalls.RemoveAll(b => b == null);
+    
+            if (activePollutionBalls.Count >= maxCount)
+            {
+                // 销毁最老的球
+                if (activePollutionBalls.Count > 0)
+                {
+                    BossPollutionProjectile oldest = activePollutionBalls[0];
+                    activePollutionBalls.RemoveAt(0);
+                    if (oldest != null)
+                    {
+                        oldest.ForceDestroy();
+                    }
+                }
+            }
+            // V3.0: 发射时触发眨眼
+            float blinkDuration = config != null ? config.blinkDuration : 0.75f;
+            if (eyeController != null)
+            {
+                eyeController.Blink(blinkDuration);
+            }
             Vector3 spawnPos = transform.position + Vector3.down * 0.5f;
             GameObject projectileObj = Instantiate(prefab, spawnPos, Quaternion.identity);
-            
+    
             BossPollutionProjectile projectile = projectileObj.GetComponent<BossPollutionProjectile>();
-            if (projectile != null && config != null)
+            if (projectile != null)
             {
-                projectile.Initialize(
-                    config.pollutionSpeed,
-                    config.pollutionTurnSpeed,
-                    config.pollutionShieldDamage,
-                    config.pollutionLifetime
-                );
+                // V3.0: 初始化带物理参数
+                if (config != null)
+                {
+                    projectile.InitializeV3(
+                        config.pollutionSpeed,
+                        config.pollutionTurnSpeed,
+                        config.pollutionShieldDamage,
+                        config.pollutionLifetime,
+                        config.pollutionBallHP,
+                        config.pollutionBallMass,
+                        this
+                    );
+                }
+        
+                // 注册到管理列表
+                RegisterPollutionBall(projectile);
             }
             
             if (showDebugInfo)
@@ -767,10 +815,11 @@ namespace LightVsDecay.Logic.Boss
         private IEnumerator ChargeRoutine()
         {
             chargeInterrupted = false;
-            
+            chargeHitCount = 0; 
             float telegraphDuration = config != null ? config.chargeTelegraphDuration : 1.0f;
             float windupDistance = config != null ? config.chargeWindupDistance : 0.5f;
             
+            float speedMultiplier = GetChargeSpeedMultiplier();
             // ═══════════════════════════════════════════════════
             // Phase 1: Telegraph (预警) - 1.0s
             // 视觉：全身高频红光闪烁，身体后缩
@@ -829,8 +878,8 @@ namespace LightVsDecay.Logic.Boss
             {
                 Debug.Log("[BossController] 🔴 Charge 冲锋！瞬间高速冲向塔！");
             }
-            
-            float dashDuration = config != null ? config.chargeDashDuration : 0.3f;
+            float baseDashDuration = config != null ? config.chargeDashDuration : 0.3f;
+            float dashDuration = baseDashDuration / speedMultiplier;  // V3.0: Buff越多，冲得越快
             float targetY = config != null ? config.chargeTargetY : -10f;
             Vector3 dashTarget = new Vector3(transform.position.x, targetY, transform.position.z);
             
@@ -1017,7 +1066,9 @@ namespace LightVsDecay.Logic.Boss
             {
                 Debug.Log("[BossController] Press Phase 3: 开始碾压！角力进行中...");
             }
-
+            pressOverloadDamage = 0f;
+            pressOverloadTimer = 0f;
+            
             isPressing = true;
             isPressPhase3Active = true;  // 激活 FixedUpdate 中的物理处理
 
@@ -1034,7 +1085,13 @@ namespace LightVsDecay.Logic.Boss
             {
                 crushingElapsed += Time.deltaTime;
                 clashTimer += Time.deltaTime;  // 【新增】角力总计时
-    
+                pressOverloadTimer += Time.deltaTime;
+                float overloadWindow = config != null ? config.pressOverloadWindow : 1.5f;
+                if (pressOverloadTimer >= overloadWindow)
+                {
+                    pressOverloadDamage = 0f;
+                    pressOverloadTimer = 0f;
+                }
                 // 【新增】角力超时检测（Boss 疲劳撤退）
                 float maxClash = config != null ? config.maxClashDuration : 6f;
                 if (clashTimer >= maxClash && isFrictionDamageActive)
@@ -1289,6 +1346,34 @@ namespace LightVsDecay.Logic.Boss
         {
             // 根据来源决定僵直时长
             float duration;
+            if (stunDurationOverride > 0)
+            {
+                duration = stunDurationOverride;
+                stunDurationOverride = -1f;  // 重置
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[BossController] 💫 进入短僵直！时长: {duration}s");
+                }
+            }
+            else
+            {
+                // 原有逻辑
+                if (chargeInterrupted)
+                {
+                    duration = config != null ? config.chargeInterruptStunDuration : 3.0f;
+                }
+                else
+                {
+                    duration = config != null ? config.pressCounterStunDuration : 3.0f;
+                }
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[BossController] 💫 进入僵直！时长: {duration}s（奖励时间）");
+                }
+            }
+            
             if (chargeInterrupted)
             {
                 duration = config != null ? config.chargeInterruptStunDuration : 3.0f;
@@ -1456,6 +1541,142 @@ namespace LightVsDecay.Logic.Boss
                 }
             }
         }
+         /// <summary>
+        /// 记录受击次数（供 BossHealth 调用，用于 Charge 频率打断）
+        /// </summary>
+        public void OnHitReceived()
+        {
+            // Charge 频率打断计数
+            if (currentState == BossState.Charge)
+            {
+                chargeHitCount++;
+                
+                int threshold = config != null ? config.chargeHitCountThreshold : 30;
+                if (chargeHitCount >= threshold && !chargeInterrupted)
+                {
+                    chargeInterrupted = true;
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[BossController] ⚡ Charge 频率打断！受击 {chargeHitCount} 次！");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 记录伤害值（重载版本，用于 Press 过载检测）
+        /// </summary>
+        public void OnDamageReceived(float damage)
+        {
+            // 原有功能：记录受伤时间
+            lastDamageTime = Time.time;
+            
+            // V3.0: Press 过载累计
+            if (currentState == BossState.Press && isPressing)
+            {
+                pressOverloadDamage += damage;
+                
+                float threshold = config != null ? config.pressOverloadDamageThreshold : 2000f;
+                if (pressOverloadDamage >= threshold)
+                {
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[BossController] 💥 Press 过载！累计伤害 {pressOverloadDamage:F0} >= {threshold:F0}");
+                    }
+                    OnPressOverload();
+                }
+            }
+        }
+        /// <summary>
+        /// Press 过载触发（玩家DPS过高，Boss撤退）
+        /// </summary>
+        private void OnPressOverload()
+        {
+            // 重置状态
+            isPressPhase3Active = false;
+            pressDownForce = 0f;
+            currentPushForce = 0f;
+            isReceivingLaserHit = false;
+            isFrictionDamageActive = false;
+            frictionDamageAccumulator = 0f;
+            pressOverloadDamage = 0f;
+    
+            rb.velocity = Vector2.zero;
+            isPressing = false;
+    
+            // 结束摩擦伤害事件
+            GameEvents.TriggerBossFrictionEnd();
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 🔥 Press 过载！Boss 核心过热撤退！");
+            }
+    
+            ShowCounterText("OVERLOAD!");
+    
+            if (CameraShake.Instance != null)
+            {
+                CameraShake.Instance.Shake(0.4f, 0.2f);
+            }
+    
+            // 进入短僵直
+            EnterShortStun();
+        }
+        /// <summary>
+        /// 获取连体Buff层数（Rusher数量，上限5）
+        /// </summary>
+        public int GetLinkedBuffStacks()
+        {
+            if (EnemyPoolManager.Instance == null) return 0;
+            
+            int rusherCount = EnemyPoolManager.Instance.GetActiveCount(EnemyType.Rusher);
+            int maxStacks = config != null ? config.linkedBuffMaxStacks : 5;
+            
+            return Mathf.Min(rusherCount, maxStacks);
+        }
+
+        /// <summary>
+        /// 获取Charge速度倍率（含连体Buff加成）
+        /// </summary>
+        public float GetChargeSpeedMultiplier()
+        {
+            int stacks = GetLinkedBuffStacks();
+            float bonusPerStack = config != null ? config.linkedBuffChargeSpeedPerStack : 0.1f;
+            
+            return 1f + (stacks * bonusPerStack);
+        }
+
+        /// <summary>
+        /// 进入短僵直（1.5秒，用于毒球反弹/过载撤退）
+        /// </summary>
+        public void EnterShortStun()
+        {
+            float shortDuration = config != null ? config.shortStunDuration : 1.5f;
+            stunDurationOverride = shortDuration;
+            ChangeState(BossState.Stun);
+        }
+
+        /// <summary>
+        /// 注册污秽球（用于数量管理）
+        /// </summary>
+        public void RegisterPollutionBall(BossPollutionProjectile ball)
+        {
+            if (ball != null && !activePollutionBalls.Contains(ball))
+            {
+                activePollutionBalls.Add(ball);
+            }
+        }
+
+        /// <summary>
+        /// 注销污秽球
+        /// </summary>
+        public void UnregisterPollutionBall(BossPollutionProjectile ball)
+        {
+            if (ball != null)
+            {
+                activePollutionBalls.Remove(ball);
+            }
+        }       
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 工具方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

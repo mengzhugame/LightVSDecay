@@ -2371,8 +2371,8 @@ MonoBehaviour:
   spawnOffset: 1.5
   eliteTankPrefab: {fileID: 7283361689419196302, guid: bc8ffc78722db7043ada0f88f923ac8c, type: 3}
   eliteDrifterPrefab: {fileID: 6171739888601257571, guid: c569fce9dc16d314a85667fe27f16cc2, type: 3}
-  showDebugInfo: 0
-  showSpawnArea: 0
+  showDebugInfo: 1
+  showSpawnArea: 1
 --- !u!1 &307729488
 GameObject:
   m_ObjectHideFlags: 0
@@ -6771,9 +6771,9 @@ MonoBehaviour:
     customDestroyDelay: -1
   - type: 1
     prefab: {fileID: 3523231564643555453, guid: 234b0bf434beb3e4ca0947d51b580e7a, type: 3}
-    usePool: 0
-    prewarmCount: 3
-    maxCount: 10
+    usePool: 1
+    prewarmCount: 5
+    maxCount: 20
     customDestroyDelay: -1
   - type: 3
     prefab: {fileID: 2431169484649566065, guid: 57ef30ec510ba1440a6553b915ac69f3, type: 3}
@@ -13515,8 +13515,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: COMBO
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 7f4ce26c163d8114d9aa14554895d90f, type: 2}
-  m_sharedMaterial: {fileID: 6612743937760426189, guid: 7f4ce26c163d8114d9aa14554895d90f, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: c1054912f77ac494884f5c6f5b86c139, type: 2}
+  m_sharedMaterial: {fileID: 6531631690749922085, guid: c1054912f77ac494884f5c6f5b86c139, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

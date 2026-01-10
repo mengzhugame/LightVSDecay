@@ -161,7 +161,41 @@ namespace LightVsDecay.Logic.Boss
             StopCurrentTransition();
             transitionCoroutine = StartCoroutine(SlowOpenRoutine(duration));
         }
-        
+        /// <summary>
+        /// 被动眨眼（快速睁开后自动闭合）
+        /// 用于召唤/喷吐时的弱点暴露窗口
+        /// </summary>
+        /// <param name="duration">睁眼持续时间（默认0.75秒）</param>
+        public void Blink(float duration = 0.75f)
+        {
+            StopCurrentTransition();
+            transitionCoroutine = StartCoroutine(BlinkRoutine(duration));
+        }
+
+        /// <summary>
+        /// 眨眼协程
+        /// </summary>
+        private IEnumerator BlinkRoutine(float duration)
+        {
+            if (showDebugInfo)
+            {
+                Debug.Log($"[BossEyeController] 👁️ 开始眨眼，持续 {duration}s");
+            }
+    
+            // 快速睁眼
+            yield return StartCoroutine(TransitionToState(BossEyeState.Open, transitionDuration));
+    
+            // 保持睁眼
+            yield return new WaitForSeconds(duration);
+    
+            // 快速闭眼
+            yield return StartCoroutine(TransitionToState(BossEyeState.Closed, transitionDuration));
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossEyeController] 👁️ 眨眼结束");
+            }
+        }
         /// <summary>
         /// 直接设置状态（无动画）
         /// </summary>

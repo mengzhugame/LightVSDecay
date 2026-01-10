@@ -226,7 +226,7 @@ MonoBehaviour:
       healthMultiplier: 1
       speedMultiplier: 1
       damageMultiplier: 1
-    - spawnTime: 15
+    - spawnTime: 10
       enemyType: 5
       count: 1
       pattern: 5
@@ -287,7 +287,7 @@ MonoBehaviour:
       healthMultiplier: 1
       speedMultiplier: 1
       damageMultiplier: 1
-    - spawnTime: 30
+    - spawnTime: 20
       enemyType: 1
       count: 2
       pattern: 1
