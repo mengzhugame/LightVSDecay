@@ -158,8 +158,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 Debug.Log($"[PollutionProjectile] V3.0 生成 @ {transform.position}, HP={currentHP}, Mass={mass}");
             }
-            // V3.1: 临时忽略 Boss 碰撞（1秒后恢复）
-            StartCoroutine(TemporaryIgnoreBossCollision(1.0f));
+            PermanentIgnoreBossCollision();
         }
         
         private void FixedUpdate()
@@ -269,20 +268,18 @@ namespace LightVsDecay.Logic.Boss
             bossController = FindObjectOfType<BossController>();
             bossHealth = FindObjectOfType<BossHealth>();
         }
-        /// <summary>
-        /// V3.1: 临时忽略 Boss 碰撞
-        /// </summary>
-        private IEnumerator TemporaryIgnoreBossCollision(float duration)
+
+        private void PermanentIgnoreBossCollision()
         {
             if (bossController == null)
             {
-                yield break;
+                return;
             }
     
             // 获取 Boss 的所有碰撞器
             Collider2D[] bossColliders = bossController.GetComponentsInChildren<Collider2D>();
     
-            // 忽略碰撞
+            // 永久忽略碰撞
             foreach (var bossCol in bossColliders)
             {
                 if (bossCol != null && col != null)
@@ -293,23 +290,7 @@ namespace LightVsDecay.Logic.Boss
     
             if (showDebugInfo)
             {
-                Debug.Log($"[PollutionProjectile] 临时忽略Boss碰撞 {duration}秒");
-            }
-    
-            yield return new WaitForSeconds(duration);
-    
-            // 恢复碰撞
-            foreach (var bossCol in bossColliders)
-            {
-                if (bossCol != null && col != null && !isDestroyed)
-                {
-                    Physics2D.IgnoreCollision(col, bossCol, false);
-                }
-            }
-    
-            if (showDebugInfo)
-            {
-                Debug.Log("[PollutionProjectile] 恢复Boss碰撞检测");
+                Debug.Log("[PollutionProjectile] 永久忽略Boss碰撞");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -384,33 +365,22 @@ namespace LightVsDecay.Logic.Boss
         private void OnCollisionEnter2D(Collision2D collision)
         {
             if (isDestroyed) return;
-            
+    
             int otherLayer = collision.gameObject.layer;
             string layerName = LayerMask.LayerToName(otherLayer);
-            
+    
             if (showDebugInfo)
             {
                 Debug.Log($"[PollutionProjectile] 碰撞: {collision.gameObject.name}, Layer: {layerName}");
             }
-            
-            // V3.0: 撞到Boss - 反弹伤害
-            if (layerName == "Enemy" || layerName == "BossBody" || layerName == "BossEyes")
-            {
-                BossHealth hitBossHealth = collision.gameObject.GetComponentInParent<BossHealth>();
-                if (hitBossHealth != null && hitBossHealth == bossHealth)
-                {
-                    OnHitBoss();
-                    return;
-                }
-            }
-            
+    
             // 撞到玩家塔/护盾
             if (layerName == "Shield" || layerName == "Tower")
             {
                 OnHitPlayer();
                 return;
             }
-            
+    
             // 撞到墙壁 - 销毁
             if (layerName == GameConstants.WALL_LAYER || collision.gameObject.CompareTag(GameConstants.WALL_TAG))
             {
@@ -423,78 +393,27 @@ namespace LightVsDecay.Logic.Boss
             }
         }
         
-        // 兼容触发器模式
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (isDestroyed) return;
-            
+    
             int otherLayer = other.gameObject.layer;
             string layerName = LayerMask.LayerToName(otherLayer);
-            
-            // V3.0: 撞到Boss - 反弹伤害
-            if (layerName == "Enemy" || layerName == "BossBody" || layerName == "BossEyes")
-            {
-                BossHealth hitBossHealth = other.GetComponentInParent<BossHealth>();
-                if (hitBossHealth != null && hitBossHealth == bossHealth)
-                {
-                    OnHitBoss();
-                    return;
-                }
-            }
-            
+    
             // 撞到玩家塔/护盾
             if (layerName == "Shield" || layerName == "Tower")
             {
                 OnHitPlayer();
                 return;
             }
-            
+    
             // 撞到墙壁
             if (layerName == GameConstants.WALL_LAYER || other.CompareTag(GameConstants.WALL_TAG))
             {
                 DestroyProjectile(false);
             }
         }
-        
-        /// <summary>
-        /// V3.0: 撞到Boss - 反弹伤害
-        /// </summary>
-        private void OnHitBoss()
-        {
-            if (showDebugInfo)
-            {
-                Debug.Log("[PollutionProjectile] 🎯 撞到Boss！造成反弹伤害！");
-            }
-            
-            // 计算反弹伤害（Boss最大HP的5%）
-            if (bossHealth != null)
-            {
-                float damagePercent = 0.05f;  // 默认5%
-                if (bossController != null)
-                {
-                    // 尝试从config读取
-                    // damagePercent = config.pollutionBossDamagePercent;
-                }
-                
-                float damage = bossHealth.MaxHealth * damagePercent;
-                bossHealth.TakeDirectDamage(damage, transform.position);
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[PollutionProjectile] Boss受到 {damage:F0} 点反弹伤害！");
-                }
-            }
-            
-            // Boss进入短僵直
-            if (bossController != null)
-            {
-                bossController.EnterShortStun();
-            }
-            
-            // 销毁自身
-            DestroyProjectile(true);
-        }
-        
+
         /// <summary>
         /// 撞到玩家 - 造成护盾伤害
         /// </summary>

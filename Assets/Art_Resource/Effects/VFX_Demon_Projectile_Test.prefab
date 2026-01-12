@@ -54057,12 +54057,21 @@ MonoBehaviour:
   moveSpeed: 5
   turnSpeed: 90
   lifetime: 8
+  maxHP: 200
+  mass: 3
+  pushDrag: 1
+  resumeTrackingDelay: 0.5
   shieldDamage: 100
   orbParticle: {fileID: 8159583632940492640}
   explosionParticle: {fileID: 1120386898808754996}
+  hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
+  hitFlashDuration: 0.1
   playerTowerLayer:
     serializedVersion: 2
     m_Bits: 1536
+  bossLayer:
+    serializedVersion: 2
+    m_Bits: 0
   showDebugInfo: 1
 --- !u!212 &8461685318920500816
 SpriteRenderer:

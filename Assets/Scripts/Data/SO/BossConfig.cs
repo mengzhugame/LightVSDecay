@@ -225,23 +225,6 @@ namespace LightVsDecay.Data.SO
         public bool stunReturnToAnchor = true;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 眼睛 (弱点) 配置
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("═══ 眼睛 (弱点) ═══")]
-        [Tooltip("闭眼时Y轴缩放")]
-        [Range(0f, 0.3f)]
-        public float eyeClosedScaleY = 0.1f;
-        
-        [Tooltip("睁眼时Collider放大倍数")]
-        public float eyeOpenColliderScale = 1.5f;
-        
-        [Tooltip("眼睛快速开闭动画时长")]
-        public float eyeTransitionDuration = 0.2f;
-        
-        [Tooltip("眼睛缓慢睁开动画时长（Press用）")]
-        public float eyeSlowOpenDuration = 1.0f;
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 甲壳机制
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         [Header("═══ 甲壳机制 ═══")]
