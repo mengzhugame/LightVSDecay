@@ -42,10 +42,7 @@ namespace LightVsDecay.Logic.Enemy
         [Header("碰撞器引用")]
         [Tooltip("身体碰撞器（常驻，受甲壳减伤）")]
         [SerializeField] private Collider2D bodyCollider;
-        
-        [Tooltip("眼睛碰撞器（切换，弱点）")]
-        [SerializeField] private Collider2D eyeCollider;
-        
+
         [Header("音效预留")]
         [Tooltip("打身体音效ID（预留）")]
         [SerializeField] private string bodyHitSfxId = "boss_armor_hit";
@@ -82,10 +79,7 @@ namespace LightVsDecay.Logic.Enemy
         
         /// <summary>身体碰撞器（供外部检测）</summary>
         public Collider2D BodyCollider => bodyCollider;
-        
-        /// <summary>眼睛碰撞器（供外部检测）</summary>
-        public Collider2D EyeCollider => eyeCollider;
-        
+
         /// <summary>核心弱点伤害倍率</summary>
         public float CoreDamageMultiplier => coreDamageMultiplier;
         
@@ -96,17 +90,7 @@ namespace LightVsDecay.Logic.Enemy
         private void Awake()
         {
             bossController = GetComponent<BossController>();
-            
-            // 自动查找碰撞器（如果未设置）
-            if (eyeCollider == null)
-            {
-                Transform eyes = transform.Find("Eyes");
-                if (eyes != null)
-                {
-                    eyeCollider = eyes.GetComponent<Collider2D>();
-                }
-            }
-            
+
             // 身体碰撞器通常在Boss根节点或Body子节点
             if (bodyCollider == null)
             {
@@ -133,7 +117,6 @@ namespace LightVsDecay.Logic.Enemy
             {
                 Debug.Log($"[BossHealth] V3.0 初始化完成 - 血量: {currentHealth}/{maxHealth}");
                 Debug.Log($"[BossHealth] 身体碰撞器: {(bodyCollider != null ? bodyCollider.name : "未设置")}");
-                Debug.Log($"[BossHealth] 眼睛碰撞器: {(eyeCollider != null ? eyeCollider.name : "未设置")}");
             }
         }
         
@@ -363,47 +346,8 @@ namespace LightVsDecay.Logic.Enemy
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        /// <summary>
-        /// 设置最大血量（用于难度缩放）
-        /// </summary>
-        public void SetMaxHealth(float newMaxHealth)
-        {
-            maxHealth = newMaxHealth;
-            currentHealth = maxHealth;
-            GameEvents.TriggerBossHealthChanged(HealthPercent);
-        }
-        
-        /// <summary>
-        /// 重置血量
-        /// </summary>
-        public void ResetHealth()
-        {
-            currentHealth = maxHealth;
-            isDead = false;
-            GameEvents.TriggerBossHealthChanged(HealthPercent);
-        }
-        
-        /// <summary>
-        /// 检查碰撞器是否为眼睛
-        /// </summary>
-        public bool IsEyeCollider(Collider2D collider)
-        {
-            return eyeCollider != null && collider == eyeCollider;
-        }
-        
-        /// <summary>
-        /// 检查碰撞器是否为身体
-        /// </summary>
-        public bool IsBodyCollider(Collider2D collider)
-        {
-            return bodyCollider != null && collider == bodyCollider;
-        }
-        
-        // 兼容旧代码
-        [System.Obsolete("Use IsEyeCollider instead")]
-        public bool IsCore(Collider2D collider) => IsEyeCollider(collider);
-        
+
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

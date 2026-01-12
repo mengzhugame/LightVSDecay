@@ -778,7 +778,16 @@ namespace LightVsDecay.Logic.Boss
             {
                 eyeController.Blink(blinkDuration);
             }
-            Vector3 spawnPos = transform.position + Vector3.down * 0.5f;
+            float bodyRadius = 1.5f; // 默认值
+            if (bossHealth != null && bossHealth.BodyCollider != null)
+            {
+                CircleCollider2D circleCol = bossHealth.BodyCollider as CircleCollider2D;
+                if (circleCol != null)
+                {
+                    bodyRadius = circleCol.radius * transform.lossyScale.x;
+                }
+            }
+            Vector3 spawnPos = transform.position + Vector3.down * (bodyRadius + 0.5f);
             GameObject projectileObj = Instantiate(prefab, spawnPos, Quaternion.identity);
     
             BossPollutionProjectile projectile = projectileObj.GetComponent<BossPollutionProjectile>();

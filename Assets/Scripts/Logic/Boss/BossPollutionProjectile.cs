@@ -5,6 +5,7 @@
 // 【重构】物理实体：有HP、可被推、可反弹伤害Boss
 // ============================================================
 
+using System.Collections;
 using UnityEngine;
 using LightVsDecay.Core;
 using LightVsDecay.Logic.Player;
@@ -157,6 +158,8 @@ namespace LightVsDecay.Logic.Boss
             {
                 Debug.Log($"[PollutionProjectile] V3.0 生成 @ {transform.position}, HP={currentHP}, Mass={mass}");
             }
+            // V3.1: 临时忽略 Boss 碰撞（1秒后恢复）
+            StartCoroutine(TemporaryIgnoreBossCollision(1.0f));
         }
         
         private void FixedUpdate()
@@ -266,7 +269,49 @@ namespace LightVsDecay.Logic.Boss
             bossController = FindObjectOfType<BossController>();
             bossHealth = FindObjectOfType<BossHealth>();
         }
-        
+        /// <summary>
+        /// V3.1: 临时忽略 Boss 碰撞
+        /// </summary>
+        private IEnumerator TemporaryIgnoreBossCollision(float duration)
+        {
+            if (bossController == null)
+            {
+                yield break;
+            }
+    
+            // 获取 Boss 的所有碰撞器
+            Collider2D[] bossColliders = bossController.GetComponentsInChildren<Collider2D>();
+    
+            // 忽略碰撞
+            foreach (var bossCol in bossColliders)
+            {
+                if (bossCol != null && col != null)
+                {
+                    Physics2D.IgnoreCollision(col, bossCol, true);
+                }
+            }
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[PollutionProjectile] 临时忽略Boss碰撞 {duration}秒");
+            }
+    
+            yield return new WaitForSeconds(duration);
+    
+            // 恢复碰撞
+            foreach (var bossCol in bossColliders)
+            {
+                if (bossCol != null && col != null && !isDestroyed)
+                {
+                    Physics2D.IgnoreCollision(col, bossCol, false);
+                }
+            }
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[PollutionProjectile] 恢复Boss碰撞检测");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // V3.0 伤害系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

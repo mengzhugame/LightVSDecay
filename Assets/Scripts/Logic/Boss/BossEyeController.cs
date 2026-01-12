@@ -40,10 +40,7 @@ namespace LightVsDecay.Logic.Boss
         
         [Tooltip("眼睛SpriteRenderer")]
         [SerializeField] private SpriteRenderer eyeRenderer;
-        
-        [Tooltip("眼睛Collider（弱点判定）")]
-        [SerializeField] private Collider2D eyeCollider;
-        
+
         [Header("怒目特效")]
         [Tooltip("Body03 - 红色身体特效（怒目时显示）")]
         [SerializeField] private GameObject redBodyEffect;
@@ -98,7 +95,8 @@ namespace LightVsDecay.Logic.Boss
         
         /// <summary>是否可被攻击（睁眼或正在睁开）</summary>
         public bool IsVulnerable => currentState == BossEyeState.Open;
-        
+        /// <summary>【新增】眼睛是否睁开（用于弱点判定）</summary>
+        public bool IsOpen => currentState == BossEyeState.Open || currentState == BossEyeState.Opening;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -109,11 +107,6 @@ namespace LightVsDecay.Logic.Boss
             if (eyeTransform != null)
             {
                 originalEyeScale = eyeTransform.localScale;
-            }
-            
-            if (eyeCollider != null)
-            {
-                originalColliderScale = eyeCollider.transform.localScale;
             }
         }
         
@@ -261,7 +254,6 @@ namespace LightVsDecay.Logic.Boss
             // 完成
             currentState = targetState;
             ApplyStateVisuals(targetState, endT);
-            UpdateColliderState(targetState == BossEyeState.Open);
             UpdateEffects(targetState == BossEyeState.Open);
             
             if (showDebugInfo)
@@ -332,7 +324,6 @@ namespace LightVsDecay.Logic.Boss
             // 完成
             currentState = BossEyeState.Open;
             ApplyStateVisuals(BossEyeState.Open, 1f);
-            UpdateColliderState(true);
             UpdateEffects(true);
             
             if (showDebugInfo)
@@ -367,24 +358,7 @@ namespace LightVsDecay.Logic.Boss
             float scaleY = Mathf.Lerp(closedScaleY, originalEyeScale.y, t);
             return new Vector3(originalEyeScale.x, scaleY, originalEyeScale.z);
         }
-        
-        private void UpdateColliderState(bool isOpen)
-        {
-            if (eyeCollider == null) return;
-            
-            // 睁眼时激活并放大 Collider
-            eyeCollider.enabled = isOpen;
-            
-            if (isOpen)
-            {
-                eyeCollider.transform.localScale = originalColliderScale * openColliderScale;
-            }
-            else
-            {
-                eyeCollider.transform.localScale = originalColliderScale;
-            }
-        }
-        
+
         private void UpdateEffects(bool isOpen)
         {
             // 红色身体特效（怒目）
@@ -419,28 +393,5 @@ namespace LightVsDecay.Logic.Boss
             }
 #endif
         }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 调试
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-#if UNITY_EDITOR
-        private void OnDrawGizmosSelected()
-        {
-            if (eyeCollider == null) return;
-            
-            // 绘制弱点区域
-            Gizmos.color = currentState == BossEyeState.Open ? Color.red : Color.gray;
-            
-            if (eyeCollider is CircleCollider2D circle)
-            {
-                Gizmos.DrawWireSphere(eyeCollider.transform.position, circle.radius * eyeCollider.transform.lossyScale.x);
-            }
-            else if (eyeCollider is BoxCollider2D box)
-            {
-                Gizmos.DrawWireCube(eyeCollider.transform.position, box.size * eyeCollider.transform.lossyScale.x);
-            }
-        }
-#endif
     }
 }

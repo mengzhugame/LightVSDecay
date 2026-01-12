@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 1343997964473775117}
   - component: {fileID: 3988100806900536482}
   - component: {fileID: 8609685334684566284}
-  - component: {fileID: 8982475681369856819}
   - component: {fileID: 5778125128812573581}
   m_Layer: 8
   m_HasEditorInfo: 1
@@ -114,51 +113,6 @@ MonoBehaviour:
   squintDuration: 0.15
   squintScaleY: 0.5
   eyesSprite: {fileID: 3988100806900536482}
---- !u!61 &8982475681369856819
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1328806322944234479}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0.00085425377, y: -0.03010577}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 5.12, y: 5.12}
-    newSize: {x: 1, y: 1}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  serializedVersion: 2
-  m_Size: {x: 1.5365796, y: 1.2965685}
-  m_EdgeRadius: 0
 --- !u!114 &5778125128812573581
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -173,7 +127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   eyeTransform: {fileID: 1343997964473775117}
   eyeRenderer: {fileID: 3988100806900536482}
-  eyeCollider: {fileID: 8982475681369856819}
+  eyeCollider: {fileID: 0}
   redBodyEffect: {fileID: 4801645900123614117}
   pupilGlowEffect: {fileID: 0}
   closedScaleY: 0.1
@@ -584,9 +538,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100000
-  armorDamageMultiplier: 0.3
+  config: {fileID: 11400000, guid: a7575bca66b9d0648b544d425b82bca3, type: 2}
   coreDamageMultiplier: 2
-  coreCollider: {fileID: 8982475681369856819}
+  bodyCollider: {fileID: 2878663063999937833}
+  eyeCollider: {fileID: 0}
+  bodyHitSfxId: boss_armor_hit
+  eyeHitSfxId: boss_core_hit
   showDebugInfo: 0
 --- !u!114 &5212838760448453320
 MonoBehaviour:
