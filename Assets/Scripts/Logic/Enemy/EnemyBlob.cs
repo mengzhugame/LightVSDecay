@@ -8,7 +8,7 @@ using UnityEngine;
 using System.Collections;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
-using LightVsDecay.Data;
+using LightVsDecay.Audio;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Player;
 using LightVsDecay.UI.FloatingText;
@@ -1058,7 +1058,11 @@ namespace LightVsDecay.Logic.Enemy
         {
             if (isDead) return;
             isDead = true;
-            
+            // 【新增】播放自爆音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayEnemyExplode();
+            }
             if (VFXPoolManager.Instance != null)
             {
                 VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
@@ -1222,6 +1226,10 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         public void ApplyFrostFreeze(float duration)
         {
+            if (!isFrozen && AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayEnemyFreeze();
+            }
             if (frostDebuff != null)
             {
                 frostDebuff.ApplyFreeze(duration);

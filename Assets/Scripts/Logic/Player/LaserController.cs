@@ -11,6 +11,7 @@ using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.TacticalDrop;
+using LightVsDecay.Audio;
 
 namespace LightVsDecay.Logic.Player
 {

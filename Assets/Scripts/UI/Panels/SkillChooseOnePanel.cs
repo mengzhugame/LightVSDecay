@@ -11,6 +11,7 @@ using TMPro;
 using LightVsDecay.Core;
 using LightVsDecay.Logic;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Audio;
 
 namespace LightVsDecay.UI.Panels
 {
