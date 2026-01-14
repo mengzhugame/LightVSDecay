@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainMenuBGM: {fileID: 8300000, guid: d897a99cf3691654db5b09c178538977, type: 3}
   battleBGM: {fileID: 8300000, guid: e13adb1543dc01e409fd1e8a8f740d33, type: 3}
-  bossBGM: {fileID: 0}
+  bossBGM: {fileID: 8300000, guid: a788454f89f152a44a827e79f602e323, type: 3}
   bgmDefaultVolume: 0.5
   bgmFadeDuration: 1
   buttonClick: {fileID: 8300000, guid: 2fc0f63abe31a454ca083eeb17a6cd4e, type: 3}
@@ -23,12 +23,10 @@ MonoBehaviour:
   victoryJingle: {fileID: 8300000, guid: 156e734f6424bb843a6145bf3222b694, type: 3}
   defeatJingle: {fileID: 8300000, guid: 8461fcadcf56beb4b9345af3e649f2e5, type: 3}
   uiDefaultVolume: 0.7
-  laserFiring: {fileID: 8300000, guid: 51c4775071990274eb1c813e8a3575bc, type: 3}
-  laserFiringVolume: 0.3
-  laserHitEnemy: {fileID: 8300000, guid: cda5c85acd01e684180773d1fef9b3d0, type: 3}
-  laserHitArmor: {fileID: 0}
-  laserHitVolume: 0.5
-  laserHitCooldown: 0.15
+  laserIdle: {fileID: 8300000, guid: a39f5fc0234bf6b40b3e8d605b12cd6e, type: 3}
+  laserBurn: {fileID: 8300000, guid: e18378eceddfa8b4ebe0be7145b38093, type: 3}
+  laserMetal: {fileID: 8300000, guid: 248799ed18fd85a469197e61d26e5f8b, type: 3}
+  laserLoopVolume: 0.4
   enemyExplode: {fileID: 8300000, guid: 0b5295d0a39c42c42addbbc9ba0c4baa, type: 3}
   enemyDeath: {fileID: 8300000, guid: 85e7d6af17c1e134e9fd94ef25f96f47, type: 3}
   enemyFreeze: {fileID: 0}

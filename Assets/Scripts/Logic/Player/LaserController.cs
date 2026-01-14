@@ -12,6 +12,7 @@ using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.TacticalDrop;
 using LightVsDecay.Audio;
+using LightVsDecay.Core.Pool; 
 
 namespace LightVsDecay.Logic.Player
 {
@@ -139,7 +140,9 @@ namespace LightVsDecay.Logic.Player
         
         /// <summary>副激光宽度倍率（相对主激光）</summary>
         private const float SUB_LASER_WIDTH_RATIO = 0.65f;
-        
+        // 激光音效状态
+        private bool isLaserAudioStarted = false;
+        private LaserHitType frameHighestHitType = LaserHitType.None;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -178,13 +181,15 @@ namespace LightVsDecay.Logic.Player
         {
             InitializeFromSettings();
             CacheComponents();
-            SubscribeEvents();
+            // 【新增】启动激光循环音效
+            StartLaserAudio();
         }
         
         private void OnDestroy()
         {
-            UnsubscribeEvents();
             ClearAllSubLasers();
+            // 【新增】停止激光循环音效
+            StopLaserAudio();
         }
         
         private void Update()
@@ -192,9 +197,20 @@ namespace LightVsDecay.Logic.Player
             // 【新增】非 Playing 状态时不执行伤害检测
             if (GameManager.Instance != null && !GameManager.Instance.IsPlaying)
             {
+                // 【新增】游戏暂停/结束时，重置为空射音效
+                if (AudioManager.Instance != null && frameHighestHitType != LaserHitType.None)
+                {
+                    frameHighestHitType = LaserHitType.None;
+                    AudioManager.Instance.UpdateLaserHitType(LaserHitType.None);
+                }
                 return;
             }
-    
+            // 【新增】确保激光音效已启动
+            if (!isLaserAudioStarted)
+            {
+                StartLaserAudio();
+            }
+
             tickTimer += Time.deltaTime;
     
             if (tickTimer >= tickRate)
@@ -207,7 +223,7 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 初始化
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private void InitializeFromSettings()
         {
             if (settings != null)
@@ -280,19 +296,38 @@ namespace LightVsDecay.Logic.Player
                 vfxColorSync = mainLaserBeam.GetComponent<LaserVFXColorSync>();
             }
         }
-        
-        private void SubscribeEvents()
+        /// <summary>
+        /// 启动激光音效循环
+        /// </summary>
+        private void StartLaserAudio()
         {
-            GameEvents.OnUltReady += OnUltReady;
-            GameEvents.OnUltUsed += OnUltUsed;
+            if (AudioManager.Instance != null && !isLaserAudioStarted)
+            {
+                AudioManager.Instance.StartLaserLoop();
+                isLaserAudioStarted = true;
+            }
         }
-        
-        private void UnsubscribeEvents()
+        /// <summary>
+        /// 停止激光音效循环
+        /// </summary>
+        private void StopLaserAudio()
         {
-            GameEvents.OnUltReady -= OnUltReady;
-            GameEvents.OnUltUsed -= OnUltUsed;
+            if (AudioManager.Instance != null && isLaserAudioStarted)
+            {
+                AudioManager.Instance.StopLaserLoop();
+                isLaserAudioStarted = false;
+            }
         }
-        
+        /// <summary>
+        /// 更新激光音效类型
+        /// </summary>
+        private void UpdateLaserAudioType()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.UpdateLaserHitType(frameHighestHitType);
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 暴击判定
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -334,7 +369,8 @@ namespace LightVsDecay.Logic.Player
             hitEnemies.Clear();
             hitBosses.Clear();
             hitCrates.Clear();  
-            
+            // 【新增】重置本帧命中类型
+            frameHighestHitType = LaserHitType.None;
             // 1. 主激光伤害检测
             DetectAndDamageEnemiesSegmented(mainLaserBeam,  CurrentDamagePerTick, 1f);
             
@@ -347,6 +383,8 @@ namespace LightVsDecay.Logic.Player
                     DetectAndDamageEnemiesSegmented(subLaser.beam,  subDamage, subLaser.damageMultiplier);
                 }
             }
+            // 【新增】更新激光音效类型
+            UpdateLaserAudioType();
         }
         
         /// <summary>
@@ -540,7 +578,8 @@ namespace LightVsDecay.Logic.Player
                             {
                                 // 眼睛睁开 → 弱点伤害（高伤害）
                                 bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
-                                
+                                // 【新增】Boss眼睛 = 灼烧音效
+                                UpdateFrameHitType(LaserHitType.Burn);
                                 if (showDebugInfo)
                                 {
                                     Debug.Log($"[LaserController] 👁️ 命中Boss弱点（眼睛睁开），伤害: {bossDamage:F1}");
@@ -550,7 +589,8 @@ namespace LightVsDecay.Logic.Player
                             {
                                 // 眼睛闭合 → 甲壳伤害（80%减伤）
                                 bossHealth.TakeBodyDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
-                                
+                                // 【新增】Boss装甲 = 金属音效
+                                UpdateFrameHitType(LaserHitType.Metal);
                                 if (showDebugInfo)
                                 {
                                     Debug.Log($"[LaserController] 🛡️ 命中Boss甲壳（眼睛闭合），伤害: {bossDamage:F1}");
@@ -607,7 +647,17 @@ namespace LightVsDecay.Logic.Player
                 Vector2 knockbackForce = knockbackDir * CurrentKnockbackForce * knockbackMultiplier;
                 
                 enemy.TakeDamage(finalEnemyDamage, knockbackForce, enemyCrit);
-                
+                // 【新增】判断敌人类型决定音效
+                if (enemy.Type == EnemyType.Tank)
+                {
+                    // Tank = 金属音效
+                    UpdateFrameHitType(LaserHitType.Metal);
+                }
+                else
+                {
+                    // 普通小怪 = 灼烧音效
+                    UpdateFrameHitType(LaserHitType.Burn);
+                }
                 // Frost 效果
                 ApplyFrostEffect(enemy);
             }
@@ -843,23 +893,17 @@ namespace LightVsDecay.Logic.Player
             }
         }
         
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 大招模式
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private void OnUltReady() { }
-        private void OnUltUsed() { }
-        
-        public void ActivateUlt()
+        /// <summary>
+        /// 更新本帧最高优先级的命中类型
+        /// 优先级: Metal > Burn > None
+        /// </summary>
+        private void UpdateFrameHitType(LaserHitType hitType)
         {
-            isUltMode = true;
-            if (showDebugInfo) Debug.Log("[LaserController] 大招激活！");
-        }
-        
-        public void DeactivateUlt()
-        {
-            isUltMode = false;
-            if (showDebugInfo) Debug.Log("[LaserController] 大招结束");
+            // 只保留最高优先级
+            if ((int)hitType > (int)frameHighestHitType)
+            {
+                frameHighestHitType = hitType;
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

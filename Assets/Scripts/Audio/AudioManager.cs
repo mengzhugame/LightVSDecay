@@ -14,6 +14,17 @@ using LightVsDecay.Core.Pool;
 namespace LightVsDecay.Audio
 {
     /// <summary>
+    /// 激光命中类型（决定播放哪种循环音效）
+    /// 优先级: Metal > Burn > None
+    /// </summary>
+    public enum LaserHitType
+    {
+        None = 0,   // 未命中（空射）
+        Burn = 1,   // 命中软体（灼烧）- 黑油/小怪/Boss眼睛
+        Metal = 2   // 命中金属（装甲）- Tank/Boss装甲
+    }
+    
+    /// <summary>
     /// 音频管理器
     /// 单例模式，跨场景持久化
     /// </summary>
@@ -80,15 +91,17 @@ namespace LightVsDecay.Audio
             {
                 sfxVolume = Mathf.Clamp01(value);
                 PlayerPrefs.SetFloat(PREF_SFX_VOLUME, sfxVolume);
+                UpdateLaserVolume();
             }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 音效冷却控制
+        // 激光音效状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private float lastLaserHitTime = 0f;
-        private bool isLaserHitOnCooldown => Time.time - lastLaserHitTime < (config != null ? config.laserHitCooldown : 0.15f);
+        private bool isLaserActive = false;
+        private LaserHitType currentLaserHitType = LaserHitType.None;
+        private AudioClip currentLaserClip = null;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // BGM 状态
@@ -171,6 +184,7 @@ namespace LightVsDecay.Audio
             bgmVolume = PlayerPrefs.GetFloat(PREF_BGM_VOLUME, 1f);
             sfxVolume = PlayerPrefs.GetFloat(PREF_SFX_VOLUME, 1f);
             UpdateBGMVolume();
+            UpdateLaserVolume();
         }
         
         private void UpdateBGMVolume()
@@ -178,6 +192,14 @@ namespace LightVsDecay.Audio
             if (bgmSource != null && config != null)
             {
                 bgmSource.volume = bgmVolume * config.bgmDefaultVolume;
+            }
+        }
+        
+        private void UpdateLaserVolume()
+        {
+            if (laserSource != null && config != null)
+            {
+                laserSource.volume = sfxVolume * config.laserLoopVolume;
             }
         }
         
@@ -354,32 +376,39 @@ namespace LightVsDecay.Audio
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 激光音效
+        // 激光循环音效（三种状态切换）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 开始激光射击循环音效
+        /// 开始激光音效（默认空射）
+        /// 由 LaserController 在激光激活时调用
         /// </summary>
         public void StartLaserLoop()
         {
-            if (config == null || config.laserFiring == null) return;
-            if (laserSource.isPlaying) return;
+            if (config == null) return;
             
-            laserSource.clip = config.laserFiring;
-            laserSource.volume = sfxVolume * config.laserFiringVolume;
-            laserSource.Play();
+            isLaserActive = true;
+            currentLaserHitType = LaserHitType.None;
+            
+            // 播放空射音效
+            SwitchLaserClip(config.laserIdle);
             
             if (showDebugInfo)
             {
-                Debug.Log("[AudioManager] 激光循环开始");
+                Debug.Log("[AudioManager] 激光循环开始（空射）");
             }
         }
         
         /// <summary>
-        /// 停止激光射击循环音效
+        /// 停止激光音效
+        /// 由 LaserController 在激光停止时调用
         /// </summary>
         public void StopLaserLoop()
         {
+            isLaserActive = false;
+            currentLaserHitType = LaserHitType.None;
+            currentLaserClip = null;
+            
             if (laserSource.isPlaying)
             {
                 laserSource.Stop();
@@ -392,25 +421,57 @@ namespace LightVsDecay.Audio
         }
         
         /// <summary>
-        /// 播放激光击中敌人音效（带冷却防止重叠）
+        /// 更新激光命中类型（每帧由 LaserController 调用）
+        /// 优先级: Metal > Burn > None
         /// </summary>
-        public void PlayLaserHitEnemy()
+        /// <param name="hitType">本帧的最高优先级命中类型</param>
+        public void UpdateLaserHitType(LaserHitType hitType)
         {
-            if (config == null || isLaserHitOnCooldown) return;
+            if (!isLaserActive || config == null) return;
             
-            lastLaserHitTime = Time.time;
-            PlaySFX(config.laserHitEnemy, config.laserHitVolume);
+            // 只有类型变化时才切换音效
+            if (hitType == currentLaserHitType) return;
+            
+            currentLaserHitType = hitType;
+            
+            // 根据类型切换音效
+            AudioClip targetClip = null;
+            switch (hitType)
+            {
+                case LaserHitType.Metal:
+                    targetClip = config.laserMetal;
+                    break;
+                case LaserHitType.Burn:
+                    targetClip = config.laserBurn;
+                    break;
+                case LaserHitType.None:
+                default:
+                    targetClip = config.laserIdle;
+                    break;
+            }
+            
+            SwitchLaserClip(targetClip);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[AudioManager] 激光音效切换: {hitType}");
+            }
         }
         
         /// <summary>
-        /// 播放激光击中装甲音效（带冷却防止重叠）
+        /// 立即切换激光音效片段
         /// </summary>
-        public void PlayLaserHitArmor()
+        private void SwitchLaserClip(AudioClip clip)
         {
-            if (config == null || isLaserHitOnCooldown) return;
+            if (clip == null || clip == currentLaserClip) return;
             
-            lastLaserHitTime = Time.time;
-            PlaySFX(config.laserHitArmor, config.laserHitVolume);
+            currentLaserClip = clip;
+            
+            // 立即切换（保持播放位置的随机性，避免每次都从头播放）
+            laserSource.clip = clip;
+            laserSource.volume = sfxVolume * config.laserLoopVolume;
+            laserSource.time = Random.Range(0f, clip.length * 0.5f); // 随机起始位置
+            laserSource.Play();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

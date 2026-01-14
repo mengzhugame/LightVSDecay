@@ -61,16 +61,7 @@ namespace LightVsDecay.Core
         
         /// <summary>金币变化 (当前金币)</summary>
         public static event Action<int> OnCoinChanged;
-        
-        /// <summary>大招能量变化 (当前能量, 最大能量)</summary>
-        public static event Action<int, int> OnUltEnergyChanged;
-        
-        /// <summary>大招已准备好</summary>
-        public static event Action OnUltReady;
-        
-        /// <summary>大招已使用</summary>
-        public static event Action OnUltUsed;
-        
+
         /// <summary>击杀数变化 (击杀数)</summary>
         public static event Action<int> OnKillCountChanged;
         
@@ -189,9 +180,6 @@ namespace LightVsDecay.Core
         public static void TriggerExpChanged(int current, int required) => OnExpChanged?.Invoke(current, required);
         public static void TriggerLevelUp(int newLevel) => OnLevelUp?.Invoke(newLevel);
         public static void TriggerCoinChanged(int coins) => OnCoinChanged?.Invoke(coins);
-        public static void TriggerUltEnergyChanged(int current, int max) => OnUltEnergyChanged?.Invoke(current, max);
-        public static void TriggerUltReady() => OnUltReady?.Invoke();
-        public static void TriggerUltUsed() => OnUltUsed?.Invoke();
         public static void TriggerKillCountChanged(int count) => OnKillCountChanged?.Invoke(count);
         public static void TriggerComboChanged(int combo) => OnComboChanged?.Invoke(combo);
         public static void TriggerComboReset() => OnComboReset?.Invoke();
@@ -264,9 +252,6 @@ namespace LightVsDecay.Core
             OnExpChanged = null;
             OnLevelUp = null;
             OnCoinChanged = null;
-            OnUltEnergyChanged = null;
-            OnUltReady = null;
-            OnUltUsed = null;
             OnKillCountChanged = null;
             OnComboChanged = null;
             OnComboReset = null;

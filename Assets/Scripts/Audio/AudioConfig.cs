@@ -11,7 +11,7 @@ namespace LightVsDecay.Audio
     /// <summary>
     /// 音效配置数据
     /// </summary>
-    [CreateAssetMenu(fileName = "AudioConfig", menuName = "LightVsDecay/Audio Config")]
+    [CreateAssetMenu(fileName = "AudioConfig", menuName = "Light vs Decay/Audio Config")]
     public class AudioConfig : ScriptableObject
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -60,29 +60,22 @@ namespace LightVsDecay.Audio
         public float uiDefaultVolume = 0.7f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 激光音效
+        // 激光循环音效（三种状态）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("═══ 激光音效 ═══")]
-        [Tooltip("激光射击（循环电流声）")]
-        public AudioClip laserFiring;
+        [Header("═══ 激光循环音效 ═══")]
+        [Tooltip("激光空射（未命中任何物体，纯电流声）")]
+        public AudioClip laserIdle;
         
-        [Tooltip("激光射击音量（较低，避免刺耳）")]
+        [Tooltip("激光灼烧（命中黑油/软体怪/Boss眼睛）")]
+        public AudioClip laserBurn;
+        
+        [Tooltip("激光金属（命中Tank/Boss装甲）")]
+        public AudioClip laserMetal;
+        
+        [Tooltip("激光循环音效音量")]
         [Range(0f, 1f)]
-        public float laserFiringVolume = 0.3f;
-        
-        [Tooltip("击中怪物灼烧")]
-        public AudioClip laserHitEnemy;
-        
-        [Tooltip("击中金属装甲（Tank/Boss外壳）")]
-        public AudioClip laserHitArmor;
-        
-        [Tooltip("击中音效音量")]
-        [Range(0f, 1f)]
-        public float laserHitVolume = 0.5f;
-        
-        [Tooltip("击中音效最小间隔（防止重叠）")]
-        public float laserHitCooldown = 0.15f;
+        public float laserLoopVolume = 0.4f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 怪物音效

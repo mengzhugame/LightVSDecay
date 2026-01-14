@@ -33,6 +33,8 @@ namespace LightVsDecay.Logic.Enemy
         
         [Header("敌人类型")]
         [SerializeField] private EnemyType enemyType = EnemyType.Slime;
+        /// <summary>敌人类型（只读）</summary>
+        public EnemyType Type => enemyType;
         // 精英怪视觉效果
         [Header("精英特效（可选）")]
         [SerializeField] private GameObject eliteEffectPrefab;
