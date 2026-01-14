@@ -2732,6 +2732,7 @@ GameObject:
   - component: {fileID: 379542309}
   - component: {fileID: 379542308}
   - component: {fileID: 379542307}
+  - component: {fileID: 379542310}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: RetryButton
@@ -2843,6 +2844,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 379542305}
   m_CullTransparentMesh: 1
+--- !u!114 &379542310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 379542305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6597131993d3fcd42aac0821ceec845e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &398741441
 GameObject:
   m_ObjectHideFlags: 0
@@ -3786,6 +3799,7 @@ GameObject:
   - component: {fileID: 599826211}
   - component: {fileID: 599826210}
   - component: {fileID: 599826212}
+  - component: {fileID: 599826213}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: SkillButton
@@ -3897,6 +3911,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &599826213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 599826208}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6597131993d3fcd42aac0821ceec845e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &602054471
 GameObject:
   m_ObjectHideFlags: 0
@@ -4817,6 +4843,7 @@ GameObject:
   - component: {fileID: 819363809}
   - component: {fileID: 819363808}
   - component: {fileID: 819363807}
+  - component: {fileID: 819363810}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: PauseButton
@@ -4927,6 +4954,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 819363805}
   m_CullTransparentMesh: 1
+--- !u!114 &819363810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 819363805}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6597131993d3fcd42aac0821ceec845e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &821763084
 GameObject:
   m_ObjectHideFlags: 0
@@ -9590,6 +9629,7 @@ GameObject:
   - component: {fileID: 1522713243}
   - component: {fileID: 1522713242}
   - component: {fileID: 1522713241}
+  - component: {fileID: 1522713244}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: ReturnButton
@@ -9700,6 +9740,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1522713239}
   m_CullTransparentMesh: 1
+--- !u!114 &1522713244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1522713239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6597131993d3fcd42aac0821ceec845e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1528889728
 GameObject:
   m_ObjectHideFlags: 0
@@ -9980,7 +10032,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1568450558
 Transform:
   m_ObjectHideFlags: 0

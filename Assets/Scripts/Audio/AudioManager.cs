@@ -46,10 +46,10 @@ namespace LightVsDecay.Audio
         
         [Header("═══ 场景名称配置 ═══")]
         [Tooltip("主菜单场景名称")]
-        [SerializeField] private string mainMenuSceneName = "MainMenu";
+        [SerializeField] private string mainMenuSceneName = "MainScene";
         
         [Tooltip("战斗场景名称")]
-        [SerializeField] private string battleSceneName = "BattleScene";
+        [SerializeField] private string battleSceneName = "GameScene";
         
         [Header("═══ 调试 ═══")]
         [SerializeField] private bool showDebugInfo = false;
@@ -72,7 +72,10 @@ namespace LightVsDecay.Audio
         
         private float bgmVolume = 1f;
         private float sfxVolume = 1f;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 经验球音效冷却
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        private float lastXpOrbCollectTime = -1f;
         public float BGMVolume
         {
             get => bgmVolume;
@@ -625,13 +628,24 @@ namespace LightVsDecay.Audio
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 播放空投落地音效
+        /// 播放无人机入场音效
         /// </summary>
-        public void PlayAirdropLand()
+        public void PlayDroneEnter()
         {
             if (config != null)
             {
-                PlaySFX(config.airdropLand, config.airdropDefaultVolume);
+                PlaySFX(config.droneEnter, config.droneVolume);
+            }
+        }
+
+        /// <summary>
+        /// 播放无人机落地音效
+        /// </summary>
+        public void PlayDroneLand()
+        {
+            if (config != null)
+            {
+                PlaySFX(config.droneLand, config.droneVolume);
             }
         }
         
@@ -642,10 +656,27 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.crateBreak, config.airdropDefaultVolume);
+                PlaySFX(config.droneBoxBreak, config.droneVolume);
             }
         }
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 经验球音效
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 播放经验球收集音效（带冷却）
+        /// </summary>
+        public void PlayXpOrbCollect()
+        {
+            if (config == null || config.xpOrbCollect == null) return;
+    
+            // 冷却检查
+            float cooldown = config.xpOrbCollectCooldown > 0 ? config.xpOrbCollectCooldown : 0.1f;
+            if (Time.time - lastXpOrbCollectTime < cooldown) return;
+    
+            lastXpOrbCollectTime = Time.time;
+            PlaySFX(config.xpOrbCollect, config.xpOrbVolume);
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 游戏事件回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

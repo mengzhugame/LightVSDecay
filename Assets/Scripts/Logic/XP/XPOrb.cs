@@ -4,6 +4,7 @@
 // 用途：经验光点控制器，控制光点飞向经验条的行为
 // ============================================================
 
+using LightVsDecay.Audio;
 using UnityEngine;
 using LightVsDecay.Core;
 
@@ -171,7 +172,11 @@ namespace LightVsDecay.Logic.XP
         {
             if (isCollected) return;
             isCollected = true;
-            
+            // 【新增】播放收集音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayXpOrbCollect();
+            }
             // 触发经验收集事件
             GameEvents.TriggerXPOrbCollected(xpValue);
             

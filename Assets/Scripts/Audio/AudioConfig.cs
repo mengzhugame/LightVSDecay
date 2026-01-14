@@ -136,20 +136,32 @@ namespace LightVsDecay.Audio
         [Tooltip("Boss 音效音量")]
         [Range(0f, 1f)]
         public float bossDefaultVolume = 0.8f;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 经验球音效
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("═══ 经验球音效 ═══")]
+        [Tooltip("经验球收集（飞入经验栏）")]
+        public AudioClip xpOrbCollect;
+
+        [Tooltip("经验球收集音量")]
+        [Range(0f, 1f)]
+        public float xpOrbVolume = 0.5f;
+
+        [Tooltip("经验球收集音效冷却时间（秒）")]
+        public float xpOrbCollectCooldown = 0.1f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 空投音效
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("═══ 空投音效 ═══")]
-        [Tooltip("无人机空投落地")]
-        public AudioClip airdropLand;
-        
+        [Tooltip("无人机入场飞行音效")]
+        public AudioClip droneEnter;
+        [Tooltip("无人机落地音效")]
+        public AudioClip droneLand;
         [Tooltip("箱子破碎")]
-        public AudioClip crateBreak;
+        public AudioClip droneBoxBreak;
         
-        [Tooltip("空投音效音量")]
+        [Tooltip("无人机音效音量")]
         [Range(0f, 1f)]
-        public float airdropDefaultVolume = 0.6f;
+        public float droneVolume = 0.6f;
     }
 }

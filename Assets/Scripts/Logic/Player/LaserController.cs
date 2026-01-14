@@ -538,6 +538,8 @@ namespace LightVsDecay.Logic.Player
                         float finalDamage = crateCrit ? damage * critDamageMultiplier : damage;
             
                         crate.TakeDamage(finalDamage, Vector2.zero, crateCrit);
+                        // 【新增】宝箱使用金属音效
+                        UpdateFrameHitType(LaserHitType.Metal);
                     }
                     continue;  // 宝箱处理完毕
                 }

@@ -435,7 +435,11 @@ namespace LightVsDecay.UI.Panels
                 Debug.LogError($"[SkillChooseOnePanel] 无效的选项索引: {index}");
                 return;
             }
-            
+            // 【新增】播放技能选择音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySkillCardSelect();
+            }
             SkillData selectedSkill = currentChoices[index];
             
             if (showDebugInfo)

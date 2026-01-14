@@ -6,6 +6,7 @@
 
 using UnityEngine;
 using DG.Tweening;
+using LightVsDecay.Audio;
 using LightVsDecay.Data.SO;
 using LightVsDecay.UI.TacticalDrop;
 using LightVsDecay.Core;
@@ -137,7 +138,11 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             // 记录目标位置（用于受击抖动恢复）
             originalPosition = new Vector3(pos.x, targetY, pos.z);
-            
+            // 【新增】播放入场音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayDroneEnter();
+            }
             // 入场动画：EaseOutBack 带回弹效果（冲过头再拉回，体现重量感）
             transform.DOMoveY(targetY, duration)
                 .SetEase(Ease.OutBack)
@@ -145,7 +150,11 @@ namespace LightVsDecay.Logic.TacticalDrop
                 {
                     // 更新原始位置
                     originalPosition = transform.position;
-                    
+                    // 【新增】播放落地音效
+                    if (AudioManager.Instance != null)
+                    {
+                        AudioManager.Instance.PlayDroneLand();
+                    }
                     if (showDebugInfo)
                     {
                         Debug.Log($"[TacticalCrate] 入场动画完成: {crateType}");
@@ -261,7 +270,12 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             // 播放爆炸特效
             PlayExplosionVFX();
-            
+            // 【新增】播放箱子破碎音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayCrateBreak();
+            }
+
             // 通知管理器
             if (TacticalDropManager.Instance != null)
             {
