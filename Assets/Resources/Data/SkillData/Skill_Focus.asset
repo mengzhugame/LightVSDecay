@@ -27,8 +27,6 @@ MonoBehaviour:
     damageMultiplier: 1.5
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -49,8 +47,6 @@ MonoBehaviour:
     damageMultiplier: 1.8
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -72,8 +68,6 @@ MonoBehaviour:
     damageMultiplier: 2.2
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -94,8 +88,6 @@ MonoBehaviour:
     damageMultiplier: 2.6
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -113,12 +105,10 @@ MonoBehaviour:
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u57FA\u7840\u4F24\u5BB3 <color=#00FF00>+200%</color>\n[\u805A\u53D8]\u51FB\u6740\u654C\u4EBA\u5F15\u53D1
-      <color=#FF0000>100\u70B9 \u8303\u56F4\u7206\u70B8</color> "
+      <color=#FF0000>250% \u8303\u56F4\u7206\u70B8</color> "
     damageMultiplier: 3
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0

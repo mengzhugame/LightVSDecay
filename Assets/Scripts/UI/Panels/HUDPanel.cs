@@ -347,7 +347,7 @@ namespace LightVsDecay.UI.Panels
             // 更新波次文本
             if (waveText != null)
             {
-                waveText.text = $"波次: {currentWave}/{totalWaves}";
+                waveText.text = $"WAVE: {currentWave}/{totalWaves}";
             }
         }
         

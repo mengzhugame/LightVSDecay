@@ -665,6 +665,11 @@ namespace LightVsDecay.Logic.Enemy
             
             if (currentHealth <= 0 || newScale <= minScale)
             {
+                // 【新增】记录击杀伤害，用于 Focus Lv5 爆炸计算
+                if (SkillEffectManager.Instance != null)
+                {
+                    SkillEffectManager.Instance.RecordKillDamage(damage);
+                }
                 Die();
             }
             // 【新增】宝箱怪被击中掉金币

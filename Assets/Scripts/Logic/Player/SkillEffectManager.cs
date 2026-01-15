@@ -110,7 +110,8 @@ namespace LightVsDecay.Logic.Player
         private bool cachedFocusExplosionOnKill = false;
         private float cachedFocusExplosionDamage = 100f;
         private float cachedFocusExplosionRadius = 2f;
-        
+        private float lastKillDamage = 0f;  // 【新增】缓存最后一次击杀的伤害值
+        private const float FOCUS_EXPLOSION_DAMAGE_SCALE = 2.5f;  // 【新增】爆炸伤害倍率 250%
         // Frost 配置缓存
         private float cachedFrostSlowPercent = 0f;
         private float cachedFrostSlowDuration = 0f;
@@ -173,7 +174,7 @@ namespace LightVsDecay.Logic.Player
             // 验证 SkillDatabase
             if (skillDatabase == null)
             {
-                Debug.LogWarning("[SkillEffectManager] ⚠️ SkillDatabase 未设置！将使用硬编码参数作为回退");
+                Debug.LogError("[SkillEffectManager] ❌ SkillDatabase 未设置！技能系统将无法正常工作 波次");
             }
             
             // 订阅事件
@@ -306,35 +307,27 @@ namespace LightVsDecay.Logic.Player
         private void ApplyPrismEffect(int level, SkillData skillData)
         {
             prismLevel = level;
-            
+    
             if (laserController == null) return;
-            
-            // 从配置读取参数
+    
             var levelData = GetLevelData(skillData, level);
-            if (levelData != null)
+            if (levelData == null)
             {
-                laserController.SetPrismLevelFromConfig(
-                    level,
-                    levelData.splitCount,
-                    levelData.splitDamageMultiplier,
-                    levelData.splitLength
-                );
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Prism Lv.{level} (配置) - " +
-                              $"分裂数:{levelData.splitCount}, 伤害:{levelData.splitDamageMultiplier:P0}, 长度:{levelData.splitLength}");
-                }
+                Debug.LogError($"[SkillEffectManager] ❌ Prism Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
             }
-            else
+    
+            laserController.SetPrismLevelFromConfig(
+                level,
+                levelData.splitCount,
+                levelData.splitDamageMultiplier,
+                levelData.splitLength
+            );
+    
+            if (showDebugInfo)
             {
-                // 回退到硬编码
-                laserController.SetPrismLevel(level);
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Prism Lv.{level} (硬编码回退)");
-                }
+                Debug.Log($"[SkillEffectManager] ✓ Prism Lv.{level} - " +
+                          $"分裂数:{levelData.splitCount}, 伤害:{levelData.splitDamageMultiplier:P0}, 长度:{levelData.splitLength}");
             }
         }
         
@@ -344,61 +337,41 @@ namespace LightVsDecay.Logic.Player
         private void ApplyFocusEffect(int level, SkillData skillData)
         {
             focusLevel = level;
-            
+    
             var levelData = GetLevelData(skillData, level);
-            
-            if (levelData != null)
+            if (levelData == null)
             {
-                // 缓存配置数据
-                cachedFocusDamageBonus = levelData.damageMultiplier - 1f;
-                cachedFocusBossDamageBonus = levelData.bossDamageBonus;
-                cachedFocusExplosionOnKill = levelData.explosionOnKill;
-                cachedFocusExplosionDamage = levelData.explosionDamage;
-                cachedFocusExplosionRadius = levelData.explosionRadius;
-                
-                // 应用到 LaserController
-                if (laserController != null)
-                {
-                    // 宽度：只有 Lv1 首次选择时减少 50%
-                    float widthMultiplier = (level == 1) ? levelData.widthMultiplier : 1f;
-                    
-                    laserController.SetFocusLevelFromConfig(
-                        level,
-                        cachedFocusDamageBonus,
-                        widthMultiplier
-                    );
-                }
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} (配置) - " +
-                              $"伤害:{cachedFocusDamageBonus:P0}, BOSS加成:{cachedFocusBossDamageBonus:P0}, " +
-                              $"爆炸:{cachedFocusExplosionOnKill}");
-                }
+                Debug.LogError($"[SkillEffectManager] ❌ Focus Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
             }
-            else
+    
+            // 缓存配置数据
+            cachedFocusDamageBonus = levelData.damageMultiplier - 1f;
+            cachedFocusBossDamageBonus = levelData.bossDamageBonus;
+            cachedFocusExplosionOnKill = levelData.explosionOnKill;
+            cachedFocusExplosionDamage = levelData.explosionDamage;
+            cachedFocusExplosionRadius = levelData.explosionRadius;
+    
+            // 应用到 LaserController
+            if (laserController != null)
             {
-                // 回退到硬编码
-                cachedFocusDamageBonus = GetFocusDamageMultiplierFallback(level) - 1f;
-                cachedFocusBossDamageBonus = (level >= 3) ? 0.2f : 0f;
-                cachedFocusExplosionOnKill = (level >= 5);
-                cachedFocusExplosionDamage = 100f;
-                cachedFocusExplosionRadius = 2f;
-                
-                if (laserController != null)
-                {
-                    laserController.SetFocusLevel(level);
-                }
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} (硬编码回退)");
-                }
+                float widthMultiplier = (level == 1) ? levelData.widthMultiplier : 1f;
+        
+                laserController.SetFocusLevelFromConfig(
+                    level,
+                    cachedFocusDamageBonus,
+                    widthMultiplier
+                );
             }
-            
-            // 更新伤害倍率
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} - " +
+                          $"伤害:{cachedFocusDamageBonus:P0}, BOSS加成:{cachedFocusBossDamageBonus:P0}, " +
+                          $"爆炸:{cachedFocusExplosionOnKill}");
+            }
+    
             UpdateDamageMultiplier();
-            // 【新增】更新宽度倍率（Focus 会影响基础宽度）
             UpdateWidthMultiplier();
         }
         
@@ -408,38 +381,25 @@ namespace LightVsDecay.Logic.Player
         private void ApplyImpactEffect(int level, SkillData skillData)
         {
             impactLevel = level;
-    
+
             var levelData = GetLevelData(skillData, level);
-    
-            if (levelData != null)
+            if (levelData == null)
             {
-                cachedImpactKnockbackMultiplier = levelData.knockbackMultiplier;
-        
-                if (laserController != null)
-                {
-                    laserController.SetKnockbackMultiplier(cachedImpactKnockbackMultiplier);
-                }
-        
-                if (showDebugInfo)
-                {
-                    string canPushBoss = (level >= 5) ? "，可推BOSS" : "";
-                    Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} (配置) - 击退力:{cachedImpactKnockbackMultiplier:F2}x{canPushBoss}");
-                }
+                Debug.LogError($"[SkillEffectManager] ❌ Impact Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
             }
-            else
+    
+            cachedImpactKnockbackMultiplier = levelData.knockbackMultiplier;
+
+            if (laserController != null)
             {
-                // 回退到硬编码
-                cachedImpactKnockbackMultiplier = GetImpactKnockbackMultiplierFallback(level);
-        
-                if (laserController != null)
-                {
-                    laserController.SetKnockbackMultiplier(cachedImpactKnockbackMultiplier);
-                }
-        
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} (硬编码回退)");
-                }
+                laserController.SetKnockbackMultiplier(cachedImpactKnockbackMultiplier);
+            }
+
+            if (showDebugInfo)
+            {
+                string canPushBoss = (level >= 5) ? "，可推BOSS" : "";
+                Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} - 击退力:{cachedImpactKnockbackMultiplier:F2}x{canPushBoss}");
             }
         }
         
@@ -449,36 +409,24 @@ namespace LightVsDecay.Logic.Player
         private void ApplyFrostEffect(int level, SkillData skillData)
         {
             frostLevel = level;
-            
+    
             var levelData = GetLevelData(skillData, level);
-            
-            if (levelData != null)
+            if (levelData == null)
             {
-                // 缓存配置数据
-                cachedFrostSlowPercent = levelData.slowPercent;
-                cachedFrostSlowDuration = levelData.slowDuration;
-                cachedFrostFreezeThreshold = levelData.freezeThreshold;
-                cachedFrostFreezeDuration = levelData.freezeDuration;
-                
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Frost Lv.{level} (配置) - " +
-                              $"减速:{cachedFrostSlowPercent:P0}/{cachedFrostSlowDuration:F1}s, " +
-                              $"冰冻阈值:{cachedFrostFreezeThreshold:F1}s");
-                }
+                Debug.LogError($"[SkillEffectManager] ❌ Frost Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
             }
-            else
+    
+            cachedFrostSlowPercent = levelData.slowPercent;
+            cachedFrostSlowDuration = levelData.slowDuration;
+            cachedFrostFreezeThreshold = levelData.freezeThreshold;
+            cachedFrostFreezeDuration = levelData.freezeDuration;
+    
+            if (showDebugInfo)
             {
-                // 回退到硬编码
-                GetFrostDataFallback(level, out cachedFrostSlowPercent, out cachedFrostSlowDuration);
-                cachedFrostFreezeThreshold = (level >= 5) ? 1.5f : 0f;
-                cachedFrostFreezeDuration = (level >= 5) ? 1.0f : 0f;
-
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Frost Lv.{level} (硬编码回退)");
-                }
+                Debug.Log($"[SkillEffectManager] ✓ Frost Lv.{level} - " +
+                          $"减速:{cachedFrostSlowPercent:P0}/{cachedFrostSlowDuration:F1}s, " +
+                          $"冰冻阈值:{cachedFrostFreezeThreshold:F1}s");
             }
         }
         
@@ -488,35 +436,27 @@ namespace LightVsDecay.Logic.Player
         private void ApplyReflexEffect(int level, SkillData skillData)
         {
             reflexLevel = level;
-            
+    
             var levelData = GetLevelData(skillData, level);
-            
-            if (levelData != null && laserController != null)
+            if (levelData == null)
+            {
+                Debug.LogError($"[SkillEffectManager] ❌ Reflex Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
+            }
+    
+            if (laserController != null)
             {
                 laserController.SetReflexLevelFromConfig(
                     level,
                     levelData.reflexDamageMultiplier,
                     levelData.reflexLengthBonus
                 );
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} (配置) - " +
-                              $"反射伤害:{levelData.reflexDamageMultiplier:P0}, 长度加成:{levelData.reflexLengthBonus:P0}");
-                }
             }
-            else
+    
+            if (showDebugInfo)
             {
-                // 回退到硬编码
-                if (laserController != null)
-                {
-                    laserController.SetReflexLevel(level);
-                }
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} (硬编码回退)");
-                }
+                Debug.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} - " +
+                          $"反射伤害:{levelData.reflexDamageMultiplier:P0}, 长度加成:{levelData.reflexLengthBonus:P0}");
             }
         }
         
@@ -530,31 +470,21 @@ namespace LightVsDecay.Logic.Player
         private void ApplyPowerEffect(int level, SkillData skillData)
         {
             powerLevel = level;
-            
+    
             var levelData = GetLevelData(skillData, level);
-            
-            if (levelData != null)
+            if (levelData == null)
             {
-                // 从配置读取伤害倍率，转换为加成值
-                // 配置中 damageMultiplier = 1.2 表示 +20%
-                totalDamageBonus = levelData.damageMultiplier - 1f;
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Power Lv.{level} (配置) - 伤害加成:{totalDamageBonus:P0}");
-                }
+                Debug.LogError($"[SkillEffectManager] ❌ Power Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
             }
-            else
+    
+            totalDamageBonus = levelData.damageMultiplier - 1f;
+    
+            if (showDebugInfo)
             {
-                // 回退：每级 +20%
-                totalDamageBonus = level * 0.20f;
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Power Lv.{level} (硬编码回退) - 伤害加成:{totalDamageBonus:P0}");
-                }
+                Debug.Log($"[SkillEffectManager] ✓ Power Lv.{level} - 伤害加成:{totalDamageBonus:P0}");
             }
-            
+    
             UpdateDamageMultiplier();
         }
         
@@ -564,33 +494,21 @@ namespace LightVsDecay.Logic.Player
         private void ApplyWideEffect(int level, SkillData skillData)
         {
             wideLevel = level;
-    
+
             var levelData = GetLevelData(skillData, level);
-    
-            if (levelData != null)
+            if (levelData == null)
             {
-                // 从配置读取宽度倍率（1.4 = +40%）
-                // 这个倍率是相对于【当前基础宽度】的加成
-                float wideBonus = levelData.widthMultiplier - 1f; // 转换为加成值
-                totalWidthBonus = wideBonus;
-        
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} (配置) - 宽度加成:{wideBonus:P0}");
-                }
-            }
-            else
-            {
-                // 回退：每级 +40%
-                totalWidthBonus = level * 0.40f;
-        
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} (硬编码回退) - 宽度加成:{totalWidthBonus:P0}");
-                }
+                Debug.LogError($"[SkillEffectManager] ❌ Wide Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
             }
     
-            // 更新最终宽度
+            totalWidthBonus = levelData.widthMultiplier - 1f;
+
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} - 宽度加成:{totalWidthBonus:P0}");
+            }
+
             UpdateWidthMultiplier();
         }
         /// <summary>
@@ -635,31 +553,22 @@ namespace LightVsDecay.Logic.Player
         private void ApplyCritEffect(int level, SkillData skillData)
         {
             critLevel = level;
-            
+    
             var levelData = GetLevelData(skillData, level);
-            
-            if (levelData != null && laserController != null)
+            if (levelData == null)
+            {
+                Debug.LogError($"[SkillEffectManager] ❌ Crit Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
+            }
+    
+            if (laserController != null)
             {
                 laserController.SetCritLevelFromConfig(level, levelData.critRateBonus);
-                
-                if (showDebugInfo)
-                {
-                    Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} (配置) - 暴击率加成:{levelData.critRateBonus:P0}");
-                }
             }
-            else
+    
+            if (showDebugInfo)
             {
-                // 回退：每级 +5%
-                if (laserController != null)
-                {
-                    laserController.SetCritLevel(level);
-                }
-                
-                if (showDebugInfo)
-                {
-                    float critBonus = level * 0.05f;
-                    Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} (硬编码回退) - 暴击率加成:{critBonus:P0}");
-                }
+                Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} - 暴击率加成:{levelData.critRateBonus:P0}");
             }
         }
         
@@ -773,17 +682,39 @@ namespace LightVsDecay.Logic.Player
                 EnemyBlob enemy = hit.GetComponentInParent<EnemyBlob>();
                 if (enemy != null)
                 {
-                    // 造成爆炸伤害（不触发连锁爆炸）
-                    enemy.TakeDamage(cachedFocusExplosionDamage, Vector2.zero, false);
+                    // 【修改】使用动态爆炸伤害 = 最后击杀伤害 × 250%
+                    float explosionDamage = lastKillDamage > 0f 
+                        ? lastKillDamage * FOCUS_EXPLOSION_DAMAGE_SCALE 
+                        : cachedFocusExplosionDamage;
+                    enemy.TakeDamage(explosionDamage, Vector2.zero, false);
                 }
             }
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] 💥 Focus Lv5 聚变爆炸! 位置:{position}, 伤害:{cachedFocusExplosionDamage}, 半径:{cachedFocusExplosionRadius}, 命中:{hits.Length}");
+                float explosionDamage = lastKillDamage > 0f 
+                    ? lastKillDamage * FOCUS_EXPLOSION_DAMAGE_SCALE 
+                    : cachedFocusExplosionDamage;
+                Debug.Log($"[SkillEffectManager] 💥 Focus Lv5 聚变爆炸! " +
+                          $"位置:{position}, 击杀伤害:{lastKillDamage:F1}, " +
+                          $"爆炸伤害:{explosionDamage:F1} (×{FOCUS_EXPLOSION_DAMAGE_SCALE}), " +
+                          $"半径:{cachedFocusExplosionRadius}, 命中:{hits.Length}");
             }
         }
-        
+        /// <summary>
+        /// 【新增】记录最后一次击杀的伤害值（由 LaserController 调用）
+        /// 用于计算 Focus Lv5 爆炸伤害
+        /// </summary>
+        /// <param name="damage">造成击杀的伤害值</param>
+        public void RecordKillDamage(float damage)
+        {
+            lastKillDamage = damage;
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillEffectManager] 记录击杀伤害: {damage:F1}");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 倍率更新
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -895,68 +826,6 @@ namespace LightVsDecay.Logic.Player
             if (showDebugInfo)
             {
                 Debug.Log("[SkillEffectManager] Adrenaline 效果结束");
-            }
-        }
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 硬编码回退方法
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private float GetFocusDamageMultiplierFallback(int level)
-        {
-            switch (level)
-            {
-                case 0: return 1.0f;
-                case 1: return 1.50f;
-                case 2: return 1.80f;
-                case 3: return 2.20f;
-                case 4: return 2.60f;
-                case 5: return 3.50f;
-                default: return 1.0f;
-            }
-        }
-        
-        private float GetImpactKnockbackMultiplierFallback(int level)
-        {
-            switch (level)
-            {
-                case 1: return 1.50f;
-                case 2: return 2.00f;
-                case 3: return 2.50f;
-                case 4: return 3.00f;
-                case 5: return 5.00f;
-                default: return 1.0f;
-            }
-        }
-
-        private void GetFrostDataFallback(int level, out float slowPercent, out float duration)
-        {
-            switch (level)
-            {
-                case 1:
-                    slowPercent = 0.20f;
-                    duration = 0.5f;
-                    break;
-                case 2:
-                    slowPercent = 0.30f;
-                    duration = 0.8f;
-                    break;
-                case 3:
-                    slowPercent = 0.40f;
-                    duration = 1.0f;
-                    break;
-                case 4:
-                    slowPercent = 0.50f;
-                    duration = 1.2f;
-                    break;
-                case 5:
-                    slowPercent = 0.50f;
-                    duration = 1.0f;
-                    break;
-                default:
-                    slowPercent = 0f;
-                    duration = 0f;
-                    break;
             }
         }
     }
