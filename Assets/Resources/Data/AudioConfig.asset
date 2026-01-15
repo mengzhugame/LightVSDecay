@@ -36,13 +36,13 @@ MonoBehaviour:
   towerHit: {fileID: 8300000, guid: 36afc5b5acd66194ab16b0a10dec00d4, type: 3}
   lowHealthWarning: {fileID: 0}
   playerDefaultVolume: 0.7
-  bossEntrance: {fileID: 0}
-  bossChargeWarning: {fileID: 0}
-  bossPressWarning: {fileID: 0}
+  bossRoar: {fileID: 8300000, guid: 3bba745b6bd1e4449a73fcb93bfdb218, type: 3}
+  bossChargeWarning: {fileID: 8300000, guid: 6cb2a7ca2ab19ec48aab33e3af21d19a, type: 3}
+  bossDash: {fileID: 8300000, guid: f94bb99d957d0804d80bad888364ae74, type: 3}
   bossPressing: {fileID: 0}
-  bossSpit: {fileID: 0}
-  bossSummon: {fileID: 0}
-  bossDefaultVolume: 0.8
+  bossSpit: {fileID: 8300000, guid: b5edb39b8162ccf4b92a20d82dfa2c72, type: 3}
+  bossSummon: {fileID: 8300000, guid: 54c82df9efaf39442a9f0f260829a8a4, type: 3}
+  bossDefaultVolume: 0.7
   xpOrbCollect: {fileID: 8300000, guid: e5b671c9edb921f48b3d4193eb19ec04, type: 3}
   xpOrbVolume: 0.5
   xpOrbCollectCooldown: 0.1

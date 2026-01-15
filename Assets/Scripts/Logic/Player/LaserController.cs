@@ -596,12 +596,22 @@ namespace LightVsDecay.Logic.Player
                                     Debug.Log($"[LaserController] 🛡️ 命中Boss甲壳（眼睛闭合），伤害: {bossDamage:F1}");
                                 }
                             }
+                            UpdateFrameHitType(LaserHitType.Burn);
                         }
                         
                         // V3.1: 角力系统（无论眼睛状态都生效）
                         int impactLevel = SkillEffectManager.Instance != null 
                             ? SkillEffectManager.Instance.GetImpactLevel() : 0;
-                        
+                        // 【新增】角力阶段使用 Metal 音效
+                        if (bossController.IsPressing)
+                        {
+                            UpdateFrameHitType(LaserHitType.Metal);
+                        }
+                        else
+                        {
+                            // 非角力阶段
+                            UpdateFrameHitType(LaserHitType.Burn);
+                        }
                         // 情况1: 蓄力阶段 - 尝试打断
                         if (bossController.IsInChargeTelegraph)
                         {

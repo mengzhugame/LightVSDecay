@@ -721,15 +721,16 @@ namespace LightVsDecay.Audio
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 播放 Boss 入场音效
+        /// 播放 Boss 入场咆哮音效
         /// </summary>
-        public void PlayBossEntrance()
+        public void PlayBossRoar()
         {
             if (config != null)
             {
-                PlaySFX(config.bossEntrance, config.bossDefaultVolume);
+                PlaySFX(config.bossRoar, config.bossDefaultVolume);
             }
         }
+
         
         /// <summary>
         /// 播放 Boss 死亡音效
@@ -743,15 +744,46 @@ namespace LightVsDecay.Audio
         }
         
         /// <summary>
-        /// 播放 Boss 冲锋音效
+        /// 播放 Boss 破空音效（冲锋/突进）
         /// </summary>
-        public void PlayBossCharge()
+        public void PlayBossDash()
         {
-            // if (config != null)
-            // {
-            //     PlaySFX(config.bossCharge, config.bossDefaultVolume);
-            // }
+            if (config != null)
+            {
+                PlaySFX(config.bossDash, config.bossDefaultVolume);
+            }
         }
+        /// <summary>
+        /// 播放 Boss 预警音效
+        /// </summary>
+        public void PlayBossChargeWarning()
+        {
+            if (config != null)
+            {
+                PlaySFX(config.bossChargeWarning, config.bossDefaultVolume);
+            }
+        }
+        /// <summary>
+        /// 播放 Boss 召唤小怪
+        /// </summary>
+        public void PlayBossSummon()
+        {
+            if (config != null)
+            {
+                PlaySFX(config.bossSummon, config.bossDefaultVolume);
+            }
+        }
+        /// <summary>
+        /// 播放 Boss 喷吐污秽
+        /// </summary>
+        public void PlayBossSpit()
+        {
+            if (config != null)
+            {
+                PlaySFX(config.bossSpit, config.bossDefaultVolume);
+            }
+        }
+        
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 无人机音效
@@ -864,8 +896,6 @@ namespace LightVsDecay.Audio
         
         private void OnBossFightStart()
         {
-            PlayBossEntrance();
-            
             // 可选：切换到 Boss 战 BGM
             if (config != null && config.bossBGM != null)
             {

@@ -119,27 +119,27 @@ namespace LightVsDecay.Audio
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("═══ Boss 音效 ═══")]
-        [Tooltip("Boss 入场")]
-        public AudioClip bossEntrance;
+        [Tooltip("Boss入场咆哮音效")]
+        public AudioClip bossRoar;
         
         [Tooltip("野蛮冲撞预警")]
         public AudioClip bossChargeWarning;
         
-        [Tooltip("重力碾压预警")]
-        public AudioClip bossPressWarning;
+        [Tooltip("Boss破空音效（冲锋/突进）")]
+        public AudioClip bossDash;
         
-        [Tooltip("重力碾压过程（持续）")]
+        [Tooltip("Boss重力碾压过程（循环）")]
         public AudioClip bossPressing;
         
-        [Tooltip("喷吐发射")]
+        [Tooltip("Boss喷吐污秽球")]
         public AudioClip bossSpit;
         
-        [Tooltip("Boss 召唤小怪")]
+        [Tooltip("Boss召唤小怪")]
         public AudioClip bossSummon;
         
         [Tooltip("Boss 音效音量")]
         [Range(0f, 1f)]
-        public float bossDefaultVolume = 0.8f;
+        public float bossDefaultVolume = 0.7f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 经验球音效
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

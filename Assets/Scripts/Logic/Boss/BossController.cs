@@ -7,6 +7,7 @@
 
 using UnityEngine;
 using System.Collections;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Data;
@@ -419,7 +420,12 @@ namespace LightVsDecay.Logic.Boss
             
             // 咆哮 + 震动
             if (showDebugInfo) Debug.Log("[BossController] BOSS 咆哮！");
-            
+            // 【新增】播放咆哮音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossRoar();
+            }
+
             float shakeIntensity = config != null ? config.spawnShakeIntensity : 0.5f;
             float shakeDuration = config != null ? config.spawnShakeDuration : 0.5f;
             if (CameraShake.Instance != null)
@@ -576,7 +582,11 @@ namespace LightVsDecay.Logic.Boss
 #endif
             
             yield return new WaitForSeconds(duration);
-            
+            // 【新增】播放召唤音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossSummon();
+            }
             // 生成小怪（左右对称）
             SpawnMinions();
             
@@ -811,6 +821,11 @@ namespace LightVsDecay.Logic.Boss
                 RegisterPollutionBall(projectile);
             }
             
+            // 【新增】播放喷吐音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossSpit();
+            }
             if (showDebugInfo)
             {
                 Debug.Log("[BossController] 💜 发射污秽投射物！");
@@ -839,7 +854,11 @@ namespace LightVsDecay.Logic.Boss
             {
                 Debug.Log("[BossController] ⚠️ Charge 蓄力开始！眼睛睁开+红光闪烁！");
             }
-            
+            // 【新增】播放预警音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossChargeWarning();
+            }
             // 眼睛猛然睁开
             if (eyeController != null) eyeController.Open();
             
@@ -886,6 +905,11 @@ namespace LightVsDecay.Logic.Boss
             if (showDebugInfo)
             {
                 Debug.Log("[BossController] 🔴 Charge 冲锋！瞬间高速冲向塔！");
+            }
+            // 【新增】播放破空音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossDash();
             }
             float baseDashDuration = config != null ? config.chargeDashDuration : 0.3f;
             float dashDuration = baseDashDuration / speedMultiplier;  // V3.0: Buff越多，冲得越快
@@ -1014,7 +1038,11 @@ namespace LightVsDecay.Logic.Boss
             {
                 Debug.Log("[BossController] 🟣 Press Phase 1: 突进贴脸！（闭眼）");
             }
-            
+            // 【新增】播放破空音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossDash();
+            }
             // 眼睛保持闭合
             if (eyeController != null) eyeController.Close();
             
