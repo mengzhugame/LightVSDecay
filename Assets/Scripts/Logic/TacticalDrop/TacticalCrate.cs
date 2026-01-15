@@ -273,7 +273,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             // 【新增】播放箱子破碎音效
             if (AudioManager.Instance != null)
             {
-                AudioManager.Instance.PlayCrateBreak();
+                AudioManager.Instance.PlayDroneExplode();
             }
 
             // 通知管理器

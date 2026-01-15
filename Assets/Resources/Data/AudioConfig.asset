@@ -15,7 +15,7 @@ MonoBehaviour:
   mainMenuBGM: {fileID: 8300000, guid: d897a99cf3691654db5b09c178538977, type: 3}
   battleBGM: {fileID: 8300000, guid: e13adb1543dc01e409fd1e8a8f740d33, type: 3}
   bossBGM: {fileID: 8300000, guid: a788454f89f152a44a827e79f602e323, type: 3}
-  bgmDefaultVolume: 0.5
+  bgmDefaultVolume: 0.3
   bgmFadeDuration: 1
   buttonClick: {fileID: 8300000, guid: 2fc0f63abe31a454ca083eeb17a6cd4e, type: 3}
   levelUp: {fileID: 8300000, guid: e774f9078c7c7b343a2fb190b2cd504b, type: 3}
@@ -32,6 +32,8 @@ MonoBehaviour:
   enemyFreeze: {fileID: 0}
   enemyDefaultVolume: 0.6
   shieldBreak: {fileID: 8300000, guid: 64b9d44f4278a8748bee5e8fe780ad13, type: 3}
+  shieldHit: {fileID: 8300000, guid: b11e5b0d52aaef54da0131141a7e9fac, type: 3}
+  towerHit: {fileID: 8300000, guid: 36afc5b5acd66194ab16b0a10dec00d4, type: 3}
   lowHealthWarning: {fileID: 0}
   playerDefaultVolume: 0.7
   bossEntrance: {fileID: 0}

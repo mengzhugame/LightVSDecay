@@ -10,6 +10,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Data;
@@ -207,7 +208,11 @@ namespace LightVsDecay.Logic.Player
             
             // 播放受伤特效
             PlayDamageEffect();
-            
+            // 【新增】播放护盾受击音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayShieldHit();
+            }
             // 【新增】触发闪白效果
             TriggerHitFlash();
             

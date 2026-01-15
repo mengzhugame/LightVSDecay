@@ -102,6 +102,11 @@ namespace LightVsDecay.UI.Panels
         {
             // 面板显示时确保 Time.timeScale = 0
             Time.timeScale = 0f;
+            // 【新增】停止激光循环音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StopLaserLoop();
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -462,6 +467,8 @@ namespace LightVsDecay.UI.Panels
             // 恢复游戏
             Time.timeScale = 1f;
             
+            // 触发升级选择完成事件
+            GameEvents.TriggerLevelUpChoiceComplete();
             if (showDebugInfo)
             {
                 Debug.Log("[SkillChooseOnePanel] 选择完成，游戏恢复");

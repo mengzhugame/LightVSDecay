@@ -102,7 +102,11 @@ namespace LightVsDecay.Audio
         [Header("═══ 玩家音效 ═══")]
         [Tooltip("护盾破碎")]
         public AudioClip shieldBreak;
-        
+        [Tooltip("护盾受击")]
+        public AudioClip shieldHit;  // 【新增】
+
+        [Tooltip("光棱塔受击")]
+        public AudioClip towerHit;   // 【新增】
         [Tooltip("低血量警告（心跳）")]
         public AudioClip lowHealthWarning;
         

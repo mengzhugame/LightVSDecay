@@ -5,7 +5,6 @@
 // ============================================================
 
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using LightVsDecay.Core;
@@ -20,22 +19,26 @@ namespace LightVsDecay.Audio
     public enum LaserHitType
     {
         None = 0,   // 未命中（空射）
-        Burn = 1,   // 命中软体（灼烧）- 黑油/小怪/Boss眼睛
-        Metal = 2   // 命中金属（装甲）- Tank/Boss装甲
+        Burn = 1,   // 命中软体（灼烧）- 普通怪物/Boss外壳
+        Metal = 2   // 命中金属（装甲）- 无人机/Boss眼睛
     }
     
     /// <summary>
     /// 音频管理器
-    /// 单例模式，跨场景持久化
+    /// 继承自 AutoPersistentSingleton，自动创建并跨场景持久化
     /// </summary>
-    public class AudioManager : MonoBehaviour
+    public class AudioManager : AutoPersistentSingleton<AudioManager>
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 单例
+        // 【关键】自动初始化 - 游戏启动时自动创建
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private static AudioManager _instance;
-        public static AudioManager Instance => _instance;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void OnGameStart()
+        {
+            // 调用基类的自动初始化方法
+            AutoInitialize();
+        }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 配置
@@ -72,10 +75,13 @@ namespace LightVsDecay.Audio
         
         private float bgmVolume = 1f;
         private float sfxVolume = 1f;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 经验球音效冷却
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         private float lastXpOrbCollectTime = -1f;
+        
         public float BGMVolume
         {
             get => bgmVolume;
@@ -114,26 +120,27 @@ namespace LightVsDecay.Audio
         private AudioClip currentBGM;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 生命周期
+        // 生命周期（继承自 AutoPersistentSingleton）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            // 单例设置
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-            
             // 创建音频源
             CreateAudioSources();
             
             // 加载音量设置
             LoadVolumeSettings();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[AudioManager] 单例初始化完成");
+            }
+        }
+        
+        private void Start()
+        {
+            // 首次运行时播放当前场景的BGM
+            PlayBGMForCurrentScene();
         }
         
         private void OnEnable()
@@ -151,32 +158,63 @@ namespace LightVsDecay.Audio
             UnsubscribeFromGameEvents();
         }
         
+        protected override void OnSingletonDestroy()
+        {
+            // 清理
+        }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 初始化
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private void CreateAudioSources()
         {
-            // BGM 音频源
-            bgmSource = gameObject.AddComponent<AudioSource>();
+            // 先尝试获取已有的 AudioSource（预制体上可能已经存在）
+            AudioSource[] existingSources = GetComponents<AudioSource>();
+    
+            if (existingSources.Length >= 4)
+            {
+                // 预制体上已有足够的 AudioSource，直接复用
+                bgmSource = existingSources[0];
+                sfxSource = existingSources[1];
+                laserSource = existingSources[2];
+                bossLoopSource = existingSources[3];
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log("[AudioManager] 复用预制体上已有的 AudioSource");
+                }
+            }
+            else
+            {
+                // 预制体上没有或不够，创建新的
+                bgmSource = gameObject.AddComponent<AudioSource>();
+                sfxSource = gameObject.AddComponent<AudioSource>();
+                laserSource = gameObject.AddComponent<AudioSource>();
+                bossLoopSource = gameObject.AddComponent<AudioSource>();
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log("[AudioManager] 创建新的 AudioSource");
+                }
+            }
+    
+            // 配置 BGM 音频源
             bgmSource.loop = true;
             bgmSource.playOnAwake = false;
-            bgmSource.priority = 0; // 最高优先级
-            
-            // SFX 音频源
-            sfxSource = gameObject.AddComponent<AudioSource>();
+            bgmSource.priority = 0;
+    
+            // 配置 SFX 音频源
             sfxSource.loop = false;
             sfxSource.playOnAwake = false;
             sfxSource.priority = 128;
-            
-            // 激光循环音频源
-            laserSource = gameObject.AddComponent<AudioSource>();
+    
+            // 配置激光循环音频源
             laserSource.loop = true;
             laserSource.playOnAwake = false;
             laserSource.priority = 64;
-            
-            // Boss 循环音频源
-            bossLoopSource = gameObject.AddComponent<AudioSource>();
+    
+            // 配置 Boss 循环音频源
             bossLoopSource.loop = true;
             bossLoopSource.playOnAwake = false;
             bossLoopSource.priority = 32;
@@ -219,6 +257,8 @@ namespace LightVsDecay.Audio
             GameEvents.OnShieldBroken += OnShieldBroken;
             GameEvents.OnLowHealthStart += OnLowHealthStart;
             GameEvents.OnBossFightStart += OnBossFightStart;
+            GameEvents.OnGameResumed += OnGameResumed;
+            GameEvents.OnLevelUpChoiceComplete += OnLevelUpChoiceComplete;
         }
         
         private void UnsubscribeFromGameEvents()
@@ -230,6 +270,8 @@ namespace LightVsDecay.Audio
             GameEvents.OnShieldBroken -= OnShieldBroken;
             GameEvents.OnLowHealthStart -= OnLowHealthStart;
             GameEvents.OnBossFightStart -= OnBossFightStart;
+            GameEvents.OnGameResumed -= OnGameResumed;
+            GameEvents.OnLevelUpChoiceComplete -= OnLevelUpChoiceComplete;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -248,15 +290,69 @@ namespace LightVsDecay.Audio
             if (scene.name == mainMenuSceneName)
             {
                 PlayBGM(config.mainMenuBGM);
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log("[AudioManager] 切换到主菜单，播放主菜单BGM");
+                }
             }
             else if (scene.name == battleSceneName)
             {
                 PlayBGM(config.battleBGM);
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log("[AudioManager] 切换到战斗场景，播放战斗BGM");
+                }
             }
             
             if (showDebugInfo)
             {
                 Debug.Log($"[AudioManager] 场景加载: {scene.name}");
+            }
+        }
+        
+        /// <summary>
+        /// 根据当前场景播放对应的BGM（首次启动时调用）
+        /// </summary>
+        private void PlayBGMForCurrentScene()
+        {
+            if (config == null)
+            {
+                Debug.LogWarning("[AudioManager] AudioConfig 未配置！");
+                return;
+            }
+            
+            string currentSceneName = SceneManager.GetActiveScene().name;
+            // 【新增】调试日志 - 检查音频文件
+            if (showDebugInfo || config.mainMenuBGM == null || config.battleBGM == null)
+            {
+                Debug.Log($"[AudioManager] AudioConfig 检查:");
+                Debug.Log($"  - mainMenuBGM: {(config.mainMenuBGM != null ? config.mainMenuBGM.name : "❌ 未配置")}");
+                Debug.Log($"  - battleBGM: {(config.battleBGM != null ? config.battleBGM.name : "❌ 未配置")}");
+            }
+            if (currentSceneName == mainMenuSceneName)
+            {
+                if (config.mainMenuBGM == null)
+                {
+                    Debug.LogError("[AudioManager] ❌ mainMenuBGM 为空！请在 AudioConfig 中配置主界面BGM");
+                    return;
+                }
+                PlayBGM(config.mainMenuBGM);
+            }
+            else if (currentSceneName == battleSceneName)
+            {
+                if (config.battleBGM == null)
+                {
+                    Debug.LogError("[AudioManager] ❌ battleBGM 为空！请在 AudioConfig 中配置战斗BGM");
+                    return;
+                }
+                PlayBGM(config.battleBGM);
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[AudioManager] Start - 当前场景: {currentSceneName}, 播放对应BGM");
             }
         }
         
@@ -269,7 +365,20 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void PlayBGM(AudioClip clip)
         {
-            if (clip == null || clip == currentBGM) return;
+            if (clip == null)
+            {
+                if (showDebugInfo)
+                {
+                    Debug.LogWarning("[AudioManager] 尝试播放空的BGM片段");
+                }
+                return;
+            }
+            
+            // 如果是同一首BGM，不重复播放
+            if (clip == currentBGM && bgmSource.isPlaying)
+            {
+                return;
+            }
             
             if (bgmFadeCoroutine != null)
             {
@@ -316,6 +425,11 @@ namespace LightVsDecay.Audio
             
             bgmSource.volume = targetVolume;
             bgmFadeCoroutine = null;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[AudioManager] BGM 切换完成: {newClip.name}");
+            }
         }
         
         /// <summary>
@@ -388,7 +502,20 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void StartLaserLoop()
         {
-            if (config == null) return;
+            // 【新增】调试日志
+            Debug.Log($"[AudioManager] StartLaserLoop 被调用");
+    
+            if (config == null)
+            {
+                Debug.LogError("[AudioManager] ❌ config 为空！");
+                return;
+            }
+    
+            if (config.laserIdle == null)
+            {
+                Debug.LogError("[AudioManager] ❌ laserIdle 音效未配置！");
+                return;
+            }
             
             isLaserActive = true;
             currentLaserHitType = LaserHitType.None;
@@ -412,7 +539,7 @@ namespace LightVsDecay.Audio
             currentLaserHitType = LaserHitType.None;
             currentLaserClip = null;
             
-            if (laserSource.isPlaying)
+            if (laserSource != null && laserSource.isPlaying)
             {
                 laserSource.Stop();
                 
@@ -478,6 +605,33 @@ namespace LightVsDecay.Audio
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Boss 循环音效
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 开始 Boss 摩擦循环音效
+        /// </summary>
+        // public void StartBossFrictionLoop()
+        // {
+        //     if (config == null || config.bossFrictionLoop == null) return;
+        //     
+        //     bossLoopSource.clip = config.bossFrictionLoop;
+        //     bossLoopSource.volume = sfxVolume * config.bossDefaultVolume;
+        //     bossLoopSource.Play();
+        // }
+        
+        /// <summary>
+        /// 停止 Boss 循环音效
+        /// </summary>
+        public void StopBossLoop()
+        {
+            if (bossLoopSource != null && bossLoopSource.isPlaying)
+            {
+                bossLoopSource.Stop();
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 怪物音效
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
@@ -530,6 +684,28 @@ namespace LightVsDecay.Audio
         }
         
         /// <summary>
+        /// 播放护盾受击音效
+        /// </summary>
+        public void PlayShieldHit()
+        {
+            if (config != null && config.shieldHit != null)
+            {
+                PlaySFX(config.shieldHit, config.playerDefaultVolume);
+            }
+        }
+        
+        /// <summary>
+        /// 播放光棱塔受击音效
+        /// </summary>
+        public void PlayTowerHit()
+        {
+            if (config != null && config.towerHit != null)
+            {
+                PlaySFX(config.towerHit, config.playerDefaultVolume);
+            }
+        }
+        
+        /// <summary>
         /// 播放低血量警告音效
         /// </summary>
         public void PlayLowHealthWarning()
@@ -556,77 +732,30 @@ namespace LightVsDecay.Audio
         }
         
         /// <summary>
-        /// 播放野蛮冲撞预警音效
+        /// 播放 Boss 死亡音效
         /// </summary>
-        public void PlayBossChargeWarning()
+        public void PlayBossDeath()
         {
-            if (config != null)
-            {
-                PlaySFX(config.bossChargeWarning, config.bossDefaultVolume);
-            }
+            // if (config != null)
+            // {
+            //     PlaySFX(config.bossDeath, config.bossDefaultVolume);
+            // }
         }
         
         /// <summary>
-        /// 播放重力碾压预警音效
+        /// 播放 Boss 冲锋音效
         /// </summary>
-        public void PlayBossPressWarning()
+        public void PlayBossCharge()
         {
-            if (config != null)
-            {
-                PlaySFX(config.bossPressWarning, config.bossDefaultVolume);
-            }
-        }
-        
-        /// <summary>
-        /// 开始重力碾压过程循环音效
-        /// </summary>
-        public void StartBossPressLoop()
-        {
-            if (config == null || config.bossPressing == null) return;
-            if (bossLoopSource.isPlaying) return;
-            
-            bossLoopSource.clip = config.bossPressing;
-            bossLoopSource.volume = sfxVolume * config.bossDefaultVolume;
-            bossLoopSource.Play();
-        }
-        
-        /// <summary>
-        /// 停止 Boss 循环音效
-        /// </summary>
-        public void StopBossLoop()
-        {
-            if (bossLoopSource.isPlaying)
-            {
-                bossLoopSource.Stop();
-            }
-        }
-        
-        /// <summary>
-        /// 播放喷吐发射音效
-        /// </summary>
-        public void PlayBossSpit()
-        {
-            if (config != null)
-            {
-                PlaySFX(config.bossSpit, config.bossDefaultVolume);
-            }
-        }
-        
-        /// <summary>
-        /// 播放 Boss 召唤小怪音效
-        /// </summary>
-        public void PlayBossSummon()
-        {
-            if (config != null)
-            {
-                PlaySFX(config.bossSummon, config.bossDefaultVolume);
-            }
+            // if (config != null)
+            // {
+            //     PlaySFX(config.bossCharge, config.bossDefaultVolume);
+            // }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 空投音效
+        // 无人机音效
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
         /// <summary>
         /// 播放无人机入场音效
         /// </summary>
@@ -637,7 +766,6 @@ namespace LightVsDecay.Audio
                 PlaySFX(config.droneEnter, config.droneVolume);
             }
         }
-
         /// <summary>
         /// 播放无人机落地音效
         /// </summary>
@@ -650,19 +778,20 @@ namespace LightVsDecay.Audio
         }
         
         /// <summary>
-        /// 播放箱子破碎音效
+        /// 播放无人机爆炸音效
         /// </summary>
-        public void PlayCrateBreak()
+        public void PlayDroneExplode()
         {
             if (config != null)
             {
                 PlaySFX(config.droneBoxBreak, config.droneVolume);
             }
         }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 经验球音效
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+        
         /// <summary>
         /// 播放经验球收集音效（带冷却）
         /// </summary>
@@ -670,19 +799,22 @@ namespace LightVsDecay.Audio
         {
             if (config == null || config.xpOrbCollect == null) return;
     
-            // 冷却检查
-            float cooldown = config.xpOrbCollectCooldown > 0 ? config.xpOrbCollectCooldown : 0.1f;
+            float cooldown = config != null ? config.xpOrbCollectCooldown : 0.1f;
             if (Time.time - lastXpOrbCollectTime < cooldown) return;
     
             lastXpOrbCollectTime = Time.time;
             PlaySFX(config.xpOrbCollect, config.xpOrbVolume);
         }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 游戏事件回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private void OnLevelUp(int level)
         {
+            // 【新增】停止激光循环音效（弹出三选一界面）
+            StopLaserLoop();
+            
             if (config != null)
             {
                 PlaySFX(config.levelUp, config.uiDefaultVolume);
@@ -738,6 +870,33 @@ namespace LightVsDecay.Audio
             if (config != null && config.bossBGM != null)
             {
                 PlayBGM(config.bossBGM);
+            }
+        }
+        /// <summary>
+        /// 游戏从暂停恢复时，重新启动激光音效
+        /// </summary>
+        private void OnGameResumed()
+        {
+            // 恢复激光音效
+            StartLaserLoop();
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[AudioManager] 游戏恢复，重启激光音效");
+            }
+        }
+
+        /// <summary>
+        /// 三选一选择完成后，重新启动激光音效
+        /// </summary>
+        private void OnLevelUpChoiceComplete()
+        {
+            // 恢复激光音效
+            StartLaserLoop();
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[AudioManager] 升级选择完成，重启激光音效");
             }
         }
     }

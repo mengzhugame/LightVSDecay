@@ -4,6 +4,7 @@
 // 用途：统一管理所有 UI 面板的显示/隐藏
 // ============================================================
 
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.UI.Panels;
 using UnityEngine;
@@ -145,6 +146,12 @@ namespace LightVsDecay.UI
         /// <param name="isVictory">是否胜利</param>
         public void ShowSettlementPanel(bool isVictory)
         {
+            // 【新增】停止激光循环音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StopLaserLoop();
+            }
+
             if (settlementPanel == null)
             {
                 Debug.LogWarning("[UIManager] settlementPanel 未设置！");
@@ -234,6 +241,11 @@ namespace LightVsDecay.UI
         /// </summary>
         public void ShowPausePanel()
         {
+            // 【新增】停止激光循环音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StopLaserLoop();
+            }
             if (pausePanel == null) return;
             
             pausePanel.SetActive(true);

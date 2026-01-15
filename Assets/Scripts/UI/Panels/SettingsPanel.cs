@@ -7,6 +7,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using LightVsDecay.Audio;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI
 {
