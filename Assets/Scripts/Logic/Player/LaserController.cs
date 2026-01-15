@@ -582,8 +582,6 @@ namespace LightVsDecay.Logic.Player
                             {
                                 // 眼睛睁开 → 弱点伤害（高伤害）
                                 bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
-                                // 【修改】Boss眼睛 = 金属音效
-                                UpdateFrameHitType(LaserHitType.Metal);
                                 if (showDebugInfo)
                                 {
                                     Debug.Log($"[LaserController] 👁️ 命中Boss弱点（眼睛睁开），伤害: {bossDamage:F1}");
@@ -593,8 +591,6 @@ namespace LightVsDecay.Logic.Player
                             {
                                 // 眼睛闭合 → 甲壳伤害（80%减伤）
                                 bossHealth.TakeBodyDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
-                                // 【修改】Boss外壳 = 灼烧音效
-                                UpdateFrameHitType(LaserHitType.Burn);
                                 if (showDebugInfo)
                                 {
                                     Debug.Log($"[LaserController] 🛡️ 命中Boss甲壳（眼睛闭合），伤害: {bossDamage:F1}");

@@ -138,7 +138,7 @@ namespace LightVsDecay.Logic.Enemy
         private CircleCollider2D circleCollider;
         private Vector3 originalScale;
         private bool isDead = false;
-        
+        private bool killedByExplosion = false;  // 【新增】是否被爆炸杀死
         private Material bodyMaterial;
         private bool isBeingHit = false;
         private float targetFlowSpeed;
@@ -348,6 +348,7 @@ namespace LightVsDecay.Logic.Enemy
         public void OnSpawn()
         {
             isDead = false;
+            killedByExplosion = false;  // 【新增】重置爆炸死亡标记
             // 重置精英状态（新增）
             isElite = false;
             // 重置波次难度为默认（等待 WaveManager 设置）
@@ -628,9 +629,14 @@ namespace LightVsDecay.Logic.Enemy
         /// <param name="damage">伤害值</param>
         /// <param name="knockbackForce">击退力</param>
         /// <param name="isCrit">是否暴击</param>
-        public void TakeDamage(float damage, Vector2 knockbackForce, bool isCrit = false)
+        public void TakeDamage(float damage, Vector2 knockbackForce, bool isCrit = false, bool fromExplosion = false)
         {
             if (isDead) return;
+            // 【新增】记录爆炸伤害标记
+            if (fromExplosion)
+            {
+                killedByExplosion = true;
+            }
             // 【新增】显示伤害飘字
             if (FloatingTextManager.Instance != null)
             {
@@ -870,10 +876,25 @@ namespace LightVsDecay.Logic.Enemy
             // 【修改】触发敌人死亡事件，使用计算后的经验值
             GameEvents.TriggerEnemyDied(enemyType, transform.position, actualXP, actualCoin);
             
-            // 播放死亡特效
+            // 【修改】根据死亡原因播放不同特效
             if (VFXPoolManager.Instance != null)
             {
-                VFXPoolManager.Instance.PlayEnemySteam(transform.position);
+                if (killedByExplosion)
+                {
+                    // 被爆炸杀死：播放爆炸特效 + 音效，直接回收（不播放淡出）
+                    VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
+                    if (AudioManager.Instance != null)
+                    {
+                        AudioManager.Instance.PlayEnemyExplode();
+                    }
+                    ReturnToPool();
+                    return;
+                }
+                else
+                {
+                    // 普通死亡：播放冒烟特效 + 淡出动画
+                    VFXPoolManager.Instance.PlayEnemySteam(transform.position);
+                }
             }
             
             deathCoroutine = StartCoroutine(DeathFadeCoroutine());

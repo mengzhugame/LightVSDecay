@@ -5,6 +5,7 @@
 // 修改：Step 1 - 添加 SkillDatabase 引用，从配置读取参数
 // ============================================================
 
+using LightVsDecay.Audio;
 using UnityEngine;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
@@ -50,11 +51,7 @@ namespace LightVsDecay.Logic.Player
         [Header("技能数据库【新增】")]
         [Tooltip("技能配置数据库（通过 Inspector 拖拽）")]
         [SerializeField] private SkillDatabase skillDatabase;
-        
-        [Header("爆炸特效【新增】")]
-        [Tooltip("Focus Lv5 击杀爆炸特效预制体")]
-        [SerializeField] private GameObject explosionVFXPrefab;
-        
+
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = true;
         
@@ -756,12 +753,17 @@ namespace LightVsDecay.Logic.Player
         /// </summary>
         private void TriggerFocusExplosion(Vector3 position)
         {
-            // 播放爆炸特效
-            if (explosionVFXPrefab != null)
+            // 【修改】使用对象池播放爆炸特效（替代 Instantiate）
+            if (VFXPoolManager.Instance != null)
             {
-                Instantiate(explosionVFXPrefab, position, Quaternion.identity);
+                VFXPoolManager.Instance.PlayEnemyExplosion(position);
             }
-            
+            // 【新增】播放爆炸音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayEnemyExplode();
+            }
+
             // 检测范围内的敌人
             int enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, "BouncingEnemy");
             Collider2D[] hits = Physics2D.OverlapCircleAll(position, cachedFocusExplosionRadius, enemyLayer);
