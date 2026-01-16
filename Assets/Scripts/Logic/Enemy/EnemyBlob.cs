@@ -127,7 +127,11 @@ namespace LightVsDecay.Logic.Enemy
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         public string PoolKey => enemyType.ToString();
-        
+        // 【新增】最大血量属性（用于 BattleStatistics 统计）
+        public float MaxHealth => maxHealth;
+
+// 【新增】当前血量属性（可选，用于调试）
+        public float CurrentHealth => currentHealth;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -632,6 +636,14 @@ namespace LightVsDecay.Logic.Enemy
         public void TakeDamage(float damage, Vector2 knockbackForce, bool isCrit = false, bool fromExplosion = false)
         {
             if (isDead) return;
+            // 【新增】计算有效伤害和溢出伤害
+            float effectiveDamage = Mathf.Min(currentHealth, damage);
+            float overkillDamage = damage - effectiveDamage;
+            // 【新增】上报伤害数据到 BattleStatistics
+            if (BattleStatistics.Instance != null)
+            {
+                BattleStatistics.Instance.RecordDamage(effectiveDamage, overkillDamage, enemyType);
+            }
             // 【新增】记录爆炸伤害标记
             if (fromExplosion)
             {

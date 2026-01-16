@@ -503,7 +503,13 @@ namespace LightVsDecay.Logic
             if (enemy != null)
             {
                 ApplyDifficultyModifiers(enemy, group);
-
+                // ═══════════════════════════════════════════════════════════
+                // 【新增】上报敌人血量到 BattleStatistics
+                // ═══════════════════════════════════════════════════════════
+                if (BattleStatistics.Instance != null)
+                {
+                    BattleStatistics.Instance.RecordEnemyHP(enemy.MaxHealth);
+                }
                 enemiesSpawned++;
             }
         }
@@ -521,6 +527,13 @@ namespace LightVsDecay.Logic
                 if (enemy != null)
                 {
                     ApplyDifficultyModifiers(enemy, group);
+                    // ═══════════════════════════════════════════════════════════
+                    // 【新增】上报敌人血量到 BattleStatistics
+                    // ═══════════════════════════════════════════════════════════
+                    if (BattleStatistics.Instance != null)
+                    {
+                        BattleStatistics.Instance.RecordEnemyHP(enemy.MaxHealth);
+                    }
                     enemiesSpawned++;
                 }
                 return;
@@ -532,7 +545,13 @@ namespace LightVsDecay.Logic
                 if (drifter != null)
                 {
                     ApplyDifficultyModifiers(drifter, group);
-
+                    // ═══════════════════════════════════════════════════════════
+                    // 【新增】上报敌人血量到 BattleStatistics
+                    // ═══════════════════════════════════════════════════════════
+                    if (BattleStatistics.Instance != null)
+                    {
+                        BattleStatistics.Instance.RecordEnemyHP(drifter.MaxHealth);
+                    }
                     enemiesSpawned++;
             
                     if (showDebugInfo)
@@ -573,7 +592,13 @@ namespace LightVsDecay.Logic
             {
                 // 应用难度倍率
                 ApplyDifficultyModifiers(enemy, group);
-
+                // ═══════════════════════════════════════════════════════════
+                // 【新增】上报敌人血量到 BattleStatistics
+                // ═══════════════════════════════════════════════════════════
+                if (BattleStatistics.Instance != null)
+                {
+                    BattleStatistics.Instance.RecordEnemyHP(enemy.MaxHealth);
+                }
                 enemiesSpawned++;
         
                 if (showDebugInfo)

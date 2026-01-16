@@ -658,16 +658,17 @@ namespace LightVsDecay.Logic.Player
         }
         
         /// <summary>
-        /// 触发 Focus Lv5 聚变爆炸
+        /// 触发 Focus Lv5 聚变爆炸（修改版 - 添加爆炸伤害统计上报）
         /// </summary>
         private void TriggerFocusExplosion(Vector3 position)
         {
-            // 【修改】使用对象池播放爆炸特效（替代 Instantiate）
+            // 【原有】使用对象池播放爆炸特效
             if (VFXPoolManager.Instance != null)
             {
                 VFXPoolManager.Instance.PlayEnemyExplosion(position);
             }
-            // 【新增】播放爆炸音效
+    
+            // 【原有】播放爆炸音效
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayEnemyExplode();
@@ -676,25 +677,33 @@ namespace LightVsDecay.Logic.Player
             // 检测范围内的敌人
             int enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, "BouncingEnemy");
             Collider2D[] hits = Physics2D.OverlapCircleAll(position, cachedFocusExplosionRadius, enemyLayer);
-            
+    
+            // 【修改】提前计算爆炸伤害（用于统计和实际造伤）
+            float explosionDamage = lastKillDamage > 0f 
+                ? lastKillDamage * FOCUS_EXPLOSION_DAMAGE_SCALE 
+                : cachedFocusExplosionDamage;
+    
+            // ═══════════════════════════════════════════════════════════
+            // 【新增】上报爆炸伤害到 BattleStatistics
+            // ═══════════════════════════════════════════════════════════
+            if (BattleStatistics.Instance != null)
+            {
+                BattleStatistics.Instance.RecordExplosionDamage(explosionDamage);
+            }
+            // ═══════════════════════════════════════════════════════════
+    
             foreach (var hit in hits)
             {
                 EnemyBlob enemy = hit.GetComponentInParent<EnemyBlob>();
                 if (enemy != null)
                 {
-                    // 【修改】使用动态爆炸伤害 = 最后击杀伤害 × 250%
-                    float explosionDamage = lastKillDamage > 0f 
-                        ? lastKillDamage * FOCUS_EXPLOSION_DAMAGE_SCALE 
-                        : cachedFocusExplosionDamage;
-                    enemy.TakeDamage(explosionDamage, Vector2.zero, false);
+                    // 【修改】使用已计算的 explosionDamage，并标记为爆炸伤害
+                    enemy.TakeDamage(explosionDamage, Vector2.zero, false, true);
                 }
             }
-            
+    
             if (showDebugInfo)
             {
-                float explosionDamage = lastKillDamage > 0f 
-                    ? lastKillDamage * FOCUS_EXPLOSION_DAMAGE_SCALE 
-                    : cachedFocusExplosionDamage;
                 Debug.Log($"[SkillEffectManager] 💥 Focus Lv5 聚变爆炸! " +
                           $"位置:{position}, 击杀伤害:{lastKillDamage:F1}, " +
                           $"爆炸伤害:{explosionDamage:F1} (×{FOCUS_EXPLOSION_DAMAGE_SCALE}), " +

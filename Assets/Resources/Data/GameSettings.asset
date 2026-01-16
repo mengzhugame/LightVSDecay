@@ -25,5 +25,5 @@ MonoBehaviour:
   baseLaserWidth: 0.5
   baseCritRate: 0.1
   critDamageMultiplier: 2
-  maxShieldHP: 5000
-  maxHullHP: 10000
+  maxShieldHP: 500
+  maxHullHP: 1000
