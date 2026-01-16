@@ -5,6 +5,7 @@
 // 修改：Step 1 - 添加 SkillDatabase 引用，从配置读取参数
 // ============================================================
 
+using System.Collections.Generic;
 using LightVsDecay.Audio;
 using UnityEngine;
 using LightVsDecay.Core;
@@ -110,8 +111,14 @@ namespace LightVsDecay.Logic.Player
         private bool cachedFocusExplosionOnKill = false;
         private float cachedFocusExplosionDamage = 100f;
         private float cachedFocusExplosionRadius = 2f;
-        private float lastKillDamage = 0f;  // 【新增】缓存最后一次击杀的伤害值
-        private const float FOCUS_EXPLOSION_DAMAGE_SCALE = 2.5f;  // 【新增】爆炸伤害倍率 250%
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Focus Lv5 爆炸系统（V2.0 修复版 - 切断递归）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        private const float EXPLOSION_DAMAGE_SCALE = 3.0f;      // 爆炸伤害 = 面板DPS × 3.0
+        private const float EXPLOSION_GLOBAL_COOLDOWN = 0.1f;   // 全局爆炸CD（秒）
+        private const float EXPLOSION_TARGET_IMMUNITY = 0.15f;  // 单体免疫时间（秒）
+        private float lastExplosionTime = -999f;                // 上次爆炸时间
+        private Dictionary<int, float> explosionImmunityTracker = new Dictionary<int, float>(); // 敌人免疫追踪
         // Frost 配置缓存
         private float cachedFrostSlowPercent = 0f;
         private float cachedFrostSlowDuration = 0f;
@@ -646,82 +653,86 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 敌人死亡回调 - 处理 Focus Lv5 爆炸
+        /// 敌人死亡回调 - 处理 Focus Lv5 爆炸（V2.0 带CD检查）
         /// </summary>
         private void OnEnemyDied(EnemyType type, Vector3 position, int xp, int coin)
         {
             // 检查是否启用爆炸
             if (!cachedFocusExplosionOnKill) return;
             if (focusLevel < 5) return;
-            
+    
+            // 全局CD检查（防止连锁爆炸过于密集）
+            if (Time.time < lastExplosionTime + EXPLOSION_GLOBAL_COOLDOWN) return;
+    
             TriggerFocusExplosion(position);
         }
         
         /// <summary>
-        /// 触发 Focus Lv5 聚变爆炸（修改版 - 添加爆炸伤害统计上报）
+        /// 触发 Focus Lv5 聚变爆炸（V2.0 修复版 - 基于面板DPS，带CD和免疫机制）
         /// </summary>
         private void TriggerFocusExplosion(Vector3 position)
         {
-            // 【原有】使用对象池播放爆炸特效
+            // 1. 更新全局CD时间戳
+            lastExplosionTime = Time.time;
+            
+            // 2. 播放爆炸特效
             if (VFXPoolManager.Instance != null)
             {
                 VFXPoolManager.Instance.PlayEnemyExplosion(position);
             }
-    
-            // 【原有】播放爆炸音效
+
+            // 3. 播放爆炸音效
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayEnemyExplode();
             }
 
-            // 检测范围内的敌人
-            int enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, "BouncingEnemy");
-            Collider2D[] hits = Physics2D.OverlapCircleAll(position, cachedFocusExplosionRadius, enemyLayer);
-    
-            // 【修改】提前计算爆炸伤害（用于统计和实际造伤）
-            float explosionDamage = lastKillDamage > 0f 
-                ? lastKillDamage * FOCUS_EXPLOSION_DAMAGE_SCALE 
-                : cachedFocusExplosionDamage;
-    
-            // ═══════════════════════════════════════════════════════════
-            // 【新增】上报爆炸伤害到 BattleStatistics
-            // ═══════════════════════════════════════════════════════════
+            // 4. 计算爆炸伤害（核心修复：基于面板DPS，切断递归）
+            float panelDPS = laserController != null ? laserController.CurrentPanelDPS : 100f;
+            float explosionDamage = panelDPS * EXPLOSION_DAMAGE_SCALE;
+
+            // 5. 上报爆炸伤害到 BattleStatistics
             if (BattleStatistics.Instance != null)
             {
                 BattleStatistics.Instance.RecordExplosionDamage(explosionDamage);
             }
-            // ═══════════════════════════════════════════════════════════
-    
+
+            // 6. 检测范围内的敌人
+            int enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, "BouncingEnemy");
+            Collider2D[] hits = Physics2D.OverlapCircleAll(position, cachedFocusExplosionRadius, enemyLayer);
+
+            int actualHitCount = 0;
+            
             foreach (var hit in hits)
             {
                 EnemyBlob enemy = hit.GetComponentInParent<EnemyBlob>();
-                if (enemy != null)
+                if (enemy == null) continue;
+                
+                int enemyId = enemy.GetInstanceID();
+                
+                // 7. 单体免疫检查（防止同一敌人瞬间吃多次爆炸）
+                if (explosionImmunityTracker.TryGetValue(enemyId, out float lastHitTime))
                 {
-                    // 【修改】使用已计算的 explosionDamage，并标记为爆炸伤害
-                    enemy.TakeDamage(explosionDamage, Vector2.zero, false, true);
+                    if (Time.time < lastHitTime + EXPLOSION_TARGET_IMMUNITY)
+                    {
+                        continue; // 该敌人仍在免疫期，跳过
+                    }
                 }
+                
+                // 8. 记录该敌人被炸时间
+                explosionImmunityTracker[enemyId] = Time.time;
+                
+                // 9. 造成伤害（标记为爆炸伤害）
+                enemy.TakeDamage(explosionDamage, Vector2.zero, false, true);
+                actualHitCount++;
             }
-    
+
             if (showDebugInfo)
             {
                 Debug.Log($"[SkillEffectManager] 💥 Focus Lv5 聚变爆炸! " +
-                          $"位置:{position}, 击杀伤害:{lastKillDamage:F1}, " +
-                          $"爆炸伤害:{explosionDamage:F1} (×{FOCUS_EXPLOSION_DAMAGE_SCALE}), " +
-                          $"半径:{cachedFocusExplosionRadius}, 命中:{hits.Length}");
-            }
-        }
-        /// <summary>
-        /// 【新增】记录最后一次击杀的伤害值（由 LaserController 调用）
-        /// 用于计算 Focus Lv5 爆炸伤害
-        /// </summary>
-        /// <param name="damage">造成击杀的伤害值</param>
-        public void RecordKillDamage(float damage)
-        {
-            lastKillDamage = damage;
-    
-            if (showDebugInfo)
-            {
-                Debug.Log($"[SkillEffectManager] 记录击杀伤害: {damage:F1}");
+                          $"位置:{position}, 面板DPS:{panelDPS:F1}, " +
+                          $"爆炸伤害:{explosionDamage:F1} (×{EXPLOSION_DAMAGE_SCALE}), " +
+                          $"半径:{cachedFocusExplosionRadius}, 命中:{actualHitCount}/{hits.Length}");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

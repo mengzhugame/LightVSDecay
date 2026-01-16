@@ -161,7 +161,8 @@ namespace LightVsDecay.Logic.Player
         
         /// <summary>当前暴击率</summary>
         public float CurrentCritRate => Mathf.Clamp01(baseCritRate + critRateBonus);
-        
+        /// <summary>当前面板DPS（用于爆炸伤害计算，不含tickRate）</summary>
+        public float CurrentPanelDPS => baseDPS * skillDamageMultiplier * (isUltMode ? ultDamageMultiplier : 1f);
         /// <summary>暴击倍率</summary>
         public float CritMultiplier => critDamageMultiplier;
 
