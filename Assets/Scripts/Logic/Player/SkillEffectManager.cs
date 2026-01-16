@@ -61,7 +61,10 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         public static SkillEffectManager Instance { get; private set; }
-        
+        /// <summary>
+        /// Focus Lv5 死亡爆炸是否启用（供 EnemyBlob 检查）
+        /// </summary>
+        public bool IsFocusExplosionEnabled => cachedFocusExplosionOnKill && focusLevel >= 5;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 常量
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

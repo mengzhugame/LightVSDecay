@@ -103,8 +103,7 @@ MonoBehaviour:
     explosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u51FB\u9000\u529B\u5EA6 <color=#00FF00>+400%</color>,\u53EF\u63A8\u5F00
-      BOSS"
+  - description: "\u51FB\u9000\u529B\u5EA6 <color=#00FF00>+400%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 5

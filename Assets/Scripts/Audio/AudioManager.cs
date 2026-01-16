@@ -281,16 +281,16 @@ namespace LightVsDecay.Audio
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (config == null) return;
-            
+    
             // 停止循环音效
             StopLaserLoop();
             StopBossLoop();
-            
+    
             // 根据场景播放对应 BGM
             if (scene.name == mainMenuSceneName)
             {
                 PlayBGM(config.mainMenuBGM);
-                
+        
                 if (showDebugInfo)
                 {
                     Debug.Log("[AudioManager] 切换到主菜单，播放主菜单BGM");
@@ -298,20 +298,37 @@ namespace LightVsDecay.Audio
             }
             else if (scene.name == battleSceneName)
             {
+                // 【修复】重新订阅游戏事件（因为 GameEvents.ClearAllEvents() 会清除订阅）
+                ResubscribeToGameEvents();
+        
                 PlayBGM(config.battleBGM);
-                
+        
                 if (showDebugInfo)
                 {
-                    Debug.Log("[AudioManager] 切换到战斗场景，播放战斗BGM");
+                    Debug.Log("[AudioManager] 切换到战斗场景，播放战斗BGM，重新订阅事件");
                 }
             }
-            
+    
             if (showDebugInfo)
             {
                 Debug.Log($"[AudioManager] 场景加载: {scene.name}");
             }
         }
-        
+        /// <summary>
+        /// 重新订阅游戏事件（场景切换后调用）
+        /// </summary>
+        private void ResubscribeToGameEvents()
+        {
+            // 先取消订阅（防止重复订阅）
+            UnsubscribeFromGameEvents();
+            // 重新订阅
+            SubscribeToGameEvents();
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[AudioManager] 游戏事件已重新订阅");
+            }
+        }
         /// <summary>
         /// 根据当前场景播放对应的BGM（首次启动时调用）
         /// </summary>

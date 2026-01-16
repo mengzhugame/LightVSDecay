@@ -460,13 +460,14 @@ namespace LightVsDecay.UI.Panels
             
             // 隐藏面板
             Hide();
-            
-            // 触发选择完成事件
-            GameEvents.TriggerLevelUpChoiceComplete();
-            
+
             // 恢复游戏
             Time.timeScale = 1f;
-            
+            // 【修复】直接重启激光音效（不依赖事件系统）
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StartLaserLoop();
+            }
             // 触发升级选择完成事件
             GameEvents.TriggerLevelUpChoiceComplete();
             if (showDebugInfo)

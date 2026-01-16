@@ -41,7 +41,7 @@ MonoBehaviour:
   bossDash: {fileID: 8300000, guid: f94bb99d957d0804d80bad888364ae74, type: 3}
   bossPressing: {fileID: 0}
   bossSpit: {fileID: 8300000, guid: b5edb39b8162ccf4b92a20d82dfa2c72, type: 3}
-  bossSummon: {fileID: 8300000, guid: 54c82df9efaf39442a9f0f260829a8a4, type: 3}
+  bossSummon: {fileID: 8300000, guid: b5edb39b8162ccf4b92a20d82dfa2c72, type: 3}
   bossDefaultVolume: 0.7
   xpOrbCollect: {fileID: 8300000, guid: e5b671c9edb921f48b3d4193eb19ec04, type: 3}
   xpOrbVolume: 0.5

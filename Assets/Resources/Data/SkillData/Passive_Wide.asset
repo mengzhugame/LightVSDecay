@@ -17,18 +17,36 @@ MonoBehaviour:
   cardType: 1
   displayName: "\u5E7F\u57DF\u900F\u955C"
   icon: {fileID: 21300000, guid: ca78ab36f16d0b64b9e9ebb331cfe090, type: 3}
-  description: "\u6BCF\u7EA7\u589E\u52A0 +15% \u6FC0\u5149\u5BBD\u5EA6"
+  description: "\u6BCF\u7EA7\u589E\u52A0 +20% \u6FC0\u5149\u5BBD\u5EA6"
   changeColor: 0
   skillColor: {r: 1, g: 1, b: 1, a: 1}
   maxLevel: 5
   isRepeatable: 0
   levelData:
+  - description: "\u6FC0\u5149\u5BBD\u5EA6 <color=#00FF00>+20%</color>"
+    damageMultiplier: 1
+    bossDamageBonus: 0
+    knockbackMultiplier: 0
+    slowPercent: 0
+    slowDuration: 0
+    freezeThreshold: 0
+    freezeDuration: 0
+    splitCount: 0
+    splitDamageMultiplier: 0.3
+    splitLength: 3
+    widthMultiplier: 1.2
+    reflexDamageMultiplier: 0.5
+    reflexLengthBonus: 0
+    critRateBonus: 0
+    explosionOnKill: 0
+    explosionDamage: 100
+    explosionRadius: 2
+    rotationSpeedBonus: 0
+    knockbackBonus: 0
   - description: "\u6FC0\u5149\u5BBD\u5EA6 <color=#00FF00>+40%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -45,12 +63,30 @@ MonoBehaviour:
     explosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
+  - description: "\u6FC0\u5149\u5BBD\u5EA6 <color=#00FF00>+60%</color>"
+    damageMultiplier: 1
+    bossDamageBonus: 0
+    knockbackMultiplier: 0
+    slowPercent: 0
+    slowDuration: 0
+    freezeThreshold: 0
+    freezeDuration: 0
+    splitCount: 0
+    splitDamageMultiplier: 0.3
+    splitLength: 3
+    widthMultiplier: 1.6
+    reflexDamageMultiplier: 0.5
+    reflexLengthBonus: 0
+    critRateBonus: 0
+    explosionOnKill: 0
+    explosionDamage: 100
+    explosionRadius: 2
+    rotationSpeedBonus: 0
+    knockbackBonus: 0
   - description: "\u6FC0\u5149\u5BBD\u5EA6 <color=#00FF00>+80%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -67,12 +103,10 @@ MonoBehaviour:
     explosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u6FC0\u5149\u5BBD\u5EA6 <color=#00FF00>+120%</color>"
+  - description: "\u6FC0\u5149\u5BBD\u5EA6 <color=#00FF00>+100%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -80,51 +114,7 @@ MonoBehaviour:
     splitCount: 0
     splitDamageMultiplier: 0.3
     splitLength: 3
-    widthMultiplier: 2.2
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
-    critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
-    rotationSpeedBonus: 0
-    knockbackBonus: 0
-  - description: "\u6FC0\u5149\u5BBD\u5EA6 <color=#00FF00>+160%</color>"
-    damageMultiplier: 1
-    bossDamageBonus: 0
-    knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
-    slowPercent: 0
-    slowDuration: 0
-    freezeThreshold: 0
-    freezeDuration: 0
-    splitCount: 0
-    splitDamageMultiplier: 0.3
-    splitLength: 3
-    widthMultiplier: 2.6
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
-    critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
-    rotationSpeedBonus: 0
-    knockbackBonus: 0
-  - description: "\u6FC0\u5149\u5BBD\u5EA6 <color=#00FF00>+200%</color>"
-    damageMultiplier: 1
-    bossDamageBonus: 0
-    knockbackMultiplier: 0
-    stunDuration: 0
-    stunChance: 0
-    slowPercent: 0
-    slowDuration: 0
-    freezeThreshold: 0
-    freezeDuration: 0
-    splitCount: 0
-    splitDamageMultiplier: 0.3
-    splitLength: 3
-    widthMultiplier: 3
+    widthMultiplier: 2
     reflexDamageMultiplier: 0.5
     reflexLengthBonus: 0
     critRateBonus: 0

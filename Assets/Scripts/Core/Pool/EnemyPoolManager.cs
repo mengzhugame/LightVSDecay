@@ -200,7 +200,7 @@ namespace LightVsDecay.Core.Pool
         public void Despawn(EnemyBlob enemy)
         {
             if (enemy == null) return;
-            
+    
             // 通过 PoolKey 找到对应的池
             if (System.Enum.TryParse<EnemyType>(enemy.PoolKey, out var type))
             {
@@ -208,9 +208,17 @@ namespace LightVsDecay.Core.Pool
                 {
                     pool.Return(enemy);
                     totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
-                    
+            
                     if (showDebugInfo)
                         Debug.Log($"[EnemyPoolManager] 回收 {type}, 剩余总数: {totalActiveEnemies}");
+                }
+                else
+                {
+                    // 【修复】找到类型但没有对应池（如精英怪），直接销毁
+                    if (showDebugInfo)
+                        Debug.Log($"[EnemyPoolManager] {type} 无对象池，直接销毁");
+            
+                    Destroy(enemy.gameObject);
                 }
             }
             else

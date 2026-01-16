@@ -891,21 +891,25 @@ namespace LightVsDecay.Logic.Enemy
             // 【修改】根据死亡原因播放不同特效
             if (VFXPoolManager.Instance != null)
             {
+                // 【修改】根据死亡原因播放不同特效
                 if (killedByExplosion)
                 {
-                    // 被爆炸杀死：播放爆炸特效 + 音效，直接回收（不播放淡出）
-                    VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
-                    if (AudioManager.Instance != null)
-                    {
-                        AudioManager.Instance.PlayEnemyExplode();
-                    }
+                    // 被爆炸杀死：爆炸特效已在伤害来源处播放（Focus Lv5 或撞击护盾），直接回收
                     ReturnToPool();
                     return;
                 }
-                else
+
+                // 检查是否会触发 Focus Lv5 爆炸（如果会，则跳过冒烟特效，因为 Focus 会在此位置播放爆炸特效）
+                bool willTriggerFocusExplosion = SkillEffectManager.Instance != null && 
+                                                 SkillEffectManager.Instance.IsFocusExplosionEnabled;
+
+                if (!willTriggerFocusExplosion)
                 {
-                    // 普通死亡：播放冒烟特效 + 淡出动画
-                    VFXPoolManager.Instance.PlayEnemySteam(transform.position);
+                    // 普通死亡（无 Focus 爆炸）：播放冒烟特效
+                    if (VFXPoolManager.Instance != null)
+                    {
+                        VFXPoolManager.Instance.PlayEnemySteam(transform.position);
+                    }
                 }
             }
             
