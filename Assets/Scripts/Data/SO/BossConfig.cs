@@ -186,13 +186,19 @@ namespace LightVsDecay.Data.SO
         
         [Header("═══ 角力物理 (Press专用) ═══")]
         [Tooltip("普通激光对Boss的基础推力")]
-        public float baseLaserPushForce = 80f;
+        public float baseLaserPushForce = 120f;
         
         [Tooltip("Impact技能等级的推力倍率 [Lv0, Lv1, Lv2, Lv3, Lv4, Lv5]")]
         public float[] impactPushMultipliers = new float[] { 0.4f, 0.85f, 1.0f, 1.3f, 1.6f, 2.5f };
-        
-        [Tooltip("大招激光推力倍率")]
-        public float ultPushMultiplier = 2.5f;
+        [Tooltip("总推力上限（防止多激光叠加过强）")]
+        public float maxTotalPushForce = 300f;
+
+        [Tooltip("Charge频率打断阈值（蓄力期间被命中次数）")]
+        public int chargeLightBarrierThreshold = 50;
+
+        [Tooltip("频率打断后的僵直时长（比Impact打断短）")]
+        public float chargeLightBarrierStunDuration = 1.0f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 角力摩擦伤害 (Press 专用) 【新增】
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -321,10 +327,8 @@ namespace LightVsDecay.Data.SO
         /// <summary>
         /// 获取推力倍率
         /// </summary>
-        public float GetPushMultiplier(int impactLevel, bool isUlt)
+        public float GetPushMultiplier(int impactLevel)
         {
-            if (isUlt) return ultPushMultiplier;
-            
             if (impactLevel >= 0 && impactLevel < impactPushMultipliers.Length)
             {
                 return impactPushMultipliers[impactLevel];

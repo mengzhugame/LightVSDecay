@@ -88,10 +88,6 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private float tickTimer = 0f;
-        private bool isUltMode = false;
-        private float ultDamageMultiplier = 2f;
-        private float ultKnockbackMultiplier = 1.5f;
-        
         // 技能加成（主激光）
         private float skillDamageMultiplier = 1f;
         private float skillKnockbackMultiplier = 1f;
@@ -154,15 +150,15 @@ namespace LightVsDecay.Logic.Player
         public float CurrentSubLaserWidth => CurrentLaserWidth * SUB_LASER_WIDTH_RATIO;
         
         /// <summary>每 Tick 伤害</summary>
-        public float CurrentDamagePerTick => baseDPS * tickRate * skillDamageMultiplier * (isUltMode ? ultDamageMultiplier : 1f);
+        public float CurrentDamagePerTick => baseDPS * tickRate * skillDamageMultiplier ;
         
         /// <summary>当前击退力</summary>
-        public float CurrentKnockbackForce => baseKnockbackForce * skillKnockbackMultiplier * (isUltMode ? ultKnockbackMultiplier : 1f);
+        public float CurrentKnockbackForce => baseKnockbackForce * skillKnockbackMultiplier ;
         
         /// <summary>当前暴击率</summary>
         public float CurrentCritRate => Mathf.Clamp01(baseCritRate + critRateBonus);
         /// <summary>当前面板DPS（用于爆炸伤害计算，不含tickRate）</summary>
-        public float CurrentPanelDPS => baseDPS * skillDamageMultiplier * (isUltMode ? ultDamageMultiplier : 1f);
+        public float CurrentPanelDPS => baseDPS * skillDamageMultiplier;
         /// <summary>暴击倍率</summary>
         public float CritMultiplier => critDamageMultiplier;
 
@@ -375,7 +371,7 @@ namespace LightVsDecay.Logic.Player
             // 【新增】重置本帧命中类型
             frameHighestHitType = LaserHitType.None;
             // 1. 主激光伤害检测
-            DetectAndDamageEnemiesSegmented(mainLaserBeam,  CurrentDamagePerTick, 1f);
+            DetectAndDamageEnemiesSegmented(mainLaserBeam,  CurrentDamagePerTick, 1f,true);
             
             // 2. 副激光伤害检测
             foreach (var subLaser in subLasers)
@@ -383,17 +379,35 @@ namespace LightVsDecay.Logic.Player
                 if (subLaser.beam != null)
                 {
                     float subDamage = CurrentDamagePerTick * subLaser.damageMultiplier;
-                    DetectAndDamageEnemiesSegmented(subLaser.beam,  subDamage, subLaser.damageMultiplier);
+                    DetectAndDamageEnemiesSegmented(subLaser.beam,  subDamage, subLaser.damageMultiplier,false);
                 }
             }
+            // 【新增】通知 BossController 结束本tick推力累加
+            FinalizeBossPushForce();
             // 【新增】更新激光音效类型
             UpdateLaserAudioType();
         }
-        
+        /// <summary>
+        /// 【新增】通知所有被命中的Boss结束推力累加
+        /// </summary>
+        private void FinalizeBossPushForce()
+        {
+            foreach (var bossHealth in hitBosses)
+            {
+                if (bossHealth != null)
+                {
+                    BossController bossController = bossHealth.GetComponent<BossController>();
+                    if (bossController != null && bossController.IsPressing)
+                    {
+                        bossController.FinalizePushForceThisTick();
+                    }
+                }
+            }
+        }
         /// <summary>
         /// 分段检测并对敌人造成伤害（支持反射段独立伤害）
         /// </summary>
-        private void DetectAndDamageEnemiesSegmented(LaserBeam beam, float baseDamage, float knockbackMultiplier)
+        private void DetectAndDamageEnemiesSegmented(LaserBeam beam, float baseDamage, float knockbackMultiplier, bool isMainLaser)
         {
             if (beam == null) return;
     
@@ -411,15 +425,17 @@ namespace LightVsDecay.Logic.Player
                     // 反射段使用反射伤害倍率
                     segmentDamage = baseDamage * reflexDamageMultiplier;
                 }
-        
+                // 【修改】传入激光类型信息
+                bool segmentIsMainLaser = isMainLaser && !segment.isReflected;
+                bool segmentHasPushForce = !segment.isReflected;  // 反射段无推力
                 // 对该段进行伤害检测
-                DetectAndDamageInSegment(segment, width, segmentDamage, knockbackMultiplier);
+                DetectAndDamageInSegment(segment, width, segmentDamage, knockbackMultiplier,segmentIsMainLaser, segmentHasPushForce);
             }
         }
         /// <summary>
         /// 对单个激光段进行伤害检测 (V3.0 重构)
         /// </summary>
-        private void DetectAndDamageInSegment(LaserSegment segment, float width, float damage, float knockbackMultiplier)
+        private void DetectAndDamageInSegment(LaserSegment segment, float width, float damage, float knockbackMultiplier, bool isMainLaser, bool hasPushForce)
         {
             // 计算检测盒
             Vector2 segmentCenter = (segment.startPoint + segment.endPoint) / 2f;
@@ -465,13 +481,16 @@ namespace LightVsDecay.Logic.Player
                 if (colliderLayer == bossEyesLayerIndex)
                 {
                     BossHealth bossHealth = collider.GetComponentInParent<BossHealth>();
-                    if (bossHealth != null && !hitBosses.Contains(bossHealth))
+                    if (bossHealth != null)
                     {
-                        hitBosses.Add(bossHealth);
-            
+                        if (!hitBosses.Contains(bossHealth))
+                        {
+                            hitBosses.Add(bossHealth);
+                        }
+
                         bool isCrit = RollCrit();
             
-                        // BOSS 易伤加成（Focus Lv3+ = +20%）
+                        // BOSS 易伤加成
                         float bossDamage = damage;
                         if (SkillEffectManager.Instance != null)
                         {
@@ -479,17 +498,11 @@ namespace LightVsDecay.Logic.Player
                             if (bossBonus > 0f)
                             {
                                 bossDamage *= (1f + bossBonus);
-                    
-                                if (showDebugInfo)
-                                {
-                                    Debug.Log($"[LaserController] BOSS易伤加成: +{bossBonus:P0}, 伤害: {damage:F1} → {bossDamage:F1}");
-                                }
                             }
                         }
-            
-                        // V3.0: 调用眼睛伤害（自动计算连体Buff）
+                        // 造成伤害（每条激光独立）
                         bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
-                        
+
                         // 角力系统
                         BossController bossController = bossHealth.GetComponent<BossController>();
                         if (bossController != null)
@@ -497,32 +510,51 @@ namespace LightVsDecay.Logic.Player
                             int impactLevel = SkillEffectManager.Instance != null 
                                 ? SkillEffectManager.Instance.GetImpactLevel() : 0;
                             
-                            // 情况1: 蓄力阶段 - 尝试打断
+                            // 情况1: 蓄力阶段 - 尝试打断（记录受击次数）
                             if (bossController.IsInChargeTelegraph)
                             {
+                                bossController.OnHitReceived();
+                
+                                // Impact Lv.5 直接打断
                                 bool canInterrupt = SkillEffectManager.Instance != null
-                                    ? SkillEffectManager.Instance.CanInterruptBossCharge(isUltMode)
-                                    : (impactLevel >= 5 || isUltMode);
-                                
-                                if (canInterrupt || isUltMode)
+                                    ? SkillEffectManager.Instance.CanInterruptBossCharge()
+                                    : (impactLevel >= 5);
+
+                                if (canInterrupt)
                                 {
                                     bossController.InterruptCharge();
-                                    
+
                                     if (showDebugInfo)
                                     {
-                                        Debug.Log($"[LaserController] ⚡ 打断Boss蓄力！(Impact Lv.{impactLevel}, ULT={isUltMode})");
+                                        Debug.Log($"[LaserController] ⚡ Impact Lv.5 打断Boss蓄力！");
                                     }
                                 }
                             }
                             
                             // 情况2: Press角力阶段 - 施加推力
-                            if (bossController.IsPressing)
+                            if (bossController.IsPressing && hasPushForce)
                             {
-                                float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
-                                Vector2 pushForce = Vector2.up * pushMagnitude;
-                                bossController.ApplyLaserPushForce(pushForce);
+                                float pushMagnitude;
+                                if (isMainLaser)
+                                {
+                                    // 主激光：享受Impact加成
+                                    pushMagnitude = bossController.CalculatePushForce(impactLevel);
+                                }
+                                else
+                                {
+                                    // 副激光：只有基础推力
+                                    pushMagnitude = bossController.CalculateSubLaserPushForce();
+                                }
+                                bossController.ApplyLaserPushForce(pushMagnitude);
+
+                                if (showDebugInfo)
+                                {
+                                    string laserType = isMainLaser ? "主激光" : "副激光";
+                                    Debug.Log($"[LaserController] {laserType}推力: {pushMagnitude:F1}");
+                                }
                             }
                         }
+                        UpdateFrameHitType(LaserHitType.Burn);
                     }
                     continue;  // 眼睛处理完毕，不再检测身体
                 }
@@ -559,9 +591,12 @@ namespace LightVsDecay.Logic.Player
                         BossEyeController eyeController = bossController.GetComponentInChildren<BossEyeController>();
                         
                         // 伤害处理
-                        if (bossHealth != null && !hitBosses.Contains(bossHealth))
+                        if (bossHealth != null )
                         {
-                            hitBosses.Add(bossHealth);
+                            if (!hitBosses.Contains(bossHealth))
+                            {
+                                hitBosses.Add(bossHealth);
+                            }
                             
                             bool isCrit = RollCrit();
                             
@@ -581,64 +616,55 @@ namespace LightVsDecay.Logic.Player
                             
                             if (isEyeOpen)
                             {
-                                // 眼睛睁开 → 弱点伤害（高伤害）
                                 bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
-                                if (showDebugInfo)
-                                {
-                                    Debug.Log($"[LaserController] 👁️ 命中Boss弱点（眼睛睁开），伤害: {bossDamage:F1}");
-                                }
                             }
                             else
                             {
-                                // 眼睛闭合 → 甲壳伤害（80%减伤）
                                 bossHealth.TakeBodyDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
-                                if (showDebugInfo)
-                                {
-                                    Debug.Log($"[LaserController] 🛡️ 命中Boss甲壳（眼睛闭合），伤害: {bossDamage:F1}");
-                                }
                             }
-                            UpdateFrameHitType(LaserHitType.Burn);
-                        }
-                        
-                        // V3.1: 角力系统（无论眼睛状态都生效）
-                        int impactLevel = SkillEffectManager.Instance != null 
-                            ? SkillEffectManager.Instance.GetImpactLevel() : 0;
-                        // 【新增】角力阶段使用 Metal 音效
-                        if (bossController.IsPressing)
-                        {
-                            UpdateFrameHitType(LaserHitType.Metal);
-                        }
-                        else
-                        {
-                            // 非角力阶段
-                            UpdateFrameHitType(LaserHitType.Burn);
-                        }
-                        // 情况1: 蓄力阶段 - 尝试打断
-                        if (bossController.IsInChargeTelegraph)
-                        {
-                            bool canInterrupt = SkillEffectManager.Instance != null
-                                ? SkillEffectManager.Instance.CanInterruptBossCharge(isUltMode)
-                                : (impactLevel >= 5 || isUltMode);
-                            
-                            if (canInterrupt || isUltMode)
+                            // 【新增】角力阶段使用 Metal 音效
+                            if (bossController.IsPressing)
                             {
-                                bossController.InterruptCharge();
-                                
-                                if (showDebugInfo)
+                                UpdateFrameHitType(LaserHitType.Metal);
+                            }
+                            else
+                            {
+                                UpdateFrameHitType(LaserHitType.Burn);
+                            }
+                            
+                            // 角力系统（无论眼睛状态都生效）
+                            int impactLevel = SkillEffectManager.Instance != null 
+                                ? SkillEffectManager.Instance.GetImpactLevel() : 0;
+                            // 情况1: 蓄力阶段
+                            if (bossController.IsInChargeTelegraph)
+                            {
+                                bossController.OnHitReceived();
+
+                                bool canInterrupt = SkillEffectManager.Instance != null
+                                    ? SkillEffectManager.Instance.CanInterruptBossCharge()
+                                    : (impactLevel >= 5);
+
+                                if (canInterrupt)
                                 {
-                                    Debug.Log($"[LaserController] ⚡ 打断Boss蓄力！(Impact Lv.{impactLevel}, ULT={isUltMode})");
+                                    bossController.InterruptCharge();
                                 }
                             }
-                        }
                         
-                        // 情况2: Press角力阶段 - 施加推力
-                        if (bossController.IsPressing)
-                        {
-                            float pushMagnitude = bossController.CalculatePushForce(impactLevel, isUltMode);
-                            Vector2 pushForce = Vector2.up * pushMagnitude;
-                            bossController.ApplyLaserPushForce(pushForce);
-                        }
-                        
+                            // 情况2: Press角力阶段 - 施加推力
+                            if (bossController.IsPressing && hasPushForce)
+                            {
+                                float pushMagnitude;
+                                if (isMainLaser)
+                                {
+                                    pushMagnitude = bossController.CalculatePushForce(impactLevel);
+                                }
+                                else
+                                {
+                                    pushMagnitude = bossController.CalculateSubLaserPushForce();
+                                }
+                                bossController.ApplyLaserPushForce(pushMagnitude);
+                            }
+                        } 
                         continue;  // Boss处理完毕，跳过普通敌人检测
                     }
                 }
@@ -647,17 +673,15 @@ namespace LightVsDecay.Logic.Player
                 // 普通敌人检测
                 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 EnemyBlob enemy = collider.GetComponentInParent<EnemyBlob>();
-                if (enemy == null || hitEnemies.Contains(enemy)) continue;
-                
-                hitEnemies.Add(enemy);
-                
+                if (enemy == null ) continue;
                 bool enemyCrit = RollCrit();
                 float finalEnemyDamage = enemyCrit ? damage * critDamageMultiplier : damage;
                 
-                Vector2 knockbackDir = ((Vector2)enemy.transform.position - (Vector2)segment.startPoint).normalized;
-                Vector2 knockbackForce = knockbackDir * CurrentKnockbackForce * knockbackMultiplier;
+                // 计算击退
+                Vector2 knockbackDir = segment.Direction;
+                float knockbackMagnitude = CurrentKnockbackForce * knockbackMultiplier;
                 
-                enemy.TakeDamage(finalEnemyDamage, knockbackForce, enemyCrit);
+                enemy.TakeDamage(finalEnemyDamage, knockbackDir * knockbackMagnitude, enemyCrit);
 
                 UpdateFrameHitType(LaserHitType.Burn);
                 // Frost 效果
@@ -1134,27 +1158,5 @@ namespace LightVsDecay.Logic.Player
             Gizmos.DrawCube(Vector3.zero, size);
             Gizmos.matrix = oldMatrix;
         }
-        
-#if UNITY_EDITOR
-        private void OnGUI()
-        {
-            if (!showDebugInfo) return;
-            
-            GUILayout.BeginArea(new Rect(Screen.width - 250, 10, 240, 260));
-            GUILayout.Label("=== Laser Stats ===");
-            GUILayout.Label($"DPS: {baseDPS * skillDamageMultiplier:F1} {(isUltMode ? "(x2 ULT)" : "")}");
-            GUILayout.Label($"Damage/Tick: {CurrentDamagePerTick:F1}");
-            GUILayout.Label($"Knockback: {CurrentKnockbackForce:F1}");
-            GUILayout.Label($"Width: {CurrentLaserWidth:F2}");
-            GUILayout.Label($"Sub Lasers: {subLasers.Count}");
-            GUILayout.Label($"--- Crit ---");
-            GUILayout.Label($"Crit Rate: {CurrentCritRate:P0}");
-            GUILayout.Label($"Crit Mult: {critDamageMultiplier:P0}");
-            GUILayout.Label($"--- Status ---");
-            GUILayout.Label($"Ult Mode: {isUltMode}");
-            GUILayout.Label($"Custom Color: {hasCustomColor}");
-            GUILayout.EndArea();
-        }
-#endif
     }
 }

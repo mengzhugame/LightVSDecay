@@ -99,9 +99,6 @@ namespace LightVsDecay.Logic.Boss
         
         // Pollution 发射
         private float pollutionTimer;
-        
-        // Charge (快招) 相关
-        private bool chargeInterrupted = false;
         // 战术召唤相关（新增）
         private float continuousDamageTimer = 0f;           // 连续受伤计时器
         private const float TACTICAL_SUMMON_THRESHOLD = 5f; // 触发阈值：连续受伤5秒
@@ -109,13 +106,21 @@ namespace LightVsDecay.Logic.Boss
         private const float TACTICAL_SUMMON_CD = 10f;       // 战术召唤冷却时间
         // Press (慢招/角力) 相关
         private bool isPressing = false;            // 是否正在碾压/角力
-        private Vector2 accumulatedPushForce;       // 累积的激光推力
-        private bool isBeingPushed = false;         // 是否正在被推
-        // 在现有字段区域添加：
         private float currentPushForce = 0f;           // 当前推力大小（持续施加直到更新）
         private bool isReceivingLaserHit = false;      // 是否正在被激光照射
         private float laserHitTimeout = 0.15f;         // 激光命中超时（略大于tick间隔）
         private float lastLaserHitTime = 0f;           // 上次被激光命中的时间
+        // 【新增】多激光推力累加
+        private float accumulatedPushForceThisTick = 0f;  // 本tick累积的推力
+        private bool pushForceUpdatedThisTick = false;     // 本tick是否有推力更新
+        // Charge (快招) 相关
+        private bool chargeInterrupted = false;
+        private int chargeHitCount = 0;                     // 蓄力+冲锋期间累计受击次数
+        // 【新增】频率打断标记
+        private bool isLightBarrierInterrupt = false; 
+        private Vector2 accumulatedPushForce;       // 累积的激光推力
+        private bool isBeingPushed = false;         // 是否正在被推
+
         // Press 角力状态
         private bool isPressPhase3Active = false;    // Phase 3 角力是否激活
         private float pressDownForce = 0f;           // 当前下压力
@@ -126,8 +131,7 @@ namespace LightVsDecay.Logic.Boss
         private ShieldController cachedShieldController;
         // 颜色缓存
         private Color[] originalColors;
-        // Charge 频率打断
-        private int chargeHitCount = 0;                     // 蓄力+冲锋期间累计受击次数
+
 
 // Press 过载检测
         private float pressOverloadDamage = 0f;             // 过载窗口内累计伤害
@@ -839,6 +843,7 @@ namespace LightVsDecay.Logic.Boss
         private IEnumerator ChargeRoutine()
         {
             chargeInterrupted = false;
+            isLightBarrierInterrupt = false;
             chargeHitCount = 0; 
             float telegraphDuration = config != null ? config.chargeTelegraphDuration : 1.0f;
             float windupDistance = config != null ? config.chargeWindupDistance : 0.5f;
@@ -892,9 +897,14 @@ namespace LightVsDecay.Logic.Boss
             // 检查是否被打断
             if (chargeInterrupted)
             {
-                if (showDebugInfo) Debug.Log("[BossController] 💥 Charge 蓄力被打断！进入僵直！");
-                ShowCounterText("INTERRUPTED!");
-                ChangeState(BossState.Stun);
+                if (isLightBarrierInterrupt)
+                {
+                    OnChargeLightBarrierInterrupt();  // 【新增】频率打断处理
+                }
+                else
+                {
+                    OnChargeInterrupted();
+                }
                 yield break;
             }
             
@@ -1350,14 +1360,14 @@ namespace LightVsDecay.Logic.Boss
         /// <summary>
         /// 接收来自激光的推力（仅在Press角力阶段生效）
         /// </summary>
-        public void ApplyLaserPushForce(Vector2 pushForce)
+        public void ApplyLaserPushForce(float pushForce)
         {
             if (!isPressing) return;
     
             // 更新推力值和命中时间
-            currentPushForce = pushForce.magnitude;
+            accumulatedPushForceThisTick += pushForce;
+            pushForceUpdatedThisTick = true;
             lastLaserHitTime = Time.time;
-            isReceivingLaserHit = true;
     
             if (showDebugInfo)
             {
@@ -1368,10 +1378,10 @@ namespace LightVsDecay.Logic.Boss
         /// <summary>
         /// 计算激光对Boss的推力大小
         /// </summary>
-        public float CalculatePushForce(int impactLevel, bool isUltMode)
+        public float CalculatePushForce(int impactLevel)
         {
-            float baseForce = config != null ? config.baseLaserPushForce : 80f;
-            float multiplier = config != null ? config.GetPushMultiplier(impactLevel, isUltMode) : 1f;
+            float baseForce = config != null ? config.baseLaserPushForce :120f;
+            float multiplier = config != null ? config.GetPushMultiplier(impactLevel) : 1f;
             return baseForce * multiplier;
         }
         
@@ -1487,7 +1497,40 @@ namespace LightVsDecay.Logic.Boss
                 }
             }
         }
-        
+        /// <summary>
+        /// 【新增】结束本tick的推力累加，应用到实际推力
+        /// 由 LaserController 在每tick伤害检测结束后调用
+        /// </summary>
+        public void FinalizePushForceThisTick()
+        {
+            if (!isPressing) return;
+
+            if (pushForceUpdatedThisTick)
+            {
+                // 应用推力上限
+                float maxForce = config != null ? config.maxTotalPushForce : 300f;
+                currentPushForce = Mathf.Min(accumulatedPushForceThisTick, maxForce);
+                isReceivingLaserHit = true;
+
+                if (showDebugInfo && accumulatedPushForceThisTick > maxForce)
+                {
+                    Debug.Log($"[BossController] 推力超限! 原始={accumulatedPushForceThisTick:F0}, 限制后={currentPushForce:F0}");
+                }
+            }
+
+            // 重置本tick累加器
+            accumulatedPushForceThisTick = 0f;
+            pushForceUpdatedThisTick = false;
+        }
+        /// <summary>
+        /// 【新增】计算副激光的基础推力（不享受Impact加成）
+        /// </summary>
+        public float CalculateSubLaserPushForce()
+        {
+            float baseForce = config != null ? config.baseLaserPushForce : 120f;
+            float baseMultiplier = config != null ? config.impactPushMultipliers[0] : 0.4f;
+            return baseForce * baseMultiplier;
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 角力摩擦伤害系统 【新增】
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1581,24 +1624,27 @@ namespace LightVsDecay.Logic.Boss
          /// <summary>
         /// 记录受击次数（供 BossHealth 调用，用于 Charge 频率打断）
         /// </summary>
-        public void OnHitReceived()
-        {
-            // Charge 频率打断计数
-            if (currentState == BossState.Charge)
-            {
-                chargeHitCount++;
-                
-                int threshold = config != null ? config.chargeHitCountThreshold : 30;
-                if (chargeHitCount >= threshold && !chargeInterrupted)
-                {
-                    chargeInterrupted = true;
-                    if (showDebugInfo)
-                    {
-                        Debug.Log($"[BossController] ⚡ Charge 频率打断！受击 {chargeHitCount} 次！");
-                    }
-                }
-            }
-        }
+         public void OnHitReceived()
+         {
+             // Charge 频率打断
+             if (currentState == BossState.Charge && !chargeInterrupted)
+             {
+                 chargeHitCount++;
+        
+                 // 【修改】使用新的频率打断阈值
+                 int threshold = config != null ? config.chargeLightBarrierThreshold : 50;
+                 if (chargeHitCount >= threshold)
+                 {
+                     chargeInterrupted = true;
+                     isLightBarrierInterrupt = true;  // 【新增】标记为频率打断
+            
+                     if (showDebugInfo)
+                     {
+                         Debug.Log($"[BossController] 🛡️ LIGHT BARRIER! 频率打断！受击 {chargeHitCount} 次！");
+                     }
+                 }
+             }
+         }
 
         /// <summary>
         /// 记录伤害值（重载版本，用于 Press 过载检测）
@@ -1713,7 +1759,77 @@ namespace LightVsDecay.Logic.Boss
             {
                 activePollutionBalls.Remove(ball);
             }
-        }       
+        }
+        /// <summary>
+        /// 【新增】Charge 被光墙（频率）打断 - 轻惩罚
+        /// </summary>
+        private void OnChargeLightBarrierInterrupt()
+        {
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 🛡️ Charge 被光墙打断！轻惩罚 - 快速回Idle");
+            }
+
+            // 显示飘字
+            ShowCounterText("LIGHT BARRIER!");
+
+            // 关闭红色特效
+            if (redBodyEffect != null) redBodyEffect.SetActive(false);
+
+            // 眼睛闭合
+            if (eyeController != null) eyeController.Close();
+
+            // 轻微屏幕震动
+            if (CameraShake.Instance != null)
+            {
+                CameraShake.Instance.Shake(0.15f, 0.1f);
+            }
+
+            // 快速返回锚点并进入 Idle（不是 Stun）
+            StartCoroutine(LightBarrierRetreatRoutine());
+        }
+
+        private void OnChargeInterrupted()
+        {
+            if (showDebugInfo) Debug.Log("[BossController] 💥 Charge 蓄力被打断！进入僵直！");
+            ShowCounterText("INTERRUPTED!");
+            // 关闭红色特效
+            if (redBodyEffect != null) redBodyEffect.SetActive(false);
+            ChangeState(BossState.Stun);
+        }
+
+        /// <summary>
+        /// 【新增】光墙打断后的撤退协程
+        /// </summary>
+        private IEnumerator LightBarrierRetreatRoutine()
+        {
+            float duration = config != null ? config.chargeLightBarrierStunDuration : 1.0f;
+
+#if DOTWEEN
+            yield return transform.DOMove(battleAnchorPosition, duration * 0.5f)
+                .SetEase(Ease.OutQuad)
+                .WaitForCompletion();
+#else
+    float elapsed = 0f;
+    Vector3 start = transform.position;
+    float moveDuration = duration * 0.5f;
+    while (elapsed < moveDuration)
+    {
+        elapsed += Time.deltaTime;
+        transform.position = Vector3.Lerp(start, battleAnchorPosition, elapsed / moveDuration);
+        yield return null;
+    }
+    transform.position = battleAnchorPosition;
+#endif
+
+            // 短暂停顿后直接回 Idle
+            yield return new WaitForSeconds(duration * 0.5f);
+
+            // 重置标记
+            isLightBarrierInterrupt = false;
+
+            ChangeState(BossState.Idle);
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 工具方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

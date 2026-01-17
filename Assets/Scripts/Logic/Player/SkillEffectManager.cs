@@ -828,9 +828,9 @@ namespace LightVsDecay.Logic.Player
         /// <summary>
         /// 判断是否可以打断 BOSS 蓄力
         /// </summary>
-        public bool CanInterruptBossCharge(bool isUltMode)
+        public bool CanInterruptBossCharge()
         {
-            return impactLevel >= 5 || isUltMode;
+            return impactLevel >= 5;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
