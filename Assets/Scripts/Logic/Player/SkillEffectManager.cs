@@ -851,5 +851,12 @@ namespace LightVsDecay.Logic.Player
                 Debug.Log("[SkillEffectManager] Adrenaline 效果结束");
             }
         }
+        /// <summary>
+        /// 获取Wide技能等级
+        /// </summary>
+        public int GetWideLevel()
+        {
+            return wideLevel;
+        }
     }
 }

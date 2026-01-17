@@ -562,7 +562,22 @@ namespace LightVsDecay.Logic.Boss
         /// 是否已销毁
         /// </summary>
         public bool IsDestroyed => isDestroyed;
-
+        /// <summary>
+        /// 【新增】设置初始方向偏移角度
+        /// </summary>
+        public void SetInitialDirection(float angleOffset)
+        {
+            // 基础方向向下
+            Vector2 baseDir = Vector2.down;
+    
+            // 旋转指定角度
+            currentDirection = Quaternion.Euler(0, 0, angleOffset) * baseDir;
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[PollutionProjectile] 初始方向角度: {angleOffset}°");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Gizmos 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

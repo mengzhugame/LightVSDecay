@@ -88,7 +88,7 @@ namespace LightVsDecay.Data.SO
         public Vector2 summonRightOffset = new Vector2(3f, -1f);
         
         [Tooltip("每侧生成的 Rusher 数量")]
-        public int summonRusherPerSide = 2;
+        public int summonRusherPerSide = 4;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Pollution (污秽喷吐) - 被动技能
@@ -96,8 +96,11 @@ namespace LightVsDecay.Data.SO
         
         [Header("═══ Pollution 污秽喷吐 (被动技能) ═══")]
         [Tooltip("Idle 状态下发射间隔（秒）")]
-        public float pollutionInterval = 4f;
-        
+        public float pollutionInterval = 2f;
+        [Tooltip("每次发射的污秽球数量")]
+        public int pollutionBurstCount = 3;
+        [Tooltip("散射角度范围（度）")]
+        public float pollutionSpreadAngle = 30f;
         [Tooltip("投射物飞行速度")]
         public float pollutionSpeed = 5f;
         
@@ -190,14 +193,10 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("Impact技能等级的推力倍率 [Lv0, Lv1, Lv2, Lv3, Lv4, Lv5]")]
         public float[] impactPushMultipliers = new float[] { 0.4f, 0.85f, 1.0f, 1.3f, 1.6f, 2.5f };
+        [Tooltip("Wide技能等级的基础推力倍率 [Lv0, Lv1, Lv2, Lv3, Lv4, Lv5]")]
+        public float[] widePushMultipliers = new float[] { 0.4f, 0.52f, 0.64f, 0.76f, 0.88f, 1.0f };
         [Tooltip("总推力上限（防止多激光叠加过强）")]
         public float maxTotalPushForce = 300f;
-
-        [Tooltip("Charge频率打断阈值（蓄力期间被命中次数）")]
-        public int chargeLightBarrierThreshold = 50;
-
-        [Tooltip("频率打断后的僵直时长（比Impact打断短）")]
-        public float chargeLightBarrierStunDuration = 1.0f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 角力摩擦伤害 (Press 专用) 【新增】
@@ -334,6 +333,17 @@ namespace LightVsDecay.Data.SO
                 return impactPushMultipliers[impactLevel];
             }
             return impactPushMultipliers[0];
+        }
+        /// <summary>
+        /// 获取Wide技能的推力倍率
+        /// </summary>
+        public float GetWidePushMultiplier(int wideLevel)
+        {
+            if (wideLevel >= 0 && wideLevel < widePushMultipliers.Length)
+            {
+                return widePushMultipliers[wideLevel];
+            }
+            return widePushMultipliers[0];
         }
     }
 }

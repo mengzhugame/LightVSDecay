@@ -30,8 +30,8 @@ MonoBehaviour:
   summonShakeFrequency: 30
   summonLeftOffset: {x: -3, y: -1}
   summonRightOffset: {x: 3, y: -1}
-  summonRusherPerSide: 2
-  pollutionInterval: 4
+  summonRusherPerSide: 4
+  pollutionInterval: 2
   pollutionSpeed: 5
   pollutionTurnSpeed: 90
   pollutionShieldDamage: 100
@@ -64,7 +64,9 @@ MonoBehaviour:
   - 1.3
   - 1.6
   - 2.5
-  ultPushMultiplier: 2
+  maxTotalPushForce: 300
+  chargeLightBarrierThreshold: 50
+  chargeLightBarrierStunDuration: 1
   frictionDamagePerSecond: 50
   maxClashDuration: 6
   frictionTriggerY: -8.5
@@ -72,7 +74,16 @@ MonoBehaviour:
   chargeInterruptStunDuration: 3
   stunDarkenAmount: 0.5
   stunReturnToAnchor: 1
-  eyeClosedScaleY: 0.1
-  eyeOpenColliderScale: 1.5
-  eyeTransitionDuration: 0.2
-  eyeSlowOpenDuration: 1
+  armorDamageReduction: 0.8
+  blinkDuration: 0.75
+  linkedBuffMaxStacks: 5
+  linkedBuffDamageReductionPerStack: 0.1
+  linkedBuffChargeSpeedPerStack: 0.1
+  chargeHitCountThreshold: 30
+  pressOverloadWindow: 1.5
+  pressOverloadDamageThreshold: 2000
+  shortStunDuration: 1.5
+  pollutionBallHP: 200
+  pollutionBallMass: 3
+  pollutionBossDamagePercent: 0.05
+  pollutionMaxCount: 3

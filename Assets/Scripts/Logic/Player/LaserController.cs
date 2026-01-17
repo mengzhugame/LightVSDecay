@@ -537,20 +537,25 @@ namespace LightVsDecay.Logic.Player
                                 float pushMagnitude;
                                 if (isMainLaser)
                                 {
-                                    // 主激光：享受Impact加成
-                                    pushMagnitude = bossController.CalculatePushForce(impactLevel);
+                                    // 主激光：取 max(Impact加成, Wide加成)
+                                    int wideLevel = SkillEffectManager.Instance != null 
+                                        ? SkillEffectManager.Instance.GetWideLevel() : 0;
+        
+                                    pushMagnitude = bossController.CalculatePushForce(impactLevel, wideLevel);
                                 }
                                 else
                                 {
-                                    // 副激光：只有基础推力
-                                    pushMagnitude = bossController.CalculateSubLaserPushForce();
+                                    pushMagnitude = 0;
                                 }
-                                bossController.ApplyLaserPushForce(pushMagnitude);
-
-                                if (showDebugInfo)
+                                
+                                if (pushMagnitude > 0f)
                                 {
-                                    string laserType = isMainLaser ? "主激光" : "副激光";
-                                    Debug.Log($"[LaserController] {laserType}推力: {pushMagnitude:F1}");
+                                    bossController.ApplyLaserPushForce(pushMagnitude);
+
+                                    if (showDebugInfo)
+                                    {
+                                        Debug.Log($"[LaserController] 主激光推力: {pushMagnitude:F1}");
+                                    }
                                 }
                             }
                         }
@@ -638,15 +643,14 @@ namespace LightVsDecay.Logic.Player
                             // 情况1: 蓄力阶段
                             if (bossController.IsInChargeTelegraph)
                             {
-                                bossController.OnHitReceived();
-
-                                bool canInterrupt = SkillEffectManager.Instance != null
-                                    ? SkillEffectManager.Instance.CanInterruptBossCharge()
-                                    : (impactLevel >= 5);
-
-                                if (canInterrupt)
+                                if (impactLevel >= 5)
                                 {
                                     bossController.InterruptCharge();
+
+                                    if (showDebugInfo)
+                                    {
+                                        Debug.Log($"[LaserController] ⚡ Impact Lv.5 打断Boss蓄力！");
+                                    }
                                 }
                             }
                         
@@ -656,13 +660,21 @@ namespace LightVsDecay.Logic.Player
                                 float pushMagnitude;
                                 if (isMainLaser)
                                 {
-                                    pushMagnitude = bossController.CalculatePushForce(impactLevel);
+                                    int wideLevel = SkillEffectManager.Instance != null 
+                                        ? SkillEffectManager.Instance.GetWideLevel() : 0;
+        
+                                    pushMagnitude = bossController.CalculatePushForce(impactLevel, wideLevel);
                                 }
                                 else
                                 {
-                                    pushMagnitude = bossController.CalculateSubLaserPushForce();
+                                    // 副激光：无推力
+                                    pushMagnitude = 0f;
                                 }
-                                bossController.ApplyLaserPushForce(pushMagnitude);
+    
+                                if (pushMagnitude > 0f)
+                                {
+                                    bossController.ApplyLaserPushForce(pushMagnitude);
+                                }
                             }
                         } 
                         continue;  // Boss处理完毕，跳过普通敌人检测

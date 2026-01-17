@@ -116,8 +116,6 @@ namespace LightVsDecay.Logic.Boss
         // Charge (快招) 相关
         private bool chargeInterrupted = false;
         private int chargeHitCount = 0;                     // 蓄力+冲锋期间累计受击次数
-        // 【新增】频率打断标记
-        private bool isLightBarrierInterrupt = false; 
         private Vector2 accumulatedPushForce;       // 累积的激光推力
         private bool isBeingPushed = false;         // 是否正在被推
 
@@ -761,6 +759,9 @@ namespace LightVsDecay.Logic.Boss
         // Pollution (污秽喷吐)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 发射污秽投射物（散射版）
+        /// </summary>
         private void FirePollutionProjectile()
         {
             GameObject prefab = config != null ? config.pollutionProjectilePrefab : null;
@@ -769,30 +770,36 @@ namespace LightVsDecay.Logic.Boss
                 if (showDebugInfo) Debug.LogWarning("[BossController] Pollution Prefab 未设置！");
                 return;
             }
+            
             int maxCount = config != null ? config.pollutionMaxCount : 3;
+            int burstCount = config != null ? config.pollutionBurstCount : 3;
+            float spreadAngle = config != null ? config.pollutionSpreadAngle : 30f;
+            
             // 清理已销毁的引用
             activePollutionBalls.RemoveAll(b => b == null);
-    
-            if (activePollutionBalls.Count >= maxCount)
+
+            // 计算需要清理多少个旧球来为新球腾出空间
+            int newTotalCount = activePollutionBalls.Count + burstCount;
+            while (newTotalCount > maxCount && activePollutionBalls.Count > 0)
             {
-                // 销毁最老的球
-                if (activePollutionBalls.Count > 0)
+                BossPollutionProjectile oldest = activePollutionBalls[0];
+                activePollutionBalls.RemoveAt(0);
+                if (oldest != null)
                 {
-                    BossPollutionProjectile oldest = activePollutionBalls[0];
-                    activePollutionBalls.RemoveAt(0);
-                    if (oldest != null)
-                    {
-                        oldest.ForceDestroy();
-                    }
+                    oldest.ForceDestroy();
                 }
+                newTotalCount--;
             }
+
             // V3.0: 发射时触发眨眼
             float blinkDuration = config != null ? config.blinkDuration : 0.75f;
             if (eyeController != null)
             {
                 eyeController.Blink(blinkDuration);
             }
-            float bodyRadius = 1.5f; // 默认值
+
+            // 计算发射位置
+            float bodyRadius = 1.5f;
             if (bossHealth != null && bossHealth.BodyCollider != null)
             {
                 CircleCollider2D circleCol = bossHealth.BodyCollider as CircleCollider2D;
@@ -802,37 +809,52 @@ namespace LightVsDecay.Logic.Boss
                 }
             }
             Vector3 spawnPos = transform.position + Vector3.down * (bodyRadius + 0.5f);
-            GameObject projectileObj = Instantiate(prefab, spawnPos, Quaternion.identity);
-    
-            BossPollutionProjectile projectile = projectileObj.GetComponent<BossPollutionProjectile>();
-            if (projectile != null)
+
+            // 计算每颗弹的角度
+            float startAngle = -spreadAngle / 2f;
+            float angleStep = burstCount > 1 ? spreadAngle / (burstCount - 1) : 0f;
+
+            for (int i = 0; i < burstCount; i++)
             {
-                // V3.0: 初始化带物理参数
-                if (config != null)
+                float angle = burstCount == 1 ? 0f : startAngle + angleStep * i;
+
+                // 生成投射物
+                GameObject projectileObj = Instantiate(prefab, spawnPos, Quaternion.identity);
+
+                BossPollutionProjectile projectile = projectileObj.GetComponent<BossPollutionProjectile>();
+                if (projectile != null)
                 {
-                    projectile.InitializeV3(
-                        config.pollutionSpeed,
-                        config.pollutionTurnSpeed,
-                        config.pollutionShieldDamage,
-                        config.pollutionLifetime,
-                        config.pollutionBallHP,
-                        config.pollutionBallMass,
-                        this
-                    );
+                    // V3.0: 初始化带物理参数
+                    if (config != null)
+                    {
+                        projectile.InitializeV3(
+                            config.pollutionSpeed,
+                            config.pollutionTurnSpeed,
+                            config.pollutionShieldDamage,
+                            config.pollutionLifetime,
+                            config.pollutionBallHP,
+                            config.pollutionBallMass,
+                            this
+                        );
+                        
+                        // 设置初始方向（散射角度）
+                        projectile.SetInitialDirection(angle);
+                    }
+
+                    // 注册到管理列表
+                    RegisterPollutionBall(projectile);
                 }
-        
-                // 注册到管理列表
-                RegisterPollutionBall(projectile);
             }
-            
-            // 【新增】播放喷吐音效
+
+            // 播放喷吐音效
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayBossSpit();
             }
+
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 💜 发射污秽投射物！");
+                Debug.Log($"[BossController] 💜 污秽喷吐！发射 {burstCount} 颗，散射角度 {spreadAngle}°");
             }
         }
         
@@ -843,8 +865,8 @@ namespace LightVsDecay.Logic.Boss
         private IEnumerator ChargeRoutine()
         {
             chargeInterrupted = false;
-            isLightBarrierInterrupt = false;
-            chargeHitCount = 0; 
+            chargeHitCount = 0;
+
             float telegraphDuration = config != null ? config.chargeTelegraphDuration : 1.0f;
             float windupDistance = config != null ? config.chargeWindupDistance : 0.5f;
             
@@ -897,14 +919,7 @@ namespace LightVsDecay.Logic.Boss
             // 检查是否被打断
             if (chargeInterrupted)
             {
-                if (isLightBarrierInterrupt)
-                {
-                    OnChargeLightBarrierInterrupt();  // 【新增】频率打断处理
-                }
-                else
-                {
-                    OnChargeInterrupted();
-                }
+                OnChargeInterrupted();
                 yield break;
             }
             
@@ -1378,10 +1393,16 @@ namespace LightVsDecay.Logic.Boss
         /// <summary>
         /// 计算激光对Boss的推力大小
         /// </summary>
-        public float CalculatePushForce(int impactLevel)
+        public float CalculatePushForce(int impactLevel, int wideLevel)
         {
-            float baseForce = config != null ? config.baseLaserPushForce :120f;
-            float multiplier = config != null ? config.GetPushMultiplier(impactLevel) : 1f;
+            float baseForce = config != null ? config.baseLaserPushForce : 120f;
+    
+            float impactMultiplier = config != null ? config.GetPushMultiplier(impactLevel) : 0.4f;
+            float wideMultiplier = config != null ? config.GetWidePushMultiplier(wideLevel) : 0.4f;
+    
+            // 取较大值
+            float multiplier = Mathf.Max(impactMultiplier, wideMultiplier);
+    
             return baseForce * multiplier;
         }
         
@@ -1523,13 +1544,11 @@ namespace LightVsDecay.Logic.Boss
             pushForceUpdatedThisTick = false;
         }
         /// <summary>
-        /// 【新增】计算副激光的基础推力（不享受Impact加成）
+        /// 计算副激光的推力（设为0）
         /// </summary>
         public float CalculateSubLaserPushForce()
         {
-            float baseForce = config != null ? config.baseLaserPushForce : 120f;
-            float baseMultiplier = config != null ? config.impactPushMultipliers[0] : 0.4f;
-            return baseForce * baseMultiplier;
+            return 0f;
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 角力摩擦伤害系统 【新增】
@@ -1626,24 +1645,8 @@ namespace LightVsDecay.Logic.Boss
         /// </summary>
          public void OnHitReceived()
          {
-             // Charge 频率打断
-             if (currentState == BossState.Charge && !chargeInterrupted)
-             {
-                 chargeHitCount++;
-        
-                 // 【修改】使用新的频率打断阈值
-                 int threshold = config != null ? config.chargeLightBarrierThreshold : 50;
-                 if (chargeHitCount >= threshold)
-                 {
-                     chargeInterrupted = true;
-                     isLightBarrierInterrupt = true;  // 【新增】标记为频率打断
-            
-                     if (showDebugInfo)
-                     {
-                         Debug.Log($"[BossController] 🛡️ LIGHT BARRIER! 频率打断！受击 {chargeHitCount} 次！");
-                     }
-                 }
-             }
+             // 记录受伤时间（用于战术召唤等）
+             lastDamageTime = Time.time;
          }
 
         /// <summary>
@@ -1760,34 +1763,6 @@ namespace LightVsDecay.Logic.Boss
                 activePollutionBalls.Remove(ball);
             }
         }
-        /// <summary>
-        /// 【新增】Charge 被光墙（频率）打断 - 轻惩罚
-        /// </summary>
-        private void OnChargeLightBarrierInterrupt()
-        {
-            if (showDebugInfo)
-            {
-                Debug.Log("[BossController] 🛡️ Charge 被光墙打断！轻惩罚 - 快速回Idle");
-            }
-
-            // 显示飘字
-            ShowCounterText("LIGHT BARRIER!");
-
-            // 关闭红色特效
-            if (redBodyEffect != null) redBodyEffect.SetActive(false);
-
-            // 眼睛闭合
-            if (eyeController != null) eyeController.Close();
-
-            // 轻微屏幕震动
-            if (CameraShake.Instance != null)
-            {
-                CameraShake.Instance.Shake(0.15f, 0.1f);
-            }
-
-            // 快速返回锚点并进入 Idle（不是 Stun）
-            StartCoroutine(LightBarrierRetreatRoutine());
-        }
 
         private void OnChargeInterrupted()
         {
@@ -1796,39 +1771,6 @@ namespace LightVsDecay.Logic.Boss
             // 关闭红色特效
             if (redBodyEffect != null) redBodyEffect.SetActive(false);
             ChangeState(BossState.Stun);
-        }
-
-        /// <summary>
-        /// 【新增】光墙打断后的撤退协程
-        /// </summary>
-        private IEnumerator LightBarrierRetreatRoutine()
-        {
-            float duration = config != null ? config.chargeLightBarrierStunDuration : 1.0f;
-
-#if DOTWEEN
-            yield return transform.DOMove(battleAnchorPosition, duration * 0.5f)
-                .SetEase(Ease.OutQuad)
-                .WaitForCompletion();
-#else
-    float elapsed = 0f;
-    Vector3 start = transform.position;
-    float moveDuration = duration * 0.5f;
-    while (elapsed < moveDuration)
-    {
-        elapsed += Time.deltaTime;
-        transform.position = Vector3.Lerp(start, battleAnchorPosition, elapsed / moveDuration);
-        yield return null;
-    }
-    transform.position = battleAnchorPosition;
-#endif
-
-            // 短暂停顿后直接回 Idle
-            yield return new WaitForSeconds(duration * 0.5f);
-
-            // 重置标记
-            isLightBarrierInterrupt = false;
-
-            ChangeState(BossState.Idle);
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 工具方法
