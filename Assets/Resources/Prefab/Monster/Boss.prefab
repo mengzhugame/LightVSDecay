@@ -127,7 +127,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   eyeTransform: {fileID: 1343997964473775117}
   eyeRenderer: {fileID: 3988100806900536482}
-  eyeCollider: {fileID: 0}
   redBodyEffect: {fileID: 4801645900123614117}
   pupilGlowEffect: {fileID: 0}
   closedScaleY: 0.1
@@ -541,9 +540,10 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: a7575bca66b9d0648b544d425b82bca3, type: 2}
   coreDamageMultiplier: 2
   bodyCollider: {fileID: 2878663063999937833}
-  eyeCollider: {fileID: 0}
   bodyHitSfxId: boss_armor_hit
   eyeHitSfxId: boss_core_hit
+  bodyRenderers: []
+  hitFlashDuration: 0.15
   showDebugInfo: 0
 --- !u!114 &5212838760448453320
 MonoBehaviour:
@@ -565,4 +565,4 @@ MonoBehaviour:
   - {fileID: 3062438057919091048}
   - {fileID: 3988100806900536482}
   playerTower: {fileID: 0}
-  showDebugInfo: 1
+  showDebugInfo: 0

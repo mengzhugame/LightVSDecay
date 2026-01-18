@@ -607,13 +607,30 @@ namespace LightVsDecay.Audio
         
         /// <summary>
         /// 立即切换激光音效片段
+        /// 【修复】即使是相同音效，如果没有在播放，也要重新播放
         /// </summary>
         private void SwitchLaserClip(AudioClip clip)
         {
-            if (clip == null || clip == currentLaserClip) return;
+            if (clip == null) return;
+    
+            // 【修复】检查是否是相同的音效
+            if (clip == currentLaserClip)
+            {
+                // 即使是相同音效，如果没有在播放，也要重新播放
+                if (laserSource != null && !laserSource.isPlaying)
+                {
+                    laserSource.Play();
             
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[AudioManager] 重新播放相同音效: {clip.name}");
+                    }
+                }
+                return;
+            }
+    
             currentLaserClip = clip;
-            
+    
             // 立即切换（保持播放位置的随机性，避免每次都从头播放）
             laserSource.clip = clip;
             laserSource.volume = sfxVolume * config.laserLoopVolume;

@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Boss
+  m_Name: Elite_Drifter
   m_Shader: {fileID: -6465566751694194690, guid: def5f24a4e28319428ceaa8037b041af, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -43,13 +43,10 @@ Material:
     m_Floats:
     - _Alpha: 1
     - _Distortion_Strength: 0.05
-    - _Flow_Speed: 0.1
-    - _HitIntensity: 0
-    - _Noise_Scale: 0.32
-    - _SimpleNoiseScale: 5
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _HitColor: {r: 0.3207547, g: 0.3207547, b: 0.3207547, a: 1}
+    - _Flow_Speed: 1
+    - _Noise_Scale: 0.2
+    - _SimpleNoiseScale: 50
+    m_Colors: []
   m_BuildTextureStacks: []
 --- !u!114 &6525933608244509770
 MonoBehaviour:

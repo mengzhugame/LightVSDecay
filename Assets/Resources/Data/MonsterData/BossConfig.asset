@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f08c93735e3ebd468254b7f0b24e8d3, type: 3}
   m_Name: BossConfig
   m_EditorClassIdentifier: 
+  maxHealth: 50000
   spawnDuration: 2.5
   battleAnchorY: 3.5
   spawnShakeIntensity: 0.5
@@ -32,6 +33,8 @@ MonoBehaviour:
   summonRightOffset: {x: 3, y: -1}
   summonRusherPerSide: 4
   pollutionInterval: 2
+  pollutionBurstCount: 3
+  pollutionSpreadAngle: 30
   pollutionSpeed: 5
   pollutionTurnSpeed: 90
   pollutionShieldDamage: 100
@@ -64,9 +67,14 @@ MonoBehaviour:
   - 1.3
   - 1.6
   - 2.5
+  widePushMultipliers:
+  - 0.4
+  - 0.52
+  - 0.64
+  - 0.76
+  - 0.88
+  - 1
   maxTotalPushForce: 300
-  chargeLightBarrierThreshold: 50
-  chargeLightBarrierStunDuration: 1
   frictionDamagePerSecond: 50
   maxClashDuration: 6
   frictionTriggerY: -8.5

@@ -154,7 +154,12 @@ namespace LightVsDecay.Logic.Boss
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+        /// <summary>Boss 配置（供 BossHealth 读取）</summary>
+        public BossConfig Config => config;
+        /// <summary>所有身体渲染器（供 BossHealth 使用受击效果）</summary>
+        public SpriteRenderer[] BodyRenderers => bodyRenderers;
+        /// <summary>原始颜色缓存（供 BossHealth 使用）</summary>
+        public Color[] OriginalColors => originalColors;
         /// <summary>当前状态</summary>
         public BossState CurrentState => currentState;
         

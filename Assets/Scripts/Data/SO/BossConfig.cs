@@ -16,6 +16,9 @@ namespace LightVsDecay.Data.SO
     [CreateAssetMenu(fileName = "BossConfig", menuName = "LightVsDecay/Boss Config", order = 3)]
     public class BossConfig : ScriptableObject
     {
+        [Header("血量设置")]
+        [Tooltip("Boss 最大血量")]
+        public float maxHealth = 10000f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Spawn (入场) 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

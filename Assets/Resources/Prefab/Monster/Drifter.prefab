@@ -258,7 +258,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5228d8d71633864428ff914373e8614c, type: 2}
+  - {fileID: 2100000, guid: 707d354bee072ac47a44ab0de2452ce6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -405,13 +405,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
   enemyType: 3
-  eliteEffectPrefab: {fileID: 0}
-  eliteTintColor: {r: 1, g: 0.5, b: 0, a: 1}
   bodySprite: {fileID: 4335784821728048696}
   eyesController: {fileID: 6691269152021299885}
   decorations:
   - {fileID: 5850622431092275405}
   - {fileID: 3203237212370406469}
+  hitFlashDuration: 0.15
+  hitSpeedBoostMultiplier: 3
+  defaultHitColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!114 &2236089286846062727
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -48,8 +48,8 @@ Material:
     - _Noise_Scale: 0.2
     - _SimpleNoiseScale: 50
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _HitColor: {r: 0.7207546, g: 0.63250965, b: 0.6242007, a: 1}
+    - _Color: {r: 0.7584905, g: 0.7584905, b: 0.7584905, a: 1}
+    - _HitColor: {r: 0.7660377, g: 0.7660377, b: 0.7660377, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &6525933608244509770
 MonoBehaviour:

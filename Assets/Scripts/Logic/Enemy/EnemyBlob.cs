@@ -71,9 +71,7 @@ namespace LightVsDecay.Logic.Enemy
         private float minScale = 0.3f;
         private float deathFadeDuration = 1.0f;
         private float normalFlowSpeed = 1.0f;
-        private float normalNoiseScale = 0.5f;
         private float hitFlowSpeed = 10.0f;
-        private float hitNoiseScale = 5.0f;
         private float wobbleReturnSpeed = 5.0f;
         private Coroutine hitFlashCoroutine;
         private Color currentHitColor;
@@ -140,10 +138,9 @@ namespace LightVsDecay.Logic.Enemy
         private Vector3 originalScale;
         private bool isDead = false;
         private bool killedByExplosion = false;  // 【新增】是否被爆炸杀死
-        private Material bodyMaterial;
+        private Material[] bodyMaterials;
         private bool isBeingHit = false;
         private float targetFlowSpeed;
-        private float targetNoiseScale;
         private float lastHitTime;
         
         private Coroutine deathCoroutine;
@@ -187,10 +184,27 @@ namespace LightVsDecay.Logic.Enemy
             circleCollider = GetComponent<CircleCollider2D>();
             originalScale = transform.localScale;
             
-            // 获取材质实例
-            if (bodySprite != null)
+// 获取所有需要闪白的材质实例
+            if (decorations != null && decorations.Length > 0)
             {
-                bodyMaterial = bodySprite.material;
+                bodyMaterials = new Material[decorations.Length];
+                for (int i = 0; i < decorations.Length; i++)
+                {
+                    if (decorations[i] != null)
+                    {
+                        SpriteRenderer sr = decorations[i].GetComponent<SpriteRenderer>();
+                        if (sr != null)
+                        {
+                            // 使用 .material 会自动创建实例
+                            bodyMaterials[i] = sr.material;
+                        }
+                    }
+                }
+            }
+            else if (bodySprite != null)
+            {
+                // 回退：只有 bodySprite
+                bodyMaterials = new Material[] { bodySprite.material };
             }
             
             // 加载配置
@@ -293,9 +307,7 @@ namespace LightVsDecay.Logic.Enemy
                 minScale = data.minScale;
                 deathFadeDuration = data.deathFadeDuration;
                 normalFlowSpeed = data.normalFlowSpeed;
-                normalNoiseScale = data.normalNoiseScale;
                 hitFlowSpeed = data.hitFlowSpeed;
-                hitNoiseScale = data.hitNoiseScale;
                 wobbleReturnSpeed = data.wobbleReturnSpeed;
                 
                 // 奖励
@@ -474,26 +486,32 @@ namespace LightVsDecay.Logic.Enemy
         
         private void ResetShaderState()
         {
-            if (bodyMaterial != null)
+            if (bodyMaterials != null)
             {
-                // 使用正确的 Shader 属性名 (LiquidFlowSpeed, LiquidNoiseScale)
-                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, normalFlowSpeed);
-                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidNoiseScale, normalNoiseScale);
+                foreach (var mat in bodyMaterials)
+                {
+                    if (mat != null)
+                    {
+                        mat.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, normalFlowSpeed);
+                    }
+                }
             }
-            
-            targetFlowSpeed = normalFlowSpeed;
-            targetNoiseScale = normalNoiseScale;
         }
         
         private void ResetVisuals()
         {
-            if (bodyMaterial != null)
+            // 【修改】重置所有材质
+            if (bodyMaterials != null)
             {
-                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidAlpha, 1.0f);
-                // 【新增】重置受击效果
-                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidHitIntensity, 0f);
+                foreach (var mat in bodyMaterials)
+                {
+                    if (mat != null)
+                    {
+                        mat.SetFloat(GameConstants.ShaderProperties.LiquidAlpha, 1.0f);
+                        mat.SetFloat(GameConstants.ShaderProperties.LiquidHitIntensity, 0f);
+                    }
+                }
             }
-            
             if (eyesController != null)
             {
                 SpriteRenderer eyesSR = eyesController.GetComponent<SpriteRenderer>();
@@ -825,14 +843,21 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         private void TriggerHitEffect()
         {
-            if (bodyMaterial == null) return;
+            if (bodyMaterials == null || bodyMaterials.Length == 0) return;
     
-            // 抖动加速：设置更高的流动速度
-            targetFlowSpeed = normalFlowSpeed * hitSpeedBoostMultiplier;
-            targetNoiseScale = hitNoiseScale;
+            // 抖动加速：直接设置 FlowSpeed x10
+            foreach (var mat in bodyMaterials)
+            {
+                if (mat != null)
+                {
+                    mat.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, normalFlowSpeed * 10f);
+                }
+            }
+    
             isBeingHit = true;
+            lastHitTime = Time.time;
     
-            // 闪烁效果：启动协程
+            // 闪烁效果
             if (hitFlashCoroutine != null)
             {
                 StopCoroutine(hitFlashCoroutine);
@@ -844,7 +869,6 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         private IEnumerator HitFlashCoroutine()
         {
-            // 从 1 线性衰减到 0
             float elapsed = 0f;
             while (elapsed < hitFlashDuration)
             {
@@ -852,35 +876,46 @@ namespace LightVsDecay.Logic.Enemy
                 float t = elapsed / hitFlashDuration;
                 float intensity = Mathf.Lerp(1f, 0f, t);
         
-                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidHitIntensity, intensity);
+                // 【修改】设置所有材质
+                foreach (var mat in bodyMaterials)
+                {
+                    if (mat != null)
+                    {
+                        mat.SetFloat(GameConstants.ShaderProperties.LiquidHitIntensity, intensity);
+                    }
+                }
+        
                 yield return null;
             }
     
             // 确保最终值为 0
-            bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidHitIntensity, 0f);
+            foreach (var mat in bodyMaterials)
+            {
+                if (mat != null)
+                {
+                    mat.SetFloat(GameConstants.ShaderProperties.LiquidHitIntensity, 0f);
+                }
+            }
+    
             hitFlashCoroutine = null;
         }
         private void UpdateShaderWobble()
         {
-            if (bodyMaterial == null) return;
-            
+            if (bodyMaterials == null || bodyMaterials.Length == 0) return;
+    
             // 检查是否脱离受击状态（0.15秒无新伤害）
             if (isBeingHit && Time.time - lastHitTime > 0.15f)
             {
-                targetFlowSpeed = normalFlowSpeed;
-                targetNoiseScale = normalNoiseScale;
+                // 恢复正常 FlowSpeed
+                foreach (var mat in bodyMaterials)
+                {
+                    if (mat != null)
+                    {
+                        mat.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, normalFlowSpeed);
+                    }
+                }
                 isBeingHit = false;
             }
-            
-            // 平滑过渡流动速度
-            float currentFlow = bodyMaterial.GetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed);
-            float newFlow = Mathf.Lerp(currentFlow, targetFlowSpeed, Time.deltaTime * wobbleReturnSpeed);
-            bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, newFlow);
-    
-            // NoiseScale 保持原有逻辑（如果需要）
-            float currentNoise = bodyMaterial.GetFloat(GameConstants.ShaderProperties.LiquidNoiseScale);
-            float newNoise = Mathf.Lerp(currentNoise, targetNoiseScale, Time.deltaTime * wobbleReturnSpeed);
-            bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidNoiseScale, newNoise);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -967,9 +1002,15 @@ namespace LightVsDecay.Logic.Enemy
                 float t = elapsed / deathFadeDuration;
                 float alpha = Mathf.Lerp(startAlpha, 0f, t);
                 
-                if (bodyMaterial != null)
+                if (bodyMaterials != null)
                 {
-                    bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidAlpha, alpha);
+                    foreach (var mat in bodyMaterials)
+                    {
+                        if (mat != null)
+                        {
+                            mat.SetFloat(GameConstants.ShaderProperties.LiquidAlpha, alpha);
+                        }
+                    }
                 }
                 
                 if (eyesController != null)
@@ -1052,7 +1093,8 @@ namespace LightVsDecay.Logic.Enemy
             {
                 BattleStatistics.Instance.RecordPlayerDamage(damageAmount, PlayerDamageSource.MobCollision);
             }
-
+            // 对护盾造成伤害
+            shieldController.TakeDamage(damageAmount);
             if (IsSmallEnemy())
             {
                 Explode();
