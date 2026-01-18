@@ -693,7 +693,8 @@ namespace LightVsDecay.Logic.Player
                 Vector2 knockbackDir = segment.Direction;
                 float knockbackMagnitude = CurrentKnockbackForce * knockbackMultiplier;
                 
-                enemy.TakeDamage(finalEnemyDamage, knockbackDir * knockbackMagnitude, enemyCrit);
+                DamageSource damageSource = (isMainLaser && !segment.isReflected) ? DamageSource.MainLaser : DamageSource.SubLaser;
+                enemy.TakeDamage(finalEnemyDamage, knockbackDir * knockbackMagnitude, enemyCrit, false, damageSource);
 
                 UpdateFrameHitType(LaserHitType.Burn);
                 // Frost 效果

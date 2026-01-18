@@ -33,19 +33,18 @@ namespace LightVsDecay.Logic.Enemy
         
         [Header("敌人类型")]
         [SerializeField] private EnemyType enemyType = EnemyType.Slime;
-        /// <summary>敌人类型（只读）</summary>
-        public EnemyType Type => enemyType;
         // 精英怪视觉效果
-        [Header("精英特效（可选）")]
-        [SerializeField] private GameObject eliteEffectPrefab;
-        [SerializeField] private Color eliteTintColor = new Color(1f, 0.5f, 0f, 1f); // 橙色
         private GameObject eliteEffectInstance;
         private Color originalColor;
         [Header("视觉组件")]
         [SerializeField] private SpriteRenderer bodySprite;
         [SerializeField] private EnemyEyes eyesController;
         [SerializeField] private Transform[] decorations;
-        
+        [Header("受击闪烁设置")]
+        [SerializeField] private float hitFlashDuration = 0.15f;        // 闪烁持续时间
+        [SerializeField] private float hitSpeedBoostMultiplier = 3f;    // 抖动速度倍率
+        [SerializeField] private Color defaultHitColor = Color.yellow;  // 默认受击颜色（激光初始黄色）
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时配置缓存（从 EnemyData 加载）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -76,7 +75,8 @@ namespace LightVsDecay.Logic.Enemy
         private float hitFlowSpeed = 10.0f;
         private float hitNoiseScale = 5.0f;
         private float wobbleReturnSpeed = 5.0f;
-        
+        private Coroutine hitFlashCoroutine;
+        private Color currentHitColor;
         // 奖励
         private int xpReward = 10;
         private int coinReward = 1;
@@ -129,9 +129,6 @@ namespace LightVsDecay.Logic.Enemy
         public string PoolKey => enemyType.ToString();
         // 【新增】最大血量属性（用于 BattleStatistics 统计）
         public float MaxHealth => maxHealth;
-
-// 【新增】当前血量属性（可选，用于调试）
-        public float CurrentHealth => currentHealth;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -167,8 +164,8 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         public bool IsElite => isElite;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Layer 切换（弹跳怪入境签证）
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Layer 切换（弹跳怪入境签证）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private bool isBouncing = false;
         private bool hasEnteredScreen = false;
@@ -434,6 +431,12 @@ namespace LightVsDecay.Logic.Enemy
         }
         public void OnDespawn()
         {
+            // 【新增】停止闪烁协程
+            if (hitFlashCoroutine != null)
+            {
+                StopCoroutine(hitFlashCoroutine);
+                hitFlashCoroutine = null;
+            }
             if (deathCoroutine != null)
             {
                 StopCoroutine(deathCoroutine);
@@ -487,6 +490,8 @@ namespace LightVsDecay.Logic.Enemy
             if (bodyMaterial != null)
             {
                 bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidAlpha, 1.0f);
+                // 【新增】重置受击效果
+                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidHitIntensity, 0f);
             }
             
             if (eyesController != null)
@@ -633,16 +638,19 @@ namespace LightVsDecay.Logic.Enemy
         /// <param name="damage">伤害值</param>
         /// <param name="knockbackForce">击退力</param>
         /// <param name="isCrit">是否暴击</param>
-        public void TakeDamage(float damage, Vector2 knockbackForce, bool isCrit = false, bool fromExplosion = false)
+        public void TakeDamage(float damage, Vector2 knockbackForce, bool isCrit = false, 
+            bool fromExplosion = false, DamageSource damageSource = DamageSource.MainLaser)
         {
             if (isDead) return;
             // 【新增】计算有效伤害和溢出伤害
             float effectiveDamage = Mathf.Min(currentHealth, damage);
             float overkillDamage = damage - effectiveDamage;
+            // 【修改】如果来自爆炸，伤害来源强制设为 Explosion
+            DamageSource actualSource = fromExplosion ? DamageSource.Explosion : damageSource;
             // 【新增】上报伤害数据到 BattleStatistics
             if (BattleStatistics.Instance != null)
             {
-                BattleStatistics.Instance.RecordDamage(effectiveDamage, overkillDamage, enemyType);
+                BattleStatistics.Instance.RecordDamage(effectiveDamage, overkillDamage, enemyType, actualSource, isCrit);
             }
             // 【新增】记录爆炸伤害标记
             if (fromExplosion)
@@ -663,7 +671,7 @@ namespace LightVsDecay.Logic.Enemy
                 ApplyKnockbackByType(knockbackForce);
             }
             
-            TriggerShaderWobble();
+            TriggerHitEffect();
 
             if (eyesController != null)
             {
@@ -812,19 +820,51 @@ namespace LightVsDecay.Logic.Enemy
         // Shader 效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void TriggerShaderWobble()
+        /// <summary>
+        /// 触发受击视觉效果（闪烁 + 抖动加速）
+        /// </summary>
+        private void TriggerHitEffect()
         {
             if (bodyMaterial == null) return;
-            
-            targetFlowSpeed = hitFlowSpeed;
+    
+            // 抖动加速：设置更高的流动速度
+            targetFlowSpeed = normalFlowSpeed * hitSpeedBoostMultiplier;
             targetNoiseScale = hitNoiseScale;
             isBeingHit = true;
+    
+            // 闪烁效果：启动协程
+            if (hitFlashCoroutine != null)
+            {
+                StopCoroutine(hitFlashCoroutine);
+            }
+            hitFlashCoroutine = StartCoroutine(HitFlashCoroutine());
         }
+        /// <summary>
+        /// 受击闪烁协程（线性衰减）
+        /// </summary>
+        private IEnumerator HitFlashCoroutine()
+        {
+            // 从 1 线性衰减到 0
+            float elapsed = 0f;
+            while (elapsed < hitFlashDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / hitFlashDuration;
+                float intensity = Mathf.Lerp(1f, 0f, t);
         
+                bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidHitIntensity, intensity);
+                yield return null;
+            }
+    
+            // 确保最终值为 0
+            bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidHitIntensity, 0f);
+            hitFlashCoroutine = null;
+        }
         private void UpdateShaderWobble()
         {
             if (bodyMaterial == null) return;
             
+            // 检查是否脱离受击状态（0.15秒无新伤害）
             if (isBeingHit && Time.time - lastHitTime > 0.15f)
             {
                 targetFlowSpeed = normalFlowSpeed;
@@ -832,14 +872,14 @@ namespace LightVsDecay.Logic.Enemy
                 isBeingHit = false;
             }
             
-            // 使用正确的 Shader 属性名
+            // 平滑过渡流动速度
             float currentFlow = bodyMaterial.GetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed);
-            float currentNoise = bodyMaterial.GetFloat(GameConstants.ShaderProperties.LiquidNoiseScale);
-            
             float newFlow = Mathf.Lerp(currentFlow, targetFlowSpeed, Time.deltaTime * wobbleReturnSpeed);
-            float newNoise = Mathf.Lerp(currentNoise, targetNoiseScale, Time.deltaTime * wobbleReturnSpeed);
-            
             bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidFlowSpeed, newFlow);
+    
+            // NoiseScale 保持原有逻辑（如果需要）
+            float currentNoise = bodyMaterial.GetFloat(GameConstants.ShaderProperties.LiquidNoiseScale);
+            float newNoise = Mathf.Lerp(currentNoise, targetNoiseScale, Time.deltaTime * wobbleReturnSpeed);
             bodyMaterial.SetFloat(GameConstants.ShaderProperties.LiquidNoiseScale, newNoise);
         }
         
@@ -1003,36 +1043,22 @@ namespace LightVsDecay.Logic.Enemy
         private void HandleShieldCollision(GameObject shieldObj)
         {
             var shieldController = shieldObj.GetComponent<ShieldController>();
-            if (shieldController == null)
-            {
-                shieldController = shieldObj.GetComponentInParent<ShieldController>();
-            }
-
             if (shieldController == null) return;
 
-            // 【修改】删除无敌检查，只检查护盾是否已破
-            if (shieldController.CurrentShieldHP <= 0)
+            int damageAmount = data != null ? data.contactDamage : 25;
+
+            // 【v2.0】上报小怪碰撞伤害到 BattleStatistics
+            if (BattleStatistics.Instance != null)
             {
-                return;
+                BattleStatistics.Instance.RecordPlayerDamage(damageAmount, PlayerDamageSource.MobCollision);
             }
 
-            // 【修改】从配置获取碰撞伤害值（字段名是 contactDamage）
-            int damageAmount = data != null ? data.contactDamage : 25;
-    
-            // 【修改】TakeDamage 现在返回溢出伤害（int），不再返回 bool
-            // overflow == 0 表示护盾完全吸收
-            // overflow > 0 表示有溢出伤害
-            int overflow = shieldController.TakeDamage(damageAmount);
-
-            // 只要调用了 TakeDamage，就算造成了伤害（无论是否溢出）
             if (IsSmallEnemy())
             {
-                // 小怪撞击后自爆
                 Explode();
             }
             else
             {
-                // 大怪被反弹
                 Vector2 direction = (transform.position - shieldObj.transform.position).normalized;
                 rb.AddForce(direction * 500f, ForceMode2D.Impulse);
             }
@@ -1041,23 +1067,22 @@ namespace LightVsDecay.Logic.Enemy
         
         private void HandleTowerCollision(GameObject towerObj)
         {
-            // 尝试从碰撞对象或其父对象获取 TurretHealth
             var turretHealth = towerObj.GetComponent<TurretHealth>();
             if (turretHealth == null)
             {
                 turretHealth = towerObj.GetComponentInParent<TurretHealth>();
             }
 
-            if (turretHealth == null)
+            if (turretHealth == null) return;
+
+            int damageAmount = data != null ? data.contactDamage : 25;
+
+            // 【v2.0】上报小怪碰撞伤害到 BattleStatistics
+            if (BattleStatistics.Instance != null)
             {
-                Debug.LogWarning($"[EnemyBlob] 找不到 TurretHealth: {towerObj.name}");
-                return;
+                BattleStatistics.Instance.RecordPlayerDamage(damageAmount, PlayerDamageSource.MobCollision);
             }
 
-            // 【修改】从配置获取碰撞伤害值（字段名是 contactDamage）
-            int damageAmount = data != null ? data.contactDamage : 25;
-    
-            // 对塔造成伤害（TurretHealth.TakeDamage 仍返回 bool）
             bool damaged = turretHealth.TakeDamage(damageAmount);
 
             if (damaged)
@@ -1073,26 +1098,7 @@ namespace LightVsDecay.Logic.Enemy
                 }
             }
         }
-        
-        /// <summary>
-        /// 被冲击波杀死
-        /// </summary>
-        public void KillByShockwave()
-        {
-            if (isDead) return;
-            isDead = true;
-            
-            rb.velocity = Vector2.zero;
-            
-            if (circleCollider != null)
-            {
-                circleCollider.enabled = false;
-            }
-            
-            GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
-            deathCoroutine = StartCoroutine(DeathFadeCoroutine());
-        }
-        
+
         private void Explode()
         {
             if (isDead) return;
@@ -1136,59 +1142,12 @@ namespace LightVsDecay.Logic.Enemy
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 外部接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        public EnemyType GetEnemyType() => enemyType;
-        public float GetMass() => rb != null ? rb.mass : mass;
-        public float GetSpeedMultiplier() => speedMultiplier;
-        public bool CanBeKnockedBack => canBeKnockedBack;
-        public float KnockbackMultiplier => knockbackMultiplier;
-        public void SetSpeedMultiplier(float multiplier)
-        {
-            speedMultiplier = multiplier;
-        }
-        
-        public void SetCanBeKnockedBack(bool canKnockback)
-        {
-            canBeKnockedBack = canKnockback;
-        }
-        
-        public void SetKnockbackMultiplier(float multiplier)
-        {
-            knockbackMultiplier = multiplier;
-        }
-        
-        public void ApplyKnockback(Vector2 force)
-        {
-            if (isDead || !canBeKnockedBack) return;
-    
-            // 【新增】击退抗性计算：实际推力 = 原推力 * (1 - 抗性)
-            float resistanceMultiplier = 1f - knockbackResistance;
-    
-            // 完全免疫时直接返回
-            if (resistanceMultiplier <= 0.001f) return;
-    
-            // 质量缩放
-            float knockbackScale = Mathf.Clamp(
-                GameConstants.KNOCKBACK_MASS_SCALE / rb.mass,
-                GameConstants.KNOCKBACK_SCALE_MIN,
-                GameConstants.KNOCKBACK_SCALE_MAX
-            );
-    
-            // 最终推力 = 力 * 质量缩放 * 抗性倍率 * 技能倍率
-            Vector2 finalForce = force * knockbackScale * resistanceMultiplier * knockbackMultiplier;
-    
-            rb.AddForce(finalForce, ForceMode2D.Force);
-        }
         /// <summary>
-        /// 设置横穿屏幕的目标位置（由 WaveManager 调用）
+        /// 设置受击时的闪烁颜色（由 LaserController 在伤害时调用）
         /// </summary>
-        public void SetCrossScreenTarget(Vector3 target)
+        public void SetHitColor(Color color)
         {
-            crossScreenTarget = target;
-            crossScreenStartPos = transform.position;
-            crossScreenProgress = 0f;
-            isOutOfBounds = false;
-            outOfBoundsTimer = 0f;
+            currentHitColor = color;
         }
         /// <summary>
         /// 设置已完全进入屏幕（由 DrifterSpawnHelper 调用）
@@ -1205,14 +1164,6 @@ namespace LightVsDecay.Logic.Enemy
 #endif
         }
 
-        /// <summary>
-        /// 检查是否可以触发弹飞（必须完全入境）
-        /// </summary>
-        public bool CanBeKnockedBackAsDrifter()
-        {
-            return enemyType == EnemyType.Drifter && hasFullyEnteredScreen;
-        }
-        
         /// <summary>累加 Frost 照射时间</summary>
         public void AddFrostExposureTime(float deltaTime)
         {

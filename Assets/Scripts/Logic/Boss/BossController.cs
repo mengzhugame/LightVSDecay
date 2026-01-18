@@ -258,6 +258,13 @@ namespace LightVsDecay.Logic.Boss
                 if (isReceivingLaserHit && currentPushForce > 0.01f)
                 {
                     rb.AddForce(Vector2.up * currentPushForce, ForceMode2D.Force);
+    
+                    // 【v2.0】上报 Boss 阻滞状态（B流派条件）
+                    // 只有当 currentPushForce > 0 且 Boss 正在被推时才计入阻滞时间
+                    if (BattleStatistics.Instance != null)
+                    {
+                        BattleStatistics.Instance.MarkBossBeingPushed();
+                    }
                 }
                 // 【新增】4. 摩擦伤害检测
                 UpdateFrictionDamage();
@@ -1621,7 +1628,7 @@ namespace LightVsDecay.Logic.Boss
         }
 
         /// <summary>
-        /// 应用摩擦伤害到护盾
+        /// 应用摩擦伤害到护盾（修改版 - 添加伤害来源上报）
         /// </summary>
         private void ApplyFrictionDamage(int damage)
         {
@@ -1629,11 +1636,18 @@ namespace LightVsDecay.Logic.Boss
             {
                 cachedShieldController = FindObjectOfType<ShieldController>();
             }
-            
+    
+            // 【v2.0】上报摩擦伤害到 BattleStatistics
+            // 摩擦伤害计入 BossBullet 类别（与污秽球、召唤小怪同类）
+            if (BattleStatistics.Instance != null)
+            {
+                BattleStatistics.Instance.RecordPlayerDamage(damage, PlayerDamageSource.BossFriction);
+            }
+    
             if (cachedShieldController != null && cachedShieldController.CurrentShieldHP > 0)
             {
                 cachedShieldController.TakeBossDamage(damage);
-                
+        
                 if (showDebugInfo && Time.frameCount % 30 == 0)
                 {
                     Debug.Log($"[BossController] 🔥 摩擦伤害: {damage}, 护盾剩余: {cachedShieldController.CurrentShieldHP}");
@@ -1775,12 +1789,23 @@ namespace LightVsDecay.Logic.Boss
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 工具方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private void ApplyDamageToPlayer(float damage)
+        /// <summary>
+        /// 对玩家造成伤害（v2.0 - 添加伤害来源参数）
+        /// </summary>
+        /// <param name="damage">伤害值</param>
+        /// <param name="source">伤害来源（默认 Boss 撞击）</param>
+        private void ApplyDamageToPlayer(float damage, PlayerDamageSource source = PlayerDamageSource.BossCollision)
         {
-            ShieldController shield = FindObjectOfType<ShieldController>();
-            TurretHealth turret = FindObjectOfType<TurretHealth>();
-            
+            // 【v2.0】上报玩家受伤数据
+            if (BattleStatistics.Instance != null)
+            {
+                BattleStatistics.Instance.RecordPlayerDamage(damage, source);
+            }
+    
+            // 获取组件（使用已有缓存或 FindObjectOfType）
+            ShieldController shield = cachedShieldController ?? FindObjectOfType<ShieldController>();
+            TurretHealth turret = FindObjectOfType<TurretHealth>();  // 注意：没有 cachedTurretHealth
+    
             if (shield != null)
             {
                 int remainingDamage = shield.TakeBossDamage((int)damage);
@@ -1794,6 +1819,7 @@ namespace LightVsDecay.Logic.Boss
                 turret.TakeBossDamage((int)damage);
             }
         }
+
         
         private void ShowCounterText(string text)
         {

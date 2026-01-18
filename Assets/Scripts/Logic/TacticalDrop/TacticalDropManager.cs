@@ -401,7 +401,14 @@ namespace LightVsDecay.Logic.TacticalDrop
     
             // 应用奖励
             ApplyReward(reward);
-    
+            if (BattleStatistics.Instance != null)
+            {
+                BattleStatistics.Instance.RecordDroneChoice(
+                    "Supply",                           // 箱子类型
+                    reward.type.ToString(),             // 奖励类型 (HealthRestore/ShieldRestore/etc)
+                    reward.displayText                  // 奖励显示值 (+100 HP/etc)
+                );
+            }
             // 显示飘字
             if (DroneRewardTextManager.Instance != null)
             {
@@ -453,6 +460,12 @@ namespace LightVsDecay.Logic.TacticalDrop
             if (resultType == GachaResultType.Nothing)
             {
                 // 谢谢惠顾
+                // 【v2.0】上报空奖励
+                if (BattleStatistics.Instance != null)
+                {
+                    BattleStatistics.Instance.RecordDroneChoice("Gacha", "Nothing", mockText ?? "谢谢惠顾");
+                }
+    
                 if (DroneRewardTextManager.Instance != null)
                 {
                     DroneRewardTextManager.Instance.ShowGachaNothing(textPos, mockText);
@@ -461,9 +474,21 @@ namespace LightVsDecay.Logic.TacticalDrop
             else if (reward != null)
             {
                 ApplyReward(reward);
-        
+    
+                // 【v2.0】上报无人机选择
+                if (BattleStatistics.Instance != null)
+                {
+                    string gachaType = resultType == GachaResultType.Epic ? "Gacha_Epic" : 
+                        resultType == GachaResultType.Negative ? "Gacha_Negative" : "Gacha";
+                    BattleStatistics.Instance.RecordDroneChoice(
+                        gachaType,
+                        reward.type.ToString(),
+                        reward.displayText
+                    );
+                }
+
                 bool isEpic = resultType == GachaResultType.Epic;
-        
+
                 if (DroneRewardTextManager.Instance != null)
                 {
                     DroneRewardTextManager.Instance.ShowGachaReward(
@@ -508,7 +533,16 @@ namespace LightVsDecay.Logic.TacticalDrop
             {
                 ApplyReward(deal.gain);
             }
-    
+            
+            if (BattleStatistics.Instance != null && deal.cost != null && deal.gain != null)
+            {
+                BattleStatistics.Instance.RecordDroneChoice(
+                    "Deal",
+                    $"{deal.cost.type}→{deal.gain.type}",
+                    $"{deal.cost.displayText}|{deal.gain.displayText}"
+                );
+            }
+            
             // 显示飘字（代价 + 收益）
             if (DroneRewardTextManager.Instance != null && deal.cost != null && deal.gain != null)
             {

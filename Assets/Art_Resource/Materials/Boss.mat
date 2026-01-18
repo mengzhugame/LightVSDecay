@@ -44,10 +44,12 @@ Material:
     - _Alpha: 1
     - _Distortion_Strength: 0.05
     - _Flow_Speed: 0.1
+    - _HitIntensity: 0
     - _Noise_Scale: 0.32
     - _SimpleNoiseScale: 5
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _HitColor: {r: 0.2603773, g: 0.12920608, b: 0.12920608, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &6525933608244509770
 MonoBehaviour:

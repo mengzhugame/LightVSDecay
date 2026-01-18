@@ -433,6 +433,11 @@ namespace LightVsDecay.Logic.Boss
         /// </summary>
         private void ApplyDamageToPlayer()
         {
+            // 【v2.0】上报污秽球伤害到 BattleStatistics
+            if (BattleStatistics.Instance != null)
+            {
+                BattleStatistics.Instance.RecordPlayerDamage(shieldDamage, PlayerDamageSource.BossBullet);
+            }
             ShieldController shield = FindObjectOfType<ShieldController>();
             TurretHealth turret = FindObjectOfType<TurretHealth>();
             
