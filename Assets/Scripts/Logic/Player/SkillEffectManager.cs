@@ -663,10 +663,13 @@ namespace LightVsDecay.Logic.Player
             // 检查是否启用爆炸
             if (!cachedFocusExplosionOnKill) return;
             if (focusLevel < 5) return;
-    
+
+            // 【新增】只有 Slime 和 Rusher 才会触发爆炸（其他怪物不会引发连锁）
+            if (type != EnemyType.Slime && type != EnemyType.Rusher) return;
+
             // 全局CD检查（防止连锁爆炸过于密集）
             if (Time.time < lastExplosionTime + EXPLOSION_GLOBAL_COOLDOWN) return;
-    
+
             TriggerFocusExplosion(position);
         }
         
