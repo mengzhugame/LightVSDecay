@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using LightVsDecay.Audio;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Player;
@@ -79,6 +80,8 @@ namespace LightVsDecay.UI.Panels
         [Tooltip("缓冲缓动时间（秒）")]
         [SerializeField] private float playerBufferDuration = 0.6f;
         
+        [Header("═══ 设置面板 ═══")]
+        [SerializeField] private SettingsPanel settingsPanel;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 关卡设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -822,8 +825,23 @@ namespace LightVsDecay.UI.Panels
         
         private void OnPauseButtonClicked()
         {
-            // 暂停功能暂不实现
-            Debug.Log("[HUDController] 暂停按钮点击（功能暂未实现）");
+            Debug.Log("[HUDPanel] 点击暂停按钮");
+    
+            // 播放按钮音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayButtonClick();
+            }
+    
+            // 打开设置面板（显示底部按钮区域）
+            if (settingsPanel != null)
+            {
+                settingsPanel.Show(true);
+            }
+            else
+            {
+                Debug.LogWarning("[HUDPanel] settingsPanel 未设置！");
+            }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

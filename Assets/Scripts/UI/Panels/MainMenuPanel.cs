@@ -1,3 +1,4 @@
+using LightVsDecay.Audio;
 using LightVsDecay.Logic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -42,7 +43,8 @@ namespace LightVsDecay.UI.Panels
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 显示设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+        [Header("═══ 设置面板 ═══")]
+        [SerializeField] private SettingsPanel settingsPanel;
         [Header("显示设置")]
         [Tooltip("难度激活颜色")]
         [SerializeField] private Color difficultyActiveColor = Color.white;
@@ -256,8 +258,23 @@ namespace LightVsDecay.UI.Panels
         
         private void OnSettingButtonClicked()
         {
-            Debug.Log("[MainMenuController] 点击设置按钮");
-            // TODO: 打开设置面板
+            Debug.Log("[MainMenuPanel] 点击设置按钮");
+    
+            // 播放按钮音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayButtonClick();
+            }
+    
+            // 打开设置面板（不显示底部按钮区域）
+            if (settingsPanel != null)
+            {
+                settingsPanel.Show(false);
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenuPanel] settingsPanel 未设置！");
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

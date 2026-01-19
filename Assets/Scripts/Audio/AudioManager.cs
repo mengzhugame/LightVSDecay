@@ -39,7 +39,15 @@ namespace LightVsDecay.Audio
             // 调用基类的自动初始化方法
             AutoInitialize();
         }
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 音频开关设置（新增）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private const string PREF_BGM_ENABLED = "BGMEnabled";
+        private const string PREF_SFX_ENABLED = "SFXEnabled";
+
+        private bool bgmEnabled = true;
+        private bool sfxEnabled = true;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -226,6 +234,9 @@ namespace LightVsDecay.Audio
             sfxVolume = PlayerPrefs.GetFloat(PREF_SFX_VOLUME, 1f);
             UpdateBGMVolume();
             UpdateLaserVolume();
+            // 加载开关状态
+            bgmEnabled = PlayerPrefs.GetInt(PREF_BGM_ENABLED, 1) == 1;
+            sfxEnabled = PlayerPrefs.GetInt(PREF_SFX_ENABLED, 1) == 1;
         }
         
         private void UpdateBGMVolume()
@@ -473,6 +484,7 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void PlaySFX(AudioClip clip, float volumeMultiplier = 1f)
         {
+            if (!sfxEnabled) return;  // 【新增】音效关闭时不播放
             if (clip == null || sfxSource == null) return;
             
             sfxSource.PlayOneShot(clip, sfxVolume * volumeMultiplier);
@@ -961,6 +973,43 @@ namespace LightVsDecay.Audio
             if (showDebugInfo)
             {
                 Debug.Log("[AudioManager] 升级选择完成，重启激光音效");
+            }
+        }
+        /// <summary>
+        /// BGM 开关（开启时使用配置默认音量，关闭时静音）
+        /// </summary>
+        public bool BGMEnabled
+        {
+            get => bgmEnabled;
+            set
+            {
+                bgmEnabled = value;
+                PlayerPrefs.SetInt(PREF_BGM_ENABLED, value ? 1 : 0);
+        
+                // 更新实际音量
+                if (bgmSource != null && config != null)
+                {
+                    bgmSource.volume = value ? config.bgmDefaultVolume : 0f;
+                }
+            }
+        }
+
+        /// <summary>
+        /// SFX 开关（开启时使用配置默认音量，关闭时静音）
+        /// </summary>
+        public bool SFXEnabled
+        {
+            get => sfxEnabled;
+            set
+            {
+                sfxEnabled = value;
+                PlayerPrefs.SetInt(PREF_SFX_ENABLED, value ? 1 : 0);
+        
+                // 更新激光音量
+                if (laserSource != null && config != null)
+                {
+                    laserSource.volume = value ? config.laserLoopVolume : 0f;
+                }
             }
         }
     }

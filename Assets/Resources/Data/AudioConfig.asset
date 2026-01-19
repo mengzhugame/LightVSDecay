@@ -15,7 +15,7 @@ MonoBehaviour:
   mainMenuBGM: {fileID: 8300000, guid: d897a99cf3691654db5b09c178538977, type: 3}
   battleBGM: {fileID: 8300000, guid: e13adb1543dc01e409fd1e8a8f740d33, type: 3}
   bossBGM: {fileID: 8300000, guid: a788454f89f152a44a827e79f602e323, type: 3}
-  bgmDefaultVolume: 0.3
+  bgmDefaultVolume: 0.2
   bgmFadeDuration: 1
   buttonClick: {fileID: 8300000, guid: 2fc0f63abe31a454ca083eeb17a6cd4e, type: 3}
   levelUp: {fileID: 8300000, guid: e774f9078c7c7b343a2fb190b2cd504b, type: 3}
