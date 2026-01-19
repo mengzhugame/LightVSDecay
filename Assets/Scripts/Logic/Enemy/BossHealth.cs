@@ -251,7 +251,6 @@ namespace LightVsDecay.Logic.Enemy
             if (isCrit) actualDamage *= critMultiplier;
             
             ApplyDamage(actualDamage);
-            TriggerHitEffect();  // 【新增】触发受击效果
             ShowBodyDamagePopup(actualDamage, hitPosition, isCrit);
             
             if (showDebugInfo)
