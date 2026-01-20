@@ -151,6 +151,15 @@ namespace LightVsDecay.UI.FloatingText
 
         [Tooltip("玩家恢复优先级")]
         public int playerRestorePriority = 2;
+        [Header("碎冰优先级")]
+        [Range(0, 100)]
+        public int shatterPriority = 55;
+        
+        [Range(0, 100)]
+        public int shatterCritPriority = 85;
+        
+        [Range(0, 100)]
+        public int executionPriority = 90;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 样式配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -334,7 +343,63 @@ namespace LightVsDecay.UI.FloatingText
             scalePeakPercent = 0.25f,
             sizeMultiplier = 1.0f
         };
-
+        [Header("碎冰伤害样式")]
+        public FloatingTextStyle shatterStyle = new FloatingTextStyle
+        {
+            textColor = new Color(0f, 0.75f, 1f, 1f),      // 亮蓝色 #00BFFF
+            outlineColor = new Color(0f, 0.2f, 0.4f, 1f),  // 深蓝描边
+            fontSize = 36f,
+            isBold = true,
+            outlineWidth = 0.2f,
+            duration = 0.7f,
+            initialUpSpeed = 160f,
+            horizontalRandomRange = 50f,
+            gravity = 120f,
+            fadeStartPercent = 0.5f,
+            useScaleAnimation = true,
+            initialScale = 0.8f,
+            peakScale = 1.2f,
+            scalePeakPercent = 0.2f,
+            sizeMultiplier = 1.15f  // 比普通大15%
+        };
+        [Header("碎冰暴击样式")]
+        public FloatingTextStyle shatterCritStyle = new FloatingTextStyle
+        {
+            textColor = new Color(0.4f, 0.9f, 1f, 1f),     // 冰蓝色 #66E5FF
+            outlineColor = new Color(0.8f, 0.1f, 0.1f, 1f), // 红色描边（高光时刻）
+            fontSize = 44f,
+            isBold = true,
+            outlineWidth = 0.3f,
+            duration = 0.9f,
+            initialUpSpeed = 200f,
+            horizontalRandomRange = 40f,
+            gravity = 180f,
+            fadeStartPercent = 0.55f,
+            useScaleAnimation = true,
+            initialScale = 0.6f,
+            peakScale = 1.5f,
+            scalePeakPercent = 0.15f,
+            sizeMultiplier = 1.4f  // 比普通大40%
+        };
+        [Header("处决样式")]
+        public FloatingTextStyle executionStyle = new FloatingTextStyle
+        {
+            textColor = new Color(0.2f, 0.8f, 1f, 1f),     // 冰蓝色
+            outlineColor = new Color(0.6f, 0f, 0.8f, 1f),  // 紫色描边（特殊感）
+            fontSize = 40f,
+            isBold = true,
+            outlineWidth = 0.35f,
+            duration = 1.0f,
+            initialUpSpeed = 180f,
+            horizontalRandomRange = 20f,
+            gravity = 100f,
+            fadeStartPercent = 0.6f,
+            useScaleAnimation = true,
+            initialScale = 0.5f,
+            peakScale = 1.6f,
+            scalePeakPercent = 0.2f,
+            sizeMultiplier = 1.3f
+        };
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -363,6 +428,13 @@ namespace LightVsDecay.UI.FloatingText
                     return playerHealthRestoreStyle;
                 case FloatingTextType.PlayerShieldRestore:
                     return playerShieldRestoreStyle;
+                // ═══ 【新增】碎冰飘字样式 ═══
+                case FloatingTextType.Shatter:
+                    return shatterStyle;
+                case FloatingTextType.ShatterCrit:
+                    return shatterCritStyle;
+                case FloatingTextType.Execution:
+                    return executionStyle;
                 case FloatingTextType.Normal:
                 default:
                     return normalStyle;
@@ -392,6 +464,13 @@ namespace LightVsDecay.UI.FloatingText
                 case FloatingTextType.PlayerHealthRestore:
                 case FloatingTextType.PlayerShieldRestore:
                     return playerRestorePriority;
+                // ═══ 【新增】碎冰飘字优先级 ═══
+                case FloatingTextType.Shatter:
+                    return shatterPriority;
+                case FloatingTextType.ShatterCrit:
+                    return shatterCritPriority;
+                case FloatingTextType.Execution:
+                    return executionPriority;
                 case FloatingTextType.Normal:
                 default:
                     return normalPriority;
@@ -421,6 +500,11 @@ namespace LightVsDecay.UI.FloatingText
                 case FloatingTextType.PlayerHealthRestore:
                 case FloatingTextType.PlayerShieldRestore:
                     return playerRestorePrefab != null ? playerRestorePrefab : normalPrefab;
+                // ═══ 【新增】碎冰飘字 Prefab（复用普通Prefab） ═══
+                case FloatingTextType.Shatter:
+                case FloatingTextType.ShatterCrit:
+                case FloatingTextType.Execution:
+                    return normalPrefab;  // 复用普通Prefab，通过样式区分
                 case FloatingTextType.Normal:
                 default:
                     return normalPrefab;

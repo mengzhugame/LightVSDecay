@@ -48,6 +48,16 @@ namespace LightVsDecay.UI.FloatingText
         DroneGacha,
 
         /// <summary>契约无人机奖励 - 代价+收益双行</summary>
-        DroneDeal
+        DroneDeal,
+        // ═══ 【新增】碎冰伤害飘字类型 ═══
+        
+        /// <summary>碎冰伤害 - 亮蓝色，比普通稍大</summary>
+        Shatter,
+        
+        /// <summary>碎冰暴击 - 冰蓝色+红描边，大号</summary>
+        ShatterCrit,
+        
+        /// <summary>处决 - 特殊文字 "EXECUTE!"</summary>
+        Execution
     }
 }

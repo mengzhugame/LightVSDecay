@@ -130,7 +130,8 @@ namespace LightVsDecay.Logic.Player
         
         // Impact 配置缓存
         private float cachedImpactKnockbackMultiplier = 1f;
-
+        private float cachedShatterDamageMultiplier = 1f;  // 【新增】碎冰伤害倍率
+        private bool cachedEnableExecution = false;        // 【新增】是否启用处决
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -400,6 +401,8 @@ namespace LightVsDecay.Logic.Player
             }
     
             cachedImpactKnockbackMultiplier = levelData.knockbackMultiplier;
+            cachedShatterDamageMultiplier = levelData.shatterDamageMultiplier;  // 【新增】
+            cachedEnableExecution = levelData.enableExecution;                   // 【新增】
 
             if (laserController != null)
             {
@@ -409,7 +412,10 @@ namespace LightVsDecay.Logic.Player
             if (showDebugInfo)
             {
                 string canPushBoss = (level >= 5) ? "，可推BOSS" : "";
-                Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} - 击退力:{cachedImpactKnockbackMultiplier:F2}x{canPushBoss}");
+                string executionInfo = cachedEnableExecution ? "，启用处决" : "";
+                Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} - " +
+                          $"击退力:{cachedImpactKnockbackMultiplier:F2}x, " +
+                          $"碎冰:{cachedShatterDamageMultiplier:F2}x{canPushBoss}{executionInfo}");
             }
         }
         
@@ -695,6 +701,10 @@ namespace LightVsDecay.Logic.Player
             if (!cachedFocusExplosionOnKill) return;
             if (focusLevel < 5) return;
 
+            // 【新增】处决击杀不触发爆炸（需要通过其他方式检查，这里暂时保留原逻辑）
+            // 注：处决标记在 EnemyBlob 中，但事件不传递该信息
+            // 实际排除逻辑将在 LaserController 中处理
+
             // 【新增】只有 Slime 和 Rusher 才会触发爆炸（其他怪物不会引发连锁）
             if (type != EnemyType.Slime && type != EnemyType.Rusher) return;
 
@@ -841,7 +851,32 @@ namespace LightVsDecay.Logic.Player
             threshold = cachedFrostFreezeThreshold;
             duration = cachedFrostFreezeDuration;
         }
+        /// <summary>
+        /// 获取碎冰伤害倍率
+        /// </summary>
+        public float GetShatterDamageMultiplier()
+        {
+            return cachedShatterDamageMultiplier;
+        }
         
+        /// <summary>
+        /// 是否启用处决（LV5秒杀冰冻普通怪）
+        /// </summary>
+        public bool IsExecutionEnabled()
+        {
+            return cachedEnableExecution;
+        }
+        
+        /// <summary>
+        /// 获取碎冰参数（一次性获取）
+        /// </summary>
+        /// <param name="shatterMultiplier">碎冰伤害倍率</param>
+        /// <param name="enableExecution">是否启用处决</param>
+        public void GetShatterParams(out float shatterMultiplier, out bool enableExecution)
+        {
+            shatterMultiplier = cachedShatterDamageMultiplier;
+            enableExecution = cachedEnableExecution;
+        }
         /// <summary>
         /// Lv.5 Frost 完全冰冻判定（旧接口，基于概率）
         /// </summary>

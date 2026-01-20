@@ -74,7 +74,13 @@ namespace LightVsDecay.Data.SO
         [Header("击退相关（冲击模块）")]
         [Tooltip("击退力倍率")]
         public float knockbackMultiplier = 1.0f;
+// 【新增】碎冰相关（冲击模块）
+        [Header("碎冰相关（冲击模块）")]
+        [Tooltip("碎冰伤害倍率 (1.5 = +50% 额外伤害)")]
+        public float shatterDamageMultiplier = 1.0f;
 
+        [Tooltip("是否启用终极粉碎（LV5秒杀冰冻普通怪）")]
+        public bool enableExecution = false;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 减速/冰冻相关（极寒光束）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

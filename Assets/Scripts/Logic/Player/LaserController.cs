@@ -12,7 +12,8 @@ using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.TacticalDrop;
 using LightVsDecay.Audio;
-using LightVsDecay.Core.Pool; 
+using LightVsDecay.Core.Pool;
+using LightVsDecay.UI.FloatingText;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -711,18 +712,95 @@ namespace LightVsDecay.Logic.Player
                 // 普通敌人检测
                 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 EnemyBlob enemy = collider.GetComponentInParent<EnemyBlob>();
-                if (enemy == null ) continue;
+                if (enemy == null) continue;
+                
+                // 判定暴击
                 bool enemyCrit = RollCrit();
-                float finalEnemyDamage = enemyCrit ? damage * critDamageMultiplier : damage;
+                
+                // 基础伤害（已包含 Power + Focus 加成）
+                float baseDamage = enemyCrit ? damage * critDamageMultiplier : damage;
+                
+                // ═══ 【新增】碎冰系统 ═══
+                float shatterMultiplier = 1f;
+                bool enableExecution = false;
+                bool isShatter = false;
+                bool isExecution = false;
+                
+                if (SkillEffectManager.Instance != null)
+                {
+                    SkillEffectManager.Instance.GetShatterParams(out shatterMultiplier, out enableExecution);
+                }
+                
+                // 检查敌人是否处于受控状态（减速或冰冻）
+                if (shatterMultiplier > 1f && enemy.IsControlled)
+                {
+                    isShatter = true;
+                    
+                    // 检查是否触发处决（LV5特技）
+                    // 条件：启用处决 + 完全冰冻 + 非精英/非Boss
+                    if (enableExecution && enemy.IsFullyFrozen && !enemy.IsEliteOrBoss)
+                    {
+                        isExecution = true;
+                    }
+                }
+                
+                // 计算最终伤害
+                float finalEnemyDamage;
+                
+                if (isExecution)
+                {
+                    // 处决：造成敌人最大血量 x100 的伤害（确保秒杀）
+                    finalEnemyDamage = enemy.MaxHealth * 100f;
+                    
+                    // 标记为处决击杀（不触发 Focus 爆炸）
+                    enemy.MarkAsExecuted();
+                    
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[LaserController] 💀 处决! 目标:{enemy.name}, 原HP:{enemy.MaxHealth:F0}");
+                    }
+                }
+                else if (isShatter)
+                {
+                    // 碎冰：基础伤害 × 碎冰倍率（独立乘区）
+                    finalEnemyDamage = baseDamage * shatterMultiplier;
+                    
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[LaserController] ❄️ 碎冰! 基础:{baseDamage:F1} × {shatterMultiplier:F2} = {finalEnemyDamage:F1}");
+                    }
+                }
+                else
+                {
+                    // 普通伤害
+                    finalEnemyDamage = baseDamage;
+                }
                 
                 // 计算击退
                 Vector2 knockbackDir = segment.Direction;
                 float knockbackMagnitude = CurrentKnockbackForce * knockbackMultiplier;
                 
                 DamageSource damageSource = (isMainLaser && !segment.isReflected) ? DamageSource.MainLaser : DamageSource.SubLaser;
-                enemy.TakeDamage(finalEnemyDamage, knockbackDir * knockbackMagnitude, enemyCrit, false, damageSource);
-
+                // 造成伤害（传递碎冰标记，但处决单独显示飘字）
+                if (isExecution)
+                {
+                    // 处决：不传 isShatter，由下方单独显示处决飘字
+                    enemy.TakeDamage(finalEnemyDamage, knockbackDir * knockbackMagnitude, enemyCrit, false, damageSource, false);
+                    
+                    // 显示处决飘字
+                    if (FloatingTextManager.Instance != null)
+                    {
+                        FloatingTextManager.Instance.ShowExecution(enemy.transform.position);
+                    }
+                }
+                else
+                {
+                    // 普通/碎冰伤害：传递 isShatter 让 EnemyBlob 内部显示对应飘字
+                    enemy.TakeDamage(finalEnemyDamage, knockbackDir * knockbackMagnitude, enemyCrit, false, damageSource, isShatter);
+                }  
+                
                 UpdateFrameHitType(LaserHitType.Burn);
+                
                 // Frost 效果
                 ApplyFrostEffect(enemy);
             }

@@ -217,7 +217,30 @@ namespace LightVsDecay.UI.FloatingText
             string text = Mathf.RoundToInt(damage).ToString();
             Show(worldPosition, text, type);
         }
+        // ═══ 【新增】碎冰伤害飘字 ═══
         
+        /// <summary>
+        /// 显示碎冰伤害飘字（支持暴击叠加）
+        /// </summary>
+        /// <param name="worldPosition">世界坐标</param>
+        /// <param name="damage">伤害值</param>
+        /// <param name="isCrit">是否同时触发暴击</param>
+        public void ShowShatterDamage(Vector3 worldPosition, float damage, bool isCrit = false)
+        {
+            // 碎冰+暴击 = ShatterCrit，纯碎冰 = Shatter
+            FloatingTextType type = isCrit ? FloatingTextType.ShatterCrit : FloatingTextType.Shatter;
+            string text = Mathf.RoundToInt(damage).ToString();
+            Show(worldPosition, text, type);
+        }
+        
+        /// <summary>
+        /// 显示处决飘字
+        /// </summary>
+        /// <param name="worldPosition">世界坐标</param>
+        public void ShowExecution(Vector3 worldPosition)
+        {
+            Show(worldPosition, "EXECUTE!", FloatingTextType.Execution);
+        }
         /// <summary>
         /// 显示 Boss 护甲伤害飘字（银灰色 + 盾牌图标）
         /// </summary>

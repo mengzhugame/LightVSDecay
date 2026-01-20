@@ -138,6 +138,7 @@ namespace LightVsDecay.Logic.Enemy
         private Vector3 originalScale;
         private bool isDead = false;
         private bool killedByExplosion = false;  // 【新增】是否被爆炸杀死
+        private bool killedByExecution = false;  // 【新增】是否被处决秒杀
         private Material[] bodyMaterials;
         private bool isBeingHit = false;
         private float targetFlowSpeed;
@@ -370,6 +371,7 @@ namespace LightVsDecay.Logic.Enemy
         {
             isDead = false;
             killedByExplosion = false;  // 【新增】重置爆炸死亡标记
+            killedByExecution = false;  // 【新增】重置处决标记
             // 重置精英状态（新增）
             isElite = false;
             // 重置波次难度为默认（等待 WaveManager 设置）
@@ -658,7 +660,8 @@ namespace LightVsDecay.Logic.Enemy
         /// <param name="knockbackForce">击退力</param>
         /// <param name="isCrit">是否暴击</param>
         public void TakeDamage(float damage, Vector2 knockbackForce, bool isCrit = false, 
-            bool fromExplosion = false, DamageSource damageSource = DamageSource.MainLaser)
+            bool fromExplosion = false, DamageSource damageSource = DamageSource.MainLaser,
+            bool isShatter = false)
         {
             if (isDead) return;
             // 【新增】计算有效伤害和溢出伤害
@@ -679,7 +682,16 @@ namespace LightVsDecay.Logic.Enemy
             // 【新增】显示伤害飘字
             if (FloatingTextManager.Instance != null)
             {
-                FloatingTextManager.Instance.ShowDamage(transform.position, damage, isCrit);
+                if (isShatter)
+                {
+                    // 碎冰伤害飘字（碎冰+暴击 或 纯碎冰）
+                    FloatingTextManager.Instance.ShowShatterDamage(transform.position, damage, isCrit);
+                }
+                else
+                {
+                    // 普通伤害飘字
+                    FloatingTextManager.Instance.ShowDamage(transform.position, damage, isCrit);
+                }
             }
             currentHealth -= damage;
             lastHitTime = Time.time;
@@ -995,7 +1007,8 @@ namespace LightVsDecay.Logic.Enemy
 
                 // 检查是否会触发 Focus Lv5 爆炸（如果会，则跳过冒烟特效，因为 Focus 会在此位置播放爆炸特效）
                 bool willTriggerFocusExplosion = SkillEffectManager.Instance != null && 
-                                                 SkillEffectManager.Instance.IsFocusExplosionEnabled;
+                                                 SkillEffectManager.Instance.IsFocusExplosionEnabled &&
+                                                 !killedByExecution;  // 【新增】处决击杀排除
 
                 if (!willTriggerFocusExplosion)
                 {
@@ -1315,5 +1328,54 @@ namespace LightVsDecay.Logic.Enemy
         /// 获取敌人类型
         /// </summary>
         public EnemyType GetEnemyType() => enemyType;
+
+        // 【新增】是否为精英或Boss（用于处决判定）
+        /// <summary>
+        /// 是否为精英或Boss（不可被处决）
+        /// </summary>
+        public bool IsEliteOrBoss => isElite || 
+                                     enemyType == EnemyType.EliteTank || 
+                                     enemyType == EnemyType.EliteDrifter;
+        
+        // 【新增】是否处于受控状态（减速或冰冻）
+        /// <summary>
+        /// 是否处于受控状态（减速或冰冻），用于碎冰判定
+        /// </summary>
+        public bool IsControlled
+        {
+            get
+            {
+                if (frostDebuff == null) return false;
+                return frostDebuff.IsSlowed || frostDebuff.IsFrozen;
+            }
+        }
+        
+        // 【新增】是否完全冰冻（用于处决判定）
+        /// <summary>
+        /// 是否完全冰冻（用于LV5处决判定）
+        /// </summary>
+        public bool IsFullyFrozen
+        {
+            get
+            {
+                if (frostDebuff == null) return false;
+                return frostDebuff.IsFrozen;
+            }
+        }
+        
+        // 【新增】标记为处决击杀
+        /// <summary>
+        /// 标记该敌人被处决击杀（不触发Focus爆炸）
+        /// </summary>
+        public void MarkAsExecuted()
+        {
+            killedByExecution = true;
+        }
+        
+        // 【新增】是否被处决击杀
+        /// <summary>
+        /// 是否被处决击杀
+        /// </summary>
+        public bool WasExecuted => killedByExecution;
     }
 }
