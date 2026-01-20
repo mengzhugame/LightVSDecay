@@ -23,7 +23,7 @@ MonoBehaviour:
   maxLevel: 5
   isRepeatable: 0
   levelData:
-  - description: "\u57FA\u7840\u4F24\u5BB3 <color=#00FF00>+50%</color>,\u6FC0\u5149\u53D8\u7EA2\u53D8\u7EC6"
+  - description: "\u57FA\u7840\u4F24\u5BB3 <color=#00FF00>+50%</color>"
     damageMultiplier: 1.5
     bossDamageBonus: 0
     knockbackMultiplier: 0

@@ -15,7 +15,7 @@ namespace LightVsDecay.Core.Pool
     
         // 激光相关
         LaserHit,           // 激光击中特效
-    
+        FrostHit,           // 【新增】极寒光束命中特效
         // ━━━ 低频特效（直接实例化） ━━━
         // 护盾相关
         ShieldHit,//护盾受击
@@ -286,7 +286,13 @@ namespace LightVsDecay.Core.Pool
         {
             Play(VFXType.LaserHit, position);
         }
-        
+        /// <summary>
+        /// 播放极寒光束命中特效
+        /// </summary>
+        public void PlayFrostHit(Vector3 position)
+        {
+            Play(VFXType.FrostHit, position);
+        }
         /// <summary>
         /// 播放护盾破碎特效
         /// </summary>

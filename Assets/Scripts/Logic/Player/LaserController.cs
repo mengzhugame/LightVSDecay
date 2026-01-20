@@ -130,6 +130,28 @@ namespace LightVsDecay.Logic.Player
 
         // Crit 暴击相关【新增】
         private int critLevel = 0;                    // Crit 技能等级
+        // ========== 寒气扩散系统 ==========
+        /// <summary>本 Tick 被直接命中的敌人列表（用于寒气扩散）</summary>
+        private List<EnemyBlob> directHitEnemiesThisTick = new List<EnemyBlob>();
+
+        /// <summary>扩散检测用的 Collider 数组（避免 GC）</summary>
+        private Collider2D[] spreadCheckBuffer = new Collider2D[50];
+
+        /// <summary>已受到扩散减速的敌人 ID（本 Tick 去重）</summary>
+        private HashSet<int> spreadAffectedEnemyIds = new HashSet<int>();
+
+// ========== Frost 粒子特效间隔控制 ==========
+        /// <summary>每个敌人上次播放粒子的时间</summary>
+        private Dictionary<int, float> lastFrostVFXTime = new Dictionary<int, float>();
+
+        /// <summary>粒子播放间隔（秒）</summary>
+        private const float FROST_VFX_INTERVAL = 0.3f;
+
+        /// <summary>寒气扩散半径</summary>
+        private const float FROST_SPREAD_RADIUS = 1.5f;
+
+        /// <summary>扩散减速比例（扩散效果 = 直接效果 * 此比例）</summary>
+        private const float FROST_SPREAD_RATIO = 0.5f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 常量
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -368,6 +390,8 @@ namespace LightVsDecay.Logic.Player
             hitEnemies.Clear();
             hitBosses.Clear();
             hitCrates.Clear();  
+            directHitEnemiesThisTick.Clear();  // 【新增】清空本 Tick 直接命中列表
+            spreadAffectedEnemyIds.Clear();     // 【新增】清空扩散去重集合
             // 【新增】重置本帧命中类型
             frameHighestHitType = LaserHitType.None;
             // 1. 主激光伤害检测
@@ -382,6 +406,8 @@ namespace LightVsDecay.Logic.Player
                     DetectAndDamageEnemiesSegmented(subLaser.beam,  subDamage, subLaser.damageMultiplier,false);
                 }
             }
+            // 【新增】3. 应用寒气扩散效果
+            ApplyFrostSpread();
             // 【新增】通知 BossController 结束本tick推力累加
             FinalizeBossPushForce();
             // 【新增】更新激光音效类型
@@ -703,7 +729,7 @@ namespace LightVsDecay.Logic.Player
         }
 
         /// <summary>
-        /// 对敌人应用 Frost 减速效果
+        /// 对敌人应用 Frost 减速效果（直接命中）
         /// </summary>
         private void ApplyFrostEffect(EnemyBlob enemy)
         {
@@ -716,6 +742,15 @@ namespace LightVsDecay.Logic.Player
     
             // 应用减速
             enemy.ApplyFrostSlow(slowPercent, duration);
+    
+            // 【新增】记录到直接命中列表（用于寒气扩散）
+            if (!directHitEnemiesThisTick.Contains(enemy))
+            {
+                directHitEnemiesThisTick.Add(enemy);
+            }
+    
+            // 【新增】播放 Frost 粒子特效（带间隔限制）
+            PlayFrostVFX(enemy);
     
             // Lv.5 冰冻检测（基于累计照射时间）
             float freezeThreshold, freezeDuration;
@@ -739,7 +774,88 @@ namespace LightVsDecay.Logic.Player
                 }
             }
         }
-
+        /// <summary>
+        /// 播放 Frost 粒子特效（带间隔限制）
+        /// </summary>
+        private void PlayFrostVFX(EnemyBlob enemy)
+        {
+            if (VFXPoolManager.Instance == null) return;
+    
+            int enemyId = enemy.GetInstanceID();
+            float currentTime = Time.time;
+    
+            // 检查间隔
+            if (lastFrostVFXTime.TryGetValue(enemyId, out float lastTime))
+            {
+                if (currentTime - lastTime < FROST_VFX_INTERVAL)
+                {
+                    return; // 还在冷却中
+                }
+            }
+    
+            // 播放粒子
+            VFXPoolManager.Instance.PlayFrostHit(enemy.transform.position);
+            lastFrostVFXTime[enemyId] = currentTime;
+        }
+        /// <summary>
+        /// 应用寒气扩散效果（每 Tick 结束时调用）
+        /// </summary>
+        private void ApplyFrostSpread()
+        {
+            if (SkillEffectManager.Instance == null) return;
+            if (directHitEnemiesThisTick.Count == 0) return;
+    
+            float slowPercent, duration;
+            SkillEffectManager.Instance.GetFrostParams(out slowPercent, out duration);
+    
+            if (slowPercent <= 0f) return;
+    
+            // 计算扩散减速效果（直接效果的 50%）
+            float spreadSlowPercent = slowPercent * FROST_SPREAD_RATIO;
+    
+            // 遍历所有直接命中的敌人
+            foreach (var sourceEnemy in directHitEnemiesThisTick)
+            {
+                if (sourceEnemy == null) continue;
+        
+                // 检测扩散范围内的敌人
+                int hitCount = Physics2D.OverlapCircleNonAlloc(
+                    sourceEnemy.transform.position,
+                    FROST_SPREAD_RADIUS,
+                    spreadCheckBuffer,
+                    combinedDetectionLayer
+                );
+        
+                for (int i = 0; i < hitCount; i++)
+                {
+                    Collider2D col = spreadCheckBuffer[i];
+                    if (col == null) continue;
+            
+                    EnemyBlob targetEnemy = col.GetComponentInParent<EnemyBlob>();
+                    if (targetEnemy == null) continue;
+            
+                    // 跳过自己
+                    if (targetEnemy == sourceEnemy) continue;
+            
+                    // 跳过已被直接命中的敌人
+                    if (directHitEnemiesThisTick.Contains(targetEnemy)) continue;
+            
+                    int targetId = targetEnemy.GetInstanceID();
+            
+                    // 去重：本 Tick 只受一次扩散效果
+                    if (spreadAffectedEnemyIds.Contains(targetId)) continue;
+                    spreadAffectedEnemyIds.Add(targetId);
+            
+                    // 应用扩散减速（不触发冰冻累积，不播放粒子）
+                    targetEnemy.ApplyFrostSlow(spreadSlowPercent, duration);
+                }
+            }
+    
+            if (showDebugInfo && spreadAffectedEnemyIds.Count > 0)
+            {
+                Debug.Log($"[LaserController] ❄️ 寒气扩散影响了 {spreadAffectedEnemyIds.Count} 个敌人");
+            }
+        }
         private void CreateSubLaser(float angle, float damageMultiplier, float lengthMultiplier)
         {
             if (laserBeamPrefab == null || laserPivot == null)

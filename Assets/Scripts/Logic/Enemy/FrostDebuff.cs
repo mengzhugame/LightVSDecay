@@ -2,6 +2,7 @@
 // FrostDebuff.cs
 // 文件位置: Assets/Scripts/Logic/Enemy/FrostDebuff.cs
 // 用途：冰冻/减速 Debuff 组件 - 管理减速效果和冰冻视觉
+// 【重构】新增颜色染色系统 + 寒气扩散支持
 // ============================================================
 
 using UnityEngine;
@@ -12,8 +13,9 @@ namespace LightVsDecay.Logic.Enemy
     /// 冰冻 Debuff 组件
     /// 职责：
     /// - 管理减速/完全冰冻状态
-    /// - 控制冰冻视觉效果（渐变 + 呼吸动画）
-    /// - 自动挂载到敌人身上
+    /// - 控制视觉效果：
+    ///   - LV1-4：颜色染色（淡蓝色）
+    ///   - LV5：颜色染色（深蓝色）+ 冰冻覆盖 Sprite
     /// </summary>
     public class FrostDebuff : MonoBehaviour
     {
@@ -21,15 +23,28 @@ namespace LightVsDecay.Logic.Enemy
         // 配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("视觉效果配置")]
-        [Tooltip("冰冻效果 Sprite（半透明蓝色）")]
+        [Header("颜色染色配置")]
+        [Tooltip("减速时的染色颜色（淡蓝色）")]
+        [SerializeField] private Color slowTintColor = new Color(0.1f, 0.65f, 1f, 1f);
+        
+        [Tooltip("冰冻时的染色颜色（深蓝色）")]
+        [SerializeField] private Color frozenTintColor = new Color(0.1f, 0.65f, 1f, 1f);
+        
+        [Tooltip("颜色混合比例（0-1）")]
+        [SerializeField] private float tintBlendRatio = 0.4f;
+        
+        [Tooltip("颜色渐变速度")]
+        [SerializeField] private float colorFadeSpeed = 5f;
+        
+        [Header("冰冻覆盖配置（仅 LV5）")]
+        [Tooltip("冰冻效果 Sprite（半透明蓝色覆盖）")]
         [SerializeField] private Sprite frostSprite;
         
-        [Tooltip("冰冻颜色")]
-        [SerializeField] private Color frostColor = new Color(0.3f, 0.7f, 1f, 0.6f);
+        [Tooltip("冰冻覆盖颜色")]
+        [SerializeField] private Color frostOverlayColor = new Color(0.3f, 0.7f, 1f, 0.6f);
         
-        [Tooltip("渐变时间")]
-        [SerializeField] private float fadeDuration = 0.2f;
+        [Tooltip("覆盖渐变时间")]
+        [SerializeField] private float overlayFadeDuration = 0.2f;
         
         [Tooltip("呼吸动画 - 最小缩放")]
         [SerializeField] private float breathScaleMin = 0.95f;
@@ -50,11 +65,17 @@ namespace LightVsDecay.Logic.Enemy
         private float remainingDuration = 0f;
         private float frozenDuration = 0f;
         
-        // 视觉组件
-        private GameObject frostVisual;
-        private SpriteRenderer frostRenderer;
-        private float currentAlpha = 0f;
-        private float targetAlpha = 0f;
+        // 颜色染色相关
+        private SpriteRenderer[] targetRenderers;
+        private Color[] originalColors;
+        private Color currentTintTarget = Color.white;
+        private bool hasInitializedRenderers = false;
+        
+        // 冰冻覆盖相关（仅 LV5）
+        private GameObject frostOverlay;
+        private SpriteRenderer frostOverlayRenderer;
+        private float currentOverlayAlpha = 0f;
+        private float targetOverlayAlpha = 0f;
         private float breathTimer = 0f;
         
         // 缓存
@@ -91,13 +112,20 @@ namespace LightVsDecay.Logic.Enemy
         private void Awake()
         {
             enemyBlob = GetComponent<EnemyBlob>();
-            CreateFrostVisual();
+            CreateFrostOverlay();
+        }
+        
+        private void Start()
+        {
+            // 延迟初始化渲染器（确保 EnemyBlob 已完成初始化）
+            InitializeTargetRenderers();
         }
         
         private void Update()
         {
             UpdateDebuffTimer();
-            UpdateVisualAlpha();
+            UpdateColorTint();
+            UpdateOverlayAlpha();
             UpdateBreathAnimation();
         }
         
@@ -112,24 +140,51 @@ namespace LightVsDecay.Logic.Enemy
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 创建冰冻视觉效果（子物体）
+        /// 初始化目标渲染器（从 EnemyBlob 获取）
         /// </summary>
-        private void CreateFrostVisual()
+        private void InitializeTargetRenderers()
+        {
+            if (hasInitializedRenderers) return;
+            
+            if (enemyBlob != null)
+            {
+                targetRenderers = enemyBlob.GetDecorationRenderers();
+            }
+            
+            if (targetRenderers != null && targetRenderers.Length > 0)
+            {
+                // 保存原始颜色
+                originalColors = new Color[targetRenderers.Length];
+                for (int i = 0; i < targetRenderers.Length; i++)
+                {
+                    if (targetRenderers[i] != null)
+                    {
+                        originalColors[i] = targetRenderers[i].color;
+                    }
+                }
+                hasInitializedRenderers = true;
+            }
+        }
+        
+        /// <summary>
+        /// 创建冰冻覆盖效果（仅 LV5 使用）
+        /// </summary>
+        private void CreateFrostOverlay()
         {
             // 创建子物体
-            frostVisual = new GameObject("FrostVisual");
-            frostVisual.transform.SetParent(transform);
-            frostVisual.transform.localPosition = Vector3.zero;
-            frostVisual.transform.localRotation = Quaternion.identity;
-            frostVisual.transform.localScale = Vector3.one;
+            frostOverlay = new GameObject("FrostOverlay");
+            frostOverlay.transform.SetParent(transform);
+            frostOverlay.transform.localPosition = Vector3.zero;
+            frostOverlay.transform.localRotation = Quaternion.identity;
+            frostOverlay.transform.localScale = Vector3.one;
             
             // 添加 SpriteRenderer
-            frostRenderer = frostVisual.AddComponent<SpriteRenderer>();
+            frostOverlayRenderer = frostOverlay.AddComponent<SpriteRenderer>();
             
-            // 设置 Sprite（如果没有配置，使用默认圆形）
+            // 设置 Sprite
             if (frostSprite != null)
             {
-                frostRenderer.sprite = frostSprite;
+                frostOverlayRenderer.sprite = frostSprite;
             }
             else
             {
@@ -137,21 +192,21 @@ namespace LightVsDecay.Logic.Enemy
                 SpriteRenderer parentSR = GetComponentInChildren<SpriteRenderer>();
                 if (parentSR != null && parentSR.sprite != null)
                 {
-                    frostRenderer.sprite = parentSR.sprite;
+                    frostOverlayRenderer.sprite = parentSR.sprite;
                 }
             }
             
             // 设置颜色（初始透明）
-            Color c = frostColor;
+            Color c = frostOverlayColor;
             c.a = 0f;
-            frostRenderer.color = c;
+            frostOverlayRenderer.color = c;
             
             // 设置排序层（在怪物之上）
-            frostRenderer.sortingLayerName = "Enemy";
-            frostRenderer.sortingOrder = 10;
+            frostOverlayRenderer.sortingLayerName = "Enemy";
+            frostOverlayRenderer.sortingOrder = 10;
             
             // 初始隐藏
-            frostVisual.SetActive(false);
+            frostOverlay.SetActive(false);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -161,12 +216,18 @@ namespace LightVsDecay.Logic.Enemy
         /// <summary>
         /// 应用减速效果
         /// </summary>
-        /// <param name="percent">减速百分比（0.2 = 减速20%）</param>
+        /// <param name="percent">减速百分比（0.4 = 减速40%）</param>
         /// <param name="duration">持续时间（秒）</param>
         public void ApplySlow(float percent, float duration)
         {
             // 如果已经冰冻，不覆盖
             if (isFrozen) return;
+            
+            // 确保渲染器已初始化
+            if (!hasInitializedRenderers)
+            {
+                InitializeTargetRenderers();
+            }
             
             // 刷新减速（取更强的效果）
             if (percent >= slowPercent || duration > remainingDuration)
@@ -178,8 +239,9 @@ namespace LightVsDecay.Logic.Enemy
             if (!isSlowed)
             {
                 isSlowed = true;
-                targetAlpha = frostColor.a;
-                frostVisual.SetActive(true);
+                
+                // 设置颜色染色目标（淡蓝色）
+                currentTintTarget = slowTintColor;
                 
                 // 通知 EnemyBlob 更新速度
                 NotifySpeedChange();
@@ -187,17 +249,26 @@ namespace LightVsDecay.Logic.Enemy
         }
         
         /// <summary>
-        /// 应用完全冰冻效果
+        /// 应用完全冰冻效果（LV5）
         /// </summary>
         /// <param name="duration">冰冻持续时间（秒）</param>
         public void ApplyFreeze(float duration)
         {
+            // 确保渲染器已初始化
+            if (!hasInitializedRenderers)
+            {
+                InitializeTargetRenderers();
+            }
+            
             isFrozen = true;
             frozenDuration = duration;
             
-            // 冰冻时使用更高的透明度
-            targetAlpha = Mathf.Min(frostColor.a + 0.2f, 0.9f);
-            frostVisual.SetActive(true);
+            // 设置颜色染色目标（深蓝色）
+            currentTintTarget = frozenTintColor;
+            
+            // 显示冰冻覆盖
+            targetOverlayAlpha = frostOverlayColor.a;
+            frostOverlay.SetActive(true);
             
             // 通知 EnemyBlob 完全停止
             NotifySpeedChange();
@@ -214,21 +285,26 @@ namespace LightVsDecay.Logic.Enemy
             remainingDuration = 0f;
             frozenDuration = 0f;
             
-            currentAlpha = 0f;
-            targetAlpha = 0f;
+            // 重置颜色
+            currentTintTarget = Color.white;
+            RestoreOriginalColors();
+            
+            // 重置覆盖
+            currentOverlayAlpha = 0f;
+            targetOverlayAlpha = 0f;
             breathTimer = 0f;
             
-            if (frostRenderer != null)
+            if (frostOverlayRenderer != null)
             {
-                Color c = frostRenderer.color;
+                Color c = frostOverlayRenderer.color;
                 c.a = 0f;
-                frostRenderer.color = c;
+                frostOverlayRenderer.color = c;
             }
             
-            if (frostVisual != null)
+            if (frostOverlay != null)
             {
-                frostVisual.SetActive(false);
-                frostVisual.transform.localScale = Vector3.one;
+                frostOverlay.SetActive(false);
+                frostOverlay.transform.localScale = Vector3.one;
             }
         }
         
@@ -238,9 +314,30 @@ namespace LightVsDecay.Logic.Enemy
         public void SetFrostSprite(Sprite sprite)
         {
             frostSprite = sprite;
-            if (frostRenderer != null)
+            if (frostOverlayRenderer != null)
             {
-                frostRenderer.sprite = sprite;
+                frostOverlayRenderer.sprite = sprite;
+            }
+        }
+        
+        /// <summary>
+        /// 外部设置目标渲染器（用于 Boss 等特殊情况）
+        /// </summary>
+        public void SetTargetRenderers(SpriteRenderer[] renderers)
+        {
+            targetRenderers = renderers;
+            
+            if (targetRenderers != null && targetRenderers.Length > 0)
+            {
+                originalColors = new Color[targetRenderers.Length];
+                for (int i = 0; i < targetRenderers.Length; i++)
+                {
+                    if (targetRenderers[i] != null)
+                    {
+                        originalColors[i] = targetRenderers[i].color;
+                    }
+                }
+                hasInitializedRenderers = true;
             }
         }
         
@@ -261,6 +358,9 @@ namespace LightVsDecay.Logic.Enemy
                 {
                     isFrozen = false;
                     
+                    // 隐藏冰冻覆盖
+                    targetOverlayAlpha = 0f;
+                    
                     // 冰冻结束后检查是否还有减速
                     if (!isSlowed || remainingDuration <= 0f)
                     {
@@ -268,7 +368,8 @@ namespace LightVsDecay.Logic.Enemy
                     }
                     else
                     {
-                        targetAlpha = frostColor.a;
+                        // 恢复到减速状态的颜色
+                        currentTintTarget = slowTintColor;
                         NotifySpeedChange();
                     }
                 }
@@ -297,43 +398,94 @@ namespace LightVsDecay.Logic.Enemy
             remainingDuration = 0f;
             frozenDuration = 0f;
             
-            // 渐隐视觉效果
-            targetAlpha = 0f;
+            // 渐隐颜色染色
+            currentTintTarget = Color.white;
+            
+            // 渐隐覆盖
+            targetOverlayAlpha = 0f;
             
             // 通知 EnemyBlob 恢复速度
             NotifySpeedChange();
         }
         
         /// <summary>
-        /// 更新视觉透明度（渐变）
+        /// 更新颜色染色效果
         /// </summary>
-        private void UpdateVisualAlpha()
+        private void UpdateColorTint()
         {
-            if (frostRenderer == null) return;
+            if (targetRenderers == null || originalColors == null) return;
             
-            // 平滑插值
-            float fadeSpeed = 1f / fadeDuration;
-            currentAlpha = Mathf.MoveTowards(currentAlpha, targetAlpha, fadeSpeed * Time.deltaTime);
-            
-            // 应用颜色
-            Color c = frostRenderer.color;
-            c.a = currentAlpha;
-            frostRenderer.color = c;
-            
-            // 完全透明时隐藏
-            if (currentAlpha <= 0.01f && targetAlpha <= 0f)
+            for (int i = 0; i < targetRenderers.Length; i++)
             {
-                frostVisual.SetActive(false);
+                if (targetRenderers[i] == null) continue;
+                
+                Color targetColor;
+                if (currentTintTarget == Color.white)
+                {
+                    // 恢复原色
+                    targetColor = originalColors[i];
+                }
+                else
+                {
+                    // 混合染色
+                    targetColor = Color.Lerp(originalColors[i], currentTintTarget, tintBlendRatio);
+                }
+                
+                // 平滑过渡
+                targetRenderers[i].color = Color.Lerp(
+                    targetRenderers[i].color, 
+                    targetColor, 
+                    colorFadeSpeed * Time.deltaTime
+                );
             }
         }
         
         /// <summary>
-        /// 更新呼吸动画
+        /// 恢复原始颜色
+        /// </summary>
+        private void RestoreOriginalColors()
+        {
+            if (targetRenderers == null || originalColors == null) return;
+            
+            for (int i = 0; i < targetRenderers.Length; i++)
+            {
+                if (targetRenderers[i] != null && i < originalColors.Length)
+                {
+                    targetRenderers[i].color = originalColors[i];
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 更新覆盖透明度（渐变）
+        /// </summary>
+        private void UpdateOverlayAlpha()
+        {
+            if (frostOverlayRenderer == null) return;
+            
+            // 平滑插值
+            float fadeSpeed = 1f / overlayFadeDuration;
+            currentOverlayAlpha = Mathf.MoveTowards(currentOverlayAlpha, targetOverlayAlpha, fadeSpeed * Time.deltaTime);
+            
+            // 应用颜色
+            Color c = frostOverlayRenderer.color;
+            c.a = currentOverlayAlpha;
+            frostOverlayRenderer.color = c;
+            
+            // 完全透明时隐藏
+            if (currentOverlayAlpha <= 0.01f && targetOverlayAlpha <= 0f)
+            {
+                frostOverlay.SetActive(false);
+            }
+        }
+        
+        /// <summary>
+        /// 更新呼吸动画（仅冰冻覆盖）
         /// </summary>
         private void UpdateBreathAnimation()
         {
-            if (!frostVisual.activeSelf) return;
-            if (frostVisual == null) return;
+            if (!frostOverlay.activeSelf) return;
+            if (frostOverlay == null) return;
             
             breathTimer += Time.deltaTime;
             
@@ -341,7 +493,7 @@ namespace LightVsDecay.Logic.Enemy
             float t = (Mathf.Sin(breathTimer * 2f * Mathf.PI / breathCycleDuration) + 1f) * 0.5f;
             float scale = Mathf.Lerp(breathScaleMin, breathScaleMax, t);
             
-            frostVisual.transform.localScale = Vector3.one * scale;
+            frostOverlay.transform.localScale = Vector3.one * scale;
         }
         
         /// <summary>

@@ -234,6 +234,13 @@ namespace LightVsDecay.Logic.Enemy
         private void FixedUpdate()
         {
             if (isDead) return;
+            // 【新增】冰冻时强制停止所有物理运动
+            if (isFrozen)
+            {
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                return;  // 跳过所有移动逻辑
+            }
             // 【新增】检查弹飞状态
             if (enemyType == EnemyType.Drifter)
             {
@@ -246,6 +253,7 @@ namespace LightVsDecay.Logic.Enemy
                 // 弹飞中，跳过移动逻辑
                 if (isBeingKnockedBack)
                 {
+                    ApplyFrostDragDuringKnockback();  // 【新增】
                     return;
                 }
             }
@@ -544,16 +552,9 @@ namespace LightVsDecay.Logic.Enemy
         
         private void MoveTowardsTower()
         {
-            if (isFrozen) return;// 僵直或冰冻时不移动
+            // 【删除重复检查】冰冻检查已在 FixedUpdate 中处理
             if (targetTower == null) return;
-    
-            // 【新增】完全冰冻时不移动
-            if (isFrozen)
-            {
-                rb.velocity = Vector2.zero;
-                return;
-            }
-    
+
             // 根据行为类型选择移动方式
             if (behaviorType == EnemyBehaviorType.CrossScreen)
             {
@@ -832,6 +833,24 @@ namespace LightVsDecay.Logic.Enemy
             if (elapsed >= knockbackMinDuration && currentSpeed < knockbackSpeedThreshold)
             {
                 ExitKnockbackState();
+            }
+        }
+        /// <summary>
+        /// 弹飞状态下应用 Frost 阻力效果
+        /// </summary>
+        private void ApplyFrostDragDuringKnockback()
+        {
+            // 如果有减速效果，增加阻力
+            if (frostSpeedMultiplier < 1f)
+            {
+                // 减速越强，阻力越大
+                // 例如：50% 减速 -> frostSpeedMultiplier = 0.5 -> extraDrag = 2.0
+                float extraDrag = (1f - frostSpeedMultiplier) * 4f;
+                rb.drag = extraDrag;
+            }
+            else
+            {
+                rb.drag = 0f;  // 无减速时保持原样
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1272,5 +1291,29 @@ namespace LightVsDecay.Logic.Enemy
         /// 获取 FrostDebuff 组件
         /// </summary>
         public FrostDebuff GetFrostDebuff() => frostDebuff;
+        
+        /// <summary>
+        /// 获取装饰物的 SpriteRenderer 数组（用于 Frost 颜色染色）
+        /// </summary>
+        public SpriteRenderer[] GetDecorationRenderers()
+        {
+            if (decorations == null || decorations.Length == 0)
+                return null;
+        
+            SpriteRenderer[] renderers = new SpriteRenderer[decorations.Length];
+            for (int i = 0; i < decorations.Length; i++)
+            {
+                if (decorations[i] != null)
+                {
+                    renderers[i] = decorations[i].GetComponent<SpriteRenderer>();
+                }
+            }
+            return renderers;
+        }
+
+        /// <summary>
+        /// 获取敌人类型
+        /// </summary>
+        public EnemyType GetEnemyType() => enemyType;
     }
 }
