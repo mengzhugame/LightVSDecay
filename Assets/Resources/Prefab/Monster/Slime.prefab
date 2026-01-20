@@ -315,12 +315,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
   enemyType: 0
-  eliteEffectPrefab: {fileID: 0}
-  eliteTintColor: {r: 1, g: 0.5, b: 0, a: 1}
   bodySprite: {fileID: 4335784821728048696}
   eyesController: {fileID: 6691269152021299885}
   decorations:
   - {fileID: 3203237212370406469}
+  hitFlashDuration: 0.15
+  hitSpeedBoostMultiplier: 3
+  defaultHitColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!114 &-4570661179181696727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -333,9 +334,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 071bfaa9d74fd2446a87ead3d1507fe7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  slowTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  frozenTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  tintBlendRatio: 1
+  colorFadeSpeed: 5
   frostSprite: {fileID: 21300000, guid: 03fcf73004bf0844980e26d2bbdc1a62, type: 3}
-  frostColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
-  fadeDuration: 0.2
+  frostOverlayColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
+  overlayFadeDuration: 0.2
   breathScaleMin: 0.95
   breathScaleMax: 1.05
   breathCycleDuration: 1.5

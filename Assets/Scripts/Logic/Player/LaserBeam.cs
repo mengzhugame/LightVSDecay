@@ -109,7 +109,11 @@ namespace LightVsDecay.Logic.Player
         // 反射状态
         private bool hasReflection = false;
         private Vector3 reflectionPoint;
-        
+        // ========== 材质颜色控制 ==========
+        private MaterialPropertyBlock laserPropertyBlock;
+        private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
+        private Color originalBaseColor;  // 缓存原始材质颜色
+        private bool hasOriginalColor = false;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -136,6 +140,10 @@ namespace LightVsDecay.Logic.Player
             {
                 enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, GameConstants.BOUNCING_ENEMY_LAYER);
             }
+            // 初始化材质属性块
+            laserPropertyBlock = new MaterialPropertyBlock();
+            // 缓存原始材质颜色
+            CacheOriginalColor();
         }
         
         private void Start()
@@ -485,15 +493,25 @@ namespace LightVsDecay.Logic.Player
         }
         
         /// <summary>
-        /// 设置激光颜色
+        /// 设置激光颜色（通过 MaterialPropertyBlock 设置 Shader 的 _BaseColor）
         /// </summary>
         public void SetColor(Color color)
         {
-            if (lineRenderer != null)
+            if (lineRenderer == null) return;
+    
+            // 1. 设置顶点颜色（兼容某些材质）
+            lineRenderer.startColor = color;
+            lineRenderer.endColor = color;
+    
+            // 2. 通过 MaterialPropertyBlock 设置 Shader 的 _BaseColor
+            if (laserPropertyBlock == null)
             {
-                lineRenderer.startColor = color;
-                lineRenderer.endColor = color;
+                laserPropertyBlock = new MaterialPropertyBlock();
             }
+    
+            lineRenderer.GetPropertyBlock(laserPropertyBlock);
+            laserPropertyBlock.SetColor(BaseColorID, color);
+            lineRenderer.SetPropertyBlock(laserPropertyBlock);
         }
         
         /// <summary>
@@ -560,7 +578,52 @@ namespace LightVsDecay.Logic.Player
                 Debug.LogError("[LaserBeam] SetLaserPivot 收到空引用！");
             }
         }
+        /// <summary>
+        /// 缓存原始材质颜色
+        /// </summary>
+        private void CacheOriginalColor()
+        {
+            if (lineRenderer != null && lineRenderer.sharedMaterial != null)
+            {
+                if (lineRenderer.sharedMaterial.HasProperty(BaseColorID))
+                {
+                    originalBaseColor = lineRenderer.sharedMaterial.GetColor(BaseColorID);
+                    hasOriginalColor = true;
+                }
+            }
+        }
+        /// <summary>
+        /// 重置激光颜色为原始材质颜色
+        /// </summary>
+        public void ResetColor()
+        {
+            if (lineRenderer == null) return;
+    
+            if (hasOriginalColor)
+            {
+                // 使用缓存的原始颜色
+                lineRenderer.startColor = originalBaseColor;
+                lineRenderer.endColor = originalBaseColor;
         
+                if (laserPropertyBlock == null)
+                {
+                    laserPropertyBlock = new MaterialPropertyBlock();
+                }
+        
+                lineRenderer.GetPropertyBlock(laserPropertyBlock);
+                laserPropertyBlock.SetColor(BaseColorID, originalBaseColor);
+                lineRenderer.SetPropertyBlock(laserPropertyBlock);
+            }
+            else
+            {
+                // 清除 PropertyBlock，恢复材质默认值
+                if (laserPropertyBlock != null)
+                {
+                    laserPropertyBlock.Clear();
+                    lineRenderer.SetPropertyBlock(laserPropertyBlock);
+                }
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

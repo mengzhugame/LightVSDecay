@@ -588,25 +588,49 @@ namespace LightVsDecay.Logic.Player
         
         /// <summary>
         /// 更新激光颜色（考虑 Focus + Frost 组合）
+        /// 只有在有 Focus 或 Frost 技能时才修改颜色，否则保持原始材质颜色
         /// </summary>
         private void UpdateLaserColor()
         {
             if (laserController == null) return;
+
+            bool hasFocus = focusLevel > 0;
+            bool hasFrost = frostLevel > 0;
+
+            // 【关键修改】如果没有 Focus 和 Frost，不修改颜色，保持原始材质颜色
+            if (!hasFocus && !hasFrost)
+            {
+                // 重置为原始颜色（如果之前有设置过）
+                laserController.ResetLaserColor();
+                
+                if (vfxColorSync != null)
+                {
+                    vfxColorSync.ResetVFXColor();
+                }
+                else
+                {
+                    laserController.ResetVFXColor();
+                }
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log("[SkillEffectManager] 颜色重置为原始材质颜色");
+                }
+                return;
+            }
+
             if (skillDatabase == null)
             {
                 Debug.LogWarning("[SkillEffectManager] SkillDatabase 未设置，无法更新颜色");
                 return;
             }
-    
-            Color targetColor = skillDatabase.DefaultLaserColor;
-    
-            bool hasFocus = focusLevel > 0;
-            bool hasFrost = frostLevel > 0;
-    
+
+            Color targetColor;
+
             // 获取技能配置
             var focusData = GetSkillData(SkillType.Focus);
             var frostData = GetSkillData(SkillType.Frost);
-    
+
             if (hasFocus && hasFrost)
             {
                 // 聚能 + 极寒 = 混合紫色
@@ -619,19 +643,27 @@ namespace LightVsDecay.Logic.Player
                 {
                     targetColor = focusData.skillColor;
                 }
+                else
+                {
+                    return; // Focus 配置不修改颜色，保持原样
+                }
             }
-            else if (hasFrost)
+            else // hasFrost
             {
                 // 仅极寒 = 从 Frost SkillData 读取颜色
                 if (frostData != null && frostData.changeColor)
                 {
                     targetColor = frostData.skillColor;
                 }
+                else
+                {
+                    return; // Frost 配置不修改颜色，保持原样
+                }
             }
-    
+
             // 应用颜色到激光
             laserController.SetLaserColor(targetColor);
-    
+
             // VFX颜色与激光颜色保持一致
             if (vfxColorSync != null)
             {
@@ -641,13 +673,12 @@ namespace LightVsDecay.Logic.Player
             {
                 laserController.SetVFXColor(targetColor);
             }
-    
+
             if (showDebugInfo)
             {
                 string colorSource = (hasFocus && hasFrost) ? "混合紫色" : 
-                    (hasFocus ? "Focus红色" : 
-                        (hasFrost ? "Frost蓝色" : "默认青色"));
-                Debug.Log($"[SkillEffectManager] 颜色更新 - 来源:{colorSource}");
+                    (hasFocus ? "Focus颜色" : "Frost颜色");
+                Debug.Log($"[SkillEffectManager] 激光颜色更新: {colorSource}");
             }
         }
         

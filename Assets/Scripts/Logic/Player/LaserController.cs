@@ -968,7 +968,26 @@ namespace LightVsDecay.Logic.Player
                 }
             }
         }
-
+        /// <summary>
+        /// 重置激光颜色为原始材质颜色
+        /// </summary>
+        public void ResetLaserColor()
+        {
+            hasCustomColor = false;
+    
+            if (mainLaserBeam != null)
+            {
+                mainLaserBeam.ResetColor();
+            }
+    
+            foreach (var subLaser in subLasers)
+            {
+                if (subLaser.beam != null)
+                {
+                    subLaser.beam.ResetColor();
+                }
+            }
+        }
         public void ResetVFXColor()
         {
             if (vfxColorSync != null)
@@ -993,6 +1012,8 @@ namespace LightVsDecay.Logic.Player
         
         public void SetWidthMultiplier(float multiplier)
         {
+            // 【调试】打印调用栈
+            Debug.Log($"[LaserController] SetWidthMultiplier 被调用: {multiplier:F2}x\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}");
             skillWidthMultiplier = Mathf.Max(0.1f, multiplier);
             UpdateAllLaserWidths();
         }

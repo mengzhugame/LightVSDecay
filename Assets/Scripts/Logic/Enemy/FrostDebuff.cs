@@ -31,7 +31,7 @@ namespace LightVsDecay.Logic.Enemy
         [SerializeField] private Color frozenTintColor = new Color(0.1f, 0.65f, 1f, 1f);
         
         [Tooltip("颜色混合比例（0-1）")]
-        [SerializeField] private float tintBlendRatio = 0.4f;
+        [SerializeField] private float tintBlendRatio = 1f;
         
         [Tooltip("颜色渐变速度")]
         [SerializeField] private float colorFadeSpeed = 5f;
@@ -428,7 +428,8 @@ namespace LightVsDecay.Logic.Enemy
                 else
                 {
                     // 混合染色
-                    targetColor = Color.Lerp(originalColors[i], currentTintTarget, tintBlendRatio);
+                    //targetColor = Color.Lerp(originalColors[i], currentTintTarget, tintBlendRatio);
+                    targetColor = slowTintColor;
                 }
                 
                 // 平滑过渡
