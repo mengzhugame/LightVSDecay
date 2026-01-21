@@ -231,7 +231,41 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("僵直结束后是否飞回战斗锚点（false=直接Idle）")]
         public bool stunReturnToAnchor = true;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】冰冻系统 (Frost)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("═══ 冰冻系统 (Frost) ═══")]
+        [Tooltip("Boss 冰冻触发的累计照射时间阈值（秒）")]
+        public float bossFrostFreezeThreshold = 1.0f;
+
+        [Tooltip("Boss 冰冻基础持续时间（秒）")]
+        public float bossFrostFreezeDuration = 2.0f;
+
+        [Tooltip("冰冻结束后回到的状态（true=Idle，false=尝试恢复之前状态）")]
+        public bool frozenReturnToIdle = true;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】霸体系统 (Unstoppable)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("═══ 霸体系统 (Unstoppable) ═══")]
+        [Tooltip("霸体持续时间（秒）")]
+        public float unstoppableDuration = 6.0f;
+
+        [Tooltip("霸体期间 Press 推力效果倍率（0.3 = 30%效果）")]
+        [Range(0f, 1f)]
+        public float unstoppablePushMultiplier = 0.3f;
+
+        [Tooltip("控制递减 - 第2次控制的效果倍率（0.5 = 50%时长）")]
+        [Range(0f, 1f)]
+        public float controlDiminish2nd = 0.5f;
+
+        [Tooltip("控制递减 - 第3次控制的效果倍率（0.25 = 25%时长）")]
+        [Range(0f, 1f)]
+        public float controlDiminish3rd = 0.25f;
+
+        [Tooltip("触发霸体需要的连续控制次数")]
+        public int unstoppableTriggerCount = 3;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 甲壳机制
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -283,6 +317,7 @@ namespace LightVsDecay.Data.SO
 
         [Tooltip("最大同时存在的污秽球数量")]
         public int pollutionMaxCount = 3;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 便捷方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

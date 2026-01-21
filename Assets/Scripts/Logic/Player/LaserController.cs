@@ -654,6 +654,25 @@ namespace LightVsDecay.Logic.Player
                             {
                                 bossHealth.TakeBodyDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
                             }
+                            
+                            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            // 【新增】Boss Frost 冰冻累积
+                            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            if (bossController != null && SkillEffectManager.Instance != null)
+                            {
+                                // 只有当 Frost 技能激活且达到 LV5 时才能冻结 Boss
+                                int frostLevel = SkillEffectManager.Instance.GetFrostLevel();
+                                if (frostLevel >= 5)
+                                {
+                                    // 累加照射时间（每 Tick 调用一次）
+                                    bossController.AddFrostExposureTime(tickRate);
+        
+                                    if (showDebugInfo && Time.frameCount % 30 == 0)
+                                    {
+                                        Debug.Log($"[LaserController] ❄️ Boss 冰冻累积: {bossController.GetFrostExposureTime():F2}s");
+                                    }
+                                }
+                            }
                             // 【新增】角力阶段使用 Metal 音效
                             if (bossController.IsPressing)
                             {
