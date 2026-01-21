@@ -66,7 +66,8 @@ namespace LightVsDecay.Logic.Enemy
         // Drifter 特殊设置
         private float drifterDeflectionAngle = 45f;
         private float drifterKnockbackMultiplier = 2.0f;
-        
+        // 【新增】数据破碎击杀标记
+        private bool wasImpairedOnDeath = false;  // 死亡时是否处于受损状态
         // 视觉设置
         private float minScale = 0.3f;
         private float deathFadeDuration = 1.0f;
@@ -370,12 +371,11 @@ namespace LightVsDecay.Logic.Enemy
         public void OnSpawn()
         {
             isDead = false;
-            killedByExplosion = false;  // 【新增】重置爆炸死亡标记
-            killedByExecution = false;  // 【新增】重置处决标记
-            // 重置精英状态（新增）
-            isElite = false;
-            // 重置波次难度为默认（等待 WaveManager 设置）
-            waveModifiers = DifficultyModifiers.Default;
+            killedByExplosion = false;  // 重置爆炸死亡标记
+            killedByExecution = false;  // 重置处决标记
+            wasImpairedOnDeath = false;// 重置数据破碎标记
+            isElite = false;// 重置精英状态
+            waveModifiers = DifficultyModifiers.Default; // 重置波次难度为默认（等待 WaveManager 设置）
             
             // 使用配置数据的原始值
             if (data != null)
@@ -957,6 +957,8 @@ namespace LightVsDecay.Logic.Enemy
         {
             if (isDead) return;
             isDead = true;
+            // 【新增】记录死亡时是否处于受损状态（用于漏洞扩散判断）
+            wasImpairedOnDeath = IsImpaired;
             rb.velocity = Vector2.zero;
             
             if (circleCollider != null)
@@ -993,7 +995,42 @@ namespace LightVsDecay.Logic.Enemy
 
             // 【修改】触发敌人死亡事件，使用计算后的经验值
             GameEvents.TriggerEnemyDied(enemyType, transform.position, actualXP, actualCoin);
+            // 【新增】检查是否触发漏洞扩散爆炸（Shatter Lv5）
+            // 条件：死亡时处于受损状态 + 启用漏洞扩散 + 非处决击杀 + 非爆炸击杀
+            bool willTriggerShatterExplosion = false;
+            if (wasImpairedOnDeath && 
+                !killedByExecution && 
+                !killedByExplosion &&
+                SkillEffectManager.Instance != null && 
+                SkillEffectManager.Instance.IsShatterExplosionEnabled)
+            {
+                willTriggerShatterExplosion = true;
+                SkillEffectManager.Instance.TriggerShatterExplosion(transform.position);
+            }
             
+            // 【修改】根据死亡原因播放不同特效
+            if (VFXPoolManager.Instance != null)
+            {
+                if (killedByExplosion)
+                {
+                    ReturnToPool();
+                    return;
+                }
+
+                // 检查是否会触发 Focus Lv5 爆炸
+                bool willTriggerFocusExplosion = SkillEffectManager.Instance != null && 
+                                                 SkillEffectManager.Instance.IsFocusExplosionEnabled &&
+                                                 !killedByExecution;
+
+                // 【修改】如果触发了漏洞扩散或Focus爆炸，跳过冒烟特效
+                if (!willTriggerFocusExplosion && !willTriggerShatterExplosion)
+                {
+                    if (VFXPoolManager.Instance != null)
+                    {
+                        VFXPoolManager.Instance.PlayEnemySteam(transform.position);
+                    }
+                }
+            }
             // 【修改】根据死亡原因播放不同特效
             if (VFXPoolManager.Instance != null)
             {
@@ -1362,7 +1399,18 @@ namespace LightVsDecay.Logic.Enemy
                 return frostDebuff.IsFrozen;
             }
         }
-        
+        /// <summary>
+        /// 是否处于"受损"状态（Slow 或 Freeze）
+        /// 用于数据破碎技能判断
+        /// </summary>
+        public bool IsImpaired
+        {
+            get
+            {
+                if (frostDebuff == null) return false;
+                return frostDebuff.IsSlowed || frostDebuff.IsFrozen;
+            }
+        }
         // 【新增】标记为处决击杀
         /// <summary>
         /// 标记该敌人被处决击杀（不触发Focus爆炸）
@@ -1377,5 +1425,9 @@ namespace LightVsDecay.Logic.Enemy
         /// 是否被处决击杀
         /// </summary>
         public bool WasExecuted => killedByExecution;
+        /// <summary>
+        /// 获取死亡时是否处于受损状态（用于漏洞扩散）
+        /// </summary>
+        public bool WasImpairedOnDeath => wasImpairedOnDeath;
     }
 }

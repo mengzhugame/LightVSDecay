@@ -24,6 +24,7 @@ namespace LightVsDecay.Data.SO
         Power,      // 功率超频 - +DPS
         Wide,       // 广域透镜 - +激光宽度
         Crit,       // 致命暴击 - +暴击率
+        Shatter,    // 数据破碎 - 对受损敌人额外伤害
     }
     
     /// <summary>
@@ -144,7 +145,7 @@ namespace LightVsDecay.Data.SO
         public float critRateBonus = 0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 爆炸相关（聚能透镜 Lv5）【新增】
+        // 爆炸相关（聚能透镜 Lv5）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         [Header("爆炸相关（聚能透镜 Lv5）")]
@@ -156,7 +157,19 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("爆炸半径")]
         public float explosionRadius = 2f;
-
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 数据破碎相关（Shatter）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("数据破碎相关（Shatter）")]
+        [Tooltip("对受损敌人的额外伤害加成 (0.3 = +30%)")]
+        public float shatterDamageBonus = 0f;
+        
+        [Tooltip("击杀受损敌人时是否触发漏洞扩散爆炸（LV5）")]
+        public bool shatterExplosionOnKill = false;
+        
+        [Tooltip("漏洞扩散爆炸半径")]
+        public float shatterExplosionRadius = 2f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 其他
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -314,6 +327,7 @@ namespace LightVsDecay.Data.SO
                 case SkillType.Power:
                 case SkillType.Wide:
                 case SkillType.Crit: 
+                case SkillType.Shatter:  // 【新增】数据破碎 - 被动技能
                     cardType = SkillCardType.Passive;
                     break;
             }

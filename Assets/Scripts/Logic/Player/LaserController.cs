@@ -719,7 +719,24 @@ namespace LightVsDecay.Logic.Player
                 
                 // 基础伤害（已包含 Power + Focus 加成）
                 float baseDamage = enemyCrit ? damage * critDamageMultiplier : damage;
+                // 【新增】数据破碎加成（独立乘区）
+                // 检查敌人是否处于受损状态（Slow/Freeze）
+                float shatterBonus = 0f;
+                if (SkillEffectManager.Instance != null)
+                {
+                    shatterBonus = SkillEffectManager.Instance.GetShatterDamageBonus();
+                }
                 
+                if (shatterBonus > 0f && enemy.IsImpaired)
+                {
+                    // 数据破碎：基础伤害 × (1 + shatterBonus)
+                    baseDamage *= (1f + shatterBonus);
+                    
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[LaserController] 💢 数据破碎! 受损加伤:{shatterBonus:P0}, 最终伤害:{baseDamage:F1}");
+                    }
+                }
                 // ═══ 【新增】碎冰系统 ═══
                 float shatterMultiplier = 1f;
                 bool enableExecution = false;

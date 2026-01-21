@@ -12,23 +12,21 @@ namespace LightVsDecay.Core.Pool
         // 敌人相关
         EnemySteam,         // 敌人死亡蒸发
         EnemyExplosion,     // 敌人撞塔爆炸
-    
         // 激光相关
         LaserHit,           // 激光击中特效
-        FrostHit,           // 【新增】极寒光束命中特效
+        FrostHit,           // 极寒光束命中特效
+        ShatterExplosion, // 数据破碎 - 漏洞扩散爆炸（冰块碎裂效果）
         // ━━━ 低频特效（直接实例化） ━━━
         // 护盾相关
         ShieldHit,//护盾受击
         ShieldBreak,        // 护盾破碎（低频）
         ShieldRecover,      // 护盾恢复（低频）
         TowerDamage,        // 塔受伤
-    
         // Boss相关
         BossSpawn,          // Boss出场
         BossSkill,          // Boss技能
         BossDeath,          // Boss死亡
         BossPhaseChange,    // Boss阶段转换
-    
         // 其他低频特效
         LevelUp,            // 升级特效
         // 无人机相关（低频）
@@ -367,6 +365,13 @@ namespace LightVsDecay.Core.Pool
         public void PlayDroneExplosion(Vector3 position)
         {
             Play(VFXType.DroneExplosion, position);
+        }
+        /// <summary>
+        /// 播放数据破碎爆炸特效（漏洞扩散 - 冰块碎裂效果）
+        /// </summary>
+        public void PlayShatterExplosion(Vector3 position)
+        {
+            Play(VFXType.ShatterExplosion, position);
         }
         /// <summary>
         /// 计算粒子系统总时长（用于非池化VFX）

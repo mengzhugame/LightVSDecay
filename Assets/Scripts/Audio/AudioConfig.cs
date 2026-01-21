@@ -11,7 +11,7 @@ namespace LightVsDecay.Audio
     /// <summary>
     /// 音效配置数据
     /// </summary>
-    [CreateAssetMenu(fileName = "AudioConfig", menuName = "Light vs Decay/Audio Config")]
+    [CreateAssetMenu(fileName = "AudioConfig", menuName = "LightVsDecay/Audio Config")]
     public class AudioConfig : ScriptableObject
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

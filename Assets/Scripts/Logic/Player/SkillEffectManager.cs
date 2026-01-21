@@ -59,7 +59,6 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 单例访问
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
         public static SkillEffectManager Instance { get; private set; }
         /// <summary>
         /// Focus Lv5 死亡爆炸是否启用（供 EnemyBlob 检查）
@@ -68,11 +67,9 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 常量
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
         // Wide 技能配置（保留旧逻辑作为回退）
         private const float WIDE_WIDTH_PER_LEVEL = 0.25f;
         private const float BASE_LASER_WIDTH = 0.5f;
-        
         // Adrenaline 配置
         private const float ADRENALINE_DURATION = 20f;
 
@@ -88,7 +85,7 @@ namespace LightVsDecay.Logic.Player
         private int wideLevel = 0;
         private int reflexLevel = 0;
         private int critLevel = 0;
-        
+        private int shatterLevel = 0;  // 【新增】数据破碎等级
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 累计加成
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -132,6 +129,11 @@ namespace LightVsDecay.Logic.Player
         private float cachedImpactKnockbackMultiplier = 1f;
         private float cachedShatterDamageMultiplier = 1f;  // 【新增】碎冰伤害倍率
         private bool cachedEnableExecution = false;        // 【新增】是否启用处决
+        // 【新增】Shatter (数据破碎) 配置缓存
+        private float cachedShatterDamageBonus = 0f;           // 对受损敌人额外伤害
+        private bool cachedShatterExplosionOnKill = false;     // 是否触发漏洞扩散
+        private float cachedShatterExplosionRadius = 2f;       // 漏洞扩散爆炸半径
+        private const float SHATTER_EXPLOSION_DAMAGE_SCALE = 2.0f;  // 漏洞扩散伤害 = 面板DPS × 2.0
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -276,9 +278,11 @@ namespace LightVsDecay.Logic.Player
                 case SkillType.Wide:
                     ApplyWideEffect(newLevel, skillData);
                     break;
-                    
                 case SkillType.Crit:
                     ApplyCritEffect(newLevel, skillData);
+                    break;
+                case SkillType.Shatter:
+                    ApplyShatterEffect(newLevel, skillData);
                     break;
             }
             
@@ -587,7 +591,34 @@ namespace LightVsDecay.Logic.Player
                 Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} - 暴击率加成:{levelData.critRateBonus:P0}");
             }
         }
-        
+        /// <summary>
+        /// 应用 Shatter（数据破碎）效果
+        /// LV1-4: 对受损敌人额外伤害
+        /// LV5: 额外伤害 + 漏洞扩散（击杀受损敌人触发AOE）
+        /// </summary>
+        private void ApplyShatterEffect(int level, SkillData skillData)
+        {
+            shatterLevel = level;
+            
+            var levelData = GetLevelData(skillData, level);
+            if (levelData == null)
+            {
+                Debug.LogError($"[SkillEffectManager] ❌ Shatter Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
+            }
+            
+            // 缓存配置数据
+            cachedShatterDamageBonus = levelData.shatterDamageBonus;
+            cachedShatterExplosionOnKill = levelData.shatterExplosionOnKill;
+            cachedShatterExplosionRadius = levelData.shatterExplosionRadius;
+            
+            if (showDebugInfo)
+            {
+                string explosionInfo = cachedShatterExplosionOnKill ? "，启用漏洞扩散" : "";
+                Debug.Log($"[SkillEffectManager] ✓ Shatter Lv.{level} - " +
+                          $"受损加伤:{cachedShatterDamageBonus:P0}{explosionInfo}");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 【新增】颜色系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -809,7 +840,86 @@ namespace LightVsDecay.Logic.Player
                           $"最终={finalMultiplier:F2}x");
             }
         }
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】Shatter Lv5 漏洞扩散爆炸系统
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 触发 Shatter Lv5 漏洞扩散爆炸
+        /// 由 EnemyBlob.Die() 在击杀受损敌人时调用
+        /// </summary>
+        /// <param name="position">爆炸位置</param>
+        public void TriggerShatterExplosion(Vector3 position)
+        {
+            // 1. 检查是否启用
+            if (!cachedShatterExplosionOnKill || shatterLevel < 5) return;
+            
+            // 2. 全局CD检查（复用 Focus 爆炸的CD机制）
+            if (Time.time < lastExplosionTime + EXPLOSION_GLOBAL_COOLDOWN) return;
+            
+            // 3. 更新全局CD时间戳
+            lastExplosionTime = Time.time;
+            
+            // 4. 播放漏洞扩散爆炸特效（冰块碎裂效果）
+            if (VFXPoolManager.Instance != null)
+            {
+                VFXPoolManager.Instance.PlayShatterExplosion(position);
+            }
+            
+            // 5. 播放爆炸音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayEnemyExplode();
+            }
+            
+            // 6. 计算爆炸伤害（200% 激光面板伤害）
+            float panelDPS = laserController != null ? laserController.CurrentPanelDPS : 100f;
+            float explosionDamage = panelDPS * SHATTER_EXPLOSION_DAMAGE_SCALE;
+            
+            // 7. 上报爆炸伤害到 BattleStatistics
+            if (BattleStatistics.Instance != null)
+            {
+                BattleStatistics.Instance.RecordExplosionDamage(explosionDamage);
+            }
+            
+            // 8. 检测范围内的敌人
+            int enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, "BouncingEnemy");
+            Collider2D[] hits = Physics2D.OverlapCircleAll(position, cachedShatterExplosionRadius, enemyLayer);
+            
+            int actualHitCount = 0;
+            
+            foreach (var hit in hits)
+            {
+                EnemyBlob enemy = hit.GetComponentInParent<EnemyBlob>();
+                if (enemy == null) continue;
+                
+                int enemyId = enemy.GetInstanceID();
+                
+                // 9. 单体免疫检查（复用 Focus 爆炸的免疫机制）
+                if (explosionImmunityTracker.TryGetValue(enemyId, out float lastHitTime))
+                {
+                    if (Time.time < lastHitTime + EXPLOSION_TARGET_IMMUNITY)
+                    {
+                        continue;
+                    }
+                }
+                
+                // 10. 记录该敌人被炸时间
+                explosionImmunityTracker[enemyId] = Time.time;
+                
+                // 11. 造成伤害（标记为爆炸伤害）
+                enemy.TakeDamage(explosionDamage, Vector2.zero, false, true);
+                actualHitCount++;
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillEffectManager] 💥 Shatter Lv5 漏洞扩散! " +
+                          $"位置:{position}, 面板DPS:{panelDPS:F1}, " +
+                          $"爆炸伤害:{explosionDamage:F1} (×{SHATTER_EXPLOSION_DAMAGE_SCALE}), " +
+                          $"半径:{cachedShatterExplosionRadius}, 命中:{actualHitCount}/{hits.Length}");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -927,5 +1037,22 @@ namespace LightVsDecay.Logic.Player
         {
             return wideLevel;
         }
+        /// <summary>获取 Shatter 等级</summary>
+        public int GetShatterLevel() => shatterLevel;
+        
+        /// <summary>
+        /// 获取数据破碎对受损敌人的额外伤害加成
+        /// </summary>
+        public float GetShatterDamageBonus() => cachedShatterDamageBonus;
+        
+        /// <summary>
+        /// 数据破碎 Lv5 漏洞扩散是否启用
+        /// </summary>
+        public bool IsShatterExplosionEnabled => cachedShatterExplosionOnKill && shatterLevel >= 5;
+        
+        /// <summary>
+        /// 获取漏洞扩散爆炸半径
+        /// </summary>
+        public float GetShatterExplosionRadius() => cachedShatterExplosionRadius;
     }
 }

@@ -22,6 +22,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0085b7f339c34f9469de88a2832fbb88, type: 2}
   - {fileID: 11400000, guid: a962a4479b9ea114eb514cb630a6ce84, type: 2}
   - {fileID: 11400000, guid: 9a7d4a535903a864a9c7de1b532ffd43, type: 2}
+  - {fileID: 11400000, guid: 751b5a97f4d95a748b1a65a96c2dc608, type: 2}
   consumables: []
   choiceCount: 3
   consumableChance: 0.3

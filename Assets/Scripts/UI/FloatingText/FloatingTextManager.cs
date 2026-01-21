@@ -228,7 +228,7 @@ namespace LightVsDecay.UI.FloatingText
         public void ShowShatterDamage(Vector3 worldPosition, float damage, bool isCrit = false)
         {
             // 碎冰+暴击 = ShatterCrit，纯碎冰 = Shatter
-            FloatingTextType type = isCrit ? FloatingTextType.ShatterCrit : FloatingTextType.Shatter;
+            FloatingTextType type = isCrit ? FloatingTextType.Crit : FloatingTextType.Shatter;
             string text = Mathf.RoundToInt(damage).ToString();
             Show(worldPosition, text, type);
         }
