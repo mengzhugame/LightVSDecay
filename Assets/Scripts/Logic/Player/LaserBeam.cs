@@ -498,11 +498,7 @@ namespace LightVsDecay.Logic.Player
         public void SetColor(Color color)
         {
             if (lineRenderer == null) return;
-    
-            // 1. 设置顶点颜色（兼容某些材质）
-            lineRenderer.startColor = color;
-            lineRenderer.endColor = color;
-    
+
             // 2. 通过 MaterialPropertyBlock 设置 Shader 的 _BaseColor
             if (laserPropertyBlock == null)
             {
@@ -601,10 +597,6 @@ namespace LightVsDecay.Logic.Player
     
             if (hasOriginalColor)
             {
-                // 使用缓存的原始颜色
-                lineRenderer.startColor = originalBaseColor;
-                lineRenderer.endColor = originalBaseColor;
-        
                 if (laserPropertyBlock == null)
                 {
                     laserPropertyBlock = new MaterialPropertyBlock();

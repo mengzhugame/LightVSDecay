@@ -173,14 +173,19 @@ namespace LightVsDecay.Logic
         private void OnBossDied()
         {
             if (currentState != WaveState.BossFight) return;
-            
+    
             if (showDebugInfo)
             {
                 Debug.Log("[WaveManager] ★★★ BOSS 已击败！★★★");
             }
-            
-            // BOSS 死亡 = 直接胜利，清除所有残余小怪
+    
+            // BOSS 死亡 = 清除所有残余小怪
             ClearAllEnemies();
+    
+            // ★★★ 【V3.0 修复】先触发波次完成，让 BattleStatistics 记录 W12 数据 ★★★
+            GameEvents.TriggerWaveComplete(currentWaveNumber, TotalWaves);
+    
+            // 然后触发胜利
             ChangeState(WaveState.Victory);
             GameEvents.TriggerGameVictory();
         }
