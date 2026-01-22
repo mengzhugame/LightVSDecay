@@ -1378,15 +1378,21 @@ namespace LightVsDecay.Logic.Boss
         {
             if (showDebugInfo) Debug.Log("[BossController] 💥 Charge 蓄力被打断！进入僵直！");
             ShowCounterText("INTERRUPTED!");
-            
+    
             if (redBodyEffect != null && !isUnstoppable)
             {
                 redBodyEffect.SetActive(false);
             }
-            
+    
             // 【修改】使用控制递减的僵直
             float baseDuration = config != null ? config.chargeInterruptStunDuration : 3.0f;
-            TryApplyStun(baseDuration);
+    
+            // 修复：如果晕眩失败（被霸体免疫），必须强制切换状态，否则会卡在 Charge 状态
+            if (!TryApplyStun(baseDuration))
+            {
+                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫打断僵直，强制返回 Idle");
+                ChangeState(BossState.Idle);
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1598,9 +1604,11 @@ namespace LightVsDecay.Logic.Boss
             
             ShowCounterText("OVERLOAD!");
             
-            if (CameraShake.Instance != null)
+            float shortDuration = config != null ? config.shortStunDuration : 1.5f;
+            if (!TryApplyStun(shortDuration))
             {
-                CameraShake.Instance.Shake(0.4f, 0.2f);
+                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫过载僵直，强制返回 Idle");
+                ChangeState(BossState.Idle);
             }
             
             EnterShortStun();
@@ -1634,7 +1642,12 @@ namespace LightVsDecay.Logic.Boss
             
             // 【修改】使用控制递减的僵直
             float baseDuration = config != null ? config.pressCounterStunDuration : 3.0f;
-            TryApplyStun(baseDuration);
+            // 修复：如果晕眩失败（被霸体免疫），必须强制切换状态，否则会卡在 Press 循环中
+            if (!TryApplyStun(baseDuration))
+            {
+                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫反制僵直，强制返回 Idle");
+                ChangeState(BossState.Idle);
+            }
         }
         
         private void OnPressHitPlayer()
@@ -1692,28 +1705,34 @@ namespace LightVsDecay.Logic.Boss
         {
             float duration = 0.4f;
             Vector3 retreatTarget = battleAnchorPosition + Vector3.up * 1.5f;
-            
+    
 #if DOTWEEN
             yield return transform.DOMove(retreatTarget, duration)
                 .SetEase(Ease.OutQuad)
                 .WaitForCompletion();
 #else
-            float elapsed = 0f;
-            Vector3 start = transform.position;
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                transform.position = Vector3.Lerp(start, retreatTarget, elapsed / duration);
-                yield return null;
-            }
-            transform.position = retreatTarget;
+    float elapsed = 0f;
+    Vector3 start = transform.position;
+    while (elapsed < duration)
+    {
+        elapsed += Time.deltaTime;
+        transform.position = Vector3.Lerp(start, retreatTarget, elapsed / duration);
+        yield return null;
+    }
+    transform.position = retreatTarget;
 #endif
-            
+    
             if (eyeController != null) eyeController.Open();
-            
+    
             // 【修改】使用控制递减的僵直
             float baseDuration = config != null ? config.exhaustedStunDuration : 2.5f;
-            TryApplyStun(baseDuration);
+    
+            // 修复 Bug：如果霸体免疫了晕眩，必须强制返回 Idle，否则 Boss 会定住
+            if (!TryApplyStun(baseDuration))
+            {
+                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫疲劳僵直，强制返回 Idle");
+                ChangeState(BossState.Idle);
+            }
         }
         
         private IEnumerator PressBounceBackRoutine()
@@ -1909,9 +1928,17 @@ namespace LightVsDecay.Logic.Boss
         public void EnterShortStun()
         {
             float shortDuration = config != null ? config.shortStunDuration : 1.5f;
-            
-            // 【修改】也使用控制递减
-            TryApplyStun(shortDuration);
+    
+            // 修复 Bug：如果霸体免疫晕眩，强制返回 Idle
+            if (!TryApplyStun(shortDuration))
+            {
+                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫短僵直，强制返回 Idle");
+                // 只有当当前状态不是 Idle 时才切换，避免逻辑混乱
+                if (currentState != BossState.Idle)
+                {
+                    ChangeState(BossState.Idle);
+                }
+            }
         }
         
         public void RegisterPollutionBall(BossPollutionProjectile ball)

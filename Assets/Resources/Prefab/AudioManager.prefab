@@ -48,4 +48,4 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: c1bbeca586278ac41a4ece000e9aecc9, type: 2}
   mainMenuSceneName: MainScene
   battleSceneName: GameScene
-  showDebugInfo: 1
+  showDebugInfo: 0

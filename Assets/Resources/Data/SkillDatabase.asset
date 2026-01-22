@@ -27,6 +27,6 @@ MonoBehaviour:
   choiceCount: 3
   consumableChance: 0.3
   passiveChance: 0.25
-  defaultLaserColor: {r: 1.8443023, g: 1.2640487, b: 0, a: 1}
+  defaultLaserColor: {r: 1.3, g: 0.8, b: 0, a: 1}
   focusFrostMixColor: {r: 1.2295351, g: 0, b: 1.8443027, a: 1}
   showDebugInfo: 0

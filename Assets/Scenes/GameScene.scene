@@ -14003,7 +14003,7 @@ MonoBehaviour:
   shieldController: {fileID: 6960895871992148850}
   vfxColorSync: {fileID: 7547185026885081181}
   skillDatabase: {fileID: 11400000, guid: 68a59b6950502b142a899fa3880d365d, type: 2}
-  showDebugInfo: 0
+  showDebugInfo: 1
 --- !u!1 &1476883934
 GameObject:
   m_ObjectHideFlags: 0
@@ -17687,6 +17687,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   turretHealth: {fileID: 1626183057}
   shieldController: {fileID: 6960895871992148850}
+  laserController: {fileID: 0}
   showDebugInfo: 1
   logToConsole: 1
 --- !u!1 &2002253803
@@ -19021,7 +19022,7 @@ MonoBehaviour:
   bossEyesLayer:
     serializedVersion: 2
     m_Bits: 256
-  showDebugInfo: 0
+  showDebugInfo: 1
 --- !u!224 &3352247367108833418 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5562580028236921876, guid: 4ee97612d2ec13641955908b97eba771, type: 3}
@@ -19261,11 +19262,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1184405229333369574, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
       propertyPath: m_Parameters.colorGradient.key0.b
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1184405229333369574, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
       propertyPath: m_Parameters.colorGradient.key0.g
-      value: 0.73811364
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1184405229333369574, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
       propertyPath: m_Parameters.colorGradient.key0.r
@@ -19309,11 +19310,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1328810007114350596, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
       propertyPath: defaultLaserColor.g
-      value: 1.6828415
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 1328810007114350596, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
       propertyPath: defaultLaserColor.r
-      value: 3
+      value: 1.8
       objectReference: {fileID: 0}
     - target: {fileID: 5212609163488559291, guid: 86a6fd3352e0649428cddb11f055e5c6, type: 3}
       propertyPath: m_LocalPosition.x

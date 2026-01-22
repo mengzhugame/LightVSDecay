@@ -692,15 +692,18 @@ namespace LightVsDecay.Logic
         /// </summary>
         private void StartWaveInterval()
         {
-            // 【新增】如果有宝箱系统，交给宝箱系统处理
-            // 宝箱系统会在玩家选择后调用 StartNextWave()
+// 【新增】如果有宝箱系统，交给宝箱系统处理
             if (TacticalDropManager.Instance != null)
             {
                 if (showDebugInfo)
                 {
                     Debug.Log("[WaveManager] 宝箱系统已激活，等待玩家选择...");
                 }
-                return; // 不启动自动计时，由 TacticalDropManager 触发下一波
+        
+                // 修复：启动超时/故障检测协程。如果宝箱没出来，自动跳过。
+                StartCoroutine(ProtectDropPhaseRoutine());
+        
+                return; 
             }
       
             // 原有逻辑（没有宝箱系统时使用）
@@ -711,7 +714,28 @@ namespace LightVsDecay.Logic
       
             waveIntervalCoroutine = StartCoroutine(WaveIntervalCoroutine());
         }
+        // 2. 新增 ProtectDropPhaseRoutine 方法
+        private IEnumerator ProtectDropPhaseRoutine()
+        {
+            // 等待一小段时间，让 TacticalDropManager 有机会生成宝箱
+            yield return new WaitForSeconds(2.0f);
+
+            // 检查场上是否有宝箱
+            // 注意：需要引用 LightVsDecay.Logic.TacticalDrop 命名空间
+            var crates = FindObjectsOfType<TacticalCrate>();
+    
+            // 如果处于 Complete 状态（说明还没进下一波），且场上没有宝箱
+            if (currentState == WaveState.Complete && (crates == null || crates.Length == 0))
+            {
+                if (showDebugInfo)
+                {
+                    Debug.LogWarning("[WaveManager] ⚠️ 检测到 Drop 阶段异常（无宝箱），强制进入下一波！");
+                }
         
+                // 强制开始下一波，防止卡死
+                StartNextWave();
+            }
+        }
         private IEnumerator WaveIntervalCoroutine()
         {
             float interval = waveConfig != null ? waveConfig.waveInterval : 10f;

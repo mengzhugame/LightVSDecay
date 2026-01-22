@@ -235,7 +235,16 @@ MonoBehaviour:
       healthMultiplier: 1
       speedMultiplier: 1
       damageMultiplier: 1
-    - spawnTime: 40
+    - spawnTime: 25
+      enemyType: 2
+      count: 4
+      pattern: 2
+      customInterval: 0.5
+      spawnZone: 3
+      healthMultiplier: 1
+      speedMultiplier: 1
+      damageMultiplier: 1
+    - spawnTime: 35
       enemyType: 2
       count: 4
       pattern: 2

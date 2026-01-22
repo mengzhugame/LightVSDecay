@@ -518,9 +518,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 071bfaa9d74fd2446a87ead3d1507fe7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  slowTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  frozenTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  tintBlendRatio: 1
+  colorFadeSpeed: 5
   frostSprite: {fileID: 21300000, guid: 03fcf73004bf0844980e26d2bbdc1a62, type: 3}
-  frostColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
-  fadeDuration: 0.2
+  frostOverlayColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
+  overlayFadeDuration: 0.2
   breathScaleMin: 0.95
   breathScaleMax: 1.05
   breathCycleDuration: 1.5
@@ -536,14 +540,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58b616f6f1c8d0a4e843e871bc09a97e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100000
-  config: {fileID: 11400000, guid: a7575bca66b9d0648b544d425b82bca3, type: 2}
   coreDamageMultiplier: 2
   bodyCollider: {fileID: 2878663063999937833}
-  bodyHitSfxId: boss_armor_hit
-  eyeHitSfxId: boss_core_hit
-  bodyRenderers: []
   hitFlashDuration: 0.15
+  hitFlowSpeedMultiplier: 10
   showDebugInfo: 0
 --- !u!114 &5212838760448453320
 MonoBehaviour:
@@ -560,9 +560,8 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: a7575bca66b9d0648b544d425b82bca3, type: 2}
   eyeController: {fileID: 5778125128812573581}
   bodyTransform: {fileID: 8875329790981093609}
-  redBodyEffect: {fileID: 4801645900123614117}
   bodyRenderers:
   - {fileID: 3062438057919091048}
   - {fileID: 3988100806900536482}
-  playerTower: {fileID: 0}
-  showDebugInfo: 0
+  redBodyEffect: {fileID: 4801645900123614117}
+  showDebugInfo: 1
