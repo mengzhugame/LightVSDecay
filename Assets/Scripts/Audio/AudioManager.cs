@@ -531,8 +531,8 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void StartLaserLoop()
         {
-            // 【新增】调试日志
-            Debug.Log($"[AudioManager] StartLaserLoop 被调用");
+            if(showDebugInfo)
+                Debug.Log($"[AudioManager] StartLaserLoop 被调用");
     
             if (config == null)
             {

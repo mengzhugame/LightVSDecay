@@ -321,12 +321,14 @@ namespace LightVsDecay.Logic.Player
         /// </summary>
         private void StartLaserAudio()
         {
-            Debug.Log($"[LaserController] StartLaserAudio 调用, AudioManager.Instance={AudioManager.Instance != null}, isLaserAudioStarted={isLaserAudioStarted}");
+            if(showDebugInfo)
+                Debug.Log($"[LaserController] StartLaserAudio 调用, AudioManager.Instance={AudioManager.Instance != null}, isLaserAudioStarted={isLaserAudioStarted}");
             if (AudioManager.Instance != null && !isLaserAudioStarted)
             {
                 AudioManager.Instance.StartLaserLoop();
                 isLaserAudioStarted = true;
-                Debug.Log("[LaserController] 激光音效已启动");
+                if(showDebugInfo)
+                    Debug.Log("[LaserController] 激光音效已启动");
             }
         }
         /// <summary>
@@ -1126,8 +1128,8 @@ namespace LightVsDecay.Logic.Player
         
         public void SetWidthMultiplier(float multiplier)
         {
-            // 【调试】打印调用栈
-            Debug.Log($"[LaserController] SetWidthMultiplier 被调用: {multiplier:F2}x\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}");
+            if(showDebugInfo)
+                Debug.Log($"[LaserController] SetWidthMultiplier 被调用: {multiplier:F2}x\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}");
             skillWidthMultiplier = Mathf.Max(0.1f, multiplier);
             UpdateAllLaserWidths();
         }

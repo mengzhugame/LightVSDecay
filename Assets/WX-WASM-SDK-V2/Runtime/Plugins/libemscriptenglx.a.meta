@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: cccbd1d680cfe34fa1fef9e4875e5f23
+guid: XClM536sB31SHOl9Q3AdjNOMcGG9XZTv/ZZRrh8lQvv5NNwmUQZM3QM=
 PluginImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -67,7 +67,7 @@ PluginImporter:
   - first:
       WeixinMiniGame: WeixinMiniGame
     second:
-      enabled: 1
+      enabled: 0
       settings: {}
   userData: 
   assetBundleName: 

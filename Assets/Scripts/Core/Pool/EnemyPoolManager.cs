@@ -136,8 +136,10 @@ namespace LightVsDecay.Core.Pool
                 );
                 
                 pools[config.type] = pool;
-                
-                Debug.Log($"[EnemyPoolManager] {config.type} 池初始化完成: 预热{config.prewarmCount}, 上限{maxForType}");
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[EnemyPoolManager] {config.type} 池初始化完成: 预热{config.prewarmCount}, 上限{maxForType}");
+                }
             }
         }
         
@@ -157,8 +159,7 @@ namespace LightVsDecay.Core.Pool
             // 全局上限检查
             if (totalActiveEnemies >= globalMaxEnemies)
             {
-                if (showDebugInfo)
-                    Debug.LogWarning($"[EnemyPoolManager] 已达全局上限 {globalMaxEnemies}！");
+                Debug.LogWarning($"[EnemyPoolManager] 已达全局上限 {globalMaxEnemies}！");
                 return null;
             }
             
@@ -240,8 +241,8 @@ namespace LightVsDecay.Core.Pool
                 pool.ReturnAll();
             }
             totalActiveEnemies = 0;
-            
-            Debug.Log("[EnemyPoolManager] 所有敌人已回收");
+            if (showDebugInfo)
+                Debug.Log("[EnemyPoolManager] 所有敌人已回收");
         }
         
         /// <summary>
@@ -257,8 +258,8 @@ namespace LightVsDecay.Core.Pool
             }
             pools.Clear();
             totalActiveEnemies = 0;
-            
-            Debug.Log("[EnemyPoolManager] 所有对象池已清空");
+            if (showDebugInfo)
+                Debug.Log("[EnemyPoolManager] 所有对象池已清空");
         }
         
         /// <summary>
@@ -317,8 +318,8 @@ namespace LightVsDecay.Core.Pool
                 
                 Spawn(testSpawnType, spawnPos);
             }
-            
-            Debug.Log($"[EnemyPoolManager] 测试生成 {testSpawnCount} 个 {testSpawnType}");
+            if (showDebugInfo)
+                Debug.Log($"[EnemyPoolManager] 测试生成 {testSpawnCount} 个 {testSpawnType}");
         }
         
         /// <summary>

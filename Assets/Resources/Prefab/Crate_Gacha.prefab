@@ -155,7 +155,7 @@ MonoBehaviour:
   crateType: 1
   hitShakeStrength: 0.1
   hitGlowIntensity: 0.5
-  showDebugInfo: 1
+  showDebugInfo: 0
 --- !u!1 &4650982846566447020
 GameObject:
   m_ObjectHideFlags: 0

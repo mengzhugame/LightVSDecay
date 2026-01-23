@@ -203,7 +203,7 @@ namespace LightVsDecay.Logic.Enemy
             
             // 设置排序层（在怪物之上）
             frostOverlayRenderer.sortingLayerName = "Enemy";
-            frostOverlayRenderer.sortingOrder = 10;
+            frostOverlayRenderer.sortingOrder = 14;
             
             // 初始隐藏
             frostOverlay.SetActive(false);

@@ -577,4 +577,4 @@ MonoBehaviour:
   crateType: 0
   hitShakeStrength: 0.1
   hitGlowIntensity: 0.5
-  showDebugInfo: 1
+  showDebugInfo: 0

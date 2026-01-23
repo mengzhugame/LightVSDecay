@@ -20,7 +20,8 @@ namespace LightVsDecay.Logic.Enemy
         
         [Header("UI Display")]
         [SerializeField] private GameObject displayBodyRTObj; // 承载body的RT的物体
-        
+        [Header("调试")]
+        [SerializeField] private bool showDebugInfo = false;
         // 内部引用
         private RenderTexture metaballsRT;
         private Camera metaballsCamera;
@@ -53,8 +54,10 @@ namespace LightVsDecay.Logic.Enemy
             };
             
             metaballsRT.Create();
-            
-            Debug.Log($"[MetaballsManager] RenderTexture created: {width}x{height}, Format: {rtFormat}");
+            if (showDebugInfo)
+            {
+                Debug.Log($"[MetaballsManager] RenderTexture created: {width}x{height}, Format: {rtFormat}");
+            }
         }
         
         /// <summary>
@@ -77,8 +80,11 @@ namespace LightVsDecay.Logic.Enemy
             metaballsCamera.cullingMask = enemyBodyLayer; // 只渲染EnemyBody
             metaballsCamera.targetTexture = metaballsRT;
             metaballsCamera.depth = -100; // 渲染优先级最低
-            
-            Debug.Log($"[MetaballsManager] Camera setup complete. Culling Mask: {LayerMask.LayerToName((int)Mathf.Log(enemyBodyLayer.value, 2))}");
+            if (showDebugInfo)
+            {
+                Debug.Log(
+                    $"[MetaballsManager] Camera setup complete. Culling Mask: {LayerMask.LayerToName((int) Mathf.Log(enemyBodyLayer.value, 2))}");
+            }
         }
         
         /// <summary>
@@ -105,7 +111,10 @@ namespace LightVsDecay.Logic.Enemy
             {
                 metaballsRT.Release();
                 Destroy(metaballsRT);
-                Debug.Log("[MetaballsManager] RenderTexture cleaned up");
+                if (showDebugInfo)
+                {
+                    Debug.Log("[MetaballsManager] RenderTexture cleaned up");
+                }
             }
         }
         

@@ -81,7 +81,8 @@ namespace LightVsDecay.UI.FloatingText
         
         private void Initialize()
         {
-            Debug.Log("[FloatingTextManager] ===== 开始初始化 =====");
+            if(showDebugInfo)
+                Debug.Log("[FloatingTextManager] ===== 开始初始化 =====");
             
             // 1. 验证配置
             if (config == null)
@@ -104,8 +105,8 @@ namespace LightVsDecay.UI.FloatingText
                 Debug.LogError("[FloatingTextManager] 初始化失败: 找不到 Canvas！");
                 return;
             }
-            
-            Debug.Log($"[FloatingTextManager] 使用 Canvas: {targetCanvas.name}");
+            if(showDebugInfo)
+                Debug.Log($"[FloatingTextManager] 使用 Canvas: {targetCanvas.name}");
             
             // 3. 创建池容器
             GameObject containerGO = new GameObject("[FloatingTextPool]");
@@ -118,14 +119,15 @@ namespace LightVsDecay.UI.FloatingText
             rt.anchoredPosition = Vector2.zero;
             
             poolContainer = containerGO.transform;
-            
-            Debug.Log($"[FloatingTextManager] 池容器已创建: {poolContainer.name}");
+            if(showDebugInfo)
+                Debug.Log($"[FloatingTextManager] 池容器已创建: {poolContainer.name}");
             
             // 4. 初始化各类型对象池
             InitializeTypePools();
             
             isInitialized = true;
-            Debug.Log($"[FloatingTextManager] ===== 初始化完成: 总创建={totalCreated} =====");
+            if(showDebugInfo)
+                Debug.Log($"[FloatingTextManager] ===== 初始化完成: 总创建={totalCreated} =====");
         }
         
         /// <summary>

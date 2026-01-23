@@ -80,7 +80,7 @@ namespace LightVsDecay.Logic.Player
         
         [Header("调试")]
         [SerializeField] private bool showDebugGizmos = true;
-        [SerializeField] private bool showDebugLogs = false;
+        [SerializeField] private bool showDebugInfo = false;
         
         [Header("旋转控制")]
         [Tooltip("旋转控制节点（LaserPivot）- 如果为空则自动查找")]
@@ -151,7 +151,7 @@ namespace LightVsDecay.Logic.Player
             InitializeLaser();
         }
         
-        private void Update()
+        private void LateUpdate()
         {
             // 每帧都计算激光路径（确保实时响应旋转）
             CalculateLaserPath();
@@ -181,7 +181,7 @@ namespace LightVsDecay.Logic.Player
             CalculateLaserPath();
             UpdateLaserVisuals();
             
-            if (showDebugLogs)
+            if (showDebugInfo)
             {
                 Debug.Log($"[LaserBeam] 初始化完成 - 反射: {(reflectionEnabled ? "启用" : "禁用")}");
             }
@@ -224,7 +224,7 @@ namespace LightVsDecay.Logic.Player
             Vector3 currentDirection = (worldEndPoint - startPoint).normalized;
             
             // 调试：打印旋转信息
-            if (showDebugLogs)
+            if(showDebugInfo)
             {
                 Debug.Log($"[LaserBeam] 起点: {startPoint}, 终点: {worldEndPoint}, 方向: {currentDirection}, Pivot旋转Z: {laserPivot.eulerAngles.z:F1}°");
             }
@@ -264,7 +264,7 @@ namespace LightVsDecay.Logic.Player
                         hitPoint = result.hitPoint;
                         currentHit = result.raycastHit;
                         
-                        if (showDebugLogs)
+                        if(showDebugInfo)
                         {
                             Debug.Log($"[LaserBeam] 击中敌人 - 位置: {result.hitPoint}");
                         }
@@ -282,7 +282,7 @@ namespace LightVsDecay.Logic.Player
                         currentPoint = result.hitPoint + currentDirection * GameConstants.REFLEX_POINT_OFFSET;
                         isFirstSegment = false;
                         
-                        if (showDebugLogs)
+                        if(showDebugInfo)
                         {
                             Debug.Log($"[LaserBeam] 墙壁反射 - 位置: {result.hitPoint}, 新方向: {currentDirection}");
                         }
@@ -486,7 +486,7 @@ namespace LightVsDecay.Logic.Player
         public void SetReflectionEnabled(bool enabled)
         {
             reflectionEnabled = enabled;
-            if (showDebugLogs)
+            if(showDebugInfo)
             {
                 Debug.Log($"[LaserBeam] 反射 {(enabled ? "启用" : "禁用")}");
             }
@@ -567,7 +567,8 @@ namespace LightVsDecay.Logic.Player
             
             if (pivot != null)
             {
-                Debug.Log($"[LaserBeam] LaserPivot 已设置: {pivot.name} (位置: {pivot.position})");
+                if(showDebugInfo)
+                    Debug.Log($"[LaserBeam] LaserPivot 已设置: {pivot.name} (位置: {pivot.position})");
             }
             else
             {

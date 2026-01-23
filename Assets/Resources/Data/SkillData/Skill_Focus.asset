@@ -27,6 +27,8 @@ MonoBehaviour:
     damageMultiplier: 1.5
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -41,12 +43,17 @@ MonoBehaviour:
     explosionOnKill: 0
     explosionDamage: 100
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u57FA\u7840\u4F24\u5BB3 <color=#00FF00>+80%</color>"
     damageMultiplier: 1.8
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -61,6 +68,9 @@ MonoBehaviour:
     explosionOnKill: 0
     explosionDamage: 100
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u57FA\u7840\u4F24\u5BB3 <color=#00FF00>+120%</color>\n\u5BF9 BOSS
@@ -68,6 +78,8 @@ MonoBehaviour:
     damageMultiplier: 2.2
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -82,12 +94,17 @@ MonoBehaviour:
     explosionOnKill: 0
     explosionDamage: 100
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u57FA\u7840\u4F24\u5BB3 <color=#00FF00>+160%</color>"
     damageMultiplier: 2.6
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -102,13 +119,18 @@ MonoBehaviour:
     explosionOnKill: 0
     explosionDamage: 100
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u57FA\u7840\u4F24\u5BB3 <color=#00FF00>+200%</color>\n[\u805A\u53D8]\u51FB\u6740\u5C0F\u602A\u5F15\u53D1
-      <color=#FF0000>250% \u8303\u56F4\u7206\u70B8</color> "
+      <color=#FF0000>200% \u8303\u56F4\u7206\u70B8</color> "
     damageMultiplier: 3
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -121,8 +143,11 @@ MonoBehaviour:
     reflexLengthBonus: 0
     critRateBonus: 0
     explosionOnKill: 1
-    explosionDamage: 100
+    explosionDamage: 50
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   baseWeight: 100

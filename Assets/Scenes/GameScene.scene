@@ -1160,6 +1160,7 @@ MonoBehaviour:
   cameraBackground: {r: 0, g: 0, b: 0, a: 1}
   cameraSize: 15
   displayBodyRTObj: {fileID: 2070459917}
+  showDebugInfo: 0
 --- !u!4 &124348605
 Transform:
   m_ObjectHideFlags: 0
@@ -2406,8 +2407,8 @@ MonoBehaviour:
   spawnOffset: 1.5
   eliteTankPrefab: {fileID: 7283361689419196302, guid: bc8ffc78722db7043ada0f88f923ac8c, type: 3}
   eliteDrifterPrefab: {fileID: 6171739888601257571, guid: c569fce9dc16d314a85667fe27f16cc2, type: 3}
-  showDebugInfo: 1
-  showSpawnArea: 1
+  showDebugInfo: 0
+  showSpawnArea: 0
 --- !u!1 &307729488
 GameObject:
   m_ObjectHideFlags: 0
@@ -12557,7 +12558,7 @@ MonoBehaviour:
   centerCrateX: 0
   rightCrateX: 4.5
   turretTransform: {fileID: 7209561176920752722}
-  showDebugInfo: 1
+  showDebugInfo: 0
 --- !u!1 &1245219309
 GameObject:
   m_ObjectHideFlags: 0
@@ -14003,7 +14004,7 @@ MonoBehaviour:
   shieldController: {fileID: 6960895871992148850}
   vfxColorSync: {fileID: 7547185026885081181}
   skillDatabase: {fileID: 11400000, guid: 68a59b6950502b142a899fa3880d365d, type: 2}
-  showDebugInfo: 1
+  showDebugInfo: 0
 --- !u!1 &1476883934
 GameObject:
   m_ObjectHideFlags: 0
@@ -17688,8 +17689,8 @@ MonoBehaviour:
   turretHealth: {fileID: 1626183057}
   shieldController: {fileID: 6960895871992148850}
   laserController: {fileID: 0}
-  showDebugInfo: 1
-  logToConsole: 1
+  showDebugInfo: 0
+  logToConsole: 0
 --- !u!1 &2002253803
 GameObject:
   m_ObjectHideFlags: 0
@@ -19022,7 +19023,7 @@ MonoBehaviour:
   bossEyesLayer:
     serializedVersion: 2
     m_Bits: 256
-  showDebugInfo: 1
+  showDebugInfo: 0
 --- !u!224 &3352247367108833418 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5562580028236921876, guid: 4ee97612d2ec13641955908b97eba771, type: 3}

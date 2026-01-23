@@ -38,9 +38,9 @@ MonoBehaviour:
     weight: 40
     isJackpot: 0
   - type: 2
-    value: 500
-    displayText: SHLD+500
-    weight: 20
+    value: 1000
+    displayText: SHLD+1000
+    weight: 10
     isJackpot: 1
   gachaResults:
   - resultType: 0

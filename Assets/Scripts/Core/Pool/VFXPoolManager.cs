@@ -139,12 +139,13 @@ namespace LightVsDecay.Core.Pool
                     );
                     
                     pools[config.type] = pool;
-                    
-                    Debug.Log($"[VFXPoolManager] {config.type} 池初始化: 预热{config.prewarmCount}, 上限{config.maxCount}");
+                    if (showDebugInfo)
+                        Debug.Log($"[VFXPoolManager] {config.type} 池初始化: 预热{config.prewarmCount}, 上限{config.maxCount}");
                 }
                 else
                 {
-                    Debug.Log($"[VFXPoolManager] {config.type} 使用普通Instantiate（非池化）");
+                    if (showDebugInfo)
+                        Debug.Log($"[VFXPoolManager] {config.type} 使用普通Instantiate（非池化）");
                 }
             }
         }

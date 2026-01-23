@@ -44,7 +44,8 @@ namespace LightVsDecay.Logic.Enemy
         [SerializeField] private float hitFlashDuration = 0.15f;        // 闪烁持续时间
         [SerializeField] private float hitSpeedBoostMultiplier = 3f;    // 抖动速度倍率
         [SerializeField] private Color defaultHitColor = Color.yellow;  // 默认受击颜色（激光初始黄色）
-
+        [Header("调试")]
+        [SerializeField] private bool showDebugInfo = false;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时配置缓存（从 EnemyData 加载）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -781,7 +782,8 @@ namespace LightVsDecay.Logic.Enemy
                 rb.AddForce(finalForce, ForceMode2D.Impulse);
     
 #if UNITY_EDITOR
-                Debug.Log($"[EnemyBlob] Drifter 弹飞! Force: {finalForce.magnitude:F1}, FullyEntered: {hasFullyEnteredScreen}");
+                if(showDebugInfo)
+                    Debug.Log($"[EnemyBlob] Drifter 弹飞! Force: {finalForce.magnitude:F1}, FullyEntered: {hasFullyEnteredScreen}");
 #endif
     
                 return; // 提前返回
@@ -803,7 +805,8 @@ namespace LightVsDecay.Logic.Enemy
             if (!hasFullyEnteredScreen)
             {
 #if UNITY_EDITOR
-                Debug.Log($"[EnemyBlob] {gameObject.name} 尚未完全入境，不触发弹飞");
+                if(showDebugInfo)
+                    Debug.Log($"[EnemyBlob] {gameObject.name} 尚未完全入境，不触发弹飞");
 #endif
                 return;
             }
@@ -816,7 +819,8 @@ namespace LightVsDecay.Logic.Enemy
             rb.angularDrag = 0f;
     
 #if UNITY_EDITOR
-            Debug.Log($"[EnemyBlob] {gameObject.name} 进入弹飞状态");
+            if(showDebugInfo)
+                Debug.Log($"[EnemyBlob] {gameObject.name} 进入弹飞状态");
 #endif
         }
 
@@ -827,7 +831,8 @@ namespace LightVsDecay.Logic.Enemy
         {
             isBeingKnockedBack = false;
 #if UNITY_EDITOR
-            Debug.Log($"[EnemyBlob] Drifter 弹飞结束，恢复移动");
+            if(showDebugInfo)
+                Debug.Log($"[EnemyBlob] Drifter 弹飞结束，恢复移动");
 #endif
         }
 
@@ -1271,7 +1276,8 @@ namespace LightVsDecay.Logic.Enemy
             // Drifter 直接使用 BouncingEnemy Layer（已在 DrifterSpawnHelper 中设置）
     
 #if UNITY_EDITOR
-            Debug.Log($"[EnemyBlob] {gameObject.name} 已完全入境，可以弹飞");
+            if(showDebugInfo)
+                Debug.Log($"[EnemyBlob] {gameObject.name} 已完全入境，可以弹飞");
 #endif
         }
 
