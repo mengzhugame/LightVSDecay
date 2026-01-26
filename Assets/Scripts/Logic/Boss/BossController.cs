@@ -168,7 +168,9 @@ namespace LightVsDecay.Logic.Boss
         private bool isFrozen = false;                   // 是否冰冻中
         private float frozenTimer = 0f;                  // 冰冻剩余时间
         private Vector2 velocityBeforeFrozen;            // 冰冻前的速度
-
+        // ═══ 狂暴状态 ═══
+        private bool hasTriggeredEnrage = false;  // 是否已触发过狂暴演出（防止重复触发）
+        private bool isEnrageEffectActive = false; // 狂暴红光效果是否激活
         // 缓存
         private ShieldController cachedShieldController;
 
@@ -255,7 +257,7 @@ namespace LightVsDecay.Logic.Boss
             
             // 【新增】更新冰冻照射重置计时
             UpdateFrostExposureReset();
-            
+            CheckEnrageTrigger();
 #if UNITY_EDITOR
             // 调试快捷键
             if (Input.GetKeyDown(KeyCode.K))
@@ -485,6 +487,11 @@ namespace LightVsDecay.Logic.Boss
                     return 0f; // 触发霸体
             }
             
+            // 狂暴状态下，控制效果持续时间额外减半
+            if (IsEnraged && config != null)
+            {
+                multiplier *= config.rageControlDurationMultiplier;
+            }
             return baseDuration * multiplier;
         }
         
@@ -676,7 +683,7 @@ namespace LightVsDecay.Logic.Boss
             if (state == BossState.Charge)
             {
                 chargeInterrupted = false;
-                if (redBodyEffect != null && !isUnstoppable) // 霸体时保持红色
+                if (redBodyEffect != null && !isUnstoppable && !isEnrageEffectActive)
                 {
                     redBodyEffect.SetActive(false);
                 }
@@ -686,7 +693,8 @@ namespace LightVsDecay.Logic.Boss
                 isPressing = false;
                 accumulatedPushForce = Vector2.zero;
                 isBeingPushed = false;
-                if (redBodyEffect != null && !isUnstoppable)
+                // 霸体或狂暴时保持红光
+                if (redBodyEffect != null && !isUnstoppable && !isEnrageEffectActive)
                 {
                     redBodyEffect.SetActive(false);
                 }
@@ -904,7 +912,7 @@ namespace LightVsDecay.Logic.Boss
         
         private IEnumerator IdleRoutine()
         {
-            float moveSpeed = config != null ? config.idleMoveSpeed : 1.5f;
+            float moveSpeed = config != null ? config.GetMoveSpeed(HealthPercent) : 1.5f;
             pollutionTimer = 0f;
             float pollutionInterval = config != null ? config.pollutionInterval : 4f;
             
@@ -1030,7 +1038,7 @@ namespace LightVsDecay.Logic.Boss
             if (EnemyPoolManager.Instance == null) return;
             
             int perSide = config != null ? config.summonRusherPerSide : 2;
-            float speedBonus = IsEnraged ? 1.3f : 1f;
+            float speedBonus = config != null ? config.GetRusherSpeedBonus(HealthPercent) : 1f;
             
             Camera cam = Camera.main;
             if (cam == null) return;
@@ -1141,7 +1149,7 @@ namespace LightVsDecay.Logic.Boss
             }
             
             int maxCount = config != null ? config.pollutionMaxCount : 3;
-            int burstCount = config != null ? config.pollutionBurstCount : 3;
+            int burstCount = config != null ? config.GetPollutionBurstCount(HealthPercent) : 3;
             float spreadAngle = config != null ? config.pollutionSpreadAngle : 30f;
             
             activePollutionBalls.RemoveAll(b => b == null || b.IsDestroyed);
@@ -2002,7 +2010,104 @@ namespace LightVsDecay.Logic.Boss
         {
             return EnemyPoolManager.Instance != null ? EnemyPoolManager.Instance.TotalActiveEnemies : 0;
         }
+        /// <summary>
+        /// 检查是否首次进入狂暴状态
+        /// </summary>
+        private void CheckEnrageTrigger()
+        {
+            // 已经触发过或未进入狂暴阈值
+            if (hasTriggeredEnrage || !IsEnraged) return;
+    
+            // 标记已触发
+            hasTriggeredEnrage = true;
+    
+            // 启动狂暴演出
+            StartCoroutine(EnrageTriggerRoutine());
+        }
+
+        /// <summary>
+        /// 狂暴触发演出协程
+        /// </summary>
+        private IEnumerator EnrageTriggerRoutine()
+        {
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 🔥 Boss 进入狂暴状态！触发演出...");
+            }
+    
+            // 1. 短暂停顿（Boss停止当前动作）
+            float pauseDuration = config != null ? config.enrageTriggerPauseDuration : 0.5f;
+    
+            // 2. 咆哮音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossRoar();
+            }
+    
+            // 3. 屏幕震动
+            float shakeIntensity = config != null ? config.enrageTriggerShakeIntensity : 0.6f;
+            float shakeDuration = config != null ? config.enrageTriggerShakeDuration : 0.8f;
+            if (CameraShake.Instance != null)
+            {
+                CameraShake.Instance.Shake(shakeIntensity, shakeDuration);
+            }
+    
+            // 4. 激活常驻红光效果
+            ActivateEnrageEffect();
+    
+            // 5. BGM加速
+            if (AudioManager.Instance != null)
+            {
+                float pitch = config != null ? config.rageBGMPitch : 1.15f;
+                AudioManager.Instance.SetBGMPitch(pitch);
+            }
+    
+            // 6. 显示狂暴提示文字
+            if (FloatingTextManager.Instance != null)
+            {
+                FloatingTextManager.Instance.ShowStatus(transform.position, "ENRAGED!");
+            }
+    
+            yield return new WaitForSeconds(pauseDuration);
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[BossController] 🔥 狂暴演出完成，Boss 变得更加狂暴！");
+            }
+        }
+
+        /// <summary>
+        /// 激活狂暴常驻红光效果（淡红光）
+        /// </summary>
+        private void ActivateEnrageEffect()
+        {
+            isEnrageEffectActive = true;
+            if (redBodyEffect != null)
+            {
+                redBodyEffect.SetActive(true);
         
+                // 调整红光透明度（狂暴时用淡红光，区别于Charge时的强红光）
+                SpriteRenderer sr = redBodyEffect.GetComponent<SpriteRenderer>();
+                if (sr != null)
+                {
+                    Color c = sr.color;
+                    c.a = config.enrageRedGlowAlpha;  // 40% 透明度，比 Charge 时更淡
+                    sr.color = c;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 关闭狂暴红光效果（Boss死亡时调用）
+        /// </summary>
+        private void DeactivateEnrageEffect()
+        {
+            isEnrageEffectActive = false;
+            if (redBodyEffect != null)
+            {
+                redBodyEffect.SetActive(false);
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

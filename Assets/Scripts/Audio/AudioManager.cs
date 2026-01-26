@@ -1012,5 +1012,29 @@ namespace LightVsDecay.Audio
                 }
             }
         }
+        /// <summary>
+        /// 设置BGM播放速度（pitch）
+        /// </summary>
+        /// <param name="pitch">播放速度（1.0=正常, >1=加速）</param>
+        public void SetBGMPitch(float pitch)
+        {
+            if (bgmSource != null)
+            {
+                bgmSource.pitch = Mathf.Clamp(pitch, 0.5f, 2.0f);
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[AudioManager] BGM Pitch 设置为: {pitch:F2}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 重置BGM播放速度为正常
+        /// </summary>
+        public void ResetBGMPitch()
+        {
+            SetBGMPitch(1.0f);
+        }
     }
 }

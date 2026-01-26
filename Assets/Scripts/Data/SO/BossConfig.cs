@@ -63,7 +63,39 @@ namespace LightVsDecay.Data.SO
         [Tooltip("水平游走范围（屏幕宽度百分比）")]
         [Range(0.5f, 1f)]
         public float idleMoveRangePercent = 0.8f;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Enrage (狂暴状态) 配置【新增】
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("═══ Enrage 狂暴状态 ═══")]
+        [Tooltip("狂暴时移速倍率")]
+        public float rageMoveSpeedMultiplier = 1.2f;
+
+        [Tooltip("狂暴时污秽球数量")]
+        public int ragePollutionBurstCount = 5;
+
+        [Tooltip("狂暴时召唤的Rusher移速加成")]
+        public float rageRusherSpeedBonus = 1.25f;
+
+        [Tooltip("狂暴时控制效果（僵直/冰冻）持续时间倍率")]
+        [Range(0.25f, 1f)]
+        public float rageControlDurationMultiplier = 0.5f;
+
+        [Header("═══ 狂暴触发演出 ═══")]
+        [Tooltip("狂暴触发时的屏幕震动强度")]
+        public float enrageTriggerShakeIntensity = 0.6f;
+
+        [Tooltip("狂暴触发时的屏幕震动时长")]
+        public float enrageTriggerShakeDuration = 0.8f;
+
+        [Tooltip("狂暴触发时的短暂停顿时长")]
+        public float enrageTriggerPauseDuration = 0.5f;
+        [Tooltip("狂暴常驻红光透明度")]
+        [Range(0.1f, 1f)]
+        public float enrageRedGlowAlpha = 0.4f;
+        [Tooltip("狂暴时BGM播放速度（pitch）")]
+        [Range(1.0f, 1.5f)]
+        public float rageBGMPitch = 1.15f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Summon (召唤爪牙) - 被动技能
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -382,6 +414,53 @@ namespace LightVsDecay.Data.SO
                 return widePushMultipliers[wideLevel];
             }
             return widePushMultipliers[0];
+        }
+        /// <summary>
+        /// 获取移动速度（根据狂暴状态）
+        /// </summary>
+        public float GetMoveSpeed(float healthPercent)
+        {
+            if (healthPercent <= rageHealthThreshold)
+            {
+                return idleMoveSpeed * rageMoveSpeedMultiplier;
+            }
+            return idleMoveSpeed;
+        }
+
+        /// <summary>
+        /// 获取污秽球数量（根据狂暴状态）
+        /// </summary>
+        public int GetPollutionBurstCount(float healthPercent)
+        {
+            if (healthPercent <= rageHealthThreshold)
+            {
+                return ragePollutionBurstCount;
+            }
+            return pollutionBurstCount;
+        }
+
+        /// <summary>
+        /// 获取召唤Rusher的移速加成（根据狂暴状态）
+        /// </summary>
+        public float GetRusherSpeedBonus(float healthPercent)
+        {
+            if (healthPercent <= rageHealthThreshold)
+            {
+                return rageRusherSpeedBonus;
+            }
+            return 1f;
+        }
+
+        /// <summary>
+        /// 获取控制效果持续时间倍率（狂暴时减半）
+        /// </summary>
+        public float GetControlDurationMultiplier(float healthPercent)
+        {
+            if (healthPercent <= rageHealthThreshold)
+            {
+                return rageControlDurationMultiplier;
+            }
+            return 1f;
         }
     }
 }
