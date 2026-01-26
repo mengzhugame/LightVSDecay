@@ -15,11 +15,10 @@ MonoBehaviour:
   ProjectConf:
     projectName: "\u5149\u4E0E\u673D"
     Appid: wx54087fcb5683bbc9
-    CDN: 
+    CDN: https://cloud1-8gj2md5vdae472ff-1398344935.tcloudbaseapp.com/webgl/
     assetLoadType: 0
     compressDataPackage: 1
     VideoUrl: 
-    relativeDST: D:/Wechat/LightVsDecay/Development
     DST: D:/Wechat/LightVsDecay/Development
     StreamCDN: 
     bundleHashLength: 32
@@ -46,7 +45,6 @@ MonoBehaviour:
     UseCompressedTexture: 0
     UseMiniGameChat: 0
     PreloadWXFont: 0
-    disableMultiTouch: 0
   CompileOptions:
     DevelopBuild: 0
     AutoProfile: 0
@@ -59,17 +57,13 @@ MonoBehaviour:
     ProfilingMemory: 0
     CleanBuild: 0
     CustomNodePath: 
-    autoAdaptScreen: 0
-    showMonitorSuggestModal: 1
+    autoAdaptScreen: 1
+    showMonitorSuggestModal: 0
     enableProfileStats: 0
     enableRenderAnalysis: 0
-    enablePerfAnalysis: 0
     iOSAutoGCInterval: 10000
     enableIOSPerformancePlus: 0
-    enableiOSMetal: 0
-    enableEmscriptenGLX: 0
     brotliMT: 1
-    enableWasm2023: 0
   CompressTexture:
     halfSize: 0
     useDXT5: 0
