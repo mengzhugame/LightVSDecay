@@ -168,6 +168,8 @@ namespace LightVsDecay.Logic.Boss
         private bool isFrozen = false;                   // 是否冰冻中
         private float frozenTimer = 0f;                  // 冰冻剩余时间
         private Vector2 velocityBeforeFrozen;            // 冰冻前的速度
+
+        private FrostDebuff frostDebuff;  // FrostDebuff 组件引用
         // ═══ 狂暴状态 ═══
         private bool hasTriggeredEnrage = false;  // 是否已触发过狂暴演出（防止重复触发）
         private bool isEnrageEffectActive = false; // 狂暴红光效果是否激活
@@ -237,6 +239,17 @@ namespace LightVsDecay.Logic.Boss
             InitializePositions();
             CalculateScreenBounds();
             CacheOriginalColors();
+            // 【新增】初始化 FrostDebuff 并设置渲染器
+            frostDebuff = GetComponent<FrostDebuff>();
+            if (frostDebuff == null)
+            {
+                frostDebuff = gameObject.AddComponent<FrostDebuff>();
+            }
+            // 传入 Boss 的身体渲染器
+            if (bodyRenderers != null && bodyRenderers.Length > 0)
+            {
+                frostDebuff.SetTargetRenderers(bodyRenderers);
+            }
             
             summonCooldownTimer = config != null ? config.summonCooldown : 15f;
             summonCooldownReady = false;
@@ -351,7 +364,9 @@ namespace LightVsDecay.Logic.Boss
             
             // 冰冻期间不累积
             if (currentState == BossState.Frozen) return;
-            
+            // 【新增】Press角力期间不累积冰冻（但减速仍然生效）
+            if (currentState == BossState.Press) return;
+
             frostExposureTime += deltaTime;
             frostExposureResetTimer = FROST_EXPOSURE_RESET_DELAY;
             
@@ -395,7 +410,13 @@ namespace LightVsDecay.Logic.Boss
                 ShowCounterText("UNSTOPPABLE!");
                 return false;
             }
-            
+            // 【新增】Press角力期间免疫冰冻
+            if (currentState == BossState.Press)
+            {
+                if (showDebugInfo)
+                    Debug.Log("[BossController] ❄️ 冰冻被角力状态免疫！");
+                return false;
+            }
             // 已经冰冻中
             if (currentState == BossState.Frozen)
             {
@@ -594,22 +615,29 @@ namespace LightVsDecay.Logic.Boss
         }
         
         /// <summary>
-        /// 应用冰冻效果（内部方法）
+        /// 应用冰冻效果
         /// </summary>
         private void ApplyFreeze(float duration)
         {
-            frozenTimer = duration;
-            stateBeforeFrozen = currentState;
-            
             // 增加控制计数
             controlStack++;
+            
+            // 记录冰冻前状态
+            stateBeforeFrozen = currentState;
+            frozenTimer = duration;
+            
+            // 【修改】使用 FrostDebuff 处理视觉效果
+            if (frostDebuff != null)
+            {
+                frostDebuff.ApplyFreeze(duration);
+            }
             
             // 切换到冰冻状态
             ChangeState(BossState.Frozen);
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] ❄️ Boss 被冰冻！时长: {duration:F2}s, 控制层数: {controlStack}");
+                Debug.Log($"[BossController] ❄️ 冰冻生效！时长: {duration:F2}s, 控制层数: {controlStack}");
             }
         }
 
@@ -751,10 +779,7 @@ namespace LightVsDecay.Logic.Boss
             // 保存并停止速度
             velocityBeforeFrozen = rb.velocity;
             rb.velocity = Vector2.zero;
-            
-            // 视觉效果：冰冻染色
-            SetBodyFrozenVisual(true);
-            
+
             // 显示飘字
             ShowCounterText("FROZEN!");
             
@@ -816,23 +841,16 @@ namespace LightVsDecay.Logic.Boss
         /// <summary>
         /// 设置冰冻视觉效果
         /// </summary>
+        /// <summary>
+        /// 设置冰冻视觉效果（冰冻结束时调用）
+        /// </summary>
         private void SetBodyFrozenVisual(bool frozen)
         {
-            Color frozenTint = new Color(0.3f, 0.6f, 1f, 1f); // 冰蓝色
-            
-            for (int i = 0; i < bodyRenderers.Length; i++)
+            // 冰冻视觉效果已由 FrostDebuff 管理
+            // 这里只处理冰冻结束时重置 FrostDebuff
+            if (!frozen && frostDebuff != null)
             {
-                if (bodyRenderers[i] != null)
-                {
-                    if (frozen)
-                    {
-                        bodyRenderers[i].color = originalColors[i] * frozenTint;
-                    }
-                    else
-                    {
-                        bodyRenderers[i].color = originalColors[i];
-                    }
-                }
+                frostDebuff.ResetDebuff();
             }
         }
         
@@ -2108,6 +2126,46 @@ namespace LightVsDecay.Logic.Boss
                 redBodyEffect.SetActive(false);
             }
         }
+
+        /// <summary>
+        /// 应用减速效果（由 LaserController 调用）
+        /// </summary>
+        public void ApplyFrostSlow(float slowPercent, float duration)
+        {
+            // 霸体期间免疫
+            if (isUnstoppable) return;
+            
+            // 冰冻期间不叠加减速
+            if (currentState == BossState.Frozen) return;
+            
+            if (frostDebuff == null) return;
+            
+            // 应用 Boss 减速削弱系数
+            float multiplier = config != null ? config.bossSlowEffectMultiplier : 0.5f;
+            float actualSlowPercent = slowPercent * multiplier;
+            float actualDuration = duration * multiplier;
+            
+            // 调用 FrostDebuff 处理减速（包括视觉效果）
+            frostDebuff.ApplySlow(actualSlowPercent, actualDuration);
+            
+            if (showDebugInfo && !frostDebuff.IsSlowed)
+            {
+                Debug.Log($"[BossController] ❄️ Boss 减速！{actualSlowPercent:P0} 持续 {actualDuration:F1}s");
+            }
+        }
+        
+        /// <summary>
+        /// 获取当前减速后的速度倍率
+        /// </summary>
+        public float GetSlowedSpeedMultiplier()
+        {
+            if (frostDebuff == null) return 1f;
+            return frostDebuff.SpeedMultiplier;
+        }
+        /// <summary>
+        /// 是否处于减速状态
+        /// </summary>
+        public bool IsSlowed => frostDebuff != null && frostDebuff.IsSlowed;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

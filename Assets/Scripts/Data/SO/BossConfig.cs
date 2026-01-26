@@ -276,6 +276,13 @@ namespace LightVsDecay.Data.SO
 
         [Tooltip("冰冻结束后回到的状态（true=Idle，false=尝试恢复之前状态）")]
         public bool frozenReturnToIdle = true;
+        [Header("═══ Boss减速效果 ═══")]
+        [Tooltip("Boss受到减速效果的削弱系数（0.5 = 减速效果只有50%）")]
+        [Range(0f, 1f)]
+        public float bossSlowEffectMultiplier = 0.5f;
+
+        [Tooltip("Boss减速视觉染色")]
+        public Color bossSlowTintColor = new Color(0.7f, 0.85f, 1f, 1f);
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 【新增】霸体系统 (Unstoppable)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

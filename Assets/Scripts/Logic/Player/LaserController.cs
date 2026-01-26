@@ -534,8 +534,28 @@ namespace LightVsDecay.Logic.Player
 
                         // 角力系统
                         BossController bossController = bossHealth.GetComponent<BossController>();
-                        if (bossController != null)
+                        if (bossController != null && SkillEffectManager.Instance != null)
                         {
+                            int frostLevel = SkillEffectManager.Instance.GetFrostLevel();
+                            // LV1-5 都应用减速效果
+                            if (frostLevel >= 1)
+                            {
+                                float slowPercent, duration;
+                                SkillEffectManager.Instance.GetFrostParams(out slowPercent, out duration);
+                                    
+                                if (slowPercent > 0f)
+                                {
+                                    bossController.ApplyFrostSlow(slowPercent, duration);
+                                    PlayBossFrostVFX(bossController);
+                                }
+                            }
+                                
+                            // LV5 才累积冰冻
+                            if (frostLevel >= 5)
+                            {
+                                bossController.AddFrostExposureTime(tickRate);
+                            }
+                            
                             int impactLevel = SkillEffectManager.Instance != null 
                                 ? SkillEffectManager.Instance.GetImpactLevel() : 0;
                             
@@ -664,6 +684,23 @@ namespace LightVsDecay.Logic.Player
                             {
                                 // 只有当 Frost 技能激活且达到 LV5 时才能冻结 Boss
                                 int frostLevel = SkillEffectManager.Instance.GetFrostLevel();
+                                // 【新增】LV1-5 都应用减速效果（Boss有削弱系数）
+                                if (frostLevel >= 1)
+                                {
+                                    float slowPercent, duration;
+                                    SkillEffectManager.Instance.GetFrostParams(out slowPercent, out duration);
+                                    
+                                    if (slowPercent > 0f)
+                                    {
+                                        // 应用减速（BossController内部会处理削弱系数）
+                                        bossController.ApplyFrostSlow(slowPercent, duration);
+                                        
+                                        // 【新增】播放 Frost 粒子特效
+                                        PlayBossFrostVFX(bossController);
+                                    }
+                                }
+                                
+                                // LV5 才累积冰冻
                                 if (frostLevel >= 5)
                                 {
                                     // 累加照射时间（每 Tick 调用一次）
@@ -912,6 +949,30 @@ namespace LightVsDecay.Logic.Player
             // 播放粒子
             VFXPoolManager.Instance.PlayFrostHit(enemy.transform.position);
             lastFrostVFXTime[enemyId] = currentTime;
+        }
+        /// <summary>
+        /// 播放 Boss Frost 粒子特效（带间隔限制）
+        /// </summary>
+        private void PlayBossFrostVFX(BossController bossController)
+        {
+            if (VFXPoolManager.Instance == null) return;
+            if (bossController == null) return;
+    
+            int bossId = bossController.GetInstanceID();
+            float currentTime = Time.time;
+    
+            // 检查间隔
+            if (lastFrostVFXTime.TryGetValue(bossId, out float lastTime))
+            {
+                if (currentTime - lastTime < FROST_VFX_INTERVAL)
+                {
+                    return; // 还在冷却中
+                }
+            }
+    
+            // 播放粒子
+            VFXPoolManager.Instance.PlayFrostHit(bossController.transform.position);
+            lastFrostVFXTime[bossId] = currentTime;
         }
         /// <summary>
         /// 应用寒气扩散效果（每 Tick 结束时调用）
