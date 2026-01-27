@@ -15,7 +15,7 @@ MonoBehaviour:
   type: 2
   displayName: "\u98DE\u901F\u602A"
   description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8840\u5C11\uFF0C\u901F\u5EA6\u5FEB"
-  maxHealth: 40
+  maxHealth: 400
   moveSpeed: 1.5
   mass: 0.5
   contactDamage: 20

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f08c93735e3ebd468254b7f0b24e8d3, type: 3}
   m_Name: BossConfig
   m_EditorClassIdentifier: 
-  maxHealth: 50000
+  maxHealth: 500000
   spawnDuration: 2.5
   battleAnchorY: 3.5
   spawnShakeIntensity: 0.5
@@ -24,6 +24,15 @@ MonoBehaviour:
   rageHealthThreshold: 0.3
   idleMoveSpeed: 1.5
   idleMoveRangePercent: 0.8
+  rageMoveSpeedMultiplier: 1.2
+  ragePollutionBurstCount: 5
+  rageRusherSpeedBonus: 1.25
+  rageControlDurationMultiplier: 0.5
+  enrageTriggerShakeIntensity: 0.6
+  enrageTriggerShakeDuration: 0.8
+  enrageTriggerPauseDuration: 0.5
+  enrageRedGlowAlpha: 0.4
+  rageBGMPitch: 1.15
   summonCooldown: 15
   summonCooldownRage: 10
   summonDuration: 1.5
@@ -85,6 +94,8 @@ MonoBehaviour:
   bossFrostFreezeThreshold: 1
   bossFrostFreezeDuration: 2
   frozenReturnToIdle: 1
+  bossSlowEffectMultiplier: 0.5
+  bossSlowTintColor: {r: 0.7, g: 0.85, b: 1, a: 1}
   unstoppableDuration: 6
   unstoppablePushMultiplier: 0.3
   controlDiminish2nd: 0.5

@@ -17,16 +17,18 @@ MonoBehaviour:
   cardType: 1
   displayName: "\u81F4\u547D\u66B4\u51FB"
   icon: {fileID: 21300000, guid: 895215fe79d8d8a49b6f3849663df51a, type: 3}
-  description: "\u63D0\u9AD8\u6FC0\u5149\u66B4\u51FB\u7387\uFF0C\u66B4\u51FB\u65F6\u9020\u6210\u53CC\u500D\u4F24\u5BB3"
+  description: "\u63D0\u9AD8\u6FC0\u5149\u66B4\u51FB\u7387\uFF0C\u66B4\u51FB\u65F6\u9020\u6210\u53CC\u500D\u4F24\u5BB3,\u98D8\u5B57X2\uFF0C\u5B9E\u9645\u662F1"
   changeColor: 0
   skillColor: {r: 1, g: 1, b: 1, a: 1}
   maxLevel: 5
   isRepeatable: 0
   levelData:
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+5%</color>"
+  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+10%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -41,12 +43,17 @@ MonoBehaviour:
     explosionOnKill: 0
     explosionDamage: 100
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+10%</color>"
+  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+20%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -61,12 +68,17 @@ MonoBehaviour:
     explosionOnKill: 0
     explosionDamage: 100
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+15%</color>"
+  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+30%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -81,12 +93,17 @@ MonoBehaviour:
     explosionOnKill: 0
     explosionDamage: 100
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+20%</color>"
+  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+40%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -101,12 +118,17 @@ MonoBehaviour:
     explosionOnKill: 0
     explosionDamage: 100
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+30%</color>"
+  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+50%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -117,10 +139,13 @@ MonoBehaviour:
     widthMultiplier: 0
     reflexDamageMultiplier: 0
     reflexLengthBonus: 0
-    critRateBonus: 0.3
+    critRateBonus: 0.25
     explosionOnKill: 0
     explosionDamage: 100
     explosionRadius: 2
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   baseWeight: 100

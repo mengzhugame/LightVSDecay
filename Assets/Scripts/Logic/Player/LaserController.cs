@@ -84,6 +84,7 @@ namespace LightVsDecay.Logic.Player
         private float baseCritRate = 0.1f;
 
         private float critDamageMultiplier = 2.0f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -93,7 +94,8 @@ namespace LightVsDecay.Logic.Player
         private float skillDamageMultiplier = 1f;
         private float skillKnockbackMultiplier = 1f;
         private float skillWidthMultiplier = 1f;
-        
+        private float flatDamageBonus = 0f;  // 固定值攻击力加成
+        private float skillLengthMultiplier = 1f;  // 长度倍率
         // 暴击率加成（技能/事件可修改）
         private float critRateBonus = 0f;
         
@@ -171,17 +173,11 @@ namespace LightVsDecay.Logic.Player
         
         /// <summary>当前副激光宽度</summary>
         public float CurrentSubLaserWidth => CurrentLaserWidth * SUB_LASER_WIDTH_RATIO;
-        
-        /// <summary>每 Tick 伤害</summary>
-        public float CurrentDamagePerTick => baseDPS * tickRate * skillDamageMultiplier ;
-        
         /// <summary>当前击退力</summary>
         public float CurrentKnockbackForce => baseKnockbackForce * skillKnockbackMultiplier ;
         
         /// <summary>当前暴击率</summary>
         public float CurrentCritRate => Mathf.Clamp01(baseCritRate + critRateBonus);
-        /// <summary>当前面板DPS（用于爆炸伤害计算，不含tickRate）</summary>
-        public float CurrentPanelDPS => baseDPS * skillDamageMultiplier;
         /// <summary>暴击倍率</summary>
         public float CritMultiplier => critDamageMultiplier;
 
@@ -193,6 +189,14 @@ namespace LightVsDecay.Logic.Player
 
         /// <summary>是否启用反射</summary>
         public bool IsReflexEnabled => reflexEnabled;
+        /// <summary>当前激光长度</summary>
+        public float CurrentLaserLength => maxLaserLength * skillLengthMultiplier;
+
+        /// <summary>每 Tick 伤害（新公式）</summary>
+        public float CurrentDamagePerTick => (baseDPS + flatDamageBonus) * tickRate * skillDamageMultiplier;
+
+        /// <summary>当前面板DPS（新公式，用于爆炸伤害计算）</summary>
+        public float CurrentPanelDPS => (baseDPS + flatDamageBonus) * skillDamageMultiplier;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -262,7 +266,7 @@ namespace LightVsDecay.Logic.Player
             if (mainLaserBeam != null)
             {
                 mainLaserBeam.SetLaserWidth(CurrentLaserWidth);
-                mainLaserBeam.SetMaxLength(maxLaserLength);
+                mainLaserBeam.SetMaxLength(CurrentLaserLength);
             }
             // 传递 LaserPivot 引用给 LaserBeam（关键！）
             if (mainLaserBeam != null && laserPivot != null)
@@ -1199,13 +1203,78 @@ namespace LightVsDecay.Logic.Player
         {
             skillDamageMultiplier += percent;
         }
-        
-        public void AddWidthPercent(float percent)
+
+        public void AddWidthPercent(float percent, float minPercent = 0f)
         {
-            skillWidthMultiplier += percent;
+            float newMultiplier = skillWidthMultiplier + percent;
+    
+            // 下限保护（仅当 minPercent > 0 时生效）
+            if (minPercent > 0f && newMultiplier < minPercent)
+            {
+                newMultiplier = minPercent;
+            }
+    
+            skillWidthMultiplier = newMultiplier;
             UpdateAllLaserWidths();
         }
-        
+        /// <summary>
+        /// 添加固定值攻击力
+        /// </summary>
+        public void AddDamageFlat(float value)
+        {
+            flatDamageBonus += value;
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] 固定攻击力 +{value}, 总加成: {flatDamageBonus}, 当前DPS: {CurrentPanelDPS:F0}");
+            }
+        }
+
+        /// <summary>
+        /// 添加激光长度（带下限保护）
+        /// </summary>
+        public void AddLengthPercent(float percent, float minPercent = 0.8f)
+        {
+            float newMultiplier = skillLengthMultiplier + percent;
+    
+            // 下限保护
+            if (newMultiplier < minPercent)
+            {
+                newMultiplier = minPercent;
+            }
+    
+            skillLengthMultiplier = newMultiplier;
+    
+            // 更新主激光长度
+            if (mainLaserBeam != null)
+            {
+                mainLaserBeam.SetMaxLength(CurrentLaserLength);
+            }
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] 激光长度倍率: {skillLengthMultiplier:P0}, 当前长度: {CurrentLaserLength:F1}");
+            }
+        }
+        /// <summary>
+        /// 重置所有空投加成（游戏开始时调用）
+        /// </summary>
+        public void ResetDropBonuses()
+        {
+            flatDamageBonus = 0f;
+            skillLengthMultiplier = 1f;
+            // 注意：skillDamageMultiplier 和 skillWidthMultiplier 由技能系统控制，不在这里重置
+    
+            if (mainLaserBeam != null)
+            {
+                mainLaserBeam.SetMaxLength(CurrentLaserLength);
+            }
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[LaserController] 空投加成已重置");
+            }
+        }
         private void UpdateAllLaserWidths()
         {
             if (mainLaserBeam != null)
@@ -1453,6 +1522,7 @@ namespace LightVsDecay.Logic.Player
         }
 
         #endregion
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

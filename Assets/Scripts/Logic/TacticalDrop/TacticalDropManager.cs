@@ -2,6 +2,7 @@
 // TacticalDropManager.cs
 // 文件位置: Assets/Scripts/Logic/TacticalDrop/TacticalDropManager.cs
 // 用途：战术空投宝箱系统管理器
+// 更新：v2.1 - 新增金币奖励、下一波怪物增强效果
 // ============================================================
 
 using UnityEngine;
@@ -16,6 +17,25 @@ using LightVsDecay.UI.FloatingText.TacticalDrop;
 namespace LightVsDecay.Logic.TacticalDrop
 {
     /// <summary>
+    /// 下一波怪物增强数据
+    /// </summary>
+    public struct NextWaveBuffData
+    {
+        public float speedMultiplier;   // 移速倍率（1.0 = 无加成）
+        public float healthMultiplier;  // 血量倍率
+        public float damageMultiplier;  // 伤害倍率
+        
+        public static NextWaveBuffData Default => new NextWaveBuffData
+        {
+            speedMultiplier = 1f,
+            healthMultiplier = 1f,
+            damageMultiplier = 1f
+        };
+        
+        public bool HasBuff => speedMultiplier > 1f || healthMultiplier > 1f || damageMultiplier > 1f;
+    }
+    
+    /// <summary>
     /// 战术空投系统管理器
     /// 职责：
     /// - 监听波次完成事件
@@ -23,6 +43,7 @@ namespace LightVsDecay.Logic.TacticalDrop
     /// - 处理宝箱被击破时的奖励
     /// - 控制奖励飘字动画
     /// - 通知 WaveManager 开始下一波
+    /// - 【新增】管理下一波怪物增强效果
     /// </summary>
     public class TacticalDropManager : MonoBehaviour
     {
@@ -86,11 +107,19 @@ namespace LightVsDecay.Logic.TacticalDrop
         private ShieldController shieldController;
         private LaserController laserController;
         
+        // 【新增】下一波怪物增强数据
+        private NextWaveBuffData nextWaveBuff = NextWaveBuffData.Default;
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         public bool IsDropPhase => isDropPhase;
+        
+        /// <summary>
+        /// 【新增】获取下一波怪物增强数据
+        /// </summary>
+        public NextWaveBuffData NextWaveBuff => nextWaveBuff;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -116,12 +145,16 @@ namespace LightVsDecay.Logic.TacticalDrop
             // 订阅波次完成事件
             GameEvents.OnWaveComplete += OnWaveComplete;
             GameEvents.OnGameStart += OnGameStart;
+            GameEvents.OnGameDefeat += OnGameOver;      
+            GameEvents.OnGameVictory += OnGameOver; 
         }
         
         private void OnDisable()
         {
             GameEvents.OnWaveComplete -= OnWaveComplete;
             GameEvents.OnGameStart -= OnGameStart;
+            GameEvents.OnGameDefeat -= OnGameOver;     
+            GameEvents.OnGameVictory -= OnGameOver; 
         }
         
         private void OnDestroy()
@@ -163,6 +196,65 @@ namespace LightVsDecay.Logic.TacticalDrop
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 下一波增强管理
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 【新增】消费并重置下一波增强数据（由 WaveManager 在波次开始时调用）
+        /// </summary>
+        public NextWaveBuffData ConsumeNextWaveBuff()
+        {
+            NextWaveBuffData buff = nextWaveBuff;
+            nextWaveBuff = NextWaveBuffData.Default;
+            
+            if (showDebugInfo && buff.HasBuff)
+            {
+                Debug.Log($"[TacticalDropManager] 应用下波增强: Speed={buff.speedMultiplier:P0}, HP={buff.healthMultiplier:P0}, DMG={buff.damageMultiplier:P0}");
+            }
+            
+            return buff;
+        }
+        
+        /// <summary>
+        /// 【新增】添加下一波移速增强
+        /// </summary>
+        private void AddNextWaveSpeedBuff(float percent)
+        {
+            nextWaveBuff.speedMultiplier += percent;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[TacticalDropManager] 下一波移速增强: +{percent:P0} → 总计 {nextWaveBuff.speedMultiplier:P0}");
+            }
+        }
+        
+        /// <summary>
+        /// 【新增】添加下一波血量增强
+        /// </summary>
+        private void AddNextWaveHealthBuff(float percent)
+        {
+            nextWaveBuff.healthMultiplier += percent;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[TacticalDropManager] 下一波血量增强: +{percent:P0} → 总计 {nextWaveBuff.healthMultiplier:P0}");
+            }
+        }
+        
+        /// <summary>
+        /// 【新增】添加下一波伤害增强
+        /// </summary>
+        private void AddNextWaveDamageBuff(float percent)
+        {
+            nextWaveBuff.damageMultiplier += percent;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[TacticalDropManager] 下一波伤害增强: +{percent:P0} → 总计 {nextWaveBuff.damageMultiplier:P0}");
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
@@ -172,15 +264,38 @@ namespace LightVsDecay.Logic.TacticalDrop
         private void OnGameStart()
         {
             gachaBadLuckCounter = 0;
+            nextWaveBuff = NextWaveBuffData.Default;
             ClearAllCrates();
             CacheComponents();
-            
+
             if (showDebugInfo)
             {
                 Debug.Log("[TacticalDropManager] 游戏开始，重置状态");
             }
         }
-        
+        // 3. 新增 OnGameOver 方法
+        /// <summary>
+        /// 游戏结束时重置（失败或胜利）
+        /// </summary>
+        private void OnGameOver()
+        {
+            // 重置激光空投加成
+            if (laserController != null)
+            {
+                laserController.ResetDropBonuses();
+            }
+    
+            // 重置暴击率加成
+            if (laserController != null)
+            {
+                laserController.ResetCritRateBonus();
+            }
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[TacticalDropManager] 游戏结束，重置空投加成");
+            }
+        }
         /// <summary>
         /// 波次完成时触发空投
         /// </summary>
@@ -211,9 +326,6 @@ namespace LightVsDecay.Logic.TacticalDrop
         /// <summary>
         /// 开始空投阶段
         /// </summary>
-        /// <summary>
-        /// 开始空投阶段
-        /// </summary>
         private IEnumerator StartDropPhase()
         {
             isDropPhase = true;
@@ -236,6 +348,7 @@ namespace LightVsDecay.Logic.TacticalDrop
                 Debug.Log("[TacticalDropManager] 所有无人机已落地，等待玩家选择...");
             }
         }
+        
         /// <summary>
         /// 错帧生成3个无人机（左→中→右）
         /// </summary>
@@ -243,60 +356,44 @@ namespace LightVsDecay.Logic.TacticalDrop
         {
             int crateHP = rewardConfig != null ? rewardConfig.crateHP : 500;
             int landedCount = 0;
-            
-            // 左：蓝色补给无人机（最先入场）
-            SpawnCrate(supplyCratePrefab, CrateType.Supply, leftCrateX, crateHP, enterDuration, 
-                () => landedCount++);
-            
-            // 等待错帧间隔
+
+            // 左侧 - 补给
+            SpawnCrate(supplyCratePrefab, CrateType.Supply, leftCrateX, crateHP, enterDuration, () => landedCount++);
             yield return new WaitForSeconds(staggerDelay);
-            
-            // 中：金色问号无人机
-            SpawnCrate(gachaCratePrefab, CrateType.Gacha, centerCrateX, crateHP, enterDuration,
-                () => landedCount++);
-            
-            // 等待错帧间隔
+
+            // 中间 - 问号
+            SpawnCrate(gachaCratePrefab, CrateType.Gacha, centerCrateX, crateHP, enterDuration, () => landedCount++);
             yield return new WaitForSeconds(staggerDelay);
-            
-            // 右：红色契约无人机（最后入场）
-            SpawnCrate(dealCratePrefab, CrateType.Deal, rightCrateX, crateHP, enterDuration,
-                () => landedCount++);
-            
-            // 等待最后一个无人机落地
-            yield return new WaitForSeconds(enterDuration + 0.05f);
-            
-            // 确保所有无人机都已落地
-            while (landedCount < activeCrates.Count)
+
+            // 右侧 - 契约
+            SpawnCrate(dealCratePrefab, CrateType.Deal, rightCrateX, crateHP, enterDuration, () => landedCount++);
+
+            // 等待所有无人机落地
+            float timeout = enterDuration + 1f;
+            float timer = 0f;
+            while (landedCount < 3 && timer < timeout)
             {
                 yield return null;
-            }
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[TacticalDropManager] 全部 {landedCount} 个无人机已落地");
+                timer += Time.deltaTime;
             }
         }
+        
         /// <summary>
-        /// 统一启用所有无人机的伤害
+        /// 统一启用所有无人机的伤害检测
         /// </summary>
         private void EnableAllCratesDamage()
         {
             foreach (var crate in activeCrates)
             {
-                if (crate != null && !crate.IsDead)
+                if (crate != null)
                 {
                     crate.EnableDamage();
                 }
             }
-            
-            if (showDebugInfo)
-            {
-                Debug.Log("[TacticalDropManager] 所有无人机已启用伤害");
-            }
         }
-
+        
         /// <summary>
-        /// 生成单个无人机
+        /// 生成单个宝箱
         /// </summary>
         private void SpawnCrate(GameObject prefab, CrateType type, float xPos, int hp, float dropDuration, System.Action onLanded = null)
         {
@@ -404,9 +501,9 @@ namespace LightVsDecay.Logic.TacticalDrop
             if (BattleStatistics.Instance != null)
             {
                 BattleStatistics.Instance.RecordDroneChoice(
-                    "Supply",                           // 箱子类型
-                    reward.type.ToString(),             // 奖励类型 (HealthRestore/ShieldRestore/etc)
-                    reward.displayText                  // 奖励显示值 (+100 HP/etc)
+                    "Supply",
+                    reward.type.ToString(),
+                    reward.displayText
                 );
             }
             // 显示飘字
@@ -459,23 +556,42 @@ namespace LightVsDecay.Logic.TacticalDrop
     
             if (resultType == GachaResultType.Nothing)
             {
-                // 谢谢惠顾
-                // 【v2.0】上报空奖励
-                if (BattleStatistics.Instance != null)
+                // 【v2.1】Nothing 现在改为金币奖励
+                if (reward != null)
                 {
-                    BattleStatistics.Instance.RecordDroneChoice("Gacha", "Nothing", mockText ?? "谢谢惠顾");
+                    ApplyReward(reward);
+                    
+                    // 上报
+                    if (BattleStatistics.Instance != null)
+                    {
+                        BattleStatistics.Instance.RecordDroneChoice("Gacha_Coin", reward.type.ToString(), reward.displayText);
+                    }
+                    
+                    // 显示金币飘字
+                    if (DroneRewardTextManager.Instance != null)
+                    {
+                        DroneRewardTextManager.Instance.ShowCoinReward(textPos, reward.displayText);
+                    }
                 }
-    
-                if (DroneRewardTextManager.Instance != null)
+                else
                 {
-                    DroneRewardTextManager.Instance.ShowGachaNothing(textPos, mockText);
+                    // 兼容旧配置：如果没有配置金币奖励池，显示嘲讽文案
+                    if (BattleStatistics.Instance != null)
+                    {
+                        BattleStatistics.Instance.RecordDroneChoice("Gacha", "Nothing", mockText ?? "谢谢惠顾");
+                    }
+    
+                    if (DroneRewardTextManager.Instance != null)
+                    {
+                        DroneRewardTextManager.Instance.ShowGachaNothing(textPos, mockText);
+                    }
                 }
             }
             else if (reward != null)
             {
                 ApplyReward(reward);
     
-                // 【v2.0】上报无人机选择
+                // 上报
                 if (BattleStatistics.Instance != null)
                 {
                     string gachaType = resultType == GachaResultType.Epic ? "Gacha_Epic" : 
@@ -487,16 +603,26 @@ namespace LightVsDecay.Logic.TacticalDrop
                     );
                 }
 
+                // 判断是否为怪物增强效果
+                bool isMonsterBuff = rewardConfig.IsMonsterBuffReward(reward.type);
                 bool isEpic = resultType == GachaResultType.Epic;
 
                 if (DroneRewardTextManager.Instance != null)
                 {
-                    DroneRewardTextManager.Instance.ShowGachaReward(
-                        textPos,
-                        reward.type,
-                        reward.displayText,
-                        isEpic
-                    );
+                    if (isMonsterBuff)
+                    {
+                        // 显示怪物增强飘字
+                        DroneRewardTextManager.Instance.ShowMonsterBuffEffect(textPos, reward.displayText);
+                    }
+                    else
+                    {
+                        DroneRewardTextManager.Instance.ShowGachaReward(
+                            textPos,
+                            reward.type,
+                            reward.displayText,
+                            isEpic
+                        );
+                    }
                 }
             }
     
@@ -603,6 +729,13 @@ namespace LightVsDecay.Logic.TacticalDrop
                     }
                     break;
                     
+                case RewardType.BaseDamageFlat:
+                    if (laserController != null)
+                    {
+                        laserController.AddDamageFlat(reward.value);
+                    }
+                    break;
+                    
                 case RewardType.CritRatePercent:
                     if (laserController != null)
                     {
@@ -610,27 +743,38 @@ namespace LightVsDecay.Logic.TacticalDrop
                     }
                     break;
                     
-                case RewardType.LaserWidthFlat:
+                case RewardType.LaserWidthPercent:
                     if (laserController != null)
                     {
                         laserController.AddWidthPercent(reward.value);
                     }
                     break;
                     
-                case RewardType.LaserLengthFlat:
-                    // TODO: 添加激光长度修改接口
-                    if (showDebugInfo)
+                case RewardType.LaserLengthPercent:
+                    if (laserController != null)
                     {
-                        Debug.Log($"[TacticalDropManager] 激光长度 +{reward.value} (待实现)");
+                        laserController.AddLengthPercent(reward.value);
                     }
                     break;
                     
-                // ═══ 负面类 ═══
+                // ═══ 金币类 ═══
+                case RewardType.CoinReward:
+                    if (ProgressManager.Instance != null)
+                    {
+                        ProgressManager.Instance.AddCoins(Mathf.RoundToInt(reward.value));
+                        
+                        if (showDebugInfo)
+                        {
+                            Debug.Log($"[TacticalDropManager] 获得金币: +{reward.value}");
+                        }
+                    }
+                    break;
+                    
+                // ═══ 负面类（削弱玩家）═══
                 case RewardType.HealthLoss:
                     if (turretHealth != null && turretHealth.CurrentHullHP > 1)
                     {
                         int loss = Mathf.RoundToInt(reward.value);
-                        // 使用直接扣血方法（不经过护盾，保底1点血）
                         int actualLoss = turretHealth.TakeDirectDamage(loss, 1);
         
                         if (showDebugInfo)
@@ -644,7 +788,6 @@ namespace LightVsDecay.Logic.TacticalDrop
                     if (shieldController != null && shieldController.CurrentShieldHP > 0)
                     {
                         int loss = Mathf.RoundToInt(reward.value);
-                        // 保底1点护盾（不会被扣到0）
                         if (shieldController.CurrentShieldHP - loss < 1)
                         {
                             loss = shieldController.CurrentShieldHP - 1;
@@ -675,22 +818,19 @@ namespace LightVsDecay.Logic.TacticalDrop
                     }
                     break;
                     
-                case RewardType.LaserWidthLossFlat:
+                case RewardType.LaserWidthLossPercent:  
                     if (laserController != null)
                     {
-                        // 检查下限保护
-                        float minWidth = GameConstants.LASER_DEFAULT_WIDTH * 
-                            (rewardConfig != null ? rewardConfig.laserWidthMinPercent : 0.8f);
-                        // TODO: 实现宽度下限检查
-                        laserController.AddWidthPercent(-reward.value);
+                        float minPercent = rewardConfig != null ? rewardConfig.laserWidthMinPercent : 0.8f;
+                        laserController.AddWidthPercent(-reward.value, minPercent);
                     }
                     break;
                     
-                case RewardType.LaserLengthLossFlat:
-                    // TODO: 添加激光长度修改接口
-                    if (showDebugInfo)
+                case RewardType.LaserLengthLossPercent:  // 改名
+                    if (laserController != null)
                     {
-                        Debug.Log($"[TacticalDropManager] 激光长度 -{reward.value} (待实现)");
+                        float minPercent = rewardConfig != null ? rewardConfig.laserLengthMinPercent : 0.8f;
+                        laserController.AddLengthPercent(-reward.value, minPercent);
                     }
                     break;
                     
@@ -703,6 +843,19 @@ namespace LightVsDecay.Logic.TacticalDrop
                             turretHealth.SetMaxHullHP(newMax);
                         }
                     }
+                    break;
+                    
+                // ═══ 负面类（增强怪物，下一波生效）═══
+                case RewardType.NextWaveSpeedBuff:
+                    AddNextWaveSpeedBuff(reward.value);
+                    break;
+                    
+                case RewardType.NextWaveHealthBuff:
+                    AddNextWaveHealthBuff(reward.value);
+                    break;
+                    
+                case RewardType.NextWaveDamageBuff:
+                    AddNextWaveDamageBuff(reward.value);
                     break;
                     
                 case RewardType.Nothing:
@@ -735,6 +888,10 @@ namespace LightVsDecay.Logic.TacticalDrop
             if (showDebugInfo)
             {
                 Debug.Log("[TacticalDropManager] 空投阶段结束，开始下一波");
+                if (nextWaveBuff.HasBuff)
+                {
+                    Debug.Log($"[TacticalDropManager] 下波增强待生效: Speed={nextWaveBuff.speedMultiplier:P0}, HP={nextWaveBuff.healthMultiplier:P0}, DMG={nextWaveBuff.damageMultiplier:P0}");
+                }
             }
             
             // 通知 WaveManager 开始下一波
@@ -758,7 +915,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             }
             activeCrates.Clear();
         }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -780,11 +937,15 @@ namespace LightVsDecay.Logic.TacticalDrop
         {
             if (!showDebugInfo) return;
             
-            GUILayout.BeginArea(new Rect(Screen.width - 250, 300, 240, 150));
-            GUILayout.Label("=== Tactical Drop ===");
+            GUILayout.BeginArea(new Rect(Screen.width - 250, 300, 240, 180));
+            GUILayout.Label("=== Tactical Drop v2.1 ===");
             GUILayout.Label($"IsDropPhase: {isDropPhase}");
             GUILayout.Label($"ActiveCrates: {activeCrates.Count}");
             GUILayout.Label($"GachaBadLuck: {gachaBadLuckCounter}");
+            GUILayout.Label("--- Next Wave Buff ---");
+            GUILayout.Label($"Speed: {nextWaveBuff.speedMultiplier:P0}");
+            GUILayout.Label($"HP: {nextWaveBuff.healthMultiplier:P0}");
+            GUILayout.Label($"DMG: {nextWaveBuff.damageMultiplier:P0}");
             GUILayout.EndArea();
         }
 #endif

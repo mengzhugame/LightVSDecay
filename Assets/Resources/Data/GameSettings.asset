@@ -18,7 +18,7 @@ MonoBehaviour:
   comboTimeout: 2
   maxEnergy: 5
   energyRecoveryInterval: 600
-  baseDPS: 100
+  baseDPS: 1000
   tickRate: 0.1
   baseKnockbackForce: 10
   maxLaserLength: 20

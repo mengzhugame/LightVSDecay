@@ -2,7 +2,7 @@
 // DroneRewardConfig.cs
 // 文件位置: Assets/Scripts/Data/SO/DroneRewardConfig.cs
 // 用途：无人机奖励系统完整配置（奖励池 + 图标 + 飘字）
-// 合并自：CrateRewardConfig.cs + DroneRewardConfig.cs
+// 更新：v2.1 - 新增金币奖励、下一波怪物增强效果
 // ============================================================
 
 using UnityEngine;
@@ -42,21 +42,30 @@ namespace LightVsDecay.Data.SO
         
         // ═══ 属性提升类 ═══
         BaseDamagePercent,  // 基础伤害百分比
+        BaseDamageFlat,     // 基础伤害固定值【新增】
         CritRatePercent,    // 暴击率百分比
-        LaserWidthFlat,     // 激光宽度（固定值）
-        LaserLengthFlat,    // 激光长度（固定值）
+        LaserWidthPercent,     // 激光宽度（固定值）
+        LaserLengthPercent,    // 激光长度（固定值）
         
-        // ═══ 负面类 ═══
-        HealthLoss,         // 生命损失
-        ShieldLoss,         // 护盾损失
-        BaseDamageLossPercent, // 基础伤害降低
-        CritRateLossPercent,   // 暴击率降低
-        LaserWidthLossFlat,    // 激光宽度降低
-        LaserLengthLossFlat,   // 激光长度降低
-        MaxHealthLoss,         // 最大生命降低
+        // ═══ 金币类 ═══【新增】
+        CoinReward,         // 金币奖励
+        
+        // ═══ 负面类（削弱玩家，永久生效）═══
+        HealthLoss,             // 生命损失
+        ShieldLoss,             // 护盾损失
+        BaseDamageLossPercent,  // 基础伤害降低（百分比）
+        CritRateLossPercent,    // 暴击率降低
+        LaserWidthLossPercent,  // 激光宽度降低（百分比）【修改】
+        LaserLengthLossPercent,    // 激光长度降低（固定值）
+        MaxHealthLoss,          // 最大生命降低
+        
+        // ═══ 负面类（增强怪物，下一波生效）═══【新增】
+        NextWaveSpeedBuff,      // 下一波怪物移速增强
+        NextWaveHealthBuff,     // 下一波怪物血量增强
+        NextWaveDamageBuff,     // 下一波怪物伤害增强
         
         // ═══ 特殊类 ═══
-        Nothing,            // 无奖励（谢谢惠顾）
+        Nothing,            // 无奖励（已废弃，改为金币）
     }
     
     /// <summary>
@@ -64,10 +73,10 @@ namespace LightVsDecay.Data.SO
     /// </summary>
     public enum GachaResultType
     {
-        Nothing,    // 谢谢惠顾 (20%)
-        Negative,   // 系统故障 (15%)
-        Normal,     // 普通奖励 (50%)
-        Epic        // 史诗大奖 (15%)
+        Nothing,    // 小奖（金币）【修改：原"谢谢惠顾"改为金币奖励】
+        Negative,   // 系统故障（负面效果）
+        Normal,     // 普通奖励
+        Epic        // 史诗大奖
     }
     
     /// <summary>
@@ -85,6 +94,8 @@ namespace LightVsDecay.Data.SO
         CritDown,       // 暴击率减少
         LaserUp,        // 激光属性增加（宽度/长度）
         LaserDown,      // 激光属性减少
+        Coin,           // 金币【新增】
+        MonsterBuff,    // 怪物增强【新增】
         Nothing         // 空气（无事发生）
     }
     
@@ -151,7 +162,7 @@ namespace LightVsDecay.Data.SO
         [Tooltip("可能的奖励池")]
         public List<RewardEntry> rewardPool = new List<RewardEntry>();
         
-        [Tooltip("嘲讽文案（仅用于 Nothing 类型）")]
+        [Tooltip("嘲讽文案（仅用于 Nothing 类型显示，现在会同时给金币）")]
         public List<string> mockTexts = new List<string>();
     }
     
@@ -259,6 +270,12 @@ namespace LightVsDecay.Data.SO
         [Tooltip("激光属性减少图标")]
         public Sprite laserDownIcon;
         
+        [Tooltip("金币图标")]
+        public Sprite coinIcon;
+        
+        [Tooltip("怪物增强图标")]
+        public Sprite monsterBuffIcon;
+        
         [Tooltip("空气图标（无事发生）")]
         public Sprite nothingIcon;
         
@@ -282,6 +299,9 @@ namespace LightVsDecay.Data.SO
         [Tooltip("补给无人机文字颜色")]
         public Color supplyTextColor = new Color(0.4f, 0.9f, 1f); // 蓝绿色
         
+        [Tooltip("金币文字颜色")]
+        public Color coinTextColor = new Color(1f, 0.84f, 0f);   // 金色
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 飘字 Prefab 引用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -295,6 +315,12 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("契约无人机飘字预制体（双行）")]
         public GameObject dealTextPrefab;
+        
+        [Tooltip("金币飘字预制体")]
+        public GameObject coinTextPrefab;
+        
+        [Tooltip("怪物增强飘字预制体")]
+        public GameObject monsterBuffTextPrefab;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 飘字对象池设置
@@ -390,10 +416,19 @@ namespace LightVsDecay.Data.SO
             // 根据结果类型处理
             if (resultConfig.resultType == GachaResultType.Nothing)
             {
+                // 【v2.1】Nothing 现在会从奖励池抽取金币奖励
                 string mockText = resultConfig.mockTexts.Count > 0 
                     ? resultConfig.mockTexts[UnityEngine.Random.Range(0, resultConfig.mockTexts.Count)]
-                    : "下次一定";
-                return (GachaResultType.Nothing, null, mockText);
+                    : "小赚一笔";
+                
+                // 如果 Nothing 池有配置，抽取金币奖励
+                RewardEntry coinReward = null;
+                if (resultConfig.rewardPool.Count > 0)
+                {
+                    coinReward = GetWeightedRandom(resultConfig.rewardPool);
+                }
+                
+                return (GachaResultType.Nothing, coinReward, mockText);
             }
             
             RewardEntry reward = GetWeightedRandom(resultConfig.rewardPool);
@@ -514,6 +549,10 @@ namespace LightVsDecay.Data.SO
                     return laserUpIcon;
                 case RewardIconType.LaserDown:
                     return laserDownIcon;
+                case RewardIconType.Coin:
+                    return coinIcon;
+                case RewardIconType.MonsterBuff:
+                    return monsterBuffIcon;
                 case RewardIconType.Nothing:
                 default:
                     return nothingIcon;
@@ -534,14 +573,19 @@ namespace LightVsDecay.Data.SO
                 case RewardType.ShieldFull:
                     return RewardIconType.ShieldUp;
                 case RewardType.BaseDamagePercent:
+                case RewardType.BaseDamageFlat:
                     return RewardIconType.AttackUp;
                 case RewardType.CritRatePercent:
                     return RewardIconType.CritUp;
-                case RewardType.LaserWidthFlat:
-                case RewardType.LaserLengthFlat:
+                case RewardType.LaserWidthPercent:
+                case RewardType.LaserLengthPercent:
                     return RewardIconType.LaserUp;
                     
-                // 负面效果
+                // 金币
+                case RewardType.CoinReward:
+                    return RewardIconType.Coin;
+                    
+                // 负面效果（削弱玩家）
                 case RewardType.HealthLoss:
                 case RewardType.MaxHealthLoss:
                     return RewardIconType.HealthDown;
@@ -551,9 +595,15 @@ namespace LightVsDecay.Data.SO
                     return RewardIconType.AttackDown;
                 case RewardType.CritRateLossPercent:
                     return RewardIconType.CritDown;
-                case RewardType.LaserWidthLossFlat:
-                case RewardType.LaserLengthLossFlat:
+                case RewardType.LaserWidthLossPercent:
+                case RewardType.LaserLengthLossPercent:
                     return RewardIconType.LaserDown;
+                    
+                // 负面效果（增强怪物）
+                case RewardType.NextWaveSpeedBuff:
+                case RewardType.NextWaveHealthBuff:
+                case RewardType.NextWaveDamageBuff:
+                    return RewardIconType.MonsterBuff;
                     
                 // 空
                 case RewardType.Nothing:
@@ -573,9 +623,27 @@ namespace LightVsDecay.Data.SO
                 case RewardType.ShieldRestore:
                 case RewardType.ShieldFull:
                 case RewardType.BaseDamagePercent:
+                case RewardType.BaseDamageFlat:
                 case RewardType.CritRatePercent:
-                case RewardType.LaserWidthFlat:
-                case RewardType.LaserLengthFlat:
+                case RewardType.LaserWidthPercent:
+                case RewardType.LaserLengthPercent:
+                case RewardType.CoinReward:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        
+        /// <summary>
+        /// 判断是否为怪物增强效果
+        /// </summary>
+        public bool IsMonsterBuffReward(RewardType rewardType)
+        {
+            switch (rewardType)
+            {
+                case RewardType.NextWaveSpeedBuff:
+                case RewardType.NextWaveHealthBuff:
+                case RewardType.NextWaveDamageBuff:
                     return true;
                 default:
                     return false;
@@ -595,6 +663,11 @@ namespace LightVsDecay.Data.SO
             if (rewardType == RewardType.Nothing)
             {
                 return neutralColor;
+            }
+            
+            if (rewardType == RewardType.CoinReward)
+            {
+                return coinTextColor;
             }
             
             return IsPositiveReward(rewardType) ? positiveColor : negativeColor;

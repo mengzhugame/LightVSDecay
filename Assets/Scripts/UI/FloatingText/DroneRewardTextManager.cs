@@ -275,7 +275,72 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
                     return null;
             }
         }
-        
+        /// <summary>
+        /// 显示金币奖励飘字
+        /// </summary>
+        public void ShowCoinReward(Vector3 worldPosition, string displayText)
+        {
+            if (!EnsureInitialized()) return;
+    
+            // 优先使用金币专用预制体，没有则使用问号预制体
+            GameObject prefab = config.coinTextPrefab != null ? config.coinTextPrefab : config.gachaTextPrefab;
+            if (prefab == null)
+            {
+                Debug.LogError("[DroneRewardTextManager] 金币/问号飘字 Prefab 未设置！");
+                return;
+            }
+    
+            GameObject go = Instantiate(prefab, targetCanvas.transform);
+            DroneRewardText text = go.GetComponent<DroneRewardText>();
+            if (text == null)
+            {
+                Destroy(go);
+                return;
+            }
+    
+            Sprite icon = config.GetIcon(RewardIconType.Coin);
+            Color color = config.coinTextColor;
+    
+            text.PlaySingle(worldPosition, icon, displayText, color);
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[DroneRewardTextManager] 金币飘字: {displayText}");
+            }
+        }
+        /// <summary>
+        /// 显示怪物增强效果飘字
+        /// </summary>
+        public void ShowMonsterBuffEffect(Vector3 worldPosition, string displayText)
+        {
+            if (!EnsureInitialized()) return;
+    
+            // 优先使用怪物增强专用预制体，没有则使用问号预制体
+            GameObject prefab = config.monsterBuffTextPrefab != null ? config.monsterBuffTextPrefab : config.gachaTextPrefab;
+            if (prefab == null)
+            {
+                Debug.LogError("[DroneRewardTextManager] 怪物增强/问号飘字 Prefab 未设置！");
+                return;
+            }
+    
+            GameObject go = Instantiate(prefab, targetCanvas.transform);
+            DroneRewardText text = go.GetComponent<DroneRewardText>();
+            if (text == null)
+            {
+                Destroy(go);
+                return;
+            }
+    
+            Sprite icon = config.GetIcon(RewardIconType.MonsterBuff);
+            Color color = config.negativeColor;  // 怪物增强用红色
+    
+            text.PlaySingle(worldPosition, icon, displayText, color);
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[DroneRewardTextManager] 怪物增强飘字: {displayText}");
+            }
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

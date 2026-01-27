@@ -15,12 +15,13 @@ MonoBehaviour:
   type: 4
   displayName: "\u5B9D\u7BB1\u602A"
   description: "\u6389\u843D\u91D1\u5E01"
-  maxHealth: 300
+  maxHealth: 3000
   moveSpeed: 0.8
   mass: 10
   contactDamage: 0
   attackInterval: 1
   isSuicide: 0
+  knockbackResistance: 0
   behaviorType: 1
   waveAmplitude: 1.5
   waveFrequency: 2
@@ -32,6 +33,9 @@ MonoBehaviour:
   knockbackStunMoveMultiplier: 0.3
   drifterDeflectionAngle: 45
   drifterKnockbackMultiplier: 2
+  knockbackMinDuration: 0.5
+  drifterMaxSpeed: 15
+  knockbackSpeedThreshold: 2
   minScale: 0.3
   deathFadeDuration: 1
   normalFlowSpeed: 0.1
@@ -47,5 +51,6 @@ MonoBehaviour:
   lowLevelBonusXP: 100
   lowLevelThreshold: 12
   collisionBehavior: 3
+  isBouncing: 0
   bounceForce: 300
   bounceStunDuration: 1

@@ -215,7 +215,15 @@ namespace LightVsDecay.Logic
         public void StartNextWave()
         {
             currentWaveNumber++;
-            
+            // 【新增 v2.1】消费上一波空投产生的怪物增强
+            if (TacticalDropManager.Instance != null)
+            {
+                var buff = TacticalDropManager.Instance.ConsumeNextWaveBuff();
+                if (buff.HasBuff && showDebugInfo)
+                {
+                    Debug.Log($"[WaveManager] 应用空投怪物增强: Speed={buff.speedMultiplier:P0}, HP={buff.healthMultiplier:P0}, DMG={buff.damageMultiplier:P0}");
+                }
+            }
             if (currentWaveNumber > TotalWaves)
             {
                 // 所有波次完成（理论上不应该走到这里，因为 W12 是 BOSS）
@@ -622,18 +630,31 @@ namespace LightVsDecay.Logic
         private void ApplyDifficultyModifiers(EnemyBlob enemy, SpawnGroup group)
         {
             if (enemy == null || currentWaveData == null) return;
-            
+    
             float waveDifficulty = currentWaveData.difficultyMultiplier;
-            
-            // 计算最终难度修正（考虑精英加成）
+    
+            // 【新增】获取来自空投系统的额外增强
+            float extraSpeedMult = 1f;
+            float extraHealthMult = 1f;
+            float extraDamageMult = 1f;
+    
+            if (TacticalDropManager.Instance != null)
+            {
+                var buff = TacticalDropManager.Instance.NextWaveBuff;
+                extraSpeedMult = buff.speedMultiplier;
+                extraHealthMult = buff.healthMultiplier;
+                extraDamageMult = buff.damageMultiplier;
+            }
+    
+            // 计算最终难度修正（考虑精英加成 + 空投增强）
             DifficultyModifiers modifiers = new DifficultyModifiers
             {
-                hpMultiplier = waveDifficulty,
-                speedMultiplier = Mathf.Min(waveDifficulty * group.speedMultiplier, 2.5f),
+                hpMultiplier = waveDifficulty * extraHealthMult,
+                speedMultiplier = Mathf.Min(waveDifficulty * group.speedMultiplier * extraSpeedMult, 2.5f),
                 massMultiplier = 1f + (waveDifficulty - 1f) * 0.3f,
-                damageMultiplier = waveDifficulty
+                damageMultiplier = waveDifficulty * extraDamageMult
             };
-            
+    
             enemy.SetWaveModifiers(modifiers);
         }
         
