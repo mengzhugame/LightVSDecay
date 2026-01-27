@@ -145,18 +145,18 @@ namespace LightVsDecay.Data.SO
         public float critRateBonus = 0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 爆炸相关（聚能透镜 Lv5）
+        // 穿透相关（聚能透镜 Lv5）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("爆炸相关（聚能透镜 Lv5）")]
-        [Tooltip("击杀时是否触发爆炸")]
-        public bool explosionOnKill = false;
-        
-        [Tooltip("爆炸伤害")]
-        public float explosionDamage = 100f;
-        
-        [Tooltip("爆炸半径")]
-        public float explosionRadius = 2f;
+        [Header("Focus穿透相关")]
+        [Tooltip("穿透敌人数量（0=不穿透，-1=无限穿透）")]
+        public int penetrationCount = 0;
+
+        [Tooltip("穿透伤害衰减率（每穿透一个敌人伤害衰减的比例，0.1=10%）")]
+        [Range(0f, 0.5f)]
+        public float penetrationDecay = 0.1f;
+
+        [Tooltip("对Boss造成真实伤害（无视护甲+无视连体Buff）")]
+        public bool dealsTrueDamageToBoss = false;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 数据破碎相关（Shatter）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

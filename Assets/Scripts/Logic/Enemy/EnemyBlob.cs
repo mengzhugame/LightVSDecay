@@ -163,6 +163,10 @@ namespace LightVsDecay.Logic.Enemy
         /// 是否为精英怪
         /// </summary>
         public bool IsElite => isElite;
+        /// <summary>
+        /// 是否已死亡
+        /// </summary>
+        public bool IsDead => isDead;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Layer 切换（弹跳怪入境签证）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

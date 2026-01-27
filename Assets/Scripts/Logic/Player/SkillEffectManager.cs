@@ -63,7 +63,7 @@ namespace LightVsDecay.Logic.Player
         /// <summary>
         /// Focus Lv5 死亡爆炸是否启用（供 EnemyBlob 检查）
         /// </summary>
-        public bool IsFocusExplosionEnabled => cachedFocusExplosionOnKill && focusLevel >= 5;
+        public bool IsFocusExplosionEnabled => focusLevel >= 5;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 常量
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -108,9 +108,6 @@ namespace LightVsDecay.Logic.Player
 // Focus 配置缓存
         private float cachedFocusDamageBonus = 0f;  // 【改名】存储加成值，不是倍率
         private float cachedFocusBossDamageBonus = 0f;
-        private bool cachedFocusExplosionOnKill = false;
-        private float cachedFocusExplosionDamage = 100f;
-        private float cachedFocusExplosionRadius = 2f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Focus Lv5 爆炸系统（V2.0 修复版 - 切断递归）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -134,6 +131,10 @@ namespace LightVsDecay.Logic.Player
         private bool cachedShatterExplosionOnKill = false;     // 是否触发漏洞扩散
         private float cachedShatterExplosionRadius = 2f;       // 漏洞扩散爆炸半径
         private const float SHATTER_EXPLOSION_DAMAGE_SCALE = 2.0f;  // 漏洞扩散伤害 = 面板DPS × 2.0
+        // Focus 穿透配置缓存【新增】
+        private int cachedFocusPenetrationCount = 0;      // 穿透数量（-1=无限）
+        private float cachedFocusPenetrationDecay = 0.1f; // 穿透衰减率
+        private bool cachedFocusTrueDamageToBoss = false; // 真实伤害标记
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -352,40 +353,54 @@ namespace LightVsDecay.Logic.Player
         private void ApplyFocusEffect(int level, SkillData skillData)
         {
             focusLevel = level;
-    
+
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
                 Debug.LogError($"[SkillEffectManager] ❌ Focus Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
-    
-            // 缓存配置数据
+
+            // 缓存原有配置数据
             cachedFocusDamageBonus = levelData.damageMultiplier - 1f;
             cachedFocusBossDamageBonus = levelData.bossDamageBonus;
-            cachedFocusExplosionOnKill = levelData.explosionOnKill;
-            cachedFocusExplosionDamage = levelData.explosionDamage;
-            cachedFocusExplosionRadius = levelData.explosionRadius;
-    
+
+            // 【新增】缓存穿透配置数据
+            cachedFocusPenetrationCount = levelData.penetrationCount;
+            cachedFocusPenetrationDecay = levelData.penetrationDecay;
+            cachedFocusTrueDamageToBoss = levelData.dealsTrueDamageToBoss;
+
             // 应用到 LaserController
             if (laserController != null)
             {
                 float widthMultiplier = (level == 1) ? levelData.widthMultiplier : 1f;
-        
+    
                 laserController.SetFocusLevelFromConfig(
                     level,
                     cachedFocusDamageBonus,
                     widthMultiplier
                 );
+        
+                // 【新增】设置穿透参数
+                laserController.SetFocusPenetrationParams(
+                    cachedFocusPenetrationCount,
+                    cachedFocusPenetrationDecay,
+                    cachedFocusTrueDamageToBoss
+                );
             }
-    
+
             if (showDebugInfo)
             {
+                string penetrationInfo = cachedFocusPenetrationCount == -1 
+                    ? "无限穿透" 
+                    : $"穿透{cachedFocusPenetrationCount}个";
+                string trueDamageInfo = cachedFocusTrueDamageToBoss ? ", Boss真实伤害" : "";
+        
                 Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} - " +
-                          $"伤害:{cachedFocusDamageBonus:P0}, BOSS加成:{cachedFocusBossDamageBonus:P0}, " +
-                          $"爆炸:{cachedFocusExplosionOnKill}");
+                          $"伤害:+{cachedFocusDamageBonus:P0}, {penetrationInfo}, " +
+                          $"衰减:{cachedFocusPenetrationDecay:P0}{trueDamageInfo}");
             }
-    
+
             UpdateDamageMultiplier();
             UpdateWidthMultiplier();
         }
@@ -728,8 +743,6 @@ namespace LightVsDecay.Logic.Player
         /// </summary>
         private void OnEnemyDied(EnemyType type, Vector3 position, int xp, int coin)
         {
-            // 检查是否启用爆炸
-            if (!cachedFocusExplosionOnKill) return;
             if (focusLevel < 5) return;
 
             // 【新增】处决击杀不触发爆炸（需要通过其他方式检查，这里暂时保留原逻辑）
@@ -741,78 +754,8 @@ namespace LightVsDecay.Logic.Player
 
             // 全局CD检查（防止连锁爆炸过于密集）
             if (Time.time < lastExplosionTime + EXPLOSION_GLOBAL_COOLDOWN) return;
-
-            TriggerFocusExplosion(position);
         }
         
-        /// <summary>
-        /// 触发 Focus Lv5 聚变爆炸（V2.0 修复版 - 基于面板DPS，带CD和免疫机制）
-        /// </summary>
-        private void TriggerFocusExplosion(Vector3 position)
-        {
-            // 1. 更新全局CD时间戳
-            lastExplosionTime = Time.time;
-            
-            // 2. 播放爆炸特效
-            if (VFXPoolManager.Instance != null)
-            {
-                VFXPoolManager.Instance.PlayEnemyExplosion(position);
-            }
-
-            // 3. 播放爆炸音效
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayEnemyExplode();
-            }
-
-            // 4. 计算爆炸伤害（核心修复：基于面板DPS，切断递归）
-            float panelDPS = laserController != null ? laserController.CurrentPanelDPS : 100f;
-            float explosionDamage = panelDPS * EXPLOSION_DAMAGE_SCALE;
-
-            // 5. 上报爆炸伤害到 BattleStatistics
-            if (BattleStatistics.Instance != null)
-            {
-                BattleStatistics.Instance.RecordExplosionDamage(explosionDamage);
-            }
-
-            // 6. 检测范围内的敌人
-            int enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, "BouncingEnemy");
-            Collider2D[] hits = Physics2D.OverlapCircleAll(position, cachedFocusExplosionRadius, enemyLayer);
-
-            int actualHitCount = 0;
-            
-            foreach (var hit in hits)
-            {
-                EnemyBlob enemy = hit.GetComponentInParent<EnemyBlob>();
-                if (enemy == null) continue;
-                
-                int enemyId = enemy.GetInstanceID();
-                
-                // 7. 单体免疫检查（防止同一敌人瞬间吃多次爆炸）
-                if (explosionImmunityTracker.TryGetValue(enemyId, out float lastHitTime))
-                {
-                    if (Time.time < lastHitTime + EXPLOSION_TARGET_IMMUNITY)
-                    {
-                        continue; // 该敌人仍在免疫期，跳过
-                    }
-                }
-                
-                // 8. 记录该敌人被炸时间
-                explosionImmunityTracker[enemyId] = Time.time;
-                
-                // 9. 造成伤害（标记为爆炸伤害）
-                enemy.TakeDamage(explosionDamage, Vector2.zero, false, true);
-                actualHitCount++;
-            }
-
-            if (showDebugInfo)
-            {
-                Debug.Log($"[SkillEffectManager] 💥 Focus Lv5 聚变爆炸! " +
-                          $"位置:{position}, 面板DPS:{panelDPS:F1}, " +
-                          $"爆炸伤害:{explosionDamage:F1} (×{EXPLOSION_DAMAGE_SCALE}), " +
-                          $"半径:{cachedFocusExplosionRadius}, 命中:{actualHitCount}/{hits.Length}");
-            }
-        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 倍率更新
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1054,5 +997,30 @@ namespace LightVsDecay.Logic.Player
         /// 获取漏洞扩散爆炸半径
         /// </summary>
         public float GetShatterExplosionRadius() => cachedShatterExplosionRadius;
+        /// <summary>
+        /// 获取 Focus 穿透参数
+        /// </summary>
+        public void GetFocusPenetrationParams(out int count, out float decay, out bool trueDamage)
+        {
+            count = cachedFocusPenetrationCount;
+            decay = cachedFocusPenetrationDecay;
+            trueDamage = cachedFocusTrueDamageToBoss;
+        }
+
+        /// <summary>
+        /// 获取 Focus 等级
+        /// </summary>
+        public int GetFocusLevel() => focusLevel;
+
+        /// <summary>
+        /// 检查是否启用穿透
+        /// </summary>
+        public bool IsPenetrationEnabled => focusLevel > 0 && cachedFocusPenetrationCount != 0;
+
+        /// <summary>
+        /// 检查是否对Boss造成真实伤害
+        /// </summary>
+        public bool IsTrueDamageToBossEnabled => cachedFocusTrueDamageToBoss;
+        
     }
 }

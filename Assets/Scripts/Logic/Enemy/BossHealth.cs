@@ -277,7 +277,48 @@ namespace LightVsDecay.Logic.Enemy
                 Debug.Log($"[BossHealth] 眼睛受击 - {baseDamage:F1} x {coreDamageMultiplier:P0} = {actualDamage:F1}");
             }
         }
-        
+        /// <summary>
+        /// 受到真实伤害（身体）- 无视护甲减伤 + 无视连体Buff
+        /// Focus LV5 专用
+        /// </summary>
+        public void TakeTrueBodyDamage(float baseDamage, Vector3 hitPosition, bool isCrit = false, float critMultiplier = 2.0f)
+        {
+            if (isDead) return;
+    
+            // 真实伤害：无视护甲减伤，无视连体Buff
+            float actualDamage = baseDamage;
+            if (isCrit) actualDamage *= critMultiplier;
+    
+            ApplyDamage(actualDamage);
+            ShowBodyDamagePopup(actualDamage, hitPosition, isCrit);
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[BossHealth] 💥 身体真实伤害 - {baseDamage:F1} → {actualDamage:F1} (无视护甲+连体Buff)");
+            }
+        }
+
+        /// <summary>
+        /// 受到真实伤害（眼睛/弱点）- 保留弱点倍率 + 无视连体Buff
+        /// Focus LV5 专用
+        /// </summary>
+        public void TakeTrueCoreDamage(float baseDamage, Vector3 hitPosition, bool isCrit = false, float critMultiplier = 2.0f)
+        {
+            if (isDead) return;
+    
+            // 真实伤害：保留弱点倍率，无视连体Buff
+            float actualDamage = baseDamage * coreDamageMultiplier;
+            if (isCrit) actualDamage *= critMultiplier;
+    
+            ApplyDamage(actualDamage);
+            TriggerHitEffect();
+            ShowCoreDamagePopup(actualDamage, hitPosition, isCrit);
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[BossHealth] 💥 眼睛真实伤害 - {baseDamage:F1} x {coreDamageMultiplier:P0} = {actualDamage:F1} (无视连体Buff)");
+            }
+        }
         public void TakeDirectDamage(float damage, Vector3 hitPosition)
         {
             if (isDead) return;
