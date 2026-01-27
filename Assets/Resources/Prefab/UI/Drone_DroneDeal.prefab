@@ -142,17 +142,17 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: HP-100
+  m_text: "\u8840\u91CF-100"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: c1054912f77ac494884f5c6f5b86c139, type: 2}
-  m_sharedMaterial: {fileID: 6531631690749922085, guid: c1054912f77ac494884f5c6f5b86c139, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b291f97015a94de4c98a113192911668, type: 2}
+  m_sharedMaterial: {fileID: -6453925796972188619, guid: b291f97015a94de4c98a113192911668, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4280746189
-  m_fontColor: {r: 0.8037735, g: 0, b: 0.15290251, a: 1}
+    rgba: 4280615107
+  m_fontColor: {r: 0.7660377, g: 0, b: 0.14573386, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -169,8 +169,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
-  m_fontSizeBase: 40
+  m_fontSize: 46
+  m_fontSizeBase: 46
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -224,7 +224,7 @@ GameObject:
   - component: {fileID: 4041005335859023617}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: FloatingText_DroneDeal
+  m_Name: Drone_DroneDeal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -358,10 +358,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ATK+10%
+  m_text: "\u6FC0\u5149\u653B\u51FB+10%"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: c1054912f77ac494884f5c6f5b86c139, type: 2}
-  m_sharedMaterial: {fileID: 6531631690749922085, guid: c1054912f77ac494884f5c6f5b86c139, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b291f97015a94de4c98a113192911668, type: 2}
+  m_sharedMaterial: {fileID: -6453925796972188619, guid: b291f97015a94de4c98a113192911668, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -385,8 +385,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
-  m_fontSizeBase: 40
+  m_fontSize: 46
+  m_fontSizeBase: 46
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

@@ -161,9 +161,6 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("可能的奖励池")]
         public List<RewardEntry> rewardPool = new List<RewardEntry>();
-        
-        [Tooltip("嘲讽文案（仅用于 Nothing 类型显示，现在会同时给金币）")]
-        public List<string> mockTexts = new List<string>();
     }
     
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -416,11 +413,6 @@ namespace LightVsDecay.Data.SO
             // 根据结果类型处理
             if (resultConfig.resultType == GachaResultType.Nothing)
             {
-                // 【v2.1】Nothing 现在会从奖励池抽取金币奖励
-                string mockText = resultConfig.mockTexts.Count > 0 
-                    ? resultConfig.mockTexts[UnityEngine.Random.Range(0, resultConfig.mockTexts.Count)]
-                    : "小赚一笔";
-                
                 // 如果 Nothing 池有配置，抽取金币奖励
                 RewardEntry coinReward = null;
                 if (resultConfig.rewardPool.Count > 0)
@@ -428,7 +420,7 @@ namespace LightVsDecay.Data.SO
                     coinReward = GetWeightedRandom(resultConfig.rewardPool);
                 }
                 
-                return (GachaResultType.Nothing, coinReward, mockText);
+                return (GachaResultType.Nothing, coinReward, null);
             }
             
             RewardEntry reward = GetWeightedRandom(resultConfig.rewardPool);

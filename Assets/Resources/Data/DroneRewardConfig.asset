@@ -18,171 +18,265 @@ MonoBehaviour:
   exitDuration: 0.5
   supplyRewards:
   - type: 0
-    value: 100
-    displayText: HP+100
-    weight: 40
+    value: 150
+    displayText: "\u751F\u547D\u503C+150"
+    weight: 30
     isJackpot: 0
   - type: 0
-    value: 500
-    displayText: HP+500
-    weight: 40
+    value: 250
+    displayText: "\u751F\u547D\u503C+250"
+    weight: 15
     isJackpot: 0
   - type: 1
-    value: 50
-    displayText: SHLD+50
-    weight: 40
+    value: 100
+    displayText: "\u62A4\u76FE\u503C+100"
+    weight: 25
     isJackpot: 0
   - type: 1
     value: 200
-    displayText: SHLD+200
-    weight: 40
+    displayText: "\u62A4\u76FE\u503C+200"
+    weight: 10
     isJackpot: 0
   - type: 2
-    value: 1000
-    displayText: SHLD+1000
-    weight: 10
+    value: 0
+    displayText: "\u62A4\u76FE\u91CD\u542F"
+    weight: 20
     isJackpot: 1
   gachaResults:
   - resultType: 0
-    probability: 10
-    rewardPool: []
-    mockTexts:
-    - MISS
-    - BAD LUCK
-  - resultType: 1
-    probability: 10
+    probability: 20
     rewardPool:
-    - type: 9
-      value: 0.05
-      displayText: ATK-5%
-      weight: 0
+    - type: 8
+      value: 50
+      displayText: "\u91D1\u5E01+50"
+      weight: 60
       isJackpot: 0
-    - type: 9
-      value: 0.1
-      displayText: ATK-10%
-      weight: 0
+    - type: 8
+      value: 100
+      displayText: "\u91D1\u5E01+100"
+      weight: 40
       isJackpot: 0
-    - type: 10
-      value: 0.01
-      displayText: CRIT-1%
-      weight: 0
+  - resultType: 1
+    probability: 15
+    rewardPool:
+    - type: 16
+      value: 0.3
+      displayText: "\u4E0B\u4E00\u6CE2\u602A\u7269\u901F\u5EA6+30%"
+      weight: 25
       isJackpot: 0
-    - type: 10
-      value: 0.02
-      displayText: CRIT-2%
-      weight: 0
+    - type: 17
+      value: 0.4
+      displayText: "\u4E0B\u4E00\u6CE2\u602A\u7269\u8840\u91CF+40%"
+      weight: 25
+      isJackpot: 0
+    - type: 18
+      value: 0.25
+      displayText: "\u4E0B\u4E00\u6CE2\u602A\u7269\u4F24\u5BB3+25%"
+      weight: 25
       isJackpot: 0
     - type: 11
-      value: 0.1
-      displayText: LASER WIDTH-10%
-      weight: 0
+      value: 0.05
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B-5%"
+      weight: 8
       isJackpot: 0
     - type: 12
-      value: 1
-      displayText: LASER LENGTH-1
-      weight: 0
+      value: 0.02
+      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387-4%"
+      weight: 8
       isJackpot: 0
-    mockTexts: []
+    - type: 13
+      value: 0.03
+      displayText: "\u6FC0\u5149\u5BBD\u5EA6-3%"
+      weight: 5
+      isJackpot: 0
+    - type: 14
+      value: 0.05
+      displayText: "\u6FC0\u5149\u957F\u5EA6-5%"
+      weight: 4
+      isJackpot: 0
   - resultType: 2
-    probability: 70
-    rewardPool:
-    - type: 3
-      value: 0.05
-      displayText: ATK+5%
-      weight: 1
-      isJackpot: 0
-    - type: 4
-      value: 0.01
-      displayText: CRIT+1%
-      weight: 1
-      isJackpot: 0
-    - type: 5
-      value: 0.05
-      displayText: LASER WIDTH+5%
-      weight: 0
-      isJackpot: 0
-    mockTexts: []
-  - resultType: 3
-    probability: 10
+    probability: 50
     rewardPool:
     - type: 3
       value: 0.1
-      displayText: ATK+10%
-      weight: 0
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+10%"
+      weight: 20
       isJackpot: 0
     - type: 4
-      value: 0.05
-      displayText: CRIT+5%
-      weight: 0
+      value: 150
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+150"
+      weight: 20
       isJackpot: 0
     - type: 5
-      value: 0.1
-      displayText: LASER WIDTH+10%
-      weight: 0
+      value: 0.03
+      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387+3%"
+      weight: 20
       isJackpot: 0
     - type: 6
-      value: 1
-      displayText: LASER LENGTH+1
-      weight: 0
+      value: 0.05
+      displayText: "\u6FC0\u5149\u5BBD\u5EA6+10%"
+      weight: 20
       isJackpot: 0
-    mockTexts: []
+    - type: 7
+      value: 0.1
+      displayText: "\u6FC0\u5149\u957F\u5EA6+10%"
+      weight: 20
+      isJackpot: 0
+  - resultType: 3
+    probability: 15
+    rewardPool:
+    - type: 3
+      value: 0.25
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+25%"
+      weight: 20
+      isJackpot: 1
+    - type: 4
+      value: 500
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+500"
+      weight: 15
+      isJackpot: 1
+    - type: 5
+      value: 0.08
+      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387+16%"
+      weight: 20
+      isJackpot: 1
+    - type: 6
+      value: 0.12
+      displayText: "\u6FC0\u5149\u5BBD\u5EA6+12%"
+      weight: 25
+      isJackpot: 1
+    - type: 7
+      value: 0.2
+      displayText: "\u6FC0\u5149\u957F\u5EA6+20%"
+      weight: 20
+      isJackpot: 1
   dealEntries:
-  - dealName: "\u8840\u91CF\u6362\u653B\u51FB\u529B"
+  - dealName: "\u8F7B\u5EA6\u5951\u7EA6-\u529B\u91CF"
     cost:
+      type: 9
+      value: 80
+      displayText: "\u751F\u547D\u503C-80"
+      weight: 1
+      isJackpot: 0
+    gain:
+      type: 3
+      value: 0.12
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+12%"
+      weight: 1
+      isJackpot: 0
+    weight: 15
+  - dealName: "\u8F7B\u5EA6\u5951\u7EA6-\u7CBE\u51C6"
+    cost:
+      type: 9
+      value: 80
+      displayText: "\u751F\u547D\u503C-80"
+      weight: 1
+      isJackpot: 0
+    gain:
+      type: 5
+      value: 0.04
+      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387+4%"
+      weight: 1
+      isJackpot: 0
+    weight: 15
+  - dealName: "\u8F7B\u5EA6\u5951\u7EA6-\u5E7F\u57DF"
+    cost:
+      type: 9
+      value: 80
+      displayText: "\u751F\u547D\u503C-80"
+      weight: 1
+      isJackpot: 0
+    gain:
+      type: 6
+      value: 0.08
+      displayText: "\u6FC0\u5149\u5BBD\u5EA6+8%"
+      weight: 1
+      isJackpot: 0
+    weight: 15
+  - dealName: "\u4E2D\u5EA6\u5951\u7EA6-\u8D85\u8F7D"
+    cost:
+      type: 9
+      value: 150
+      displayText: "\u751F\u547D\u503C-150"
+      weight: 1
+      isJackpot: 0
+    gain:
+      type: 3
+      value: 0.18
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+18%"
+      weight: 1
+      isJackpot: 0
+    weight: 12
+  - dealName: "\u4E2D\u5EA6\u5951\u7EA6-\u5EF6\u4F38"
+    cost:
+      type: 9
+      value: 150
+      displayText: "\u751F\u547D\u503C-150"
+      weight: 0
+      isJackpot: 0
+    gain:
       type: 7
+      value: 0.15
+      displayText: "\u6FC0\u5149\u957F\u5EA6+15%"
+      weight: 0
+      isJackpot: 0
+    weight: 12
+  - dealName: "\u4E2D\u5EA6\u5951\u7EA6-\u56FA\u5316"
+    cost:
+      type: 9
+      value: 150
+      displayText: "\u751F\u547D\u503C-150"
+      weight: 0
+      isJackpot: 0
+    gain:
+      type: 4
+      value: 300
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+300"
+      weight: 0
+      isJackpot: 0
+    weight: 12
+  - dealName: "\u62A4\u76FE\u5951\u7EA6-\u529B\u91CF"
+    cost:
+      type: 10
       value: 100
-      displayText: HP-100
-      weight: 1
-      isJackpot: 0
-    gain:
-      type: 3
-      value: 0.1
-      displayText: ATK+10%
-      weight: 1
-      isJackpot: 0
-    weight: 1
-  - dealName: "\u62A4\u76FE\u6362\u653B\u51FB\u529B"
-    cost:
-      type: 8
-      value: 50
-      displayText: SHLD-50
-      weight: 1
-      isJackpot: 0
-    gain:
-      type: 3
-      value: 0.1
-      displayText: ATK+10%
-      weight: 1
-      isJackpot: 0
-    weight: 1
-  - dealName: "\u8840\u91CF\u6362\u66B4\u51FB"
-    cost:
-      type: 7
-      value: 100
-      displayText: HP-100
-      weight: 1
-      isJackpot: 0
-    gain:
-      type: 3
-      value: 0.02
-      displayText: CRIT+2%
-      weight: 1
-      isJackpot: 0
-    weight: 1
-  - dealName: "\u62A4\u76FE\u6362\u66B4\u51FB"
-    cost:
-      type: 8
-      value: 50
-      displayText: SHLD-50
+      displayText: "\u62A4\u76FE\u503C-100"
       weight: 0
       isJackpot: 0
     gain:
       type: 3
-      value: 0.02
-      displayText: CRIT+2%
+      value: 0.15
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+15%"
       weight: 0
       isJackpot: 0
-    weight: 1
+    weight: 10
+  - dealName: "\u62A4\u76FE\u5951\u7EA6-\u66B4\u51FB"
+    cost:
+      type: 10
+      value: 100
+      displayText: "\u62A4\u76FE\u503C-100"
+      weight: 0
+      isJackpot: 0
+    gain:
+      type: 5
+      value: 0.05
+      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387+5%"
+      weight: 0
+      isJackpot: 0
+    weight: 8
+  - dealName: "\u62A4\u76FE\u5951\u7EA6-\u6BC1\u706D"
+    cost:
+      type: 9
+      value: 250
+      displayText: "\u751F\u547D\u503C-250"
+      weight: 0
+      isJackpot: 0
+    gain:
+      type: 3
+      value: 0.28
+      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+28%"
+      weight: 0
+      isJackpot: 0
+    weight: 3
   gachaBadLuckProtectionCount: 2
   laserWidthMinPercent: 0.8
   laserLengthMinPercent: 0.8
@@ -196,14 +290,19 @@ MonoBehaviour:
   critDownIcon: {fileID: 21300000, guid: 875a701a168c387458b412423bf58424, type: 3}
   laserUpIcon: {fileID: 21300000, guid: 12a1c07e81b89c44f83492925818340f, type: 3}
   laserDownIcon: {fileID: 21300000, guid: 5d39c4f68e2029a4f8bb02016962cf16, type: 3}
+  coinIcon: {fileID: 21300000, guid: b0c1c165da9ae0644b734e3939c74a9b, type: 3}
+  monsterBuffIcon: {fileID: 21300000, guid: 0a0615fb5843c664e97d9ee01ad1f04c, type: 3}
   nothingIcon: {fileID: 21300000, guid: d3acfda75246fdf4f86eea0021cb491e, type: 3}
   positiveColor: {r: 0.3, g: 1, b: 0.4, a: 1}
   negativeColor: {r: 1, g: 0.3, b: 0.3, a: 1}
   neutralColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   epicColor: {r: 1, g: 0.84, b: 0, a: 1}
   supplyTextColor: {r: 0.4, g: 0.9, b: 1, a: 1}
+  coinTextColor: {r: 1, g: 0.84, b: 0, a: 1}
   supplyTextPrefab: {fileID: 4350696347044824851, guid: 09d75b45b21064c4e8113df5e23a33fd, type: 3}
   gachaTextPrefab: {fileID: 4853227166549278126, guid: e1eff4caa74ed294cbc4643d16676d94, type: 3}
   dealTextPrefab: {fileID: 2251835379829043586, guid: 460d1828f385c124e8ff0dfa7f033fa2, type: 3}
+  coinTextPrefab: {fileID: 8951767721941194616, guid: 503862ddb22db884ba8eeb20f664ae12, type: 3}
+  monsterBuffTextPrefab: {fileID: 8951767721941194616, guid: 2e6309d80188f3646a01c2f42079e810, type: 3}
   textPrewarmCount: 3
   textMaxPoolSize: 10

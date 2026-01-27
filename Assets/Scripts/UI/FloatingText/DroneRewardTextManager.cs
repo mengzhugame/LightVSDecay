@@ -157,28 +157,6 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
                 Debug.Log($"[DroneRewardTextManager] 问号飘字: {displayText}, Epic={isEpic}");
             }
         }
-        
-        /// <summary>
-        /// 显示问号无人机"谢谢惠顾"飘字
-        /// </summary>
-        public void ShowGachaNothing(Vector3 worldPosition, string mockText)
-        {
-            if (!EnsureInitialized()) return;
-            
-            DroneRewardText text = CreateText(DroneTextType.Gacha);
-            if (text == null) return;
-            
-            Sprite icon = config.GetIcon(RewardIconType.Nothing);
-            Color color = config.neutralColor;
-            
-            text.PlaySingle(worldPosition, icon, mockText, color);
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[DroneRewardTextManager] 问号飘字（空）: {mockText}");
-            }
-        }
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共接口 - 契约无人机
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -573,19 +573,6 @@ namespace LightVsDecay.Logic.TacticalDrop
                         DroneRewardTextManager.Instance.ShowCoinReward(textPos, reward.displayText);
                     }
                 }
-                else
-                {
-                    // 兼容旧配置：如果没有配置金币奖励池，显示嘲讽文案
-                    if (BattleStatistics.Instance != null)
-                    {
-                        BattleStatistics.Instance.RecordDroneChoice("Gacha", "Nothing", mockText ?? "谢谢惠顾");
-                    }
-    
-                    if (DroneRewardTextManager.Instance != null)
-                    {
-                        DroneRewardTextManager.Instance.ShowGachaNothing(textPos, mockText);
-                    }
-                }
             }
             else if (reward != null)
             {
