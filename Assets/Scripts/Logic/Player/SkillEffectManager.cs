@@ -76,16 +76,15 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 技能等级
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
         private int prismLevel = 0;
         private int focusLevel = 0;
         private int impactLevel = 0;
         private int frostLevel = 0;
         private int powerLevel = 0;
         private int wideLevel = 0;
-        private int reflexLevel = 0;
         private int critLevel = 0;
         private int shatterLevel = 0;  // 【新增】数据破碎等级
+        private int chainLevel = 0;  // 连锁反应等级
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 累计加成
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -135,6 +134,10 @@ namespace LightVsDecay.Logic.Player
         private int cachedFocusPenetrationCount = 0;      // 穿透数量（-1=无限）
         private float cachedFocusPenetrationDecay = 0.1f; // 穿透衰减率
         private bool cachedFocusTrueDamageToBoss = false; // 真实伤害标记
+        // Chain 配置缓存
+        private int cachedChainBounces = 1;
+        private float cachedChainRange = 3f;
+        private float cachedChainDamageDecay = 0.2f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -267,8 +270,8 @@ namespace LightVsDecay.Logic.Player
                     ApplyFrostEffect(newLevel, skillData);
                     break;
                     
-                case SkillType.Reflex:
-                    ApplyReflexEffect(newLevel, skillData);
+                case SkillType.Chain:
+                    ApplyChainEffect(newLevel, skillData);
                     break;
                     
                 // ========== 被动技能 ==========
@@ -464,34 +467,55 @@ namespace LightVsDecay.Logic.Player
                           $"冰冻阈值:{cachedFrostFreezeThreshold:F1}s");
             }
         }
-        
+        /// <summary>获取 Chain 等级</summary>
+        public int GetChainLevel() => chainLevel;
+
         /// <summary>
-        /// 应用 Reflex（反射透镜）效果
+        /// 获取 Chain 连锁反应参数
         /// </summary>
-        private void ApplyReflexEffect(int level, SkillData skillData)
+        public void GetChainParams(out int bounces, out float range, out float decay)
         {
-            reflexLevel = level;
-    
+            bounces = cachedChainBounces;
+            range = cachedChainRange;
+            decay = cachedChainDamageDecay;
+        }
+
+        /// <summary>连锁反应是否启用</summary>
+        public bool IsChainEnabled => chainLevel > 0;
+        /// <summary>
+        /// 应用 Chain（连锁反应）效果
+        /// </summary>
+        private void ApplyChainEffect(int level, SkillData skillData)
+        {
+            chainLevel = level;
+
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Reflex Lv.{level} 配置缺失！请检查 SkillDatabase");
+                Debug.LogError($"[SkillEffectManager] ❌ Chain Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
-    
-            if (laserController != null)
+
+            // 缓存配置数据
+            cachedChainBounces = levelData.chainBounces;
+            cachedChainRange = levelData.chainRange;
+            cachedChainDamageDecay = levelData.chainDamageDecay;
+
+            // 应用到 ChainLightningManager
+            if (ChainLightningManager.Instance != null)
             {
-                laserController.SetReflexLevelFromConfig(
+                ChainLightningManager.Instance.SetChainParameters(
                     level,
-                    levelData.reflexDamageMultiplier,
-                    levelData.reflexLengthBonus
+                    cachedChainBounces,
+                    cachedChainRange,
+                    cachedChainDamageDecay
                 );
             }
-    
+
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} - " +
-                          $"反射伤害:{levelData.reflexDamageMultiplier:P0}, 长度加成:{levelData.reflexLengthBonus:P0}");
+                Debug.Log($"[SkillEffectManager] ✓ Chain Lv.{level} - " +
+                          $"跳数:{cachedChainBounces}, 距离:{cachedChainRange}m, 衰减:{cachedChainDamageDecay:P0}");
             }
         }
         
@@ -872,10 +896,7 @@ namespace LightVsDecay.Logic.Player
         
         /// <summary>获取 Impact 等级</summary>
         public int GetImpactLevel() => impactLevel;
-        
-        /// <summary>获取 Reflex 等级</summary>
-        public int GetReflexLevel() => reflexLevel;
-        
+
         /// <summary>获取 Crit 等级</summary>
         public int GetCritLevel() => critLevel;
         

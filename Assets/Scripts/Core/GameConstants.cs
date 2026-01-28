@@ -63,16 +63,31 @@ namespace LightVsDecay.Core
         public const float KNOCKBACK_SCALE_MAX = 2.0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 激光反射系统【新增】
+        // 连锁反应系统（Chain）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        /// <summary>反射次数（Reflex技能固定1次）</summary>
-        public const int REFLEX_MAX_REFLECTIONS = 1;
+        /// <summary>连锁传导默认距离（米）</summary>
+        public const float CHAIN_DEFAULT_RANGE = 3f;
 
-        /// <summary>反射点偏移量（避免重复检测同一墙壁）</summary>
-        public const float REFLEX_POINT_OFFSET = 0.01f;
+        /// <summary>连锁目标查找间隔（秒）</summary>
+        public const float CHAIN_FIND_INTERVAL = 0.2f;
 
-        /// <summary>反射检测间隔（秒）</summary>
-        public const float REFLEX_RAYCAST_INTERVAL = 0.02f;
+        /// <summary>连锁伤害tick间隔（秒）</summary>
+        public const float CHAIN_DAMAGE_INTERVAL = 0.1f;
+
+        /// <summary>副激光强制跳数上限</summary>
+        public const int CHAIN_SUB_LASER_MAX_BOUNCES = 1;
+
+        /// <summary>连锁传导线最大数量（性能保护）</summary>
+        public const int CHAIN_MAX_ACTIVE_LINES = 15;
+
+        /// <summary>连锁传导线基础宽度（主激光）</summary>
+        public const float CHAIN_LINE_WIDTH_MAIN = 0.15f;
+
+        /// <summary>连锁传导线基础宽度（副激光）</summary>
+        public const float CHAIN_LINE_WIDTH_SUB = 0.1f;
+
+        /// <summary>连锁传导透明度衰减（每跳的透明度，索引=跳数）</summary>
+        public static readonly float[] CHAIN_ALPHA_PER_BOUNCE = { 1.0f, 0.7f, 0.4f, 0.2f, 0.2f };
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Shader属性名（避免硬编码字符串）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

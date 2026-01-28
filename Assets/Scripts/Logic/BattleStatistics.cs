@@ -658,14 +658,13 @@ namespace LightVsDecay.Logic
             bool hasFocus = _skillLevels.ContainsKey(SkillType.Focus) && _skillLevels[SkillType.Focus] >= 1;
             bool hasImpact = _skillLevels.ContainsKey(SkillType.Impact) && _skillLevels[SkillType.Impact] >= 1;
             bool hasCrit = _skillLevels.ContainsKey(SkillType.Crit) && _skillLevels[SkillType.Crit] >= 1;
-            bool hasReflex = _skillLevels.ContainsKey(SkillType.Reflex) && _skillLevels[SkillType.Reflex] >= 1;
             bool hasPrism = _skillLevels.ContainsKey(SkillType.Prism) && _skillLevels[SkillType.Prism] >= 1;
             bool hasWide = _skillLevels.ContainsKey(SkillType.Wide) && _skillLevels[SkillType.Wide] >= 1;
             bool hasFrost = _skillLevels.ContainsKey(SkillType.Frost) && _skillLevels[SkillType.Frost] >= 1;
             bool hasShatter = _skillLevels.ContainsKey(SkillType.Shatter) && _skillLevels[SkillType.Shatter] >= 1;
             
             if (hasFocus && hasImpact && hasCrit) return "A";
-            if (hasReflex && hasPrism && hasWide) return "B";
+            if (hasPrism && hasWide) return "B";
             if (hasFrost && hasImpact && hasShatter) return "C";
             return "Mix";
         }

@@ -1194,7 +1194,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &131474928
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2788,6 +2788,7 @@ Transform:
   - {fileID: 290128681}
   - {fileID: 547200605}
   - {fileID: 1473873900}
+  - {fileID: 370255847}
   - {fileID: 1775796606}
   - {fileID: 944346165}
   - {fileID: 2121936017}
@@ -2795,6 +2796,55 @@ Transform:
   - {fileID: 1228544117}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &370255846
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 370255847}
+  - component: {fileID: 370255848}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: ChainLightningManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &370255847
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 370255846}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 361127107}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &370255848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 370255846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a4c72d773660343b18340989ce02ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chainLightningPrefab: {fileID: 4899465964056212147, guid: 4ccf5357f6ebdb04e93e06fb1c24902e, type: 3}
+  poolPrewarmCount: 10
+  poolMaxCount: 20
+  showDebugInfo: 0
 --- !u!1 &376488525
 GameObject:
   m_ObjectHideFlags: 0
@@ -10785,7 +10835,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &960533965
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10795,7 +10845,7 @@ RectTransform:
   m_GameObject: {fileID: 960533964}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 1.31315, y: 1.31315, z: 1.31315}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2018360199}
@@ -10804,7 +10854,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 387, y: 271}
+  m_AnchoredPosition: {x: -50, y: 260}
   m_SizeDelta: {x: 256, y: 256}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &960533966

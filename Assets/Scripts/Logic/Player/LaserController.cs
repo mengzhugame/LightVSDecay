@@ -137,15 +137,6 @@ namespace LightVsDecay.Logic.Player
         private int bouncingEnemyLayerIndex;  // 【新增】
         private int bossEyesLayerIndex;
         private int bossPollutionBallLayerIndex;  // 污秽球Layer
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Reflex 反射相关【新增】
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-        private bool reflexEnabled = false;           // 是否启用反射
-        private int reflexLevel = 0;                  // Reflex 技能等级
-        private float reflexDamageMultiplier = 0.5f;  // 反射段伤害倍率
-        private float reflexLengthBonus = 0f;         // 反射长度加成
-
         // Crit 暴击相关【新增】
         private int critLevel = 0;                    // Crit 技能等级
         // ========== 寒气扩散系统 ==========
@@ -180,6 +171,12 @@ namespace LightVsDecay.Logic.Player
 // 穿透检测缓存
         private List<PenetrationHitInfo> penetrationHits = new List<PenetrationHitInfo>(16);
         private RaycastHit2D[] penetrationRayHits = new RaycastHit2D[32];
+        // ========== 连锁反应追踪 ==========
+        /// <summary>上一帧被激光命中的敌人</summary>
+        private Dictionary<int, EnemyBlob> lastFrameHitEnemies = new Dictionary<int, EnemyBlob>();
+
+        /// <summary>当前帧被激光命中的敌人</summary>
+        private Dictionary<int, EnemyBlob> currentFrameHitEnemies = new Dictionary<int, EnemyBlob>();
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 常量
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -208,12 +205,6 @@ namespace LightVsDecay.Logic.Player
 
         /// <summary>副激光数量</summary>
         public int SubLaserCount => subLasers.Count;
-        
-        /// <summary>反射段伤害倍率</summary>
-        public float ReflexDamageMultiplier => reflexDamageMultiplier;
-
-        /// <summary>是否启用反射</summary>
-        public bool IsReflexEnabled => reflexEnabled;
         /// <summary>当前激光长度</summary>
         public float CurrentLaserLength => maxLaserLength * skillLengthMultiplier;
 
@@ -444,6 +435,8 @@ namespace LightVsDecay.Logic.Player
             FinalizeBossPushForce();
             // 【新增】更新激光音效类型
             UpdateLaserAudioType();
+            // 【新增】处理连锁反应：通知离开的敌人
+            ProcessChainLaserTracking();
         }
         /// <summary>
         /// 【新增】通知所有被命中的Boss结束推力累加
@@ -476,24 +469,17 @@ namespace LightVsDecay.Logic.Player
     
             foreach (var segment in segments)
             {
-                // 计算该段的实际伤害
                 float segmentDamage = baseDamage;
-                if (segment.isReflected)
-                {
-                    // 反射段使用反射伤害倍率
-                    segmentDamage = baseDamage * reflexDamageMultiplier;
-                }
                 // 【修改】传入激光类型信息
-                bool segmentIsMainLaser = isMainLaser && !segment.isReflected;
-                bool segmentHasPushForce = !segment.isReflected;  // 反射段无推力
+                bool segmentIsMainLaser = isMainLaser;
                 // 对该段进行伤害检测
-                DetectAndDamageInSegment(segment, width, segmentDamage, knockbackMultiplier,segmentIsMainLaser, segmentHasPushForce);
+                DetectAndDamageInSegment(segment, width, segmentDamage, knockbackMultiplier,segmentIsMainLaser);
             }
         }
         /// <summary>
         /// 对单个激光段进行伤害检测 (V4.0 - 支持穿透)
         /// </summary>
-        private void DetectAndDamageInSegment(LaserSegment segment, float width, float damage, float knockbackMultiplier, bool isMainLaser, bool hasPushForce)
+        private void DetectAndDamageInSegment(LaserSegment segment, float width, float damage, float knockbackMultiplier, bool isMainLaser)
         {
             // 计算检测盒
             Vector2 segmentCenter = (segment.startPoint + segment.endPoint) / 2f;
@@ -505,7 +491,7 @@ namespace LightVsDecay.Logic.Player
             int hitCount = Physics2D.OverlapBoxNonAlloc(segmentCenter, boxSize, angle, hitBuffer, combinedDetectionLayer);
     
             // 【新增】判断是否启用穿透（只有主激光非反射段才有穿透）
-            bool usePenetration = isMainLaser && !segment.isReflected && focusPenetrationCount != 0;
+            bool usePenetration = isMainLaser  && focusPenetrationCount != 0;
     
             if (usePenetration)
             {
@@ -515,7 +501,7 @@ namespace LightVsDecay.Logic.Player
             else
             {
                 // 【普通模式】原有逻辑
-                DetectNormalDamage(segment, width, damage, knockbackMultiplier, isMainLaser, hasPushForce, hitCount);
+                DetectNormalDamage(segment, width, damage, knockbackMultiplier, isMainLaser, hitCount);
             }
         }
         /// <summary>
@@ -834,11 +820,13 @@ namespace LightVsDecay.Logic.Player
                 {
                     enemy.TakeDamage(enemyFinalDamage, knockbackDir * knockbackMagnitude, enemyCrit, false, damageSource, isShatter);
                 }
-                
+
                 UpdateFrameHitType(LaserHitType.Burn);
                 
                 // Frost效果
                 ApplyFrostEffect(enemy);
+                // 【新增】注册连锁反应命中
+                RegisterChainHit(enemy, currentDamage, true); 
                 
                 // 更新穿透计数
                 penetratedCount++;
@@ -861,7 +849,7 @@ namespace LightVsDecay.Logic.Player
         /// <summary>
         /// 普通伤害检测（原有逻辑，用于非穿透情况）
         /// </summary>
-        private void DetectNormalDamage(LaserSegment segment, float width, float damage, float knockbackMultiplier, bool isMainLaser, bool hasPushForce, int hitCount)
+        private void DetectNormalDamage(LaserSegment segment, float width, float damage, float knockbackMultiplier, bool isMainLaser, int hitCount)
         {
             Vector2 segmentDir = segment.Direction;
             
@@ -916,7 +904,7 @@ namespace LightVsDecay.Logic.Player
                         bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
                         
                         // 推力处理
-                        if (isMainLaser && hasPushForce)
+                        if (isMainLaser)
                         {
                             BossController bossController = bossHealth.GetComponent<BossController>();
                             if (bossController != null && bossController.IsPressing)
@@ -1002,7 +990,7 @@ namespace LightVsDecay.Logic.Player
                             }
                             
                             // 推力处理
-                            if (isMainLaser && hasPushForce && bossController.IsPressing)
+                            if (isMainLaser  && bossController.IsPressing)
                             {
                                 int impactLevel = SkillEffectManager.Instance != null ? SkillEffectManager.Instance.GetImpactLevel() : 0;
                                 int wideLevel = SkillEffectManager.Instance != null ? SkillEffectManager.Instance.GetWideLevel() : 0;
@@ -1075,7 +1063,7 @@ namespace LightVsDecay.Logic.Player
                 Vector2 knockbackDir = segment.Direction;
                 float knockbackMagnitude = CurrentKnockbackForce * knockbackMultiplier;
                 
-                DamageSource damageSource = (isMainLaser && !segment.isReflected) ? DamageSource.MainLaser : DamageSource.SubLaser;
+                DamageSource damageSource = isMainLaser ? DamageSource.MainLaser : DamageSource.SubLaser;
                 
                 if (isExecution)
                 {
@@ -1089,9 +1077,11 @@ namespace LightVsDecay.Logic.Player
                 {
                     enemy.TakeDamage(finalEnemyDamage, knockbackDir * knockbackMagnitude, enemyCrit, false, damageSource, isShatter);
                 }
-                
+
                 UpdateFrameHitType(LaserHitType.Burn);
                 ApplyFrostEffect(enemy);
+                // 【新增】注册连锁反应命中
+                RegisterChainHit(enemy, damage, isMainLaser);
             }
         }
 
@@ -1275,11 +1265,6 @@ namespace LightVsDecay.Logic.Player
             float subLength = maxLaserLength * lengthMultiplier;
             beam.SetMaxLength(subLength);
             beam.SetLaserWidth(CurrentSubLaserWidth);
-            // 【新增】同步反射状态
-            if (reflexEnabled)
-            {
-                beam.SetReflectionEnabled(true);
-            }
             // 同步颜色
             if (hasCustomColor)
             {
@@ -1636,72 +1621,6 @@ namespace LightVsDecay.Logic.Player
                 Debug.Log($"[LaserController] Focus穿透设置: 数量={penetrationInfo}, 衰减={decay:P0}, Boss真伤={trueDamage}");
             }
         }
-        /// <summary>
-        /// 从配置设置 Reflex（反射透镜）效果
-        /// </summary>
-        /// <param name="level">技能等级</param>
-        /// <param name="damageMultiplier">反射段伤害倍率</param>
-        /// <param name="lengthBonus">激光长度加成</param>
-        public void SetReflexLevelFromConfig(int level, float damageMultiplier, float lengthBonus)
-        {
-            reflexLevel = level;
-            
-            if (level <= 0)
-            {
-                // 关闭反射
-                reflexEnabled = false;
-                reflexDamageMultiplier = 0f;
-                reflexLengthBonus = 0f;
-                
-                if (mainLaserBeam != null)
-                {
-                    mainLaserBeam.SetReflectionEnabled(false);
-                    mainLaserBeam.SetMaxLength(maxLaserLength);
-                }
-                
-                foreach (var subLaser in subLasers)
-                {
-                    if (subLaser.beam != null)
-                    {
-                        subLaser.beam.SetReflectionEnabled(false);
-                        float subLength = maxLaserLength * subLaser.lengthMultiplier;
-                        subLaser.beam.SetMaxLength(subLength);
-                    }
-                }
-                return;
-            }
-            
-            // 启用反射
-            reflexEnabled = true;
-            reflexDamageMultiplier = damageMultiplier;
-            reflexLengthBonus = lengthBonus;
-            
-            // 计算新的激光长度
-            float newLength = maxLaserLength * (1f + lengthBonus);
-            
-            // 应用到主激光
-            if (mainLaserBeam != null)
-            {
-                mainLaserBeam.SetReflectionEnabled(true);
-                mainLaserBeam.SetMaxLength(newLength);
-            }
-            
-            // 应用到所有副激光
-            foreach (var subLaser in subLasers)
-            {
-                if (subLaser.beam != null)
-                {
-                    subLaser.beam.SetReflectionEnabled(true);
-                    float subLength = newLength * subLaser.lengthMultiplier;
-                    subLaser.beam.SetMaxLength(subLength);
-                }
-            }
-            
-            if (showDebugInfo)
-            {
-                Debug.Log($"[LaserController] Reflex Lv.{level} (配置): 反射伤害={damageMultiplier:P0}, 长度加成={lengthBonus:P0}");
-            }
-        }
 
         /// <summary>
         /// 从配置设置 Crit（致命暴击）等级
@@ -1744,7 +1663,46 @@ namespace LightVsDecay.Logic.Player
                 }
             }
         }
+        /// <summary>
+        /// 注册连锁反应命中
+        /// </summary>
+        private void RegisterChainHit(EnemyBlob enemy, float damage, bool isMainLaser)
+        {
+            if (enemy == null || enemy.IsDead) return;
+    
+            int enemyId = enemy.GetInstanceID();
+            currentFrameHitEnemies[enemyId] = enemy;
+    
+            if (ChainLightningManager.Instance != null && ChainLightningManager.Instance.IsEnabled)
+            {
+                ChainLightningManager.Instance.RegisterLaserHit(enemy, damage, isMainLaser);
+            }
+        }
 
+        /// <summary>
+        /// 处理连锁追踪：通知离开的敌人，交换帧缓存
+        /// </summary>
+        private void ProcessChainLaserTracking()
+        {
+            if (ChainLightningManager.Instance == null || !ChainLightningManager.Instance.IsEnabled)
+            {
+                lastFrameHitEnemies.Clear();
+                return;
+            }
+    
+            foreach (var kvp in lastFrameHitEnemies)
+            {
+                if (!currentFrameHitEnemies.ContainsKey(kvp.Key))
+                {
+                    ChainLightningManager.Instance.NotifyLaserLeft(kvp.Value);
+                }
+            }
+    
+            var temp = lastFrameHitEnemies;
+            lastFrameHitEnemies = currentFrameHitEnemies;
+            currentFrameHitEnemies = temp;
+            currentFrameHitEnemies.Clear();
+        }
         #endregion
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

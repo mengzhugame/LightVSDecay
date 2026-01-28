@@ -18,7 +18,7 @@ namespace LightVsDecay.Data.SO
         Prism,      // 折射棱镜 - AOE清怪
         Focus,      // 聚能透镜 - 单体攻坚
         Impact,     // 冲击模块 - 控制/防近身
-        Reflex,     // 反射透镜 - 墙壁反射
+        Chain,     // 连锁反应 - 激光传导（替代原 Reflex）
         Frost,      // 极寒光束 - 减速辅助
         // 被动技能（最多5级）- 青色/蓝色卡
         Power,      // 功率超频 - +DPS
@@ -123,17 +123,19 @@ namespace LightVsDecay.Data.SO
         public float widthMultiplier = 1.0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 反射相关（反射透镜）
+        // 连锁反应相关（Chain）- 替代原 Reflex
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("反射相关（反射透镜）")]
-        [Tooltip("反射段伤害倍率 (0.5 = 50%)")]
-        [Range(0f, 2f)]
-        public float reflexDamageMultiplier = 0.5f;
+        [Header("连锁反应相关（Chain）")]
+        [Tooltip("主激光传导跳数")]
+        public int chainBounces = 1;
         
-        [Tooltip("激光总长度加成 (0.1 = +10%)")]
-        [Range(0f, 1f)]
-        public float reflexLengthBonus = 0f;
+        [Tooltip("传导距离（米）")]
+        public float chainRange = 3f;
+        
+        [Tooltip("伤害衰减率（每跳衰减，0.2 = 20%）")]
+        [Range(0f, 0.5f)]
+        public float chainDamageDecay = 0.2f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 暴击相关（致命暴击）
@@ -318,7 +320,7 @@ namespace LightVsDecay.Data.SO
                 case SkillType.Prism:   // 分裂棱镜
                 case SkillType.Focus:   // 聚能透镜
                 case SkillType.Impact:  // 冲击模块
-                case SkillType.Reflex:  // 反射透镜
+                case SkillType.Chain:  // 反射透镜
                 case SkillType.Frost:   // 极寒光束
                     cardType = SkillCardType.Attack;
                     break;

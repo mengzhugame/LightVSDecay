@@ -110,7 +110,7 @@ MonoBehaviour:
   pressOverloadWindow: 1.5
   pressOverloadDamageThreshold: 2000
   shortStunDuration: 1.5
-  pollutionBallHP: 200
-  pollutionBallMass: 3
+  pollutionBallHP: 2000
+  pollutionBallMass: 5
   pollutionBossDamagePercent: 0.05
-  pollutionMaxCount: 3
+  pollutionMaxCount: 5
