@@ -23,6 +23,19 @@ using DG.Tweening;
 namespace LightVsDecay.Logic.Boss
 {
     /// <summary>
+    /// Boss 状态飘字类型
+    /// </summary>
+    public enum BossStatusTextType
+    {
+        Unstoppable,    // 霸体
+        Frozen,         // 冰冻
+        Enraged,        // 狂暴
+        Interrupted,    // 被打断
+        Countered,      // 被反击
+        Overload,       // 过载
+        Exhausted       // 疲劳
+    }
+    /// <summary>
     /// Boss 行为状态
     /// </summary>
     public enum BossState
@@ -407,7 +420,7 @@ namespace LightVsDecay.Logic.Boss
                 {
                     Debug.Log("[BossController] ❄️ 冰冻被霸体免疫！");
                 }
-                ShowCounterText("UNSTOPPABLE!");
+                ShowStatusText(BossStatusTextType.Unstoppable);
                 return false;
             }
             // 【新增】Press角力期间免疫冰冻
@@ -450,7 +463,7 @@ namespace LightVsDecay.Logic.Boss
                 {
                     Debug.Log("[BossController] 💫 僵直被霸体免疫！");
                 }
-                ShowCounterText("UNSTOPPABLE!");
+                ShowStatusText(BossStatusTextType.Unstoppable);
                 return false;
             }
             
@@ -534,7 +547,7 @@ namespace LightVsDecay.Logic.Boss
             }
             
             // 显示飘字
-            ShowCounterText("UNSTOPPABLE!");
+            ShowStatusText(BossStatusTextType.Unstoppable);
             
             // 震动反馈
             if (CameraShake.Instance != null)
@@ -781,7 +794,7 @@ namespace LightVsDecay.Logic.Boss
             rb.velocity = Vector2.zero;
 
             // 显示飘字
-            ShowCounterText("FROZEN!");
+            ShowStatusText(BossStatusTextType.Frozen);
             
             // 播放冰冻音效
             if (AudioManager.Instance != null)
@@ -1347,7 +1360,7 @@ namespace LightVsDecay.Logic.Boss
                 {
                     Debug.Log("[BossController] ⚡ Charge 打断被霸体免疫！");
                 }
-                ShowCounterText("UNSTOPPABLE!");
+                ShowStatusText(BossStatusTextType.Unstoppable);
                 return;
             }
             
@@ -1402,8 +1415,10 @@ namespace LightVsDecay.Logic.Boss
         
         private void OnChargeInterrupted()
         {
-            if (showDebugInfo) Debug.Log("[BossController] 💥 Charge 蓄力被打断！进入僵直！");
-            ShowCounterText("INTERRUPTED!");
+            if (showDebugInfo) 
+                Debug.Log("[BossController] 💥 Charge 蓄力被打断！进入僵直！");
+            
+            ShowStatusText(BossStatusTextType.Interrupted);
     
             if (redBodyEffect != null && !isUnstoppable)
             {
@@ -1628,7 +1643,7 @@ namespace LightVsDecay.Logic.Boss
                 Debug.Log("[BossController] 🔥 Press 过载！Boss 核心过热撤退！");
             }
             
-            ShowCounterText("OVERLOAD!");
+            ShowStatusText(BossStatusTextType.Overload);
             
             float shortDuration = config != null ? config.shortStunDuration : 1.5f;
             if (!TryApplyStun(shortDuration))
@@ -1659,7 +1674,7 @@ namespace LightVsDecay.Logic.Boss
                 Debug.Log("[BossController] ✅ Press 被反推！玩家胜利！");
             }
             
-            ShowCounterText("COUNTERED!");
+            ShowStatusText(BossStatusTextType.Countered);
             
             if (CameraShake.Instance != null)
             {
@@ -1717,7 +1732,7 @@ namespace LightVsDecay.Logic.Boss
                 Debug.Log("[BossController] 😤 Boss 角力疲劳！强制撤退！");
             }
             
-            ShowCounterText("EXHAUSTED!");
+            ShowStatusText(BossStatusTextType.Exhausted);
             
             if (CameraShake.Instance != null)
             {
@@ -2011,14 +2026,48 @@ namespace LightVsDecay.Logic.Boss
             }
         }
         
-        private void ShowCounterText(string text)
+        /// <summary>
+        /// 显示状态飘字（使用配置文本）
+        /// </summary>
+        private void ShowStatusText(BossStatusTextType textType)
         {
-            if (FloatingTextManager.Instance != null)
+            if (FloatingTextManager.Instance == null) return;
+            
+            string text = GetStatusText(textType);
+            FloatingTextManager.Instance.ShowStatus(transform.position, text);
+        }
+        /// <summary>
+        /// 获取配置化的状态文本
+        /// </summary>
+        private string GetStatusText(BossStatusTextType textType)
+        {
+            if (config == null)
             {
-                FloatingTextManager.Instance.ShowStatus(transform.position, text);
+                switch (textType)
+                {
+                    case BossStatusTextType.Unstoppable: return "UNSTOPPABLE!";
+                    case BossStatusTextType.Frozen: return "FROZEN!";
+                    case BossStatusTextType.Enraged: return "ENRAGED!";
+                    case BossStatusTextType.Interrupted: return "INTERRUPTED!";
+                    case BossStatusTextType.Countered: return "COUNTERED!";
+                    case BossStatusTextType.Overload: return "OVERLOAD!";
+                    case BossStatusTextType.Exhausted: return "EXHAUSTED!";
+                    default: return "";
+                }
+            }
+            
+            switch (textType)
+            {
+                case BossStatusTextType.Unstoppable: return config.unstoppableText;
+                case BossStatusTextType.Frozen: return config.frozenText;
+                case BossStatusTextType.Enraged: return config.enragedText;
+                case BossStatusTextType.Interrupted: return config.interruptedText;
+                case BossStatusTextType.Countered: return config.counteredText;
+                case BossStatusTextType.Overload: return config.overloadText;
+                case BossStatusTextType.Exhausted: return config.exhaustedText;
+                default: return "";
             }
         }
-        
         public void ForceStun()
         {
             ChangeState(BossState.Stun);

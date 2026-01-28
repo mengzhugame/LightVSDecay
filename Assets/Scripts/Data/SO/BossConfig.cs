@@ -356,7 +356,31 @@ namespace LightVsDecay.Data.SO
 
         [Tooltip("最大同时存在的污秽球数量")]
         public int pollutionMaxCount = 3;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】状态飘字文本配置
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("═══ 状态飘字文本 ═══")]
+        [Tooltip("霸体状态文本")]
+        public string unstoppableText = "UNSTOPPABLE!";
+        
+        [Tooltip("冰冻状态文本")]
+        public string frozenText = "FROZEN!";
+        
+        [Tooltip("狂暴状态文本")]
+        public string enragedText = "ENRAGED!";
+        
+        [Tooltip("被打断状态文本")]
+        public string interruptedText = "INTERRUPTED!";
+        
+        [Tooltip("被反击状态文本")]
+        public string counteredText = "COUNTERED!";
 
+        [Tooltip("过载状态文本")]
+        public string overloadText = "OVERLOAD!";
+        
+        [Tooltip("疲劳状态文本")]
+        public string exhaustedText = "EXHAUSTED!";
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 便捷方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

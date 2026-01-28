@@ -19,7 +19,7 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 8635c8f43427b044cac3b175fa344f12, type: 3}
   description: "\u51B0\u51BB\u51CF\u901F\u6548\u679C"
   changeColor: 1
-  skillColor: {r: 0.1078742, g: 0.36173782, b: 1.8443024, a: 1}
+  skillColor: {r: 0, g: 0.35225257, b: 2.4251218, a: 1}
   maxLevel: 5
   isRepeatable: 0
   levelData:
@@ -29,6 +29,8 @@ MonoBehaviour:
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0.4
     slowDuration: 0.5
     freezeThreshold: 0
@@ -37,12 +39,16 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00FF00>50%</color>,\u6301\u7EED
@@ -50,6 +56,8 @@ MonoBehaviour:
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0.5
     slowDuration: 0.8
     freezeThreshold: 0
@@ -58,12 +66,16 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00FF00>60%</color>,\u6301\u7EED
@@ -71,6 +83,8 @@ MonoBehaviour:
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0.6
     slowDuration: 1
     freezeThreshold: 0
@@ -79,12 +93,16 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00FF00>70%</color>,\u6301\u7EED
@@ -92,6 +110,8 @@ MonoBehaviour:
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0.7
     slowDuration: 1.2
     freezeThreshold: 0
@@ -100,12 +120,16 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u7EDD\u5BF9\u96F6\u5EA6\uFF1A \u6301\u7EED\u7167\u5C04\u76EE\u6807
@@ -113,6 +137,8 @@ MonoBehaviour:
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
+    shatterDamageMultiplier: 1
+    enableExecution: 0
     slowPercent: 0.7
     slowDuration: 1.2
     freezeThreshold: 1
@@ -121,12 +147,16 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
   baseWeight: 100

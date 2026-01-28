@@ -634,7 +634,28 @@ namespace LightVsDecay.Logic.Player
                                 bossController.ApplyLaserPushForce(pushMagnitude);
                             }
                         }
-                        
+                        // 【新增】Frost减速和冰冻累积（眼睛命中） Unstoppable
+                        if (SkillEffectManager.Instance != null)
+                        {
+                            int frostLevel = SkillEffectManager.Instance.GetFrostLevel();
+                            if (frostLevel >= 1)
+                            {
+                                float slowPercent, duration;
+                                SkillEffectManager.Instance.GetFrostParams(out slowPercent, out duration);
+                                
+                                // 应用减速
+                                bossController.ApplyFrostSlow(slowPercent, duration);
+                                
+                                // 播放 Frost 粒子特效
+                                PlayBossFrostVFX(bossController);
+                                
+                                // LV5 冰冻累积
+                                if (frostLevel >= 5)
+                                {
+                                    bossController.AddFrostExposureTime(tickRate);
+                                }
+                            }
+                        }
                         UpdateFrameHitType(LaserHitType.Burn);
                         
                         // Boss眼睛也消耗穿透次数
@@ -716,7 +737,7 @@ namespace LightVsDecay.Logic.Player
                                 }
                             }
                             
-                            // Frost冰冻累积
+                            // Frost减速和冰冻累积
                             if (SkillEffectManager.Instance != null)
                             {
                                 int frostLevel = SkillEffectManager.Instance.GetFrostLevel();
@@ -724,7 +745,18 @@ namespace LightVsDecay.Logic.Player
                                 {
                                     float slowPercent, duration;
                                     SkillEffectManager.Instance.GetFrostParams(out slowPercent, out duration);
+                                    
+                                    // 应用减速
                                     bossController.ApplyFrostSlow(slowPercent, duration);
+                                    
+                                    // 【新增】播放 Frost 粒子特效
+                                    PlayBossFrostVFX(bossController);
+                                    
+                                    // 【新增】LV5 冰冻累积
+                                    if (frostLevel >= 5)
+                                    {
+                                        bossController.AddFrostExposureTime(tickRate);
+                                    }
                                 }
                             }
                             
@@ -918,6 +950,7 @@ namespace LightVsDecay.Logic.Player
                                 }
                             }
                         }
+                        
                         UpdateFrameHitType(LaserHitType.Burn);
                     }
                     continue;
@@ -977,7 +1010,7 @@ namespace LightVsDecay.Logic.Player
                                 bossHealth.TakeBodyDamage(bossDamage, collider.transform.position, isCrit, critDamageMultiplier);
                             }
                             
-                            // Frost冰冻累积
+                            // Frost减速和冰冻累积
                             if (SkillEffectManager.Instance != null)
                             {
                                 int frostLevel = SkillEffectManager.Instance.GetFrostLevel();
@@ -985,7 +1018,18 @@ namespace LightVsDecay.Logic.Player
                                 {
                                     float slowPercent, duration;
                                     SkillEffectManager.Instance.GetFrostParams(out slowPercent, out duration);
+                                    
+                                    // 应用减速
                                     bossController.ApplyFrostSlow(slowPercent, duration);
+                                    
+                                    // 【新增】播放 Frost 粒子特效
+                                    PlayBossFrostVFX(bossController);
+                                    
+                                    // 【新增】LV5 冰冻累积
+                                    if (frostLevel >= 5)
+                                    {
+                                        bossController.AddFrostExposureTime(tickRate);
+                                    }
                                 }
                             }
                             
@@ -998,6 +1042,28 @@ namespace LightVsDecay.Logic.Player
                                 if (pushMagnitude > 0f)
                                 {
                                     bossController.ApplyLaserPushForce(pushMagnitude);
+                                }
+                            }
+                            // 【新增】Frost减速和冰冻累积（眼睛命中）
+                            if (SkillEffectManager.Instance != null)
+                            {
+                                int frostLevel = SkillEffectManager.Instance.GetFrostLevel();
+                                if (frostLevel >= 1)
+                                {
+                                    float slowPercent, duration;
+                                    SkillEffectManager.Instance.GetFrostParams(out slowPercent, out duration);
+                                
+                                    // 应用减速
+                                    bossController.ApplyFrostSlow(slowPercent, duration);
+                                
+                                    // 播放 Frost 粒子特效
+                                    PlayBossFrostVFX(bossController);
+                                
+                                    // LV5 冰冻累积
+                                    if (frostLevel >= 5)
+                                    {
+                                        bossController.AddFrostExposureTime(tickRate);
+                                    }
                                 }
                             }
                             UpdateFrameHitType(LaserHitType.Burn);
