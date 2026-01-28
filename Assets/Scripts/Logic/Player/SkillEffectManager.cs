@@ -376,14 +376,6 @@ namespace LightVsDecay.Logic.Player
             // 应用到 LaserController
             if (laserController != null)
             {
-                float widthMultiplier = (level == 1) ? levelData.widthMultiplier : 1f;
-    
-                laserController.SetFocusLevelFromConfig(
-                    level,
-                    cachedFocusDamageBonus,
-                    widthMultiplier
-                );
-        
                 // 【新增】设置穿透参数
                 laserController.SetFocusPenetrationParams(
                     cachedFocusPenetrationCount,
@@ -405,7 +397,6 @@ namespace LightVsDecay.Logic.Player
             }
 
             UpdateDamageMultiplier();
-            UpdateWidthMultiplier();
         }
         
         /// <summary>
@@ -571,39 +562,27 @@ namespace LightVsDecay.Logic.Player
             UpdateWidthMultiplier();
         }
         /// <summary>
-        /// 更新宽度倍率
-        /// 计算公式：最终宽度倍率 = Focus宽度倍率 * (1 + Wide加成)
-        /// 例如：Focus Lv1 (0.5x) + Wide Lv1 (+40%) = 0.5 * 1.4 = 0.7x
+        /// 更新宽度倍率 - 只计算 Wide 加成
+        /// 【已删除】Focus 不再影响宽度
         /// </summary>
         private void UpdateWidthMultiplier()
         {
             if (laserController == null) return;
-    
-            // Focus 的宽度倍率（可能是 0.5 表示变细）
-            float focusWidthMultiplier = (focusLevel >= 1) ? 0.5f : 1f;
-    
-            // 如果有配置，从 Focus 配置中读取
-            var focusData = GetSkillData(SkillType.Focus);
-            if (focusData != null && focusLevel >= 1)
-            {
-                var focusLevelData = GetLevelData(focusData, 1); // 只有 Lv1 会变细
-                if (focusLevelData != null && focusLevelData.widthMultiplier < 1f)
-                {
-                    focusWidthMultiplier = focusLevelData.widthMultiplier;
-                }
-            }
-    
+
+            // 【修改】Focus 不再影响宽度，基础倍率始终为 1.0
+            float baseWidthMultiplier = 1f;
+
             // Wide 的累加加成
             float wideBonus = totalWidthBonus;
-    
-            // 最终宽度倍率 = Focus宽度 * (1 + Wide加成)
-            float finalMultiplier = focusWidthMultiplier * (1f + wideBonus);
-    
+
+            // 最终宽度倍率 = 基础 * (1 + Wide加成)
+            float finalMultiplier = baseWidthMultiplier * (1f + wideBonus);
+
             laserController.SetWidthMultiplier(finalMultiplier);
-    
+
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] 宽度倍率更新: Focus={focusWidthMultiplier:F2}x, Wide=+{wideBonus:P0}, 最终={finalMultiplier:F2}x");
+                Debug.Log($"[SkillEffectManager] 宽度倍率更新: Wide=+{wideBonus:P0}, 最终={finalMultiplier:F2}x");
             }
         }
         /// <summary>

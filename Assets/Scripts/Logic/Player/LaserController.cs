@@ -314,7 +314,11 @@ namespace LightVsDecay.Logic.Player
             // 合并检测层 (Enemy + BossEyes)
             LayerMask pollutionBallLayer = 1 << LayerMask.NameToLayer("BossPollutionBall");
             combinedDetectionLayer = enemyLayer | bouncingEnemyLayer | pollutionBallLayer;
-            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] 合并检测层: Enemy={enemyLayer.value}, Bouncing={bouncingEnemyLayer.value}, " +
+                          $"BossEyes={bossEyesLayer.value}, Combined={combinedDetectionLayer.value}");
+            }
             // 缓存 Layer 索引
             enemyLayerIndex = LayerMask.NameToLayer("Enemy");
             bouncingEnemyLayerIndex = LayerMask.NameToLayer(GameConstants.BOUNCING_ENEMY_LAYER);  // 【新增】
@@ -477,22 +481,39 @@ namespace LightVsDecay.Logic.Player
             }
         }
         /// <summary>
-        /// 对单个激光段进行伤害检测 (V4.0 - 支持穿透)
+        /// 对单个激光段进行伤害检测 (V4.1 - 修复穿透检测范围)
         /// </summary>
         private void DetectAndDamageInSegment(LaserSegment segment, float width, float damage, float knockbackMultiplier, bool isMainLaser)
         {
-            // 计算检测盒
-            Vector2 segmentCenter = (segment.startPoint + segment.endPoint) / 2f;
+            // 判断是否启用穿透（只有主激光才有穿透）
+            bool usePenetration = isMainLaser && focusPenetrationCount != 0;
+
             Vector2 segmentDir = segment.Direction;
+            Vector2 segmentStart = segment.startPoint;
+    
+            // 【核心修复】穿透模式下使用最大激光长度进行检测
+            float detectLength;
+            Vector2 detectCenter;
+    
+            if (usePenetration)
+            {
+                // 穿透模式：检测整个激光最大范围
+                detectLength = maxLaserLength;
+                detectCenter = segmentStart + segmentDir * (detectLength / 2f);
+            }
+            else
+            {
+                // 普通模式：只检测当前渲染的激光段
+                detectLength = segment.length;
+                detectCenter = (segment.startPoint + segment.endPoint) / 2f;
+            }
+    
             float angle = Mathf.Atan2(segmentDir.y, segmentDir.x) * Mathf.Rad2Deg - 90f;
-            Vector2 boxSize = new Vector2(width, segment.length);
-    
+            Vector2 boxSize = new Vector2(width, detectLength);
+
             // 使用合并的检测层
-            int hitCount = Physics2D.OverlapBoxNonAlloc(segmentCenter, boxSize, angle, hitBuffer, combinedDetectionLayer);
-    
-            // 【新增】判断是否启用穿透（只有主激光非反射段才有穿透）
-            bool usePenetration = isMainLaser  && focusPenetrationCount != 0;
-    
+            int hitCount = Physics2D.OverlapBoxNonAlloc(detectCenter, boxSize, angle, hitBuffer, combinedDetectionLayer);
+
             if (usePenetration)
             {
                 // 【穿透模式】收集所有命中目标，按距离排序后处理
@@ -515,7 +536,6 @@ namespace LightVsDecay.Logic.Player
             
             Vector2 segmentDir = segment.Direction;
             Vector2 segmentStart = segment.startPoint;
-            
             // 收集所有命中的目标并计算距离
             HashSet<int> processedIds = new HashSet<int>();
             
@@ -575,7 +595,12 @@ namespace LightVsDecay.Logic.Player
             int maxPenetration = focusPenetrationCount == -1 
                 ? penetrationHits.Count  // 无限穿透
                 : Mathf.Min(focusPenetrationCount, penetrationHits.Count);
-            
+            // 【新增】调试日志：显示检测到的敌人数量
+            if (showDebugInfo)
+            {
+                Debug.Log($"[LaserController] 穿透检测: 检测到{penetrationHits.Count}个目标, " +
+                          $"配置穿透数={focusPenetrationCount}, 实际穿透上限={maxPenetration}");
+            }
             // 对每个目标应用衰减伤害
             float currentDamage = baseDamage;  // 第一个目标使用基础伤害（已含Focus加成）
             int penetratedCount = 0;
@@ -857,6 +882,19 @@ namespace LightVsDecay.Logic.Player
                 
                 // Frost效果
                 ApplyFrostEffect(enemy);
+                // 【新增】确保穿透敌人也有受击反馈
+                // 记录到直接命中列表（用于寒气扩散和受击效果）
+                if (!directHitEnemiesThisTick.Contains(enemy))
+                {
+                    directHitEnemiesThisTick.Add(enemy);
+                }
+                // 【新增】穿透敌人播放穿透特效（只对非第一个敌人）
+                if (penetratedCount > 0 && VFXPoolManager.Instance != null)
+                {
+                    // 播放一个小型命中特效表示穿透
+                    VFXPoolManager.Instance.PlayLaserHit(enemy.transform.position);
+                }
+
                 // 【新增】注册连锁反应命中
                 RegisterChainHit(enemy, currentDamage, true); 
                 
@@ -1634,42 +1672,15 @@ namespace LightVsDecay.Logic.Player
         }
 
         /// <summary>
-        /// 从配置设置 Focus（聚能透镜）效果
+        /// 设置 Focus 伤害倍率（由 SkillEffectManager 调用）
         /// </summary>
-        /// <param name="level">技能等级</param>
-        /// <param name="damageMultiplier">伤害倍率</param>
-        /// <param name="widthMultiplier">宽度倍率（仅 Lv1 生效）</param>
-        /// <param name="laserColor">激光颜色</param>
-        public void SetFocusLevelFromConfig(int level, float damageMultiplier, float widthMultiplier)
+        public void SetFocusDamageMultiplier(float damageBonus)
         {
-            if (level <= 0)
-            {
-                ResetFocusEffect();
-                return;
-            }
-    
-            // 应用伤害倍率
-            skillDamageMultiplier = damageMultiplier;
-    
-            // 仅在 Lv1 时应用宽度变化（变细）
-            if (level == 1 && widthMultiplier < 1f)
-            {
-                skillWidthMultiplier *= widthMultiplier;
-            }
-    
-            // 颜色由 SkillEffectManager.UpdateLaserColor() 统一处理
-    
-            // 更新激光宽度
-            if (mainLaserBeam != null)
-            {
-                mainLaserBeam.SetLaserWidth(CurrentLaserWidth);
-            }
-    
-            UpdateAllLaserWidths();
+            skillDamageMultiplier = damageBonus;
     
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserController] Focus Lv.{level} (配置): 伤害={damageMultiplier:P0}, 宽度倍率={widthMultiplier:F2}");
+                Debug.Log($"[LaserController] Focus伤害设置: +{damageBonus:P0}");
             }
         }
         /// <summary>
