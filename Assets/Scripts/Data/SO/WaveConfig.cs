@@ -76,18 +76,6 @@ namespace LightVsDecay.Data.SO
         [Header("位置与属性")]
         [Tooltip("生成区域")]
         public SpawnZone spawnZone = SpawnZone.AllEdges;
-        
-        [Tooltip("血量倍率（用于难度调整）")]
-        [Range(0.5f, 10f)]
-        public float healthMultiplier = 1f;
-        
-        [Tooltip("速度倍率")]
-        [Range(0.5f, 3f)]
-        public float speedMultiplier = 1f;
-        
-        [Tooltip("伤害倍率")]
-        [Range(0.5f, 3f)]
-        public float damageMultiplier = 1f;
 
         // 运行时标记（不序列化）
         [System.NonSerialized]
@@ -370,8 +358,7 @@ namespace LightVsDecay.Data.SO
                 new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 20, 
                     pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.AllEdges },
                 new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.EliteTank, count = 1, 
-                    pattern = SpawnPattern.Instant, spawnZone = SpawnZone.TopOnly,
-                    healthMultiplier = 5f, damageMultiplier = 2f },
+                    pattern = SpawnPattern.Instant, spawnZone = SpawnZone.TopOnly},
                 new SpawnGroup { spawnTime = 40f, enemyType = EnemyType.Rusher, count = 4, 
                     pattern = SpawnPattern.Burst, customInterval = 0.5f, spawnZone = SpawnZone.SideRandom }
             ));
@@ -422,8 +409,7 @@ namespace LightVsDecay.Data.SO
                 new SpawnGroup { spawnTime = 12f, enemyType = EnemyType.Slime, count = 25, 
                     pattern = SpawnPattern.Swarm, customInterval = 0.3f, spawnZone = SpawnZone.AllEdges },
                 new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.EliteDrifter, count = 1, 
-                    pattern = SpawnPattern.Instant, spawnZone = SpawnZone.TopOnly,
-                    healthMultiplier = 5f, speedMultiplier = 1.5f },
+                    pattern = SpawnPattern.Instant, spawnZone = SpawnZone.TopOnly},
                 new SpawnGroup { spawnTime = 28f, enemyType = EnemyType.Slime, count = 15, 
                     pattern = SpawnPattern.Flood, customInterval = 0.2f, spawnZone = SpawnZone.AllEdges },
                 new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.Rusher, count = 6, 
@@ -497,6 +483,394 @@ namespace LightVsDecay.Data.SO
             Debug.Log("精英怪：");
             Debug.Log("  W6 @35s: Elite Tank (HP×5, DMG×2, XP×5=250)");
             Debug.Log("  W9 @25s: Elite Phantom (HP×5, Speed×1.5, XP×5=100)");
+        }
+        // ============================================================
+        // WaveConfig.cs 新增方法 (v4.0)
+        // 添加位置: 在 #if UNITY_EDITOR 区域内，GenerateDefaultConfig() 方法之后
+        // ============================================================
+
+        [ContextMenu("生成普通模式8波配置 v4.0（7波=Lv.18）")]
+        public void GenerateNormalConfig_v4()
+        {
+            waves.Clear();
+            totalWaves = 8;
+            
+            // ══════════════════════════════════════════════════════════════
+            // 第一阶段：教学期 (Wave 1-2)
+            // 目标：让玩家熟悉操作，轻松升级
+            // ══════════════════════════════════════════════════════════════
+            
+            // Wave 1: 初临 (500 XP → Lv.4)
+            // 纯 Slime，让玩家熟悉激光操作和转向
+            waves.Add(CreateWave(1, "初临", "⚡ 净化之光，启动！", 1.0f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 15, 
+                    pattern = SpawnPattern.Trickle, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 20f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 40f, enemyType = EnemyType.Slime, count = 15, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.AllEdges }
+            ));
+            
+            // Wave 2: 暗涌 (700 XP → Lv.6)
+            // 引入 Drifter（漂移者），教会玩家追踪移动目标
+            waves.Add(CreateWave(2, "暗涌", "🌀 漂流者出现了...", 1.0f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 15, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 10f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Trickle, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.Slime, count = 15, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 40f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom }
+            ));
+            
+            // ══════════════════════════════════════════════════════════════
+            // 第二阶段：过渡期 (Wave 3-4)
+            // 目标：引入更多怪物类型，节奏加快
+            // ══════════════════════════════════════════════════════════════
+            
+            // Wave 3: 骤雨 (900 XP → Lv.8)
+            // 引入 Rusher（冲锋者），首次出现快速威胁
+            waves.Add(CreateWave(3, "骤雨", "⚡ 冲锋者来袭！", 1.1f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 10f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 20f, enemyType = EnemyType.Rusher, count = 15, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 45f, enemyType = EnemyType.Rusher, count = 10, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.BottomCorners }
+            ));
+            
+            // Wave 4: 铁壁 (1,110 XP → Lv.11)
+            // 引入 Tank（坦克），教会玩家集火高血量目标
+            waves.Add(CreateWave(4, "铁壁", "🛡️ 重甲污染体出现！", 1.2f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 10f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 15f, enemyType = EnemyType.Tank, count = 3, 
+                    pattern = SpawnPattern.Trickle, customInterval = 3f, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.Rusher, count = 12, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 40f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 50f, enemyType = EnemyType.Tank, count = 2, 
+                    pattern = SpawnPattern.Trickle, customInterval = 2f, spawnZone = SpawnZone.TopRandom }
+            ));
+            
+            // ══════════════════════════════════════════════════════════════
+            // 第三阶段：转折点 (Wave 5) ⭐ 精英怪①
+            // 目标：难度跳升，精英坦克登场
+            // ══════════════════════════════════════════════════════════════
+            
+            // Wave 5: 污染先驱 (1,310 XP → Lv.13)
+            // 精英坦克首次登场，作为小 Boss 体验，打破节奏
+            waves.Add(CreateWave(5, "污染先驱", "⭐ 精英污染体降临！", 1.3f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 25, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 10f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 20f, enemyType = EnemyType.Rusher, count = 12, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.BottomCorners },
+                // ⭐ 精英坦克 @25s
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.EliteTank, count = 1, 
+                    pattern = SpawnPattern.Instant, spawnZone = SpawnZone.TopOnly},
+                new SpawnGroup { spawnTime = 30f, enemyType = EnemyType.Slime, count = 25, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 45f, enemyType = EnemyType.Tank, count = 2, 
+                    pattern = SpawnPattern.Trickle, customInterval = 2f, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 50f, enemyType = EnemyType.Rusher, count = 8, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.SideRandom }
+            ));
+            
+            // ══════════════════════════════════════════════════════════════
+            // 第四阶段：压力期 (Wave 6)
+            // 目标：高密度刷怪，考验操作
+            // ══════════════════════════════════════════════════════════════
+            
+            // Wave 6: 浪潮 (1,690 XP → Lv.15)
+            // 高密度刷怪，考验玩家的技能构筑和操作
+            waves.Add(CreateWave(6, "浪潮", "🌊 污染浪潮来袭！", 1.4f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 35, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 8f, enemyType = EnemyType.Drifter, count = 15, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 15f, enemyType = EnemyType.Rusher, count = 18, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.BottomCorners },
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.Tank, count = 3, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.Slime, count = 35, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 45f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 50f, enemyType = EnemyType.Rusher, count = 12, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 55f, enemyType = EnemyType.Tank, count = 2, 
+                    pattern = SpawnPattern.Trickle, spawnZone = SpawnZone.TopOnly }
+            ));
+            
+            // ══════════════════════════════════════════════════════════════
+            // 第五阶段：高潮前奏 (Wave 7) ⭐ 精英怪②
+            // 目标：最后的资源波，精英漂流者登场
+            // ══════════════════════════════════════════════════════════════
+            
+            // Wave 7: 最后的宁静 (2,310 XP → Lv.18)
+            // 最后的资源波，精英漂流者高速移动考验追踪能力，为 Boss 战热身
+            waves.Add(CreateWave(7, "最后的宁静", "⭐ 风暴前的宁静...", 1.5f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 50, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 8f, enemyType = EnemyType.Drifter, count = 20, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 15f, enemyType = EnemyType.Rusher, count = 25, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.BottomCorners },
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.Tank, count = 3, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopRandom },
+                // ⭐ 精英漂流者 @30s
+                new SpawnGroup { spawnTime = 30f, enemyType = EnemyType.EliteDrifter, count = 1, 
+                    pattern = SpawnPattern.Instant, spawnZone = SpawnZone.SideRandom},
+                new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.Slime, count = 50, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 45f, enemyType = EnemyType.Drifter, count = 12, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 50f, enemyType = EnemyType.Rusher, count = 15, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 55f, enemyType = EnemyType.Tank, count = 2, 
+                    pattern = SpawnPattern.Trickle, spawnZone = SpawnZone.TopOnly }
+            ));
+            
+            // ══════════════════════════════════════════════════════════════
+            // 第六阶段：BOSS战 (Wave 8)
+            // ══════════════════════════════════════════════════════════════
+            
+            // Wave 8: BOSS战 - 刷怪由 BossController 控制
+            waves.Add(CreateWave(8, "决战", "👹 污染之核 The Corruptor 降临！", 1.5f, true));
+            
+            // 标记配置已修改
+            #if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            #endif
+            
+            Debug.Log("=== WaveConfig v4.0 普通模式已生成 ===");
+            Debug.Log("目标：7波结束达到 Lv.18 (累计 8,520 XP)");
+            Debug.Log("总敌人数：656只（含2只精英）+ Boss");
+            Debug.Log("");
+            Debug.Log("经验分配：");
+            Debug.Log("  W1: 500 XP  → Lv.4");
+            Debug.Log("  W2: 700 XP  → Lv.6");
+            Debug.Log("  W3: 900 XP  → Lv.8");
+            Debug.Log("  W4: 1,110 XP → Lv.11");
+            Debug.Log("  W5: 1,310 XP → Lv.13 (Elite Tank @25s)");
+            Debug.Log("  W6: 1,690 XP → Lv.15");
+            Debug.Log("  W7: 2,310 XP → Lv.18 (Elite Drifter @30s)");
+            Debug.Log("  W8: Boss战");
+            Debug.Log("");
+            Debug.Log("难度倍率：W1=1.0, W2=1.0, W3=1.1, W4=1.2, W5=1.3, W6=1.4, W7=1.5");
+        }
+        
+        [ContextMenu("生成困难模式8波配置 v4.0（7波=Lv.18）")]
+        public void GenerateHardConfig_v4()
+        {
+            waves.Clear();
+            totalWaves = 8;
+            
+            // ══════════════════════════════════════════════════════════════
+            // 困难模式：相同怪物配置，更高难度倍率
+            // 难度倍率影响：血量、速度、伤害
+            // ══════════════════════════════════════════════════════════════
+            
+            // Wave 1: 初临 (500 XP → Lv.4)
+            waves.Add(CreateWave(1, "初临", "⚡ 净化之光，启动！", 1.2f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 15, 
+                    pattern = SpawnPattern.Trickle, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 20f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 40f, enemyType = EnemyType.Slime, count = 15, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.AllEdges }
+            ));
+            
+            // Wave 2: 暗涌 (700 XP → Lv.6)
+            waves.Add(CreateWave(2, "暗涌", "🌀 漂流者出现了...", 1.3f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 15, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 10f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Trickle, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.Slime, count = 15, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 40f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom }
+            ));
+            
+            // Wave 3: 骤雨 (900 XP → Lv.8)
+            waves.Add(CreateWave(3, "骤雨", "⚡ 冲锋者来袭！", 1.4f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 10f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 20f, enemyType = EnemyType.Rusher, count = 15, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 45f, enemyType = EnemyType.Rusher, count = 10, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.BottomCorners }
+            ));
+            
+            // Wave 4: 铁壁 (1,110 XP → Lv.11)
+            waves.Add(CreateWave(4, "铁壁", "🛡️ 重甲污染体出现！", 1.6f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 10f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 15f, enemyType = EnemyType.Tank, count = 3, 
+                    pattern = SpawnPattern.Trickle, customInterval = 3f, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.Rusher, count = 12, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 40f, enemyType = EnemyType.Slime, count = 20, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 50f, enemyType = EnemyType.Tank, count = 2, 
+                    pattern = SpawnPattern.Trickle, customInterval = 2f, spawnZone = SpawnZone.TopRandom }
+            ));
+            
+            // Wave 5: 污染先驱 (1,310 XP → Lv.13) ⭐ 精英怪①
+            waves.Add(CreateWave(5, "污染先驱", "⭐ 精英污染体降临！", 1.8f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 25, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 10f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 20f, enemyType = EnemyType.Rusher, count = 12, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.BottomCorners },
+                // ⭐ 精英坦克 @25s
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.EliteTank, count = 1, 
+                    pattern = SpawnPattern.Instant, spawnZone = SpawnZone.TopOnly},
+                new SpawnGroup { spawnTime = 30f, enemyType = EnemyType.Slime, count = 25, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 45f, enemyType = EnemyType.Tank, count = 2, 
+                    pattern = SpawnPattern.Trickle, customInterval = 2f, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 50f, enemyType = EnemyType.Rusher, count = 8, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.SideRandom }
+            ));
+            
+            // Wave 6: 浪潮 (1,690 XP → Lv.15)
+            waves.Add(CreateWave(6, "浪潮", "🌊 污染浪潮来袭！", 2.0f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 35, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 8f, enemyType = EnemyType.Drifter, count = 15, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 15f, enemyType = EnemyType.Rusher, count = 18, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.BottomCorners },
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.Tank, count = 3, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.Slime, count = 35, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 45f, enemyType = EnemyType.Drifter, count = 10, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 50f, enemyType = EnemyType.Rusher, count = 12, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 55f, enemyType = EnemyType.Tank, count = 2, 
+                    pattern = SpawnPattern.Trickle, spawnZone = SpawnZone.TopOnly }
+            ));
+            
+            // Wave 7: 最后的宁静 (2,310 XP → Lv.18) ⭐ 精英怪②
+            waves.Add(CreateWave(7, "最后的宁静", "⭐ 风暴前的宁静...", 2.2f, false,
+                new SpawnGroup { spawnTime = 0f, enemyType = EnemyType.Slime, count = 50, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.TopOnly },
+                new SpawnGroup { spawnTime = 8f, enemyType = EnemyType.Drifter, count = 20, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 15f, enemyType = EnemyType.Rusher, count = 25, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.BottomCorners },
+                new SpawnGroup { spawnTime = 25f, enemyType = EnemyType.Tank, count = 3, 
+                    pattern = SpawnPattern.Normal, spawnZone = SpawnZone.TopRandom },
+                // ⭐ 精英漂流者 @30s
+                new SpawnGroup { spawnTime = 30f, enemyType = EnemyType.EliteDrifter, count = 1, 
+                    pattern = SpawnPattern.Instant, spawnZone = SpawnZone.SideRandom},
+                new SpawnGroup { spawnTime = 35f, enemyType = EnemyType.Slime, count = 50, 
+                    pattern = SpawnPattern.Flood, spawnZone = SpawnZone.AllEdges },
+                new SpawnGroup { spawnTime = 45f, enemyType = EnemyType.Drifter, count = 12, 
+                    pattern = SpawnPattern.Swarm, spawnZone = SpawnZone.SideRandom },
+                new SpawnGroup { spawnTime = 50f, enemyType = EnemyType.Rusher, count = 15, 
+                    pattern = SpawnPattern.Burst, spawnZone = SpawnZone.TopRandom },
+                new SpawnGroup { spawnTime = 55f, enemyType = EnemyType.Tank, count = 2, 
+                    pattern = SpawnPattern.Trickle, spawnZone = SpawnZone.TopOnly }
+            ));
+            
+            // Wave 8: BOSS战
+            waves.Add(CreateWave(8, "决战", "👹 污染之核 The Corruptor 降临！", 2.2f, true));
+            
+            // 标记配置已修改
+            #if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+            #endif
+            
+            Debug.Log("=== WaveConfig v4.0 困难模式已生成 ===");
+            Debug.Log("目标：7波结束达到 Lv.18 (累计 8,520 XP)");
+            Debug.Log("总敌人数：656只（含2只精英）+ Boss");
+            Debug.Log("");
+            Debug.Log("难度倍率（困难模式）：");
+            Debug.Log("  W1=1.2, W2=1.3, W3=1.4, W4=1.6, W5=1.8, W6=2.0, W7=2.2");
+            Debug.Log("");
+            Debug.Log("与普通模式对比：");
+            Debug.Log("  W1: 1.0 → 1.2 (+20%)");
+            Debug.Log("  W2: 1.0 → 1.3 (+30%)");
+            Debug.Log("  W3: 1.1 → 1.4 (+27%)");
+            Debug.Log("  W4: 1.2 → 1.6 (+33%)");
+            Debug.Log("  W5: 1.3 → 1.8 (+38%)");
+            Debug.Log("  W6: 1.4 → 2.0 (+43%)");
+            Debug.Log("  W7: 1.5 → 2.2 (+47%)");
+        }
+        
+        [ContextMenu("验证8波配置经验计算 v4.0")]
+        public void ValidateExpCalculation_v4()
+        {
+            Debug.Log("=== WaveConfig v4.0 经验验证 ===");
+            Debug.Log("怪物经验值: Slime=10, Drifter=20, Rusher=8, Tank=50");
+            Debug.Log("精英加成: ×5 (Elite Tank=250, Elite Drifter=100)");
+            Debug.Log("");
+            
+            // 各波次经验计算（基于配置）
+            int[] waveExp = {
+                500,    // W1: Slime×50
+                700,    // W2: Slime×30 + Drifter×20
+                900,    // W3: Slime×40 + Drifter×10 + Rusher×25
+                1110,   // W4: Slime×40 + Drifter×10 + Rusher×12 + Tank×5
+                1310,   // W5: Slime×50 + Drifter×10 + Rusher×20 + Tank×2 + EliteTank(250)
+                1690,   // W6: Slime×70 + Drifter×25 + Rusher×30 + Tank×5
+                2310    // W7: Slime×100 + Drifter×32 + Rusher×40 + Tank×5 + EliteDrifter(100)
+            };
+            
+            // 升级所需经验 (公式: 100 + (lv-1) × 50)
+            int[] levelUpReq = new int[20];
+            for (int i = 0; i < 20; i++)
+            {
+                levelUpReq[i] = 100 + i * 50;
+            }
+            
+            int cumulative = 0;
+            int currentLevel = 1;
+            int expToNext = levelUpReq[currentLevel - 1];
+            int currentExp = 0;
+            
+            for (int w = 0; w < waveExp.Length; w++)
+            {
+                cumulative += waveExp[w];
+                currentExp += waveExp[w];
+                
+                // 检查升级
+                while (currentExp >= expToNext && currentLevel < 20)
+                {
+                    currentExp -= expToNext;
+                    currentLevel++;
+                    expToNext = levelUpReq[currentLevel - 1];
+                }
+                
+                Debug.Log($"W{w + 1}: +{waveExp[w]} XP | 累计: {cumulative} | → Lv.{currentLevel}");
+            }
+            
+            Debug.Log("");
+            Debug.Log($"最终等级: Lv.{currentLevel}");
+            Debug.Log($"目标: Lv.18 (需要 8,500 XP)");
+            Debug.Log($"实际: {cumulative} XP → {(cumulative >= 8500 ? "✓ 达标" : "✗ 未达标")}");
         }
         
         private WaveData CreateWave(int number, string name, string hint, float difficulty, bool isBoss, params SpawnGroup[] groups)

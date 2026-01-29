@@ -483,7 +483,14 @@ namespace LightVsDecay.Logic
             _isBossBeingPushed = false;
             
             // 如果是Boss波，重置Boss统计器
-            if (waveNumber == 12)
+            // 【v4.0修改】使用动态判断而非硬编码12
+            bool isBossWave = false;
+            if (WaveManager.Instance != null && WaveManager.Instance.IsBossWave)
+            {
+                isBossWave = true;
+            }
+            
+            if (isBossWave)
             {
                 _bossStats.Reset();
             }
