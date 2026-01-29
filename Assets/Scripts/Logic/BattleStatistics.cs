@@ -28,6 +28,228 @@ using LightVsDecay.Logic.Player;
 namespace LightVsDecay.Logic
 {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // V4.0 新增：技能选择事件记录
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /// <summary>
+    /// 技能选择事件（记录选择时机）
+    /// </summary>
+    [Serializable]
+    public class SkillSelectionEvent
+    {
+        public float gameTime;          // 游戏进行时间（秒）
+        public int waveNumber;          // 当前波次
+        public int playerLevel;         // 选择时玩家等级
+        public SkillType selectedSkill; // 选中的技能
+        public int newSkillLevel;       // 技能升级后的等级
+        public string offeredChoices;   // 提供的三个选项
+        
+        public SkillSelectionEvent(float time, int wave, int level, SkillType skill, int newLv, string choices)
+        {
+            gameTime = time;
+            waveNumber = wave;
+            playerLevel = level;
+            selectedSkill = skill;
+            newSkillLevel = newLv;
+            offeredChoices = choices;
+        }
+        
+        public override string ToString()
+        {
+            return $"{gameTime:F1}s|W{waveNumber}|Lv{playerLevel}|{selectedSkill}→{newSkillLevel}";
+        }
+    }
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // V4.0 新增：关键事件时间戳
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /// <summary>
+    /// 关键事件记录
+    /// </summary>
+    [Serializable]
+    public class KeyEventLog
+    {
+        public float firstDamageTakenTime = -1f;     // 首次受伤时间
+        public float firstEliteKillTime = -1f;      // 首次击杀精英时间
+        public float firstShieldBreakTime = -1f;    // 首次护盾被打破时间
+        public float lowestHPTime = -1f;            // HP最低点时间
+        public float lowestHPValue = float.MaxValue;// HP最低点数值
+        public int closeCallCount = 0;              // 险胜次数（HP<20%后存活）
+        
+        public void Reset()
+        {
+            firstDamageTakenTime = -1f;
+            firstEliteKillTime = -1f;
+            firstShieldBreakTime = -1f;
+            lowestHPTime = -1f;
+            lowestHPValue = float.MaxValue;
+            closeCallCount = 0;
+        }
+        
+        public string ToCSV()
+        {
+            return $"{firstDamageTakenTime:F1},{firstEliteKillTime:F1},{firstShieldBreakTime:F1}," +
+                   $"{lowestHPTime:F1},{lowestHPValue:F0},{closeCallCount}";
+        }
+        
+        public static string CSVHeader()
+        {
+            return "First_Dmg_Time,First_Elite_Kill_Time,First_Shield_Break_Time," +
+                   "Lowest_HP_Time,Lowest_HP_Value,Close_Call_Count";
+        }
+    }
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // V4.0 新增：操作统计
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /// <summary>
+    /// 操作行为统计
+    /// </summary>
+    [Serializable]
+    public class InputStats
+    {
+        public float totalRotationAngle = 0f;       // 激光累计旋转角度
+        public int directionChangeCount = 0;        // 方向改变次数
+        public float avgRotationSpeed = 0f;         // 平均旋转速度
+        public float maxRotationSpeed = 0f;         // 最大瞬时旋转速度
+        public float idleTime = 0f;                 // 无操作时间
+        
+        // 内部追踪
+        private float _lastAngle = 0f;
+        private float _lastChangeTime = 0f;
+        private bool _lastDirection = true; // true=顺时针
+        private float _rotationSpeedSum = 0f;
+        private int _rotationSampleCount = 0;
+        
+        public void Update(float currentAngle, float deltaTime)
+        {
+            float angleDelta = Mathf.Abs(Mathf.DeltaAngle(_lastAngle, currentAngle));
+            
+            if (angleDelta > 0.1f) // 忽略微小抖动
+            {
+                totalRotationAngle += angleDelta;
+                
+                // 计算旋转速度
+                float rotationSpeed = angleDelta / deltaTime;
+                _rotationSpeedSum += rotationSpeed;
+                _rotationSampleCount++;
+                
+                if (rotationSpeed > maxRotationSpeed)
+                {
+                    maxRotationSpeed = rotationSpeed;
+                }
+                
+                // 检测方向改变
+                bool currentDirection = Mathf.DeltaAngle(_lastAngle, currentAngle) > 0;
+                if (currentDirection != _lastDirection && Time.time - _lastChangeTime > 0.1f)
+                {
+                    directionChangeCount++;
+                    _lastChangeTime = Time.time;
+                }
+                _lastDirection = currentDirection;
+            }
+            else
+            {
+                idleTime += deltaTime;
+            }
+            
+            _lastAngle = currentAngle;
+        }
+        
+        public void CalculateAverages()
+        {
+            avgRotationSpeed = _rotationSampleCount > 0 ? _rotationSpeedSum / _rotationSampleCount : 0f;
+        }
+        
+        public void Reset()
+        {
+            totalRotationAngle = 0f;
+            directionChangeCount = 0;
+            avgRotationSpeed = 0f;
+            maxRotationSpeed = 0f;
+            idleTime = 0f;
+            _lastAngle = 0f;
+            _lastChangeTime = 0f;
+            _rotationSpeedSum = 0f;
+            _rotationSampleCount = 0;
+        }
+        
+        public string ToCSV()
+        {
+            CalculateAverages();
+            return $"{totalRotationAngle:F0},{directionChangeCount},{avgRotationSpeed:F1},{maxRotationSpeed:F1},{idleTime:F1}";
+        }
+        
+        public static string CSVHeader()
+        {
+            return "Total_Rotation_Angle,Direction_Change_Count,Avg_Rotation_Speed,Max_Rotation_Speed,Idle_Time";
+        }
+    }
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // V4.0 新增：游戏总结数据
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    
+    /// <summary>
+    /// 整局游戏总结数据（用于跨局分析）
+    /// </summary>
+    [Serializable]
+    public class GameSummaryData
+    {
+        // ═══ 基础信息 ═══
+        public string sessionId;            // 会话ID
+        public string gameResult;           // Victory / Defeat
+        public float totalGameTime;         // 总游戏时长（秒）
+        public int finalWave;               // 最终到达波次
+        public int finalPlayerLevel;        // 最终玩家等级
+        public string buildType;            // 流派类型
+        
+        // ═══ 战斗总结 ═══
+        public int totalKills;              // 总击杀数
+        public float totalDamageDealt;      // 总输出伤害
+        public float totalDamageTaken;      // 总受伤害
+        public float totalOverkillDamage;   // 总溢出伤害
+        public float dpsEfficiency;         // DPS效率 = 有效伤害 / (理论DPS × 时间)
+        
+        // ═══ 技能贡献度 ═══
+        public float mainLaserDamageRatio;  // 主激光伤害占比
+        public float subLaserDamageRatio;   // 副激光伤害占比
+        public float explosionDamageRatio;  // 爆炸伤害占比
+        public float critDamageRatio;       // 暴击伤害占比
+        
+        // ═══ 经济统计 ═══
+        public int totalExpGained;          // 总获取经验
+        public int totalCoinsGained;        // 总获取金币
+        public int totalCoinsSpent;         // 总消耗金币
+        
+        // ═══ 敌人到达统计 ═══
+        public int enemiesReachedCore;      // 成功接触核心的敌人数
+        public float coreBreachRate;        // 防线突破率 = 接触核心数 / 总生成数
+        
+        // ═══ 技能路径 ═══
+        public string skillSelectionPath;   // 技能选择路径
+        public string finalSkillLevels;     // 最终技能等级
+        public string skillSelectionTiming; // 技能选择时机详情
+        
+        // ═══ 关键事件 ═══
+        public KeyEventLog keyEvents;       // 关键事件记录
+        
+        // ═══ 操作统计 ═══
+        public InputStats inputStats;       // 操作行为统计
+        
+        // ═══ 无人机统计 ═══
+        public int droneSupplyCount;
+        public int droneGachaCount;
+        public int droneDealCount;
+        public float droneNetHealthChange;
+        public float droneNetDamageChange;
+        
+        // ═══ Boss战统计（仅胜利时有效）═══
+        public float bossKillTime;          // Boss战耗时
+        public float bossTotalDamage;       // 对Boss总伤害
+        public int bossStunCount;           // Boss被眩晕次数
+    }
+    
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 伤害来源枚举
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
@@ -141,6 +363,33 @@ namespace LightVsDecay.Logic
         // ═══ 其他 (2) ═══
         public float dpsPeak;
         public float enemyTotalHP;
+        // ═══ V4.0 新增：节奏统计 ═══
+        public float waveStartGameTime;     // 波次开始时的游戏总时间
+        public float waveEndGameTime;       // 波次结束时的游戏总时间
+        
+        // ═══ V4.0 新增：敌人到达统计 ═══
+        public int enemiesSpawned;          // 本波生成敌人数
+        public int enemiesReachedCore;      // 本波到达核心的敌人数
+        public float breachRate;            // 突破率 = 到达数/生成数
+        
+        // ═══ V4.0 新增：DPS效率 ═══
+        public float theoreticalDPS;        // 理论DPS（面板值）
+        public float actualDPS;             // 实际DPS（有效伤害/时间）
+        public float dpsEfficiency;         // 效率 = 实际/理论
+        
+        // ═══ V4.0 新增：经济数据 ═══
+        public int expGained;               // 本波获得经验
+        public int coinsGained;             // 本波获得金币
+        
+        // ═══ V4.0 新增：操作数据（每波快照）═══
+        public float waveRotationAngle;     // 本波激光旋转角度
+        public int waveDirectionChanges;    // 本波方向改变次数
+        
+        // ═══ V4.0 新增：技能贡献度 ═══
+        public float skillContribPrism;     // Prism贡献度（副激光伤害/总伤害）
+        public float skillContribFocus;     // Focus贡献度（穿透+爆炸伤害/总伤害）
+        public float skillContribFrost;     // Frost贡献度（减速时间/波次时间）
+        public float skillContribCrit;      // Crit贡献度（暴击伤害/总伤害）
     }
     
     /// <summary>
@@ -229,7 +478,32 @@ namespace LightVsDecay.Logic
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = true;
         [SerializeField] private bool logToConsole = true;
+        // ═══ V4.0 新增字段 ═══
+        private float _gameStartTime = 0f;
+        private List<SkillSelectionEvent> _skillSelectionEvents = new List<SkillSelectionEvent>();
+        private KeyEventLog _keyEvents = new KeyEventLog();
+        private InputStats _inputStats = new InputStats();
         
+        // 经济追踪
+        private int _sessionTotalExp = 0;
+        private int _sessionTotalCoins = 0;
+        private int _waveExpGained = 0;
+        private int _waveCoinsGained = 0;
+        
+        // 敌人到达追踪
+        private int _waveEnemiesSpawned = 0;
+        private int _waveEnemiesReachedCore = 0;
+        private int _sessionEnemiesSpawned = 0;
+        private int _sessionEnemiesReachedCore = 0;
+        
+        // 操作追踪（每波快照）
+        private float _waveRotationAngle = 0f;
+        private int _waveDirectionChanges = 0;
+        
+        private float _lastRecordedAngle = 0f;
+        private bool _lastRotationDir = true;
+        private float _lastDirChangeTime = 0f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // DPS 追踪
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1110,6 +1384,451 @@ namespace LightVsDecay.Logic
     
             // 可选：记录最大爆炸伤害（如果需要这个数据）
             // 目前 V3.0 不再单独记录 maxExplosionDmg，但保留此方法以兼容调用
+        }
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // V4.0 外部上报接口
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 【V4.0】上报技能选择事件（带选项记录）
+        /// 由 SkillSelectionPanel 调用
+        /// </summary>
+        public void RecordSkillSelection(SkillType selected, int newLevel, List<SkillType> offeredChoices)
+        {
+            if (!_isTracking) return;
+            
+            float gameTime = Time.time - _gameStartTime;
+            int currentWave = _currentWave;
+            int playerLevel = ProgressManager.Instance != null ? ProgressManager.Instance.CurrentLevel : 0;
+            
+            string choicesStr = string.Join("|", offeredChoices);
+            var evt = new SkillSelectionEvent(gameTime, currentWave, playerLevel, selected, newLevel, choicesStr);
+            _skillSelectionEvents.Add(evt);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[BattleStatistics V4] 📝 技能选择: {evt}");
+            }
+        }
+        
+        /// <summary>
+        /// 【V4.0】上报敌人生成
+        /// 由 WaveManager 调用
+        /// </summary>
+        public void RecordEnemySpawned(EnemyType type)
+        {
+            if (!_isTracking) return;
+            
+            _waveEnemiesSpawned++;
+            _sessionEnemiesSpawned++;
+        }
+        
+        /// <summary>
+        /// 【V4.0】上报敌人到达核心
+        /// 由 EnemyBlob.OnTriggerEnter2D（与核心碰撞）调用
+        /// </summary>
+        public void RecordEnemyReachedCore(EnemyType type)
+        {
+            if (!_isTracking) return;
+            
+            _waveEnemiesReachedCore++;
+            _sessionEnemiesReachedCore++;
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[BattleStatistics V4] ⚠️ 敌人突破防线: {type}");
+            }
+        }
+        
+        /// <summary>
+        /// 【V4.0】上报激光角度（每帧调用）
+        /// 由 TurretController 调用
+        /// </summary>
+        public void RecordLaserRotation(float currentAngle, float deltaTime)
+        {
+            if (!_isTracking) return;
+            
+            _inputStats.Update(currentAngle, deltaTime);
+            
+            // 计算本波的旋转数据
+            float angleDelta = Mathf.Abs(Mathf.DeltaAngle(_lastRecordedAngle, currentAngle));
+            if (angleDelta > 0.1f)
+            {
+                _waveRotationAngle += angleDelta;
+                
+                bool currentDir = Mathf.DeltaAngle(_lastRecordedAngle, currentAngle) > 0;
+                if (currentDir != _lastRotationDir && Time.time - _lastDirChangeTime > 0.1f)
+                {
+                    _waveDirectionChanges++;
+                    _lastDirChangeTime = Time.time;
+                }
+                _lastRotationDir = currentDir;
+            }
+            _lastRecordedAngle = currentAngle;
+        }
+                /// <summary>
+        /// 【V4.0】上报经验获取
+        /// 由 ProgressManager 调用
+        /// </summary>
+        public void RecordExpGain(int amount)
+        {
+            if (!_isTracking) return;
+            
+            _waveExpGained += amount;
+            _sessionTotalExp += amount;
+        }
+        
+        /// <summary>
+        /// 【V4.0】上报金币获取
+        /// 由 ProgressManager 调用
+        /// </summary>
+        public void RecordCoinGain(int amount)
+        {
+            if (!_isTracking) return;
+            
+            _waveCoinsGained += amount;
+            _sessionTotalCoins += amount;
+        }
+        
+        /// <summary>
+        /// 【V4.0】上报关键事件 - 首次受伤
+        /// </summary>
+        public void RecordFirstDamageTaken()
+        {
+            if (!_isTracking) return;
+            if (_keyEvents.firstDamageTakenTime < 0)
+            {
+                _keyEvents.firstDamageTakenTime = Time.time - _gameStartTime;
+            }
+        }
+        
+        /// <summary>
+        /// 【V4.0】上报关键事件 - 首次护盾破碎
+        /// </summary>
+        public void RecordShieldBroken()
+        {
+            if (!_isTracking) return;
+            if (_keyEvents.firstShieldBreakTime < 0)
+            {
+                _keyEvents.firstShieldBreakTime = Time.time - _gameStartTime;
+            }
+        }
+        
+        /// <summary>
+        /// 【V4.0】上报关键事件 - HP变化（追踪最低点）
+        /// </summary>
+        public void RecordHPChange(float currentHP, float maxHP)
+        {
+            if (!_isTracking) return;
+            
+            if (currentHP < _keyEvents.lowestHPValue)
+            {
+                _keyEvents.lowestHPValue = currentHP;
+                _keyEvents.lowestHPTime = Time.time - _gameStartTime;
+            }
+            
+            // 检测险胜（HP<20%后存活到下一波）
+            float hpRatio = currentHP / maxHP;
+            if (hpRatio < 0.2f)
+            {
+                _isInCloseCallState = true;
+            }
+        }
+        
+        private bool _isInCloseCallState = false;
+        
+        /// <summary>
+        /// 【V4.0】上报精英击杀
+        /// </summary>
+        public void RecordEliteKill()
+        {
+            if (!_isTracking) return;
+            if (_keyEvents.firstEliteKillTime < 0)
+            {
+                _keyEvents.firstEliteKillTime = Time.time - _gameStartTime;
+            }
+        }
+        
+               // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // V4.0 内部方法更新
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 【V4.0 重写】游戏开始时初始化
+        /// </summary>
+        private void OnGameStartV4()
+        {
+            _gameStartTime = Time.time;
+            _skillSelectionEvents.Clear();
+            _keyEvents.Reset();
+            _inputStats.Reset();
+            
+            _sessionTotalExp = 0;
+            _sessionTotalCoins = 0;
+            _sessionEnemiesSpawned = 0;
+            _sessionEnemiesReachedCore = 0;
+            
+            ResetWaveV4Stats();
+        }
+        
+        /// <summary>
+        /// 【V4.0】重置波次追踪数据
+        /// </summary>
+        private void ResetWaveV4Stats()
+        {
+            _waveExpGained = 0;
+            _waveCoinsGained = 0;
+            _waveEnemiesSpawned = 0;
+            _waveEnemiesReachedCore = 0;
+            _waveRotationAngle = 0f;
+            _waveDirectionChanges = 0;
+            
+            // 险胜检测
+            if (_isInCloseCallState)
+            {
+                _keyEvents.closeCallCount++;
+                _isInCloseCallState = false;
+            }
+        }
+        
+        /// <summary>
+        /// 【V4.0】填充波次V4数据
+        /// </summary>
+        private void FillWaveV4Data(WaveStatData data, float waveStartTime, float waveEndTime)
+        {
+            // 节奏统计
+            data.waveStartGameTime = waveStartTime - _gameStartTime;
+            data.waveEndGameTime = waveEndTime - _gameStartTime;
+            
+            // 敌人到达统计
+            data.enemiesSpawned = _waveEnemiesSpawned;
+            data.enemiesReachedCore = _waveEnemiesReachedCore;
+            data.breachRate = _waveEnemiesSpawned > 0 
+                ? (float)_waveEnemiesReachedCore / _waveEnemiesSpawned 
+                : 0f;
+            
+            // DPS效率
+            data.theoreticalDPS = data.panelDPS;
+            float waveDuration = data.timeToClear;
+            data.actualDPS = waveDuration > 0 ? (data.dmgDealtTotal - data.overkillRatio * data.dmgDealtTotal) / waveDuration : 0f;
+            data.dpsEfficiency = data.theoreticalDPS > 0 ? data.actualDPS / data.theoreticalDPS : 0f;
+            
+            // 经济数据
+            data.expGained = _waveExpGained;
+            data.coinsGained = _waveCoinsGained;
+            
+            // 操作数据
+            data.waveRotationAngle = _waveRotationAngle;
+            data.waveDirectionChanges = _waveDirectionChanges;
+            
+            // 技能贡献度
+            float totalDmg = data.dmgDealtTotal;
+            if (totalDmg > 0)
+            {
+                data.skillContribPrism = data.dmgSubLaser / totalDmg;
+                data.skillContribFocus = data.dmgExplosion / totalDmg; // Focus主要通过穿透和爆炸贡献
+                data.skillContribCrit = data.critDamageTotal / totalDmg;
+                data.skillContribFrost = data.frostSlowDuration / Mathf.Max(data.timeToClear, 1f);
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // V4.0 CSV 导出（新增游戏总结文件）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 【V4.0】导出游戏总结CSV（单行，便于跨局分析）
+        /// </summary>
+        private void ExportGameSummaryCSV(string gameResult)
+        {
+            var summary = BuildGameSummary(gameResult);
+            
+            StringBuilder csv = new StringBuilder();
+            
+            // Header
+            csv.AppendLine(
+                "Session_ID,Result,Total_Time,Final_Wave,Final_Level,Build_Type," +
+                "Total_Kills,Total_Dmg_Dealt,Total_Dmg_Taken,Total_Overkill,DPS_Efficiency," +
+                "Main_Laser_Ratio,Sub_Laser_Ratio,Explosion_Ratio,Crit_Ratio," +
+                "Total_Exp,Total_Coins," +
+                "Enemies_Reached_Core,Core_Breach_Rate," +
+                "Skill_Path,Final_Skill_Levels,Skill_Timing," +
+                KeyEventLog.CSVHeader() + "," +
+                InputStats.CSVHeader() + "," +
+                "Drone_Supply,Drone_Gacha,Drone_Deal,Drone_Net_Health,Drone_Net_Damage," +
+                "Boss_Kill_Time,Boss_Total_Damage,Boss_Stun_Count"
+            );
+            
+            // Data row
+            string line = string.Format(
+                "{0},{1},{2:F1},{3},{4},{5}," +
+                "{6},{7:F0},{8:F0},{9:F0},{10:F2}," +
+                "{11:F2},{12:F2},{13:F2},{14:F2}," +
+                "{15},{16}," +
+                "{17},{18:F3}," +
+                "\"{19}\",\"{20}\",\"{21}\"," +
+                "{22}," +
+                "{23}," +
+                "{24},{25},{26},{27:F0},{28:F1}," +
+                "{29:F1},{30:F0},{31}",
+                summary.sessionId, summary.gameResult, summary.totalGameTime, summary.finalWave, summary.finalPlayerLevel, summary.buildType,
+                summary.totalKills, summary.totalDamageDealt, summary.totalDamageTaken, summary.totalOverkillDamage, summary.dpsEfficiency,
+                summary.mainLaserDamageRatio, summary.subLaserDamageRatio, summary.explosionDamageRatio, summary.critDamageRatio,
+                summary.totalExpGained, summary.totalCoinsGained,
+                summary.enemiesReachedCore, summary.coreBreachRate,
+                summary.skillSelectionPath, summary.finalSkillLevels, summary.skillSelectionTiming,
+                summary.keyEvents.ToCSV(),
+                summary.inputStats.ToCSV(),
+                summary.droneSupplyCount, summary.droneGachaCount, summary.droneDealCount, summary.droneNetHealthChange, summary.droneNetDamageChange,
+                summary.bossKillTime, summary.bossTotalDamage, summary.bossStunCount
+            );
+            csv.AppendLine(line);
+            
+            // 保存
+            string fileName = $"GameSummary_{_sessionStartTime}_{gameResult}.csv";
+            string filePath = Path.Combine(Application.persistentDataPath, fileName);
+            
+            try
+            {
+                File.WriteAllText(filePath, csv.ToString());
+                Debug.Log($"[BattleStatistics V4] ✅ 游戏总结已保存: {filePath}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[BattleStatistics V4] ❌ 总结保存失败: {e.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// 【V4.0】导出技能选择时序CSV
+        /// </summary>
+        private void ExportSkillSelectionCSV()
+        {
+            if (_skillSelectionEvents.Count == 0) return;
+            
+            StringBuilder csv = new StringBuilder();
+            csv.AppendLine("Game_Time,Wave,Player_Level,Selected_Skill,New_Level,Offered_Choices");
+            
+            foreach (var evt in _skillSelectionEvents)
+            {
+                csv.AppendLine($"{evt.gameTime:F1},{evt.waveNumber},{evt.playerLevel},{evt.selectedSkill},{evt.newSkillLevel},\"{evt.offeredChoices}\"");
+            }
+            
+            string fileName = $"SkillSelection_{_sessionStartTime}.csv";
+            string filePath = Path.Combine(Application.persistentDataPath, fileName);
+            
+            try
+            {
+                File.WriteAllText(filePath, csv.ToString());
+                Debug.Log($"[BattleStatistics V4] ✅ 技能选择记录已保存: {filePath}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[BattleStatistics V4] ❌ 技能选择保存失败: {e.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// 构建游戏总结数据
+        /// </summary>
+        private GameSummaryData BuildGameSummary(string gameResult)
+        {
+            var summary = new GameSummaryData
+            {
+                sessionId = _sessionStartTime,
+                gameResult = gameResult,
+                totalGameTime = Time.time - _gameStartTime,
+                finalWave = _currentWave,
+                finalPlayerLevel = ProgressManager.Instance != null ? ProgressManager.Instance.CurrentLevel : 0,
+                buildType = DetermineBuildType(),
+                
+                // 累计统计
+                totalKills = 0,
+                totalDamageDealt = 0,
+                totalDamageTaken = 0,
+                totalOverkillDamage = 0,
+                
+                // 经济
+                totalExpGained = _sessionTotalExp,
+                totalCoinsGained = _sessionTotalCoins,
+                
+                // 敌人到达
+                enemiesReachedCore = _sessionEnemiesReachedCore,
+                coreBreachRate = _sessionEnemiesSpawned > 0 
+                    ? (float)_sessionEnemiesReachedCore / _sessionEnemiesSpawned 
+                    : 0f,
+                
+                // 技能
+                skillSelectionPath = string.Join("→", _skillSelectionPath),
+                finalSkillLevels = BuildSkillLevelsString(),
+                skillSelectionTiming = BuildSkillTimingString(),
+                
+                // 关键事件
+                keyEvents = _keyEvents,
+                
+                // 操作统计
+                inputStats = _inputStats,
+                
+                // 无人机
+                droneSupplyCount = _sessionDroneCountSupply,
+                droneGachaCount = _sessionDroneCountGacha,
+                droneDealCount = _sessionDroneCountDeal,
+                droneNetHealthChange = _sessionDroneAccHealth,
+                droneNetDamageChange = _sessionDroneAccDamagePct
+            };
+            
+            // 从所有波次数据累计
+            float totalMainDmg = 0, totalSubDmg = 0, totalExpDmg = 0, totalCritDmg = 0;
+            foreach (var wave in _allWaveStats)
+            {
+                summary.totalKills += wave.killTotal;
+                summary.totalDamageDealt += wave.dmgDealtTotal;
+                summary.totalDamageTaken += wave.playerHPLost;
+                summary.totalOverkillDamage += wave.overkillRatio * wave.dmgDealtTotal;
+                
+                totalMainDmg += wave.dmgMainLaser;
+                totalSubDmg += wave.dmgSubLaser;
+                totalExpDmg += wave.dmgExplosion;
+                totalCritDmg += wave.critDamageTotal;
+                
+                // Boss战数据
+                if (wave.wave == 12 || wave.bossHPRemaining < 1f)
+                {
+                    summary.bossKillTime = wave.timeToClear;
+                    summary.bossTotalDamage = wave.dmgDealtTotal;
+                    summary.bossStunCount = wave.bossStunCount;
+                }
+            }
+            
+            // 计算比率
+            if (summary.totalDamageDealt > 0)
+            {
+                summary.mainLaserDamageRatio = totalMainDmg / summary.totalDamageDealt;
+                summary.subLaserDamageRatio = totalSubDmg / summary.totalDamageDealt;
+                summary.explosionDamageRatio = totalExpDmg / summary.totalDamageDealt;
+                summary.critDamageRatio = totalCritDmg / summary.totalDamageDealt;
+            }
+            
+            // DPS效率
+            float effectiveDamage = summary.totalDamageDealt - summary.totalOverkillDamage;
+            float theoreticalTotalDPS = _allWaveStats.Count > 0 ? _allWaveStats[_allWaveStats.Count - 1].panelDPS : 100f;
+            summary.dpsEfficiency = theoreticalTotalDPS > 0 && summary.totalGameTime > 0
+                ? (effectiveDamage / summary.totalGameTime) / theoreticalTotalDPS
+                : 0f;
+            
+            return summary;
+        }
+        
+        private string BuildSkillTimingString()
+        {
+            if (_skillSelectionEvents.Count == 0) return "";
+            
+            List<string> timings = new List<string>();
+            foreach (var evt in _skillSelectionEvents)
+            {
+                timings.Add(evt.ToString());
+            }
+            return string.Join(";", timings);
         }
     }
 }
