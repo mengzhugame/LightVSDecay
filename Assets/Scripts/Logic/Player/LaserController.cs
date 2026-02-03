@@ -13,6 +13,7 @@ using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.TacticalDrop;
 using LightVsDecay.Audio;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Logic.Statistics;
 using LightVsDecay.UI.FloatingText;
 
 namespace LightVsDecay.Logic.Player
@@ -113,7 +114,10 @@ namespace LightVsDecay.Logic.Player
         private float skillLengthMultiplier = 1f;  // 长度倍率
         // 暴击率加成（技能/事件可修改）
         private float critRateBonus = 0f;
-        
+        // 大招倍率（由 OverloadManager 控制）
+        private bool isOverloadActive = false;
+        private float overloadDamageMultiplier = 1f;
+        private float overloadWidthMultiplier = 1f;
         // 副激光管理
         private List<SubLaserData> subLasers = new List<SubLaserData>();
         private float subLaserDamageMultiplier = 0.3f;
@@ -191,10 +195,10 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>当前激光宽度</summary>
-        public float CurrentLaserWidth => baseLaserWidth * skillWidthMultiplier;
+        public float CurrentLaserWidth => baseLaserWidth * skillWidthMultiplier * overloadWidthMultiplier;
         
         /// <summary>当前副激光宽度</summary>
-        public float CurrentSubLaserWidth => CurrentLaserWidth * SUB_LASER_WIDTH_RATIO;
+        public float CurrentSubLaserWidth => CurrentLaserWidth * SUB_LASER_WIDTH_RATIO* overloadWidthMultiplier;
         /// <summary>当前击退力</summary>
         public float CurrentKnockbackForce => baseKnockbackForce * skillKnockbackMultiplier ;
         
@@ -209,10 +213,14 @@ namespace LightVsDecay.Logic.Player
         public float CurrentLaserLength => maxLaserLength * skillLengthMultiplier;
 
         /// <summary>每 Tick 伤害（新公式）</summary>
-        public float CurrentDamagePerTick => (baseDPS + flatDamageBonus) * tickRate * skillDamageMultiplier;
+        public float CurrentDamagePerTick => (baseDPS + flatDamageBonus) * tickRate * skillDamageMultiplier * overloadDamageMultiplier;
 
         /// <summary>当前面板DPS（新公式，用于爆炸伤害计算）</summary>
-        public float CurrentPanelDPS => (baseDPS + flatDamageBonus) * skillDamageMultiplier;
+        public float CurrentPanelDPS => (baseDPS + flatDamageBonus) * skillDamageMultiplier * overloadDamageMultiplier;
+        /// <summary>
+        /// 大招是否激活
+        /// </summary>
+        public bool IsOverloadActive => isOverloadActive;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1780,6 +1788,34 @@ namespace LightVsDecay.Logic.Player
             currentFrameHitEnemies = temp;
             currentFrameHitEnemies.Clear();
         }
+        /// <summary>
+        /// 设置大招激活状态（由 OverloadManager 调用）
+        /// </summary>
+        /// <param name="active">是否激活</param>
+        /// <param name="damageMultiplier">伤害倍率</param>
+        /// <param name="widthMultiplier">宽度倍率</param>
+        public void SetOverloadActive(bool active, float damageMultiplier, float widthMultiplier)
+        {
+            isOverloadActive = active;
+            overloadDamageMultiplier = active ? damageMultiplier : 1f;
+            overloadWidthMultiplier = active ? widthMultiplier : 1f;
+    
+            // 立即更新激光宽度视觉
+            UpdateAllLaserWidths();
+    
+            if (showDebugInfo)
+            {
+                if (active)
+                {
+                    Debug.Log($"[LaserController] ⚡ 大招激活！伤害×{damageMultiplier}, 宽度×{widthMultiplier}");
+                }
+                else
+                {
+                    Debug.Log("[LaserController] 大招结束，倍率恢复");
+                }
+            }
+        }
+        
         #endregion
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

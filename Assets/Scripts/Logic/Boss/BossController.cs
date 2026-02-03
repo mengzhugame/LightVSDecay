@@ -15,6 +15,7 @@ using LightVsDecay.Data;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Player;
+using LightVsDecay.Logic.Statistics;
 using LightVsDecay.UI.FloatingText;
 #if DOTWEEN
 using DG.Tweening;
@@ -710,6 +711,8 @@ namespace LightVsDecay.Logic.Boss
             
             ExitState(currentState);
             currentState = newState;
+            // 【新增】上报Boss状态变化
+            BattleStatistics.Instance?.RecordBossPhase(newState.ToString());
             EnterState(newState);
         }
         
@@ -764,15 +767,19 @@ namespace LightVsDecay.Logic.Boss
                     EnterIdle();
                     break;
                 case BossState.Summon:
+                    BattleStatistics.Instance?.RecordBossSkill("summon");
                     stateCoroutine = StartCoroutine(SummonRoutine());
                     break;
                 case BossState.Charge:
+                    BattleStatistics.Instance?.RecordBossSkill("charge");
                     stateCoroutine = StartCoroutine(ChargeRoutine());
                     break;
                 case BossState.Press:
+                    BattleStatistics.Instance?.RecordBossSkill("press");
                     stateCoroutine = StartCoroutine(PressRoutine());
                     break;
                 case BossState.Stun:
+                    BattleStatistics.Instance?.RecordBossSkill("stun");
                     stateCoroutine = StartCoroutine(StunRoutine());
                     break;
                 case BossState.Frozen:

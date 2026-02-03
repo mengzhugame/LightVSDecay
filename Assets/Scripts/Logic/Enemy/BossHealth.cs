@@ -10,6 +10,7 @@ using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Boss;
+using LightVsDecay.Logic.Statistics;
 using LightVsDecay.UI.FloatingText;
 
 namespace LightVsDecay.Logic.Enemy
@@ -332,7 +333,8 @@ namespace LightVsDecay.Logic.Enemy
         {
             currentHealth -= damage;
             GameEvents.TriggerBossHealthChanged(HealthPercent);
-            
+            // 【新增】上报Boss血量到统计系统
+            BattleStatistics.Instance?.RecordBossHP(HealthPercent);
             if (currentHealth <= 0)
             {
                 currentHealth = 0;

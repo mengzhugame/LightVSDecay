@@ -12,6 +12,7 @@ using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Enemy;
+using LightVsDecay.Logic.Statistics;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -786,7 +787,7 @@ namespace LightVsDecay.Logic.Player
                           $"最终={finalMultiplier:F2}x");
             }
         }
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 【新增】Shatter Lv5 漏洞扩散爆炸系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         

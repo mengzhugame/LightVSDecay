@@ -139,7 +139,11 @@ namespace LightVsDecay.Logic.Player
         public bool TakeDamage(int damage)
         {
             if (damage <= 0) return false;
-            
+            // 【新增】大招无敌检查
+            if (OverloadManager.Instance != null && OverloadManager.Instance.IsActive)
+            {
+                return false; // 无敌状态，不受伤害
+            }
             // 先由护盾承担伤害
             if (shieldController != null && shieldController.CurrentShieldHP > 0)
             {
@@ -172,7 +176,11 @@ namespace LightVsDecay.Logic.Player
         public void TakeBossDamage(int damage)
         {
             if (damage <= 0) return;
-            
+            // 【新增】大招无敌检查
+            if (OverloadManager.Instance != null && OverloadManager.Instance.IsActive)
+            {
+                return; // 无敌状态，不受伤害
+            }
             // 先由护盾承担伤害
             if (shieldController != null && shieldController.CurrentShieldHP > 0)
             {

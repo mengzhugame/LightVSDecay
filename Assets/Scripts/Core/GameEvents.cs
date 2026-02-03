@@ -101,7 +101,18 @@ namespace LightVsDecay.Core
 
         /// <summary>玩家血量恢复飘字 (恢复值, 位置)</summary>
         public static event Action<int, Vector3> OnPlayerHealthRestored;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 超载模式（大招）事件
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>超载模式状态变化 (新状态)</summary>
+        public static event Action<Logic.Player.OverloadState> OnOverloadStateChanged;
+
+        /// <summary>超载模式激活</summary>
+        public static event Action OnOverloadActivated;
+
+        /// <summary>超载模式结束</summary>
+        public static event Action OnOverloadDeactivated;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 游戏时间事件（保留用于兼容）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -198,7 +209,11 @@ namespace LightVsDecay.Core
         // 游戏时间（保留用于兼容）
         [System.Obsolete("Use TriggerWaveProgressUpdated instead")]
         public static void TriggerGameTimeUpdated(float current, float total) => OnGameTimeUpdated?.Invoke(current, total);
-        
+        // 超载模式
+        public static void TriggerOverloadStateChanged(Logic.Player.OverloadState state) 
+            => OnOverloadStateChanged?.Invoke(state);
+        public static void TriggerOverloadActivated() => OnOverloadActivated?.Invoke();
+        public static void TriggerOverloadDeactivated() => OnOverloadDeactivated?.Invoke();
         // 敌人
         public static void TriggerEnemyDied(Pool.EnemyType type, Vector3 pos, int xp, int coin) 
             => OnEnemyDied?.Invoke(type, pos, xp, coin);
@@ -271,7 +286,10 @@ namespace LightVsDecay.Core
             #pragma warning disable CS0618
             OnGameTimeUpdated = null;
             #pragma warning restore CS0618
-            
+            // 超载模式
+            OnOverloadStateChanged = null;
+            OnOverloadActivated = null;
+            OnOverloadDeactivated = null;
             // 敌人
             OnEnemyDied = null;
             OnXPOrbCollected = null;

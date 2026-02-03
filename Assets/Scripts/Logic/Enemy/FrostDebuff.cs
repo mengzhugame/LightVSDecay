@@ -5,6 +5,7 @@
 // 【重构】新增颜色染色系统 + 寒气扩散支持
 // ============================================================
 
+using LightVsDecay.Logic.Statistics;
 using UnityEngine;
 
 namespace LightVsDecay.Logic.Enemy
@@ -234,17 +235,19 @@ namespace LightVsDecay.Logic.Enemy
             {
                 slowPercent = Mathf.Max(slowPercent, percent);
                 remainingDuration = Mathf.Max(remainingDuration, duration);
+                // 【新增】上报减速持续时间
+                BattleStatistics.Instance?.RecordFrostSlowDuration(duration);
             }
             
             if (!isSlowed)
             {
                 isSlowed = true;
-                
                 // 设置颜色染色目标（淡蓝色）
                 currentTintTarget = slowTintColor;
-                
                 // 通知 EnemyBlob 更新速度
                 NotifySpeedChange();
+                // 【新增】上报减速触发
+                BattleStatistics.Instance?.RecordFrostSlow();
             }
         }
         
@@ -262,7 +265,8 @@ namespace LightVsDecay.Logic.Enemy
             
             isFrozen = true;
             frozenDuration = duration;
-            
+            // 【新增】上报冰冻触发
+            BattleStatistics.Instance?.RecordFrostFreeze();
             // 设置颜色染色目标（深蓝色）
             currentTintTarget = frozenTintColor;
             

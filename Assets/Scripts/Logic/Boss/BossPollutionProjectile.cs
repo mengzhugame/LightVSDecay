@@ -10,6 +10,7 @@ using UnityEngine;
 using LightVsDecay.Core;
 using LightVsDecay.Logic.Player;
 using LightVsDecay.Logic.Enemy;
+using LightVsDecay.Logic.Statistics;
 
 namespace LightVsDecay.Logic.Boss
 {

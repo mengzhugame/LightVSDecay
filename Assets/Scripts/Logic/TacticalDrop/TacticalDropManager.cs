@@ -12,6 +12,7 @@ using DG.Tweening;
 using LightVsDecay.Core;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Player;
+using LightVsDecay.Logic.Statistics;
 using LightVsDecay.UI.FloatingText.TacticalDrop;
 
 namespace LightVsDecay.Logic.TacticalDrop

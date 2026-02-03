@@ -11,6 +11,7 @@ using LightVsDecay.Core.Pool;
 using LightVsDecay.Audio;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Player;
+using LightVsDecay.Logic.Statistics;
 using LightVsDecay.UI.FloatingText;
 
 namespace LightVsDecay.Logic.Enemy
@@ -1161,6 +1162,11 @@ namespace LightVsDecay.Logic.Enemy
         
         private void HandleShieldCollision(GameObject shieldObj)
         {
+            // 【新增】大招无敌检查 - 玩家无敌时不触发任何碰撞效果
+            if (OverloadManager.Instance != null && OverloadManager.Instance.IsActive)
+            {
+                return;
+            }
             var shieldController = shieldObj.GetComponent<ShieldController>();
             if (shieldController == null) return;
 
@@ -1187,6 +1193,11 @@ namespace LightVsDecay.Logic.Enemy
         
         private void HandleTowerCollision(GameObject towerObj)
         {
+            // 【新增】大招无敌检查 - 玩家无敌时不触发任何碰撞效果
+            if (OverloadManager.Instance != null && OverloadManager.Instance.IsActive)
+            {
+                return;
+            }
             var turretHealth = towerObj.GetComponent<TurretHealth>();
             if (turretHealth == null)
             {

@@ -12,6 +12,7 @@ using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Enemy;
+using LightVsDecay.Logic.Statistics;
 using LightVsDecay.Logic.TacticalDrop;
 
 namespace LightVsDecay.Logic

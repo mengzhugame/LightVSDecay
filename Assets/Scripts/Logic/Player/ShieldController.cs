@@ -184,7 +184,11 @@ namespace LightVsDecay.Logic.Player
         public int TakeDamage(int damage)
         {
             if (damage <= 0) return 0;
-            
+            // 【新增】大招无敌检查
+            if (OverloadManager.Instance != null && OverloadManager.Instance.IsActive)
+            {
+                return 0; // 无敌状态，不受伤害
+            }
             // 护盾已破，直接返回全部伤害
             if (currentShieldHP <= 0)
             {
