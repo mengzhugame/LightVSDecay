@@ -1,8 +1,8 @@
 // ============================================================
 // SessionData.cs
 // 文件位置: Assets/Scripts/Data/Runtime/SessionData.cs
-// 用途：局内运行时数据（每局游戏重置）
-// 从 ProgressManager 拆分出的运行时状态
+// 用途：局内运行时数据（每局游戏重置）+ 局外持久化数据
+// 更新：添加章节进度存储功能
 // ============================================================
 
 using LightVsDecay.Data.SO;
@@ -154,10 +154,15 @@ namespace LightVsDecay.Data.Runtime
     /// <summary>
     /// 局外持久化数据
     /// 跨局保存，使用 PlayerPrefs
+    /// 更新：添加章节进度存储
     /// </summary>
     [System.Serializable]
     public class MetaData
     {
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 货币数据
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         /// <summary>宝石（付费货币）</summary>
         public int gems = 0;
         
@@ -170,11 +175,15 @@ namespace LightVsDecay.Data.Runtime
         /// <summary>最大能量</summary>
         public int maxEnergy = 5;
         
-        /// <summary>当前章节</summary>
-        public int currentChapter = 1;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 章节进度数据（新增）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        /// <summary>当前难度</summary>
-        public int currentDifficulty = 1;
+        /// <summary>章节进度数组</summary>
+        public ChapterProgressData[] chapterProgress;
+        
+        /// <summary>当前查看的章节索引（UI状态，非进度）</summary>
+        public int currentViewChapterIndex = 0;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 存档键
@@ -183,8 +192,125 @@ namespace LightVsDecay.Data.Runtime
         private const string KEY_GEMS = "PlayerGems";
         private const string KEY_GOLD = "PlayerGoldCoins";
         private const string KEY_ENERGY = "PlayerEnergy";
-        private const string KEY_CHAPTER = "CurrentChapter";
-        private const string KEY_DIFFICULTY = "CurrentDifficulty";
+        private const string KEY_CHAPTER_PROGRESS = "ChapterProgress";  // JSON格式存储
+        private const string KEY_VIEW_CHAPTER = "CurrentViewChapter";
+        
+        // 默认章节数量
+        private const int DEFAULT_CHAPTER_COUNT = 3;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 章节进度便捷属性
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 已解锁的最高章节索引
+        /// </summary>
+        public int UnlockedChapterIndex
+        {
+            get
+            {
+                if (chapterProgress == null) return 0;
+                
+                for (int i = chapterProgress.Length - 1; i >= 0; i--)
+                {
+                    if (chapterProgress[i].isUnlocked)
+                    {
+                        return i;
+                    }
+                }
+                return 0;
+            }
+        }
+        
+        /// <summary>
+        /// 总章节数
+        /// </summary>
+        public int TotalChapters => chapterProgress?.Length ?? 0;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 章节进度方法
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 获取指定章节的进度数据
+        /// </summary>
+        public ChapterProgressData GetChapterProgress(int chapterIndex)
+        {
+            if (chapterProgress != null && chapterIndex >= 0 && chapterIndex < chapterProgress.Length)
+            {
+                return chapterProgress[chapterIndex];
+            }
+            return null;
+        }
+        
+        /// <summary>
+        /// 检查章节是否已解锁
+        /// </summary>
+        public bool IsChapterUnlocked(int chapterIndex)
+        {
+            var progress = GetChapterProgress(chapterIndex);
+            return progress?.isUnlocked ?? false;
+        }
+        
+        /// <summary>
+        /// 获取章节已通关的难度
+        /// </summary>
+        public int GetChapterCompletedDifficulty(int chapterIndex)
+        {
+            var progress = GetChapterProgress(chapterIndex);
+            return progress?.completedDifficulty ?? 0;
+        }
+        
+        /// <summary>
+        /// 获取章节下一个要挑战的难度
+        /// </summary>
+        public int GetChapterNextDifficulty(int chapterIndex)
+        {
+            var progress = GetChapterProgress(chapterIndex);
+            return progress?.NextDifficulty ?? 1;
+        }
+        
+        /// <summary>
+        /// 完成章节难度
+        /// </summary>
+        /// <param name="chapterIndex">章节索引</param>
+        /// <param name="difficulty">完成的难度</param>
+        /// <returns>是否需要解锁下一章节</returns>
+        public bool CompleteChapterDifficulty(int chapterIndex, int difficulty)
+        {
+            var progress = GetChapterProgress(chapterIndex);
+            if (progress == null) return false;
+            
+            bool updated = progress.CompleteDifficulty(difficulty);
+            
+            // 如果是难度1通关，检查是否需要解锁下一章节
+            bool shouldUnlockNext = false;
+            if (difficulty == 1 && updated)
+            {
+                int nextIndex = chapterIndex + 1;
+                if (nextIndex < chapterProgress.Length)
+                {
+                    var nextProgress = chapterProgress[nextIndex];
+                    if (!nextProgress.isUnlocked)
+                    {
+                        nextProgress.Unlock();
+                        shouldUnlockNext = true;
+                        Debug.Log($"[MetaData] 章节 {nextIndex + 1} 已解锁！");
+                    }
+                }
+            }
+            
+            return shouldUnlockNext;
+        }
+        
+        /// <summary>
+        /// 解锁指定章节
+        /// </summary>
+        public void UnlockChapter(int chapterIndex)
+        {
+            var progress = GetChapterProgress(chapterIndex);
+            progress?.Unlock();
+        }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 持久化方法
@@ -193,14 +319,96 @@ namespace LightVsDecay.Data.Runtime
         /// <summary>
         /// 从 PlayerPrefs 加载
         /// </summary>
-        public void Load(int defaultMaxEnergy = 5)
+        public void Load(int defaultMaxEnergy = 5, int chapterCount = DEFAULT_CHAPTER_COUNT)
         {
+            // 加载货币数据
             gems = PlayerPrefs.GetInt(KEY_GEMS, 0);
             goldCoins = PlayerPrefs.GetInt(KEY_GOLD, 0);
             energy = PlayerPrefs.GetInt(KEY_ENERGY, defaultMaxEnergy);
             maxEnergy = defaultMaxEnergy;
-            currentChapter = PlayerPrefs.GetInt(KEY_CHAPTER, 1);
-            currentDifficulty = PlayerPrefs.GetInt(KEY_DIFFICULTY, 1);
+            
+            // 加载章节进度
+            LoadChapterProgress(chapterCount);
+            
+            // 加载UI状态
+            currentViewChapterIndex = PlayerPrefs.GetInt(KEY_VIEW_CHAPTER, 0);
+            
+            Debug.Log($"[MetaData] 加载完成: Gems={gems}, Gold={goldCoins}, Energy={energy}, " +
+                      $"Chapters={chapterProgress?.Length ?? 0}, Unlocked={UnlockedChapterIndex + 1}");
+        }
+        
+        /// <summary>
+        /// 加载章节进度（从JSON）
+        /// </summary>
+        private void LoadChapterProgress(int chapterCount)
+        {
+            string json = PlayerPrefs.GetString(KEY_CHAPTER_PROGRESS, "");
+            
+            if (!string.IsNullOrEmpty(json))
+            {
+                try
+                {
+                    var wrapper = JsonUtility.FromJson<ChapterProgressWrapper>(json);
+                    if (wrapper?.chapters != null && wrapper.chapters.Length > 0)
+                    {
+                        chapterProgress = wrapper.chapters;
+                        
+                        // 如果章节数增加了，扩展数组
+                        if (chapterProgress.Length < chapterCount)
+                        {
+                            ExpandChapterProgress(chapterCount);
+                        }
+                        
+                        return;
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"[MetaData] 章节进度解析失败: {e.Message}");
+                }
+            }
+            
+            // 初始化默认章节进度
+            InitializeDefaultChapterProgress(chapterCount);
+        }
+        
+        /// <summary>
+        /// 初始化默认章节进度
+        /// </summary>
+        private void InitializeDefaultChapterProgress(int chapterCount)
+        {
+            chapterProgress = new ChapterProgressData[chapterCount];
+            
+            for (int i = 0; i < chapterCount; i++)
+            {
+                chapterProgress[i] = new ChapterProgressData(i, i == 0, 0);
+                // 第一章默认解锁
+            }
+            
+            Debug.Log($"[MetaData] 初始化 {chapterCount} 个章节，第1章已解锁");
+        }
+        
+        /// <summary>
+        /// 扩展章节进度数组（当添加新章节时）
+        /// </summary>
+        private void ExpandChapterProgress(int newCount)
+        {
+            var oldProgress = chapterProgress;
+            chapterProgress = new ChapterProgressData[newCount];
+            
+            // 复制旧数据
+            for (int i = 0; i < oldProgress.Length; i++)
+            {
+                chapterProgress[i] = oldProgress[i];
+            }
+            
+            // 初始化新章节（默认锁定）
+            for (int i = oldProgress.Length; i < newCount; i++)
+            {
+                chapterProgress[i] = new ChapterProgressData(i, false, 0);
+            }
+            
+            Debug.Log($"[MetaData] 章节数组扩展: {oldProgress.Length} -> {newCount}");
         }
         
         /// <summary>
@@ -208,26 +416,122 @@ namespace LightVsDecay.Data.Runtime
         /// </summary>
         public void Save()
         {
+            // 保存货币数据
             PlayerPrefs.SetInt(KEY_GEMS, gems);
             PlayerPrefs.SetInt(KEY_GOLD, goldCoins);
             PlayerPrefs.SetInt(KEY_ENERGY, energy);
-            PlayerPrefs.SetInt(KEY_CHAPTER, currentChapter);
-            PlayerPrefs.SetInt(KEY_DIFFICULTY, currentDifficulty);
+            
+            // 保存章节进度（JSON格式）
+            SaveChapterProgress();
+            
+            // 保存UI状态
+            PlayerPrefs.SetInt(KEY_VIEW_CHAPTER, currentViewChapterIndex);
+            
             PlayerPrefs.Save();
+        }
+        
+        /// <summary>
+        /// 保存章节进度（转JSON）
+        /// </summary>
+        private void SaveChapterProgress()
+        {
+            if (chapterProgress != null && chapterProgress.Length > 0)
+            {
+                var wrapper = new ChapterProgressWrapper(chapterProgress);
+                string json = JsonUtility.ToJson(wrapper);
+                PlayerPrefs.SetString(KEY_CHAPTER_PROGRESS, json);
+            }
         }
         
         /// <summary>
         /// 重置所有数据
         /// </summary>
-        public void Reset(int defaultMaxEnergy = 5)
+        public void Reset(int defaultMaxEnergy = 5, int chapterCount = DEFAULT_CHAPTER_COUNT)
         {
             gems = 0;
             goldCoins = 0;
             energy = defaultMaxEnergy;
             maxEnergy = defaultMaxEnergy;
-            currentChapter = 1;
-            currentDifficulty = 1;
+            currentViewChapterIndex = 0;
+            
+            // 重置章节进度
+            InitializeDefaultChapterProgress(chapterCount);
+            
             Save();
+            
+            Debug.Log("[MetaData] 所有数据已重置");
+        }
+        
+        /// <summary>
+        /// 仅重置章节进度（不重置货币）
+        /// </summary>
+        public void ResetChapterProgress(int chapterCount = DEFAULT_CHAPTER_COUNT)
+        {
+            currentViewChapterIndex = 0;
+            InitializeDefaultChapterProgress(chapterCount);
+            Save();
+            
+            Debug.Log("[MetaData] 章节进度已重置");
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 调试方法
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 打印章节进度（调试用）
+        /// </summary>
+        public void PrintChapterProgress()
+        {
+            Debug.Log("[MetaData] ========== 章节进度 ==========");
+            
+            if (chapterProgress == null || chapterProgress.Length == 0)
+            {
+                Debug.Log("  (无数据)");
+                return;
+            }
+            
+            for (int i = 0; i < chapterProgress.Length; i++)
+            {
+                var p = chapterProgress[i];
+                string status = p.isUnlocked ? (p.HasCompletedAll ? "★全通关" : $"已解锁({p.completedDifficulty}/5)") : "🔒锁定";
+                Debug.Log($"  章节{i + 1}: {status}");
+            }
+            
+            Debug.Log("[MetaData] ================================");
+        }
+        
+        /// <summary>
+        /// 解锁所有章节（调试用）
+        /// </summary>
+        public void DebugUnlockAllChapters()
+        {
+            if (chapterProgress == null) return;
+            
+            foreach (var p in chapterProgress)
+            {
+                p.Unlock();
+            }
+            
+            Save();
+            Debug.Log("[MetaData] 调试：已解锁所有章节");
+        }
+        
+        /// <summary>
+        /// 完成所有难度（调试用）
+        /// </summary>
+        public void DebugCompleteAllDifficulties()
+        {
+            if (chapterProgress == null) return;
+            
+            foreach (var p in chapterProgress)
+            {
+                p.isUnlocked = true;
+                p.completedDifficulty = 5;
+            }
+            
+            Save();
+            Debug.Log("[MetaData] 调试：已完成所有章节所有难度");
         }
     }
     

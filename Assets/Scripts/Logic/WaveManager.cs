@@ -145,11 +145,34 @@ namespace LightVsDecay.Logic
         
         private void OnGameStart()
         {
+            // ★★★ 调试：检查配置传递 ★★★
+            Debug.Log($"[WaveManager] ========== 配置检查 ==========");
+            Debug.Log($"[WaveManager] GameManager.Instance 存在: {GameManager.Instance != null}");
+            if (GameManager.Instance != null)
+            {
+                Debug.Log($"[WaveManager] 章节索引: {GameManager.Instance.CurrentChapterIndex}");
+                Debug.Log($"[WaveManager] 难度等级: {GameManager.Instance.CurrentDifficulty}");
+                Debug.Log($"[WaveManager] ChapterConfig: {GameManager.Instance.CurrentChapterConfig?.chapterName ?? "NULL"}");
+                Debug.Log($"[WaveManager] GameManager.WaveConfig: {GameManager.Instance.WaveConfig?.name ?? "NULL"}");
+            }
+    
+            Debug.Log($"[WaveManager] 当前 waveConfig: {waveConfig?.name ?? "NULL"}");
+            Debug.Log($"[WaveManager] ================================");
+            
             if (showDebugInfo)
             {
                 Debug.Log("[WaveManager] 游戏开始！准备第一波");
             }
-            
+            // 【新增】从 GameManager 获取当前章节的 WaveConfig
+            if (GameManager.Instance != null && GameManager.Instance.WaveConfig != null)
+            {
+                waveConfig = GameManager.Instance.WaveConfig;
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[WaveManager] 使用章节波次配置: {waveConfig.name}");
+                }
+            }
             currentWaveNumber = 0;
             bossSpawned = false;
             StartNextWave();
@@ -289,6 +312,15 @@ namespace LightVsDecay.Logic
             enemiesSpawned = 0;
             enemiesKilled = 0;
             totalEnemiesInWave = currentWaveData.TotalEnemyCount;
+            // 【新增】获取章节难度的敌人数量倍率
+            float countMultiplier = 1f;
+            if (GameManager.Instance != null && GameManager.Instance.CurrentDifficultySettings != null)
+            {
+                countMultiplier = GameManager.Instance.CurrentDifficultySettings.enemyCountMultiplier;
+            }
+            // 计算调整后的敌人总数
+            int baseCount = currentWaveData.TotalEnemyCount;
+            totalEnemiesInWave = Mathf.RoundToInt(baseCount * countMultiplier);
             
             // 重置所有刷怪组状态
             currentWaveData.ResetSpawnStates();
@@ -633,7 +665,22 @@ namespace LightVsDecay.Logic
             if (enemy == null || currentWaveData == null) return;
     
             float waveDifficulty = currentWaveData.difficultyMultiplier;
-    
+            // 【新增】获取章节难度倍率
+            float chapterHealthMult = 1f;
+            float chapterSpeedMult = 1f;
+            float chapterCountMult = 1f;
+            if (GameManager.Instance != null && GameManager.Instance.CurrentDifficultySettings != null)
+            {
+                var diffSettings = GameManager.Instance.CurrentDifficultySettings;
+                chapterHealthMult = diffSettings.enemyHealthMultiplier;
+                chapterSpeedMult = diffSettings.enemySpeedMultiplier;
+                chapterCountMult = diffSettings.enemyCountMultiplier;
+        
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[WaveManager] 章节难度: HP x{chapterHealthMult}, Speed x{chapterSpeedMult}");
+                }
+            }
             // 【新增】获取来自空投系统的额外增强
             float extraSpeedMult = 1f;
             float extraHealthMult = 1f;

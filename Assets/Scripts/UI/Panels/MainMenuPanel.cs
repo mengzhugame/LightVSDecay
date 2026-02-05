@@ -1,4 +1,13 @@
+// ============================================================
+// MainMenuPanel.cs (章节选择版)
+// 文件位置: Assets/Scripts/UI/Panels/MainMenuPanel.cs
+// 用途：主菜单控制器 - 章节选择、难度显示、箭头切换
+// 更新：完整重构支持章节系统
+// ============================================================
+
 using LightVsDecay.Audio;
+using LightVsDecay.Data.Runtime;
+using LightVsDecay.Data.SO;
 using LightVsDecay.Logic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +18,7 @@ namespace LightVsDecay.UI.Panels
     /// <summary>
     /// 主菜单控制器
     /// 负责 MainScene 的 UI 交互
+    /// 包含章节选择、难度显示、箭头切换功能
     /// </summary>
     public class MainMenuPanel : MonoBehaviour
     {
@@ -16,56 +26,99 @@ namespace LightVsDecay.UI.Panels
         // Inspector 配置 - TopArea
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("TopArea - 顶部区域")]
+        [Header("═══ TopArea - 顶部区域 ═══")]
         [SerializeField] private Button settingButton;
         [SerializeField] private TextMeshProUGUI gemText;
         [SerializeField] private TextMeshProUGUI goldCoinText;
         [SerializeField] private TextMeshProUGUI energyText;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Inspector 配置 - MidArea
+        // Inspector 配置 - MidArea 章节选择
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("MidArea - 中间区域")]
-        [SerializeField] private Image chapterImage;
-        [SerializeField] private TextMeshProUGUI chapterText;
+        [Header("═══ MidArea - 章节选择 ═══")]
+        [Tooltip("章节卡片背景图")]
+        [SerializeField] private Image chapterCardImage;
         
-        [Tooltip("难度指示图标（5个）")]
-        [SerializeField] private Image[] difficultyImages;
+        [Tooltip("章节标题文本（如：1.深暗虚空）")]
+        [SerializeField] private TextMeshProUGUI chapterTitleText;
+        
+        [Tooltip("锁定图标（显示在未解锁章节上）")]
+        [SerializeField] private GameObject lockIcon;
+        
+        [Header("章节切换箭头")]
+        [Tooltip("左箭头按钮")]
+        [SerializeField] private Button leftArrowButton;
+        
+        [Tooltip("右箭头按钮")]
+        [SerializeField] private Button rightArrowButton;
+        
+        [Tooltip("左箭头图片（用于控制颜色）")]
+        [SerializeField] private Image leftArrowImage;
+        
+        [Tooltip("右箭头图片（用于控制颜色）")]
+        [SerializeField] private Image rightArrowImage;
+        
+        [Header("难度图标")]
+        [Tooltip("难度指示图标数组（5个）")]
+        [SerializeField] private Image[] difficultyIcons;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - BottomArea
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        [Header("BottomArea - 底部区域")]
+        [Header("═══ BottomArea - 底部区域 ═══")]
         [SerializeField] private Button startButton;
+        
+        [Tooltip("开始按钮的父物体（用于隐藏整个按钮区域）")]
+        [SerializeField] private GameObject startButtonContainer;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 - 设置面板
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        [Header("═══ 设置面板 ═══")]
+        [SerializeField] private SettingsPanel settingsPanel;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 显示设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        [Header("═══ 设置面板 ═══")]
-        [SerializeField] private SettingsPanel settingsPanel;
-        [Header("显示设置")]
-        [Tooltip("难度激活颜色")]
-        [SerializeField] private Color difficultyActiveColor = Color.white;
         
-        [Tooltip("难度未激活颜色")]
-        [SerializeField] private Color difficultyInactiveColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+        [Header("═══ 显示设置 ═══")]
+        [Tooltip("箭头正常颜色")]
+        [SerializeField] private Color arrowNormalColor = Color.white;
+        
+        [Tooltip("箭头禁用颜色（灰色半透明）")]
+        [SerializeField] private Color arrowDisabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+        
+        [Tooltip("章节锁定时的灰色透明度")]
+        [SerializeField] private Color chapterLockedColor = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+        
+        [Tooltip("章节解锁时的正常颜色")]
+        [SerializeField] private Color chapterUnlockedColor = Color.white;
         
         [Tooltip("能量不足时按钮颜色")]
         [SerializeField] private Color buttonDisabledColor = new Color(0.5f, 0.5f, 0.5f, 1f);
+        
+        [Header("═══ 调试 ═══")]
+        [SerializeField] private bool showDebugInfo = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        // 玩家资源
         private int playerGems = 0;
         private int playerGoldCoins = 0;
-        private int playerEnergy = 5;      // 当前能量
-        private int maxEnergy = 5;         // 最大能量
-        private int currentChapter = 1;
-        private int currentDifficulty = 1; // 1-5
+        private int playerEnergy = 5;
+        private int maxEnergy = 5;
         
+        // 章节选择状态
+        private int currentViewIndex = 0;      // 当前查看的章节索引 (0-based)
+        private int totalChapters = 3;         // 总章节数
+        
+        // 缓存
+        private ChapterDatabase chapterDatabase;
         private Image startButtonImage;
         private Color startButtonOriginalColor;
         
@@ -88,6 +141,7 @@ namespace LightVsDecay.UI.Panels
         
         private void Start()
         {
+            InitializeChapterDatabase();
             SetupButtons();
             LoadPlayerData();
             UpdateAllUI();
@@ -97,6 +151,39 @@ namespace LightVsDecay.UI.Panels
         // 初始化
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 初始化章节数据库引用
+        /// </summary>
+        private void InitializeChapterDatabase()
+        {
+            // 从 ProgressManager 获取章节数据库
+            if (ProgressManager.Instance != null)
+            {
+                chapterDatabase = ProgressManager.Instance.ChapterDatabase;
+                totalChapters = ProgressManager.Instance.TotalChapters;
+                
+                // 恢复上次查看的章节
+                currentViewIndex = ProgressManager.Instance.CurrentViewChapterIndex;
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenuPanel] ProgressManager 未找到！使用默认值");
+                totalChapters = 3;
+                currentViewIndex = 0;
+            }
+            
+            // 确保索引有效
+            currentViewIndex = Mathf.Clamp(currentViewIndex, 0, totalChapters - 1);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[MainMenuPanel] 初始化: 总章节={totalChapters}, 当前查看={currentViewIndex}");
+            }
+        }
+        
+        /// <summary>
+        /// 设置按钮事件
+        /// </summary>
         private void SetupButtons()
         {
             // 开始按钮
@@ -110,16 +197,31 @@ namespace LightVsDecay.UI.Panels
             {
                 settingButton.onClick.AddListener(OnSettingButtonClicked);
             }
+            
+            // 左箭头
+            if (leftArrowButton != null)
+            {
+                leftArrowButton.onClick.AddListener(OnLeftArrowClicked);
+            }
+            
+            // 右箭头
+            if (rightArrowButton != null)
+            {
+                rightArrowButton.onClick.AddListener(OnRightArrowClicked);
+            }
         }
         
+        /// <summary>
+        /// 加载玩家数据
+        /// </summary>
         private void LoadPlayerData()
         {
-            // 从 PlayerProgressManager 或 PlayerPrefs 加载数据
             if (ProgressManager.Instance != null)
             {
                 playerGems = ProgressManager.Instance.Gems;
                 playerGoldCoins = ProgressManager.Instance.GoldCoins;
                 playerEnergy = ProgressManager.Instance.Energy;
+                maxEnergy = ProgressManager.Instance.MaxEnergy;
             }
             else
             {
@@ -127,23 +229,24 @@ namespace LightVsDecay.UI.Panels
                 playerGems = PlayerPrefs.GetInt("PlayerGems", 0);
                 playerGoldCoins = PlayerPrefs.GetInt("PlayerGoldCoins", 0);
                 playerEnergy = PlayerPrefs.GetInt("PlayerEnergy", 5);
+                maxEnergy = 5;
             }
-            
-            // 加载关卡进度
-            currentChapter = PlayerPrefs.GetInt("CurrentChapter", 1);
-            currentDifficulty = PlayerPrefs.GetInt("CurrentDifficulty", 1);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // UI 更新
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 更新所有 UI
+        /// </summary>
         private void UpdateAllUI()
         {
             UpdateResourcesUI();
             UpdateChapterUI();
+            UpdateArrowsUI();
             UpdateDifficultyUI();
-            UpdateStartButtonState();
+            UpdateStartButtonUI();
         }
         
         /// <summary>
@@ -163,83 +266,321 @@ namespace LightVsDecay.UI.Panels
             
             if (energyText != null)
             {
-                energyText.text = $"{playerEnergy}/{maxEnergy}";
+                energyText.text = $"{playerEnergy} / {maxEnergy}";
             }
         }
         
         /// <summary>
-        /// 更新章节显示
+        /// 更新章节显示（卡片图、标题、锁定状态）
         /// </summary>
         private void UpdateChapterUI()
         {
-            if (chapterText != null)
+            // 获取当前章节配置
+            ChapterConfig chapterConfig = null;
+            if (chapterDatabase != null)
             {
-                chapterText.text = $"Chapter {currentChapter}";
+                chapterConfig = chapterDatabase.GetChapter(currentViewIndex);
             }
             
-            // TODO: 根据 currentChapter 切换 chapterImage
+            // 检查章节是否解锁
+            bool isUnlocked = IsChapterUnlocked(currentViewIndex);
+            
+            // 更新章节标题
+            if (chapterTitleText != null)
+            {
+                if (chapterConfig != null)
+                {
+                    chapterTitleText.text = chapterConfig.DisplayTitle;
+                }
+                else
+                {
+                    chapterTitleText.text = $"{currentViewIndex + 1}.章节{currentViewIndex + 1}";
+                }
+            }
+            
+            // 更新章节卡片图
+            if (chapterCardImage != null)
+            {
+                // 设置章节图片
+                if (chapterConfig != null && chapterConfig.chapterCardImage != null)
+                {
+                    chapterCardImage.sprite = chapterConfig.chapterCardImage;
+                }
+                
+                // 根据锁定状态设置颜色
+                chapterCardImage.color = isUnlocked ? chapterUnlockedColor : chapterLockedColor;
+            }
+            
+            // 更新锁图标
+            if (lockIcon != null)
+            {
+                lockIcon.SetActive(!isUnlocked);
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[MainMenuPanel] 章节UI更新: index={currentViewIndex}, unlocked={isUnlocked}");
+            }
         }
         
         /// <summary>
-        /// 更新难度指示器
+        /// 更新箭头按钮状态
+        /// </summary>
+        private void UpdateArrowsUI()
+        {
+            // 左箭头：第一章时禁用
+            bool canGoLeft = currentViewIndex > 0;
+            UpdateArrowState(leftArrowButton, leftArrowImage, canGoLeft);
+            
+            // 右箭头：最后一章时禁用
+            bool canGoRight = currentViewIndex < totalChapters - 1;
+            UpdateArrowState(rightArrowButton, rightArrowImage, canGoRight);
+        }
+        
+        /// <summary>
+        /// 更新单个箭头的状态
+        /// </summary>
+        private void UpdateArrowState(Button button, Image image, bool isEnabled)
+        {
+            if (button != null)
+            {
+                button.interactable = isEnabled;
+            }
+            
+            if (image != null)
+            {
+                image.color = isEnabled ? arrowNormalColor : arrowDisabledColor;
+            }
+        }
+        
+        /// <summary>
+        /// 更新难度图标显示
         /// </summary>
         private void UpdateDifficultyUI()
         {
-            if (difficultyImages == null || difficultyImages.Length == 0) return;
+            if (difficultyIcons == null || difficultyIcons.Length == 0) return;
             
-            for (int i = 0; i < difficultyImages.Length; i++)
+            // 获取当前章节已通关的难度
+            int completedDifficulty = GetChapterCompletedDifficulty(currentViewIndex);
+            
+            // 获取难度图标资源
+            Sprite activeIcon = null;
+            Sprite inactiveIcon = null;
+            
+            if (chapterDatabase != null)
             {
-                if (difficultyImages[i] != null)
+                activeIcon = chapterDatabase.difficultyIconActive;
+                inactiveIcon = chapterDatabase.difficultyIconInactive;
+            }
+            
+            // 更新每个难度图标
+            for (int i = 0; i < difficultyIcons.Length; i++)
+            {
+                if (difficultyIcons[i] == null) continue;
+                
+                // i+1 对应难度等级 (1-5)
+                // 已通关的难度显示亮图标
+                bool isCompleted = (i + 1) <= completedDifficulty;
+                
+                // 设置图标
+                if (isCompleted && activeIcon != null)
                 {
-                    // i+1 <= currentDifficulty 的图标点亮
-                    bool isActive = (i + 1) <= currentDifficulty;
-                    difficultyImages[i].color = isActive ? difficultyActiveColor : difficultyInactiveColor;
+                    difficultyIcons[i].sprite = activeIcon;
+                    difficultyIcons[i].color = Color.white;
+                }
+                else if (!isCompleted && inactiveIcon != null)
+                {
+                    difficultyIcons[i].sprite = inactiveIcon;
+                    difficultyIcons[i].color = Color.white;
+                }
+                else
+                {
+                    // 备用方案：没有图片时用颜色区分
+                    difficultyIcons[i].color = isCompleted ? Color.white : new Color(0.3f, 0.3f, 0.3f, 0.5f);
+                }
+            }
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[MainMenuPanel] 难度UI更新: chapter={currentViewIndex}, completed={completedDifficulty}");
+            }
+        }
+        
+        /// <summary>
+        /// 更新开始按钮状态
+        /// </summary>
+        private void UpdateStartButtonUI()
+        {
+            bool isUnlocked = IsChapterUnlocked(currentViewIndex);
+            bool hasEnergy = playerEnergy > 0;
+            
+            // 如果章节未解锁，隐藏开始按钮
+            if (startButtonContainer != null)
+            {
+                startButtonContainer.SetActive(isUnlocked);
+            }
+            else if (startButton != null)
+            {
+                // 没有容器时直接控制按钮
+                startButton.gameObject.SetActive(isUnlocked);
+            }
+            
+            // 能量不足时按钮变灰（但仍可见）
+            if (startButton != null && isUnlocked)
+            {
+                startButton.interactable = hasEnergy;
+                
+                if (startButtonImage != null)
+                {
+                    startButtonImage.color = hasEnergy ? startButtonOriginalColor : buttonDisabledColor;
                 }
             }
         }
         
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 数据查询辅助方法
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         /// <summary>
-        /// 更新开始按钮状态（能量不足时变灰）
+        /// 检查章节是否已解锁
         /// </summary>
-        private void UpdateStartButtonState()
+        private bool IsChapterUnlocked(int chapterIndex)
         {
-            if (startButton == null) return;
-            
-            bool hasEnergy = playerEnergy > 0;
-            startButton.interactable = hasEnergy;
-            
-            if (startButtonImage != null)
+            if (ProgressManager.Instance != null)
             {
-                startButtonImage.color = hasEnergy ? startButtonOriginalColor : buttonDisabledColor;
+                return ProgressManager.Instance.IsChapterUnlocked(chapterIndex);
             }
+            
+            // 降级：第一章默认解锁
+            return chapterIndex == 0;
+        }
+        
+        /// <summary>
+        /// 获取章节已通关的最高难度
+        /// </summary>
+        private int GetChapterCompletedDifficulty(int chapterIndex)
+        {
+            if (ProgressManager.Instance != null)
+            {
+                return ProgressManager.Instance.GetChapterCompletedDifficulty(chapterIndex);
+            }
+            return 0;
+        }
+        
+        /// <summary>
+        /// 获取章节下一个要挑战的难度
+        /// </summary>
+        private int GetChapterNextDifficulty(int chapterIndex)
+        {
+            if (ProgressManager.Instance != null)
+            {
+                return ProgressManager.Instance.GetChapterNextDifficulty(chapterIndex);
+            }
+            return 1;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 按钮回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 左箭头点击 - 切换到上一章节
+        /// </summary>
+        private void OnLeftArrowClicked()
+        {
+            if (currentViewIndex <= 0) return;
+            
+            PlayButtonSound();
+            
+            currentViewIndex--;
+            SaveCurrentViewIndex();
+            
+            UpdateChapterUI();
+            UpdateArrowsUI();
+            UpdateDifficultyUI();
+            UpdateStartButtonUI();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[MainMenuPanel] 切换到章节 {currentViewIndex + 1}");
+            }
+        }
+        
+        /// <summary>
+        /// 右箭头点击 - 切换到下一章节
+        /// </summary>
+        private void OnRightArrowClicked()
+        {
+            if (currentViewIndex >= totalChapters - 1) return;
+            
+            PlayButtonSound();
+            
+            currentViewIndex++;
+            SaveCurrentViewIndex();
+            
+            UpdateChapterUI();
+            UpdateArrowsUI();
+            UpdateDifficultyUI();
+            UpdateStartButtonUI();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[MainMenuPanel] 切换到章节 {currentViewIndex + 1}");
+            }
+        }
+        
+        /// <summary>
+        /// 保存当前查看的章节索引
+        /// </summary>
+        private void SaveCurrentViewIndex()
+        {
+            if (ProgressManager.Instance != null)
+            {
+                ProgressManager.Instance.CurrentViewChapterIndex = currentViewIndex;
+            }
+        }
+        
+        /// <summary>
+        /// 开始按钮点击
+        /// </summary>
         private void OnStartButtonClicked()
         {
-            Debug.Log("[MainMenuController] 点击开始游戏");
+            // 检查章节是否解锁
+            if (!IsChapterUnlocked(currentViewIndex))
+            {
+                Debug.Log("[MainMenuPanel] 章节未解锁！");
+                return;
+            }
             
             // 检查能量是否足够
             if (playerEnergy <= 0)
             {
-                Debug.Log("[MainMenuController] 能量不足！");
+                Debug.Log("[MainMenuPanel] 能量不足！");
                 // TODO: 显示能量不足提示
                 return;
             }
             
-            // 扣除能量
-            playerEnergy--;
+            PlayButtonSound();
             
-            // 保存数据
+            // 获取要挑战的难度
+            int difficulty = GetChapterNextDifficulty(currentViewIndex);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[MainMenuPanel] 开始游戏: 章节={currentViewIndex + 1}, 难度={difficulty}");
+            }
+            
+            // 设置游戏会话配置
+            GameSessionConfig.Set(currentViewIndex, difficulty);
+            
+            // 扣除能量
             if (ProgressManager.Instance != null)
             {
                 ProgressManager.Instance.ConsumeEnergy(1);
             }
             else
             {
+                playerEnergy--;
                 PlayerPrefs.SetInt("PlayerEnergy", playerEnergy);
                 PlayerPrefs.Save();
             }
@@ -256,16 +597,18 @@ namespace LightVsDecay.UI.Panels
             }
         }
         
+        /// <summary>
+        /// 设置按钮点击
+        /// </summary>
         private void OnSettingButtonClicked()
         {
-            Debug.Log("[MainMenuPanel] 点击设置按钮");
-    
-            // 播放按钮音效
-            if (AudioManager.Instance != null)
+            PlayButtonSound();
+            
+            if (showDebugInfo)
             {
-                AudioManager.Instance.PlayButtonClick();
+                Debug.Log("[MainMenuPanel] 点击设置按钮");
             }
-    
+            
             // 打开设置面板（不显示底部按钮区域）
             if (settingsPanel != null)
             {
@@ -277,37 +620,91 @@ namespace LightVsDecay.UI.Panels
             }
         }
         
+        /// <summary>
+        /// 播放按钮音效
+        /// </summary>
+        private void PlayButtonSound()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayButtonClick();
+            }
+        }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 刷新UI（从外部调用）
+        /// 刷新UI（从外部调用，如返回主菜单时）
         /// </summary>
         public void RefreshUI()
         {
             LoadPlayerData();
+            
+            // 重新获取章节数据（可能有新解锁）
+            if (ProgressManager.Instance != null)
+            {
+                totalChapters = ProgressManager.Instance.TotalChapters;
+                currentViewIndex = Mathf.Clamp(currentViewIndex, 0, totalChapters - 1);
+            }
+            
             UpdateAllUI();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[MainMenuPanel] UI 已刷新");
+            }
         }
         
         /// <summary>
-        /// 设置当前章节
+        /// 跳转到指定章节（外部调用）
         /// </summary>
-        public void SetChapter(int chapter)
+        public void NavigateToChapter(int chapterIndex)
         {
-            currentChapter = Mathf.Max(1, chapter);
-            PlayerPrefs.SetInt("CurrentChapter", currentChapter);
-            UpdateChapterUI();
+            if (chapterIndex >= 0 && chapterIndex < totalChapters)
+            {
+                currentViewIndex = chapterIndex;
+                SaveCurrentViewIndex();
+                UpdateAllUI();
+            }
         }
         
-        /// <summary>
-        /// 设置难度等级
-        /// </summary>
-        public void SetDifficulty(int difficulty)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 调试
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+#if UNITY_EDITOR
+        [ContextMenu("Debug - Unlock All Chapters")]
+        private void DebugUnlockAllChapters()
         {
-            currentDifficulty = Mathf.Clamp(difficulty, 1, 5);
-            PlayerPrefs.SetInt("CurrentDifficulty", currentDifficulty);
-            UpdateDifficultyUI();
+            if (ProgressManager.Instance != null)
+            {
+                ProgressManager.Instance.Meta.DebugUnlockAllChapters();
+                RefreshUI();
+            }
         }
+        
+        [ContextMenu("Debug - Complete All Difficulties")]
+        private void DebugCompleteAllDifficulties()
+        {
+            if (ProgressManager.Instance != null)
+            {
+                ProgressManager.Instance.Meta.DebugCompleteAllDifficulties();
+                RefreshUI();
+            }
+        }
+        
+        [ContextMenu("Debug - Reset Chapter Progress")]
+        private void DebugResetChapterProgress()
+        {
+            if (ProgressManager.Instance != null)
+            {
+                ProgressManager.Instance.ResetChapterProgress();
+                currentViewIndex = 0;
+                RefreshUI();
+            }
+        }
+#endif
     }
 }

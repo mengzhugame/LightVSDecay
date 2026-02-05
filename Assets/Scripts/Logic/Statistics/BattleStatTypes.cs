@@ -25,6 +25,7 @@ namespace LightVsDecay.Logic.Statistics
         MainLaser,      // 主激光（直射段）
         SubLaser,       // 副激光（分裂/反射段）
         Explosion,      // 爆炸（Focus Lv5）
+        Chain,
         Other
     }
     
@@ -150,11 +151,13 @@ namespace LightVsDecay.Logic.Statistics
         public float dmgFromBoss;
         public float playerHPLost;
         public float tankAbsorbedRatio;
-        
+        // ═══ 技能与大招 【修改分类】 ═══
+        public int overloadCount;       // 【新增】本波次大招释放次数
         // ═══ 伤害输出 (8) ═══
         public float dmgMainLaser;
         public float dmgSubLaser;
         public float dmgExplosion;
+        public float dmgChain;          // 【新增】连锁伤害总量
         public float critDamageTotal;
         public int critHitCount;
         public int normalHitCount;

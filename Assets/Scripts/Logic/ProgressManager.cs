@@ -1,7 +1,8 @@
 // ============================================================
-// ProgressManager.cs (简化版)
+// ProgressManager.cs (章节系统版)
 // 文件位置: Assets/Scripts/Logic/ProgressManager.cs
-// 用途：玩家进度管理器 - 简化后仅处理逻辑，数据存储在 Data 层
+// 用途：玩家进度管理器 - 管理局内/局外进度 + 章节进度
+// 更新：添加章节进度管理功能
 // ============================================================
 
 using System.Collections.Generic;
@@ -16,10 +17,11 @@ using SettlementData = LightVsDecay.Core.SettlementData;
 namespace LightVsDecay.Logic
 {
     /// <summary>
-    /// 玩家进度管理器 (简化版)
+    /// 玩家进度管理器
     /// 职责：
     /// - 管理局内进度（SessionData）
     /// - 管理局外进度（MetaData）
+    /// - 管理章节进度（ChapterProgressData）
     /// - 响应游戏事件并更新数据
     /// - 广播数据变化给 UI
     /// </summary>
@@ -32,6 +34,9 @@ namespace LightVsDecay.Logic
         [Header("配置")]
         [Tooltip("游戏设置（ScriptableObject）")]
         [SerializeField] private GameSettings settings;
+        
+        [Tooltip("章节数据库（ScriptableObject）")]
+        [SerializeField] private ChapterDatabase chapterDatabase;
         
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
@@ -46,7 +51,7 @@ namespace LightVsDecay.Logic
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共属性 - 局内进度
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+    
         public int CurrentLevel => session.level;
         public int CurrentExp => session.exp;
         public int ExpToNextLevel => session.expToNextLevel;
@@ -70,6 +75,30 @@ namespace LightVsDecay.Logic
         public int MaxEnergy => settings.maxEnergy;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 公共属性 - 章节进度（新增）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>章节总数</summary>
+        public int TotalChapters => meta.TotalChapters;
+        
+        /// <summary>已解锁的最高章节索引 (0-based)</summary>
+        public int UnlockedChapterIndex => meta.UnlockedChapterIndex;
+        
+        /// <summary>当前查看的章节索引 (UI状态)</summary>
+        public int CurrentViewChapterIndex
+        {
+            get => meta.currentViewChapterIndex;
+            set
+            {
+                meta.currentViewChapterIndex = Mathf.Clamp(value, 0, TotalChapters - 1);
+                meta.Save();
+            }
+        }
+        
+        /// <summary>章节数据库引用</summary>
+        public ChapterDatabase ChapterDatabase => chapterDatabase;
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 数据访问
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
@@ -89,11 +118,18 @@ namespace LightVsDecay.Logic
         protected override void OnSingletonAwake()
         {
             ValidateSettings();
-            meta.Load(settings.maxEnergy);
+            
+            // 获取章节数量（从数据库或使用默认值）
+            int chapterCount = chapterDatabase != null ? chapterDatabase.ChapterCount : 3;
+            
+            // 加载局外进度（包含章节进度）
+            meta.Load(settings.maxEnergy, chapterCount);
             
             if (showDebugInfo)
             {
-                Debug.Log($"[ProgressManager] 加载局外进度: Gems={meta.gems}, Gold={meta.goldCoins}, Energy={meta.energy}");
+                Debug.Log($"[ProgressManager] 加载局外进度: Gems={meta.gems}, Gold={meta.goldCoins}, " +
+                          $"Energy={meta.energy}, Chapters={meta.TotalChapters}");
+                meta.PrintChapterProgress();
             }
         }
         
@@ -103,6 +139,7 @@ namespace LightVsDecay.Logic
             GameEvents.OnEnemyDied += OnEnemyDied;
             GameEvents.OnGameStart += ResetSession;
             GameEvents.OnXPOrbCollected += OnXPOrbCollected; 
+            
             // 初始化局内进度
             ResetSession();
         }
@@ -118,6 +155,7 @@ namespace LightVsDecay.Logic
             GameEvents.OnGameStart -= ResetSession;
             GameEvents.OnXPOrbCollected -= OnXPOrbCollected;
         }
+        
         /// <summary>
         /// 经验光点被收集
         /// </summary>
@@ -128,6 +166,7 @@ namespace LightVsDecay.Logic
                 AddExp(xp);
             }
         }
+        
         private void OnApplicationQuit() => meta.Save();
         private void OnApplicationPause(bool pause) { if (pause) meta.Save(); }
         
@@ -141,6 +180,81 @@ namespace LightVsDecay.Logic
             {
                 Debug.LogError("[ProgressManager] GameSettings 未设置！创建默认配置...");
                 settings = ScriptableObject.CreateInstance<GameSettings>();
+            }
+            
+            if (chapterDatabase == null)
+            {
+                Debug.LogWarning("[ProgressManager] ChapterDatabase 未设置！章节功能将受限");
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 章节进度操作（新增）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 检查章节是否已解锁
+        /// </summary>
+        public bool IsChapterUnlocked(int chapterIndex)
+        {
+            return meta.IsChapterUnlocked(chapterIndex);
+        }
+        
+        /// <summary>
+        /// 获取章节已通关的最高难度 (0-5, 0=未通关)
+        /// </summary>
+        public int GetChapterCompletedDifficulty(int chapterIndex)
+        {
+            return meta.GetChapterCompletedDifficulty(chapterIndex);
+        }
+        
+        /// <summary>
+        /// 获取章节下一个要挑战的难度 (1-5)
+        /// </summary>
+        public int GetChapterNextDifficulty(int chapterIndex)
+        {
+            return meta.GetChapterNextDifficulty(chapterIndex);
+        }
+        
+        /// <summary>
+        /// 获取章节进度数据
+        /// </summary>
+        public ChapterProgressData GetChapterProgress(int chapterIndex)
+        {
+            return meta.GetChapterProgress(chapterIndex);
+        }
+        
+        /// <summary>
+        /// 完成章节难度（通关时调用）
+        /// </summary>
+        /// <param name="chapterIndex">章节索引 (0-based)</param>
+        /// <param name="difficulty">完成的难度等级 (1-5)</param>
+        /// <returns>是否解锁了新章节</returns>
+        public bool CompleteChapterDifficulty(int chapterIndex, int difficulty)
+        {
+            bool unlockedNew = meta.CompleteChapterDifficulty(chapterIndex, difficulty);
+            meta.Save();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[ProgressManager] 完成章节{chapterIndex + 1}难度{difficulty}" +
+                          (unlockedNew ? $"，解锁章节{chapterIndex + 2}！" : ""));
+            }
+            
+            return unlockedNew;
+        }
+        
+        /// <summary>
+        /// 解锁指定章节（调试/购买用）
+        /// </summary>
+        public void UnlockChapter(int chapterIndex)
+        {
+            meta.UnlockChapter(chapterIndex);
+            meta.Save();
+            
+            if (showDebugInfo)
+            {
+                Debug.Log($"[ProgressManager] 解锁章节 {chapterIndex + 1}");
             }
         }
         
@@ -193,7 +307,7 @@ namespace LightVsDecay.Logic
                 Debug.Log($"[ProgressManager] 升级! Lv.{session.level}");
             }
             
-            // 【新增】暂停游戏，显示三选一界面
+            // 暂停游戏，显示三选一界面
             Time.timeScale = 0f;
     
             // 通知 UIManager 显示技能选择面板
@@ -264,9 +378,11 @@ namespace LightVsDecay.Logic
                 Debug.Log($"[ProgressManager] 敌人死亡: {type}, XP:{xp}, Coin:{coin}");
             }
         }
+        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 技能相关
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
         /// <summary>
         /// 获取当前技能等级字典（用于三选一生成）
         /// </summary>
@@ -376,12 +492,27 @@ namespace LightVsDecay.Logic
         
         public void ResetAllProgress()
         {
-            meta.Reset(settings.maxEnergy);
+            int chapterCount = chapterDatabase != null ? chapterDatabase.ChapterCount : 3;
+            meta.Reset(settings.maxEnergy, chapterCount);
             ResetSession();
             
             if (showDebugInfo)
             {
                 Debug.Log("[ProgressManager] 所有进度已重置");
+            }
+        }
+        
+        /// <summary>
+        /// 仅重置章节进度
+        /// </summary>
+        public void ResetChapterProgress()
+        {
+            int chapterCount = chapterDatabase != null ? chapterDatabase.ChapterCount : 3;
+            meta.ResetChapterProgress(chapterCount);
+            
+            if (showDebugInfo)
+            {
+                Debug.Log("[ProgressManager] 章节进度已重置");
             }
         }
         
@@ -398,11 +529,25 @@ namespace LightVsDecay.Logic
         {
             if (!showDebugInfo) return;
             
-            GUILayout.BeginArea(new Rect(10, 300, 220, 280));
+            GUILayout.BeginArea(new Rect(10, 300, 250, 350));
+            
             GUILayout.Label("=== Meta ===");
             GUILayout.Label($"Gems: {meta.gems}");
             GUILayout.Label($"Gold: {meta.goldCoins}");
             GUILayout.Label($"Energy: {meta.energy}/{settings.maxEnergy}");
+            
+            GUILayout.Space(5);
+            GUILayout.Label("=== Chapters ===");
+            GUILayout.Label($"Total: {TotalChapters}, Unlocked: {UnlockedChapterIndex + 1}");
+            for (int i = 0; i < TotalChapters; i++)
+            {
+                var p = GetChapterProgress(i);
+                if (p != null)
+                {
+                    string status = p.isUnlocked ? $"✓ {p.completedDifficulty}/5" : "🔒";
+                    GUILayout.Label($"  Ch.{i + 1}: {status}");
+                }
+            }
             
             GUILayout.Space(5);
             GUILayout.Label("=== Session ===");
@@ -415,6 +560,10 @@ namespace LightVsDecay.Logic
             if (GUILayout.Button("+100 XP")) AddExp(100);
             if (GUILayout.Button("+50 Coins")) AddCoins(50);
             if (GUILayout.Button("+100 Gold")) AddGoldCoins(100);
+            
+            GUILayout.Space(5);
+            if (GUILayout.Button("Unlock All Chapters")) meta.DebugUnlockAllChapters();
+            if (GUILayout.Button("Complete All")) meta.DebugCompleteAllDifficulties();
             
             GUILayout.EndArea();
         }

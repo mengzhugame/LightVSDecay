@@ -69,7 +69,8 @@ namespace LightVsDecay.Logic.Statistics
         private float _currentSecondDamage = 0f;
         private float _dpsTimer = 0f;
         private float _peakDPS = 0f;
-        
+        private float _waveChainDamage = 0f;    // 连锁伤害累计
+        private int _waveOverloadCount = 0;     // 大招释放次数
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 波次基础
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -313,7 +314,8 @@ namespace LightVsDecay.Logic.Statistics
             // 重置玩家受伤
             _waveDmgFromMobs = 0f;
             _waveDmgFromBoss = 0f;
-            
+            _waveChainDamage = 0f;
+            _waveOverloadCount = 0;
             // 重置伤害来源
             _waveMainLaserDamage = 0f;
             _waveSubLaserDamage = 0f;
@@ -413,7 +415,8 @@ namespace LightVsDecay.Logic.Statistics
                 normalHitCount = _waveNormalHitCount,
                 overkillRatio = overkillRatio,
                 dmgDealtTotal = _waveTotalDamage,
-                
+                dmgChain = _waveChainDamage,
+                overloadCount = _waveOverloadCount,
                 // Frost统计
                 frostSlowCount = _waveFrost.slowCount,
                 frostFreezeCount = _waveFrost.freezeCount,
@@ -564,6 +567,9 @@ namespace LightVsDecay.Logic.Statistics
                 case DamageSource.Explosion:
                     _waveExplosionDamage += totalDamage;
                     break;
+                case DamageSource.Chain: // 【新增】
+                    _waveChainDamage += totalDamage;
+                    break;
             }
             
             // 暴击统计
@@ -577,7 +583,15 @@ namespace LightVsDecay.Logic.Statistics
                 _waveNormalHitCount++;
             }
         }
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】大招上报接口
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        public void RecordOverloadActivation()
+        {
+            if (!CanRecord()) return;
+            _waveOverloadCount++;
+            if (showDebugInfo) Debug.Log("[BattleStatistics] ⚡ 记录大招释放！");
+        }
         /// <summary>
         /// 上报敌人总血量（生成时调用）
         /// </summary>
@@ -891,7 +905,7 @@ namespace LightVsDecay.Logic.Statistics
                 "HP_Start_Hull,HP_Start_Shield,HP_End_Hull,HP_End_Shield," +
                 "Dmg_From_Mobs,Dmg_From_Boss,Player_HP_Lost,Tank_Absorbed_Ratio," +
                 // 伤害输出 (8)
-                "Dmg_Main_Laser,Dmg_Sub_Laser,Dmg_Explosion," +
+                "Dmg_Main_Laser,Dmg_Sub_Laser,Dmg_Explosion,Dmg_Chain," +
                 "Crit_Damage_Total,Crit_Hit_Count,Normal_Hit_Count,Overkill_Ratio,Dmg_Dealt_Total," +
                 // Frost统计 (3)
                 "Frost_Slow_Count,Frost_Freeze_Count,Frost_Slow_Duration," +
@@ -906,56 +920,89 @@ namespace LightVsDecay.Logic.Statistics
                 "Boss_Dmg_Collision,Boss_Dmg_Bullet,Boss_Pushback_Time," +
                 "Boss_Phase,Boss_HP_Remaining,Boss_Charge_Count,Boss_Press_Count,Boss_Summon_Count,Boss_Stun_Count," +
                 // 技能路径 (2)
-                "Skill_Path,Skill_Levels," +
+                "Skill_Path,Skill_Levels,Overload_Count," +
                 // 其他 (2)
                 "DPS_Peak,Enemy_Total_HP";
         }
         
         /// <summary>
-        /// 构建单行CSV数据
+        /// 构建单行CSV数据 (V4.1)
+        /// 新增: Dmg_Chain (索引22), Overload_Count (索引57)
+        /// 总字段数: 60
         /// </summary>
         private string BuildCSVDataLine(WaveStatData d)
         {
-            // 转义技能路径中的逗号
+            // 转义技能路径中的逗号，防止破坏CSV格式
             string escapedPath = $"\"{d.skillPath}\"";
             string escapedLevels = $"\"{d.skillLevels}\"";
             
             return string.Format(
+                // 1. 基础信息 (0-4)
                 "{0},{1},{2},{3},{4:F1}," +
+                // 2. 击杀统计 (5-10)
                 "{5},{6},{7},{8},{9},{10}," +
+                // 3. 玩家状态 (11-18)
                 "{11},{12},{13},{14},{15:F0},{16:F0},{17:F0},{18:F2}," +
-                "{19:F0},{20:F0},{21:F0},{22:F0},{23},{24},{25:F2},{26:F0}," +
-                "{27},{28},{29:F1}," +
-                "{30:F0},{31:F2},{32:F2}," +
-                "{33},{34},{35},{36:F0},{37:F0},{38:F1},{39:F1},{40:F1},{41:F1},{42},{43},{44}," +
-                "{45:F0},{46:F0},{47:F1},{48},{49:F2},{50},{51},{52},{53}," +
-                "{54},{55}," +
-                "{56:F0},{57:F0}",
-                // 基础信息
+                // 4. 伤害输出 (19-27) [新增 Chain 在 22]
+                "{19:F0},{20:F0},{21:F0},{22:F0},{23:F0},{24},{25},{26:F2},{27:F0}," +
+                // 5. Frost统计 (28-30)
+                "{28},{29},{30:F1}," +
+                // 6. 面板快照 (31-33)
+                "{31:F0},{32:F2},{33:F2}," +
+                // 7. 无人机数据 (34-45)
+                "{34},{35},{36},{37:F0},{38:F0},{39:F1},{40:F1},{41:F1},{42:F1},{43},{44},{45}," +
+                // 8. Boss战数据 (46-54)
+                "{46:F0},{47:F0},{48:F1},{49},{50:F2},{51},{52},{53},{54}," +
+                // 9. 技能与大招 (55-57) [新增 Overload 在 57]
+                "{55},{56},{57}," +
+                // 10. 其他 (58-59)
+                "{58:F0},{59:F0}",
+
+                // ================= 参数列表 =================
+                
+                // 1. 基础信息
                 d.wave, d.buildType, d.playerLevel, d.result, d.timeToClear,
-                // 击杀统计
+                
+                // 2. 击杀统计
                 d.killSlime, d.killRusher, d.killTank, d.killDrifter, d.killElite, d.killTotal,
-                // 玩家状态
+                
+                // 3. 玩家状态
                 d.hpStartHull, d.hpStartShield, d.hpEndHull, d.hpEndShield,
                 d.dmgFromMobs, d.dmgFromBoss, d.playerHPLost, d.tankAbsorbedRatio,
-                // 伤害输出
-                d.dmgMainLaser, d.dmgSubLaser, d.dmgExplosion,
-                d.critDamageTotal, d.critHitCount, d.normalHitCount, d.overkillRatio, d.dmgDealtTotal,
-                // Frost统计
+                
+                // 4. 伤害输出 (注意顺序)
+                d.dmgMainLaser,     // 19
+                d.dmgSubLaser,      // 20
+                d.dmgExplosion,     // 21
+                d.dmgChain,         // 22 [新增] 连锁伤害
+                d.critDamageTotal,  // 23
+                d.critHitCount,     // 24
+                d.normalHitCount,   // 25
+                d.overkillRatio,    // 26
+                d.dmgDealtTotal,    // 27
+                
+                // 5. Frost统计
                 d.frostSlowCount, d.frostFreezeCount, d.frostSlowDuration,
-                // 面板快照
+                
+                // 6. 面板快照
                 d.panelDPS, d.panelCritRate, d.panelLaserWidth,
-                // 无人机数据
+                
+                // 7. 无人机数据
                 d.droneChoice, d.droneRewardType, d.droneRewardValue,
                 d.droneAccHealth, d.droneAccShield, d.droneAccDamagePct, d.droneAccCritPct,
                 d.droneAccLaserWidth, d.droneAccLaserLength,
                 d.droneCountSupply, d.droneCountGacha, d.droneCountDeal,
-                // Boss战数据
+                
+                // 8. Boss战数据
                 d.bossDmgCollision, d.bossDmgBullet, d.bossPushbackTime,
                 d.bossPhase, d.bossHPRemaining, d.bossChargeCount, d.bossPressCount, d.bossSummonCount, d.bossStunCount,
-                // 技能路径
-                escapedPath, escapedLevels,
-                // 其他
+                
+                // 9. 技能与大招
+                escapedPath,    // 55
+                escapedLevels,  // 56
+                d.overloadCount,// 57 [新增] 大招次数
+                
+                // 10. 其他
                 d.dpsPeak, d.enemyTotalHP
             );
         }

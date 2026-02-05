@@ -168,6 +168,10 @@ namespace LightVsDecay.Logic.Enemy
         /// 是否已死亡
         /// </summary>
         public bool IsDead => isDead;
+        /// <summary>
+        /// 获取敌人类型的属性访问器 (修复 CS1061 错误)
+        /// </summary>
+        public EnemyType Type => enemyType;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Layer 切换（弹跳怪入境签证）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

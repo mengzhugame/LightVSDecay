@@ -12,6 +12,7 @@ using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Audio;
+using LightVsDecay.Logic.Statistics;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -565,7 +566,21 @@ namespace LightVsDecay.Logic.Player
             
             // 造成伤害（不带击退，不带暴击）
             link.targetEnemy.TakeDamage(tickDamage, Vector2.zero, false, false);
-            
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 【新增】数据埋点：上报 Chain 伤害
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            if (BattleStatistics.Instance != null)
+            {
+                // 注意：这里假设 EnemyBlob 有 Type 属性获取 EnemyType
+                // 如果你的属性名是 enemyType，请自行调整
+                BattleStatistics.Instance.RecordDamage(
+                    tickDamage,                     // 有效伤害
+                    0f,                             // 溢出伤害（连锁通常不计算溢出）
+                    link.targetEnemy.Type,          // 敌人类型
+                    DamageSource.Chain,             // 【关键】标记为连锁伤害
+                    false                           // 连锁伤害通常不暴击
+                );
+            }
             // 应用 Frost 效果
             ApplyFrostEffect(link.targetEnemy);
         }

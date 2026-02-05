@@ -11,6 +11,7 @@ using UnityEngine.UI;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Logic.Enemy;
+using LightVsDecay.Logic.Statistics;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -445,7 +446,11 @@ namespace LightVsDecay.Logic.Player
             
             // 触发激活事件
             GameEvents.TriggerOverloadActivated();
-            
+            // 【新增】数据埋点
+            if (BattleStatistics.Instance != null)
+            {
+                BattleStatistics.Instance.RecordOverloadActivation();
+            }
             if (showDebugInfo)
             {
                 Debug.Log($"[OverloadManager] 🔥 大招激活！持续 {activeDuration} 秒");

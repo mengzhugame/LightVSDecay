@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 221542e697f31cc4d9ac5764a95040a0, type: 3}
+  m_Name: Chapter03_Frozen
+  m_EditorClassIdentifier: 
+  chapterIndex: 0
+  chapterNumber: 3
+  chapterName: "\u6781\u5BD2\u865A\u7A7A"
+  chapterDescription: "\u7B2C\u4E09\u7AE0\uFF1A\u6781\u5BD2\u865A\u7A7A"
+  chapterCardImage: {fileID: 21300000, guid: 57ce1661d3b0ef1439784f94c06b61ce, type: 3}
+  battleBackgroundImage: {fileID: 21300000, guid: 77857ab770629004bb0512bc0e9b2a17, type: 3}
+  themeColor: {r: 0, g: 0.61710167, b: 1, a: 1}
+  battleBGM: {fileID: 0}
+  bossBGM: {fileID: 0}
+  waveConfig: {fileID: 11400000, guid: 9967bbae06fefc1438e76fc06f774805, type: 2}
+  bossPrefab: {fileID: 7651956220622171640, guid: 5b037580938be1f40998b30cf4c7c9e2, type: 3}
+  mechanicType: 0
+  difficulties:
+  - difficultyLevel: 1
+    displayName: "\u666E\u901A"
+    enemyHealthMultiplier: 1
+    enemyCountMultiplier: 1
+    enemySpeedMultiplier: 1
+    bossHealthMultiplier: 1
+    bossAttackMultiplier: 1
+    coinDropMultiplier: 1
+    expDropMultiplier: 1
+  - difficultyLevel: 2
+    displayName: "\u56F0\u96BE"
+    enemyHealthMultiplier: 1.3
+    enemyCountMultiplier: 1.15
+    enemySpeedMultiplier: 1.05
+    bossHealthMultiplier: 1.4
+    bossAttackMultiplier: 1.2
+    coinDropMultiplier: 1.25
+    expDropMultiplier: 1.1
+  - difficultyLevel: 3
+    displayName: "\u5669\u68A6"
+    enemyHealthMultiplier: 1.6
+    enemyCountMultiplier: 1.3
+    enemySpeedMultiplier: 1.1
+    bossHealthMultiplier: 1.8
+    bossAttackMultiplier: 1.4
+    coinDropMultiplier: 1.5
+    expDropMultiplier: 1.2
+  - difficultyLevel: 4
+    displayName: "\u5730\u72F1"
+    enemyHealthMultiplier: 1.9000001
+    enemyCountMultiplier: 1.45
+    enemySpeedMultiplier: 1.15
+    bossHealthMultiplier: 2.2
+    bossAttackMultiplier: 1.6
+    coinDropMultiplier: 1.75
+    expDropMultiplier: 1.3
+  - difficultyLevel: 5
+    displayName: "\u6DF1\u6E0A"
+    enemyHealthMultiplier: 2.2
+    enemyCountMultiplier: 1.6
+    enemySpeedMultiplier: 1.2
+    bossHealthMultiplier: 2.6
+    bossAttackMultiplier: 1.8
+    coinDropMultiplier: 2
+    expDropMultiplier: 1.4
