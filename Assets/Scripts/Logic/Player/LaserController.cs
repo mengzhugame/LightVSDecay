@@ -2,6 +2,12 @@
 // LaserController.cs (重构版 - 支持多激光 + Boss穿透 + 暴击)
 // 文件位置: Assets/Scripts/Logic/Player/LaserController.cs
 // 用途：激光伤害判定和击退 - 支持 Prism 分裂、Focus 聚能、Boss穿透、暴击
+// 
+// TODO: 此文件过大(1800+行)，后续版本建议拆分为：
+//   - LaserDamageHandler.cs (伤害计算和应用)
+//   - LaserKnockbackHandler.cs (击退效果)
+//   - LaserCritSystem.cs (暴击系统)
+//   - LaserPenetrationHandler.cs (穿透逻辑)
 // ============================================================
 
 using UnityEngine;

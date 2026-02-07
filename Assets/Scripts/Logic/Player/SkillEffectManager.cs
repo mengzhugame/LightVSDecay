@@ -55,7 +55,7 @@ namespace LightVsDecay.Logic.Player
         [SerializeField] private SkillDatabase skillDatabase;
 
         [Header("调试")]
-        [SerializeField] private bool showDebugInfo = true;
+        [SerializeField] private bool showDebugInfo = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 单例访问

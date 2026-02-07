@@ -43,7 +43,7 @@ namespace LightVsDecay.Logic.Statistics
         [SerializeField] private LaserController laserController;
         
         [Header("调试")]
-        [SerializeField] private bool showDebugInfo = true;
+        [SerializeField] private bool showDebugInfo = false;
         [SerializeField] private bool logToConsole = true;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

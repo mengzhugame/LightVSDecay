@@ -57,7 +57,7 @@ namespace LightVsDecay.Logic.Enemy
         [SerializeField] private Transform towerTransform;
         
         [Header("调试")]
-        [SerializeField] private bool showDebugInfo = true;
+        [SerializeField] private bool showDebugInfo = false;
         [SerializeField] private bool showGizmos = true;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -31,7 +31,7 @@ namespace LightVsDecay.UI.FloatingText
         [SerializeField] private Canvas targetCanvas;
         
         [Header("调试")]
-        [SerializeField] private bool showDebugInfo = true;
+        [SerializeField] private bool showDebugInfo = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时数据

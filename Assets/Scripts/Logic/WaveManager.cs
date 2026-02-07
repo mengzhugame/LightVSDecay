@@ -63,7 +63,7 @@ namespace LightVsDecay.Logic
         [Tooltip("精英漂流者预制体")]
         [SerializeField] private GameObject eliteDrifterPrefab;
         [Header("调试")]
-        [SerializeField] private bool showDebugInfo = true;
+        [SerializeField] private bool showDebugInfo = false;
         [SerializeField] private bool showSpawnArea = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

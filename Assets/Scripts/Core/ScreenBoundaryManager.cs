@@ -52,7 +52,7 @@ namespace LightVsDecay.Core
         [SerializeField] private GameObject wallVisualPrefab;
         
         [Header("调试")]
-        [SerializeField] private bool showDebugInfo = true;
+        [SerializeField] private bool showDebugInfo = false;
         [SerializeField] private bool showGizmos = true;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
