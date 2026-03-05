@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b97c3a6eda065d8488fe589d39774f3d, type: 3}
+  m_Name: EquipmentData_Proc_Rare
+  m_EditorClassIdentifier: 
+  equipmentId: proc_rare
+  displayName: "\u8FD0\u7B97\u82AF\u7247 II"
+  description: "\u6807\u51C6\u8FD0\u7B97\u82AF\u7247\uFF0C\u63D0\u4F9B\u66B4\u51FB\u7387\u548C\u5927\u62DB\u5145\u80FD\u901F\u5EA6\u3002"
+  slotType: 2
+  rarity: 2
+  baseStats:
+    attackBonus: 0
+    hpBonus: 0
+    shieldBonus: 0
+    critBonus: 0.08
+    chargeBonus: 0.08
+  subEffectDescription: 
+  legendaryPassiveDescription: 
+  maxLevel: 20
+  levelUpGoldBase: 100
+  levelUpBlueprintBase: 5
+  icon: {fileID: 21300000, guid: 374781292c8dcb54c90c9251ae4e04d7, type: 3}

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b97c3a6eda065d8488fe589d39774f3d, type: 3}
+  m_Name: EquipmentData_Base_Epic
+  m_EditorClassIdentifier: 
+  equipmentId: base_epic
+  displayName: "\u5854\u8EAB\u5E95\u5EA7 III"
+  description: "\u6807\u51C6\u5854\u8EAB\u5E95\u5EA7\uFF0C\u63D0\u4F9B\u8840\u91CF\u548C\u62A4\u76FE\u503C\u3002"
+  slotType: 1
+  rarity: 3
+  baseStats:
+    attackBonus: 0
+    hpBonus: 2000
+    shieldBonus: 400
+    critBonus: 0
+    chargeBonus: 0
+  subEffectDescription: 
+  legendaryPassiveDescription: 
+  maxLevel: 25
+  levelUpGoldBase: 100
+  levelUpBlueprintBase: 5
+  icon: {fileID: 21300000, guid: 9fd8ee37e657fe84a90521c1be3f5ede, type: 3}
