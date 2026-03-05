@@ -293,7 +293,7 @@ GameObject:
   - component: {fileID: 43373859}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: Button
+  m_Name: Update_Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -963,7 +963,7 @@ GameObject:
   - component: {fileID: 131709971}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: hecheng_Button
+  m_Name: Composite_Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1597,7 +1597,7 @@ GameObject:
   - component: {fileID: 197003899}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: huangse
+  m_Name: Yellow_Line
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2386,7 +2386,7 @@ GameObject:
   - component: {fileID: 335094144}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: hecheng_Button (1)
+  m_Name: Equipment_Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2698,7 +2698,7 @@ GameObject:
   - component: {fileID: 388340650}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: ZhuangBei
+  m_Name: EquipmentPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4151,7 +4151,7 @@ GameObject:
   - component: {fileID: 586826015}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: lanse
+  m_Name: Blue_Line
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4760,7 +4760,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -0.000091552734, y: 0}
   m_SizeDelta: {x: 0, y: 260}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &634773409
@@ -5878,7 +5878,7 @@ GameObject:
   - component: {fileID: 798222480}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: lvse
+  m_Name: Green_Line
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7156,7 +7156,7 @@ GameObject:
   - component: {fileID: 978261353}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: Button
+  m_Name: Close_Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7482,7 +7482,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 106427439}
   m_HandleRect: {fileID: 106427438}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -10609,12 +10609,12 @@ GameObject:
   - component: {fileID: 1412907345}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: SettingButton (1)
+  m_Name: 'BackButton '
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1412907344
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10711,7 +10711,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: bd218c50e9a62894197b1265de0db0d4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: eba7936979f33f74199bfab16f5173ff, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -10875,7 +10875,7 @@ GameObject:
   - component: {fileID: 1486388540}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: KeJiPanel
+  m_Name: SciencePanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10906,6 +10906,61 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1500074409
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1500074411}
+  - component: {fileID: 1500074410}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: MainSceneUIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1500074410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500074409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fda06ff397a04a749a35b2da9c6d980f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  globalBackground: {fileID: 579100293}
+  mainPanel: {fileID: 252727451}
+  keJiPanel: {fileID: 1486388539}
+  zhuangBeiPanel: {fileID: 388340649}
+  settingButton: {fileID: 1650999878}
+  backButton: {fileID: 1412907343}
+  keJiButton: {fileID: 1407984597}
+  zhuangBeiButton: {fileID: 1643958194}
+  backButtonComponent: {fileID: 1412907346}
+  showDebugInfo: 0
+--- !u!4 &1500074411
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500074409}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1500266123
 GameObject:
   m_ObjectHideFlags: 0
@@ -11857,7 +11912,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1650999879
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12816,7 +12871,7 @@ GameObject:
   - component: {fileID: 1726912364}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: Red_line
+  m_Name: Red_Line
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13005,7 +13060,7 @@ GameObject:
   - component: {fileID: 1736175996}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: Button
+  m_Name: Close_Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14250,7 +14305,7 @@ GameObject:
   - component: {fileID: 1862310399}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: Button
+  m_Name: Equipment_Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15072,7 +15127,7 @@ GameObject:
   - component: {fileID: 1972719228}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: Image
+  m_Name: Core
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16693,11 +16748,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4416506852489165347, guid: afe0a4acc78f8a74aaeb4467fdeffe9e, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 4416506852489165347, guid: afe0a4acc78f8a74aaeb4467fdeffe9e, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 4416506852489165347, guid: afe0a4acc78f8a74aaeb4467fdeffe9e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -16763,6 +16818,7 @@ SceneRoots:
   - {fileID: 961739753}
   - {fileID: 203844589}
   - {fileID: 1319170857}
+  - {fileID: 1500074411}
   - {fileID: 1285834101}
   - {fileID: 1229250494}
   - {fileID: 348760131156675921}
