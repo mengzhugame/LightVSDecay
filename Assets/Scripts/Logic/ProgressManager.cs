@@ -524,49 +524,49 @@ namespace LightVsDecay.Logic
             GameEvents.TriggerComboChanged(session.currentCombo);
         }
         
-#if UNITY_EDITOR
-        private void OnGUI()
-        {
-            if (!showDebugInfo) return;
-            
-            GUILayout.BeginArea(new Rect(10, 300, 250, 350));
-            
-            GUILayout.Label("=== Meta ===");
-            GUILayout.Label($"Gems: {meta.gems}");
-            GUILayout.Label($"Gold: {meta.goldCoins}");
-            GUILayout.Label($"Energy: {meta.energy}/{settings.maxEnergy}");
-            
-            GUILayout.Space(5);
-            GUILayout.Label("=== Chapters ===");
-            GUILayout.Label($"Total: {TotalChapters}, Unlocked: {UnlockedChapterIndex + 1}");
-            for (int i = 0; i < TotalChapters; i++)
-            {
-                var p = GetChapterProgress(i);
-                if (p != null)
-                {
-                    string status = p.isUnlocked ? $"✓ {p.completedDifficulty}/5" : "🔒";
-                    GUILayout.Label($"  Ch.{i + 1}: {status}");
-                }
-            }
-            
-            GUILayout.Space(5);
-            GUILayout.Label("=== Session ===");
-            GUILayout.Label($"Lv.{session.level} ({session.exp}/{session.expToNextLevel})");
-            GUILayout.Label($"Coins: {session.coins}");
-            GUILayout.Label($"Kills: {session.totalKills}");
-            GUILayout.Label($"Combo: {session.currentCombo} (Max:{session.maxCombo})");
-            
-            GUILayout.Space(5);
-            if (GUILayout.Button("+100 XP")) AddExp(100);
-            if (GUILayout.Button("+50 Coins")) AddCoins(50);
-            if (GUILayout.Button("+100 Gold")) AddGoldCoins(100);
-            
-            GUILayout.Space(5);
-            if (GUILayout.Button("Unlock All Chapters")) meta.DebugUnlockAllChapters();
-            if (GUILayout.Button("Complete All")) meta.DebugCompleteAllDifficulties();
-            
-            GUILayout.EndArea();
-        }
-#endif
+// #if UNITY_EDITOR
+//         private void OnGUI()
+//         {
+//             if (!showDebugInfo) return;
+//             
+//             GUILayout.BeginArea(new Rect(10, 300, 250, 350));
+//             
+//             GUILayout.Label("=== Meta ===");
+//             GUILayout.Label($"Gems: {meta.gems}");
+//             GUILayout.Label($"Gold: {meta.goldCoins}");
+//             GUILayout.Label($"Energy: {meta.energy}/{settings.maxEnergy}");
+//             
+//             GUILayout.Space(5);
+//             GUILayout.Label("=== Chapters ===");
+//             GUILayout.Label($"Total: {TotalChapters}, Unlocked: {UnlockedChapterIndex + 1}");
+//             for (int i = 0; i < TotalChapters; i++)
+//             {
+//                 var p = GetChapterProgress(i);
+//                 if (p != null)
+//                 {
+//                     string status = p.isUnlocked ? $"✓ {p.completedDifficulty}/5" : "🔒";
+//                     GUILayout.Label($"  Ch.{i + 1}: {status}");
+//                 }
+//             }
+//             
+//             GUILayout.Space(5);
+//             GUILayout.Label("=== Session ===");
+//             GUILayout.Label($"Lv.{session.level} ({session.exp}/{session.expToNextLevel})");
+//             GUILayout.Label($"Coins: {session.coins}");
+//             GUILayout.Label($"Kills: {session.totalKills}");
+//             GUILayout.Label($"Combo: {session.currentCombo} (Max:{session.maxCombo})");
+//             
+//             GUILayout.Space(5);
+//             if (GUILayout.Button("+100 XP")) AddExp(100);
+//             if (GUILayout.Button("+50 Coins")) AddCoins(50);
+//             if (GUILayout.Button("+100 Gold")) AddGoldCoins(100);
+//             
+//             GUILayout.Space(5);
+//             if (GUILayout.Button("Unlock All Chapters")) meta.DebugUnlockAllChapters();
+//             if (GUILayout.Button("Complete All")) meta.DebugCompleteAllDifficulties();
+//             
+//             GUILayout.EndArea();
+//         }
+// #endif
     }
 }

@@ -578,34 +578,34 @@ namespace LightVsDecay.Logic
             }
         }
         
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 调试
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-#if UNITY_EDITOR
-        private void OnGUI()
-        {
-            if (!showDebugInfo) return;
-            
-            GUILayout.BeginArea(new Rect(Screen.width - 220, 10, 210, 200));
-            GUILayout.Label($"=== GameManager ===");
-            GUILayout.Label($"State: {currentState}");
-            GUILayout.Label($"Time: {GameTimeFormatted}");
-            GUILayout.Label($"Chapter: {currentChapterIndex + 1} ({currentChapterConfig?.chapterName ?? "N/A"})");
-            GUILayout.Label($"Difficulty: {currentDifficulty}");
-            GUILayout.Label($"HP Mult: x{currentDifficultySettings?.enemyHealthMultiplier ?? 1f:F2}");
-            GUILayout.Label($"Boss Fight: {isBossFight}");
-            
-            if (currentState == GameState.Playing)
-            {
-                if (GUILayout.Button("Force Victory"))
-                    Victory();
-                if (GUILayout.Button("Force Defeat"))
-                    Defeat();
-            }
-            
-            GUILayout.EndArea();
-        }
-#endif
+//         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//         // 调试 === Meta
+//         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//         
+// #if UNITY_EDITOR
+//         private void OnGUI()
+//         {
+//             if (!showDebugInfo) return;
+//             
+//             GUILayout.BeginArea(new Rect(Screen.width - 220, 10, 210, 200));
+//             GUILayout.Label($"=== GameManager ===");
+//             GUILayout.Label($"State: {currentState}");
+//             GUILayout.Label($"Time: {GameTimeFormatted}");
+//             GUILayout.Label($"Chapter: {currentChapterIndex + 1} ({currentChapterConfig?.chapterName ?? "N/A"})");
+//             GUILayout.Label($"Difficulty: {currentDifficulty}");
+//             GUILayout.Label($"HP Mult: x{currentDifficultySettings?.enemyHealthMultiplier ?? 1f:F2}");
+//             GUILayout.Label($"Boss Fight: {isBossFight}");
+//             
+//             if (currentState == GameState.Playing)
+//             {
+//                 if (GUILayout.Button("Force Victory"))
+//                     Victory();
+//                 if (GUILayout.Button("Force Defeat"))
+//                     Defeat();
+//             }
+//             
+//             GUILayout.EndArea();
+//         }
+// #endif
     }
 }

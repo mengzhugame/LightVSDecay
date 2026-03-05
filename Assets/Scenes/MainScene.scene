@@ -2899,6 +2899,7 @@ MonoBehaviour:
   - {fileID: 1241664680}
   inventoryGridRoot: {fileID: 634773408}
   itemUIPrefab: {fileID: 7357251095123580348, guid: afe0a4acc78f8a74aaeb4467fdeffe9e, type: 3}
+  gameSettings: {fileID: 11400000, guid: 292b06d2fe53f2543852e082a82cc6a4, type: 2}
   attackText: {fileID: 2035138184}
   hpText: {fileID: 903722191}
   shieldText: {fileID: 1394263428}

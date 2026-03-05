@@ -22,7 +22,8 @@ namespace LightVsDecay.UI.Equipment
         [Header("背包")]
         [SerializeField] private Transform       inventoryGridRoot;
         [SerializeField] private EquipmentItemUI itemUIPrefab;
-
+        [Header("基础配置（读取初始属性）")]
+        [SerializeField] private GameSettings gameSettings;
         [Header("总属性显示")]
         [SerializeField] private TextMeshProUGUI attackText;
         [SerializeField] private TextMeshProUGUI hpText;
@@ -130,12 +131,23 @@ namespace LightVsDecay.UI.Equipment
         {
             var mgr = EquipmentManager.Instance;
             if (mgr == null) return;
-            var s = mgr.GetTotalStats();
-            if (attackText != null) attackText.text = $"攻击力：{s.attackBonus}";
-            if (hpText     != null) hpText.text     = $"生命值：{s.hpBonus}";
-            if (shieldText != null) shieldText.text = $"护盾值：{s.shieldBonus}";
-            if (critText   != null) critText.text   = $"暴击率：{s.critBonus * 100:F1}%";
-            if (chargeText != null) chargeText.text = $"充能效率：{s.chargeBonus * 100:F1}%";
+
+            // 装备加成
+            var bonus = mgr.GetTotalStats();
+
+            // 基础值（来自 GameSettings，未来可替换为服务器下发数据）
+            int   baseAtk    = gameSettings != null ? Mathf.RoundToInt(gameSettings.baseDPS)    : 0;
+            int   baseHp     = gameSettings != null ? gameSettings.maxHullHP                    : 0;
+            int   baseShield = gameSettings != null ? gameSettings.maxShieldHP                  : 0;
+            float baseCrit   = gameSettings != null ? gameSettings.baseCritRate                 : 0f;
+            float baseCharge = 0f; // 暂无基础值，服务器接入后补充
+
+            // 显示：基础值 + 装备加成
+            if (attackText != null) attackText.text = $"攻击力：{baseAtk  + bonus.attackBonus}";
+            if (hpText     != null) hpText.text     = $"生命值：{baseHp   + bonus.hpBonus}";
+            if (shieldText != null) shieldText.text = $"护盾值：{baseShield + bonus.shieldBonus}";
+            if (critText   != null) critText.text   = $"暴击率：{(baseCrit   + bonus.critBonus)   * 100:F1}%";
+            if (chargeText != null) chargeText.text = $"充能效率：{(baseCharge + bonus.chargeBonus) * 100:F1}%";
         }
 
         private void RefreshRedDots()
