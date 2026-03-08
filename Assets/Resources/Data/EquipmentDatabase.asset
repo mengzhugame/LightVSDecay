@@ -13,4 +13,15 @@ MonoBehaviour:
   m_Name: EquipmentDatabase
   m_EditorClassIdentifier: 
   allEquipments:
+  - {fileID: 11400000, guid: 22d3693524875d54283d835f0beddb6d, type: 2}
+  - {fileID: 11400000, guid: e5079861ab4a53c46a58d19f40e137a0, type: 2}
+  - {fileID: 11400000, guid: ba367c308ed17bb4dad6d9255538fa66, type: 2}
+  - {fileID: 11400000, guid: 32d71f8332bf3e9489ca5e661dd7c194, type: 2}
+  - {fileID: 11400000, guid: 2fe50a8f1baeb694aba1bb5fec8a55b9, type: 2}
+  - {fileID: 11400000, guid: 48c5d0a5ffe216f4d989870818f13eb1, type: 2}
+  - {fileID: 11400000, guid: 3549437dfececc74c97aac6fa4abc015, type: 2}
   - {fileID: 11400000, guid: a88e5604e11aaf74baf21150df519d23, type: 2}
+  - {fileID: 11400000, guid: 7c34d483cdcdbc64092db33d41102106, type: 2}
+  - {fileID: 11400000, guid: 7e7d1b4a50abf2a4c8b47aba283cb431, type: 2}
+  - {fileID: 11400000, guid: 1b34b58e92184fa45bf59345c69dcfca, type: 2}
+  - {fileID: 11400000, guid: 2f722ed12c6e9954aabfa33e603fe6da, type: 2}

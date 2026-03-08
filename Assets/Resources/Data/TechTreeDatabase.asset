@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94a03370cd5138c4cb9cf16fb057b9d7, type: 3}
+  m_Name: TechTreeDatabase
+  m_EditorClassIdentifier: 
+  allNodes:
+  - {fileID: 11400000, guid: 073bc0e22e279ca4c86a1850c270043c, type: 2}
+  - {fileID: 11400000, guid: e654a5be8a90e254bb77c7ff426302ad, type: 2}
+  - {fileID: 11400000, guid: 01ef7ed55ba799641a8008f2179ea664, type: 2}
+  - {fileID: 11400000, guid: d12446f46cab8d246bfaed80d64f8c97, type: 2}
+  - {fileID: 11400000, guid: a384c3e20416fac438770635fcb45cf8, type: 2}
+  - {fileID: 11400000, guid: 0a78b0298fedb304d8333dc0abbbb8e1, type: 2}
+  - {fileID: 11400000, guid: 6bcc53a3b2fcb124ebd9df92e2ddb3ec, type: 2}
+  - {fileID: 11400000, guid: ca964b8a078e66441aaab30d8747c632, type: 2}
+  - {fileID: 11400000, guid: 1ce0ba8cbc67ec4468b08c5bc4f38438, type: 2}
+  - {fileID: 11400000, guid: f31fff705dc39624ca6450dc6f64b6c2, type: 2}
+  - {fileID: 11400000, guid: 0865dca87c4d42343adb8a8d1de3690a, type: 2}
+  - {fileID: 11400000, guid: 2e8422c4ae9df994bbf0d9f516d84bd7, type: 2}
+  - {fileID: 11400000, guid: c2af37a7f14403049ad8c85f8d14569b, type: 2}
+  - {fileID: 11400000, guid: 14e0049430cdc2243ba323e6152d8ea3, type: 2}
+  - {fileID: 11400000, guid: d19ce51d3f17779488fa4354be03deaa, type: 2}
+  - {fileID: 11400000, guid: f7a387c5afbde5349ba8881983872aba, type: 2}
+  - {fileID: 11400000, guid: 047b547e1acfdb246a0a16e2d2409134, type: 2}
+  - {fileID: 11400000, guid: d6cf8c64c93914a4da8ca976cabc8904, type: 2}
+  - {fileID: 11400000, guid: fcc76a0a2e3f4f84a8a47d58b6f43f01, type: 2}
+  - {fileID: 11400000, guid: b6b7add651e431b48b53723d9e463114, type: 2}
+  - {fileID: 11400000, guid: 7ff2574c4ddb7c64388ab406fa79c302, type: 2}
+  - {fileID: 11400000, guid: 78d2ebe25035e3743a19a031e2fe197a, type: 2}
+  - {fileID: 11400000, guid: 9ee89846b52c06e439ff0d974f623109, type: 2}
+  - {fileID: 11400000, guid: f1fdaab91e1dd754494b7110cbd10518, type: 2}
+  - {fileID: 11400000, guid: 1e3d50bc4b2aef24eaff19b309c5819e, type: 2}
+  - {fileID: 11400000, guid: d785fc09b4c07dc448e5d9bbdcf13052, type: 2}

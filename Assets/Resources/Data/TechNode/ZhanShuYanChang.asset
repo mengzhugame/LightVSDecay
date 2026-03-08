@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 882f2318a89130c48938389a43091f2b, type: 3}
+  m_Name: ZhanShuYanChang
+  m_EditorClassIdentifier: 
+  nodeId: node_tc_buff
+  displayName: "\u6218\u672F\u5EF6\u957F"
+  icon: {fileID: 21300000, guid: a162e248a5495654893f3ed9de0f9b05, type: 3}
+  branch: 3
+  nodeType: 1
+  effectType: 35
+  effectValuePerLevel: 20
+  maxLevel: 1
+  baseCost: 1000
+  growthFactor: 1
+  prerequisiteNodeIds:
+  - node_tc_charge

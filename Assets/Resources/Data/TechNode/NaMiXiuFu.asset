@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 882f2318a89130c48938389a43091f2b, type: 3}
+  m_Name: NaMiXiuFu
+  m_EditorClassIdentifier: 
+  nodeId: node_sv_nano
+  displayName: "\u7EB3\u7C73\u4FEE\u590D"
+  icon: {fileID: 21300000, guid: 238aab90e259f83499c7b7b576a4a002, type: 3}
+  branch: 1
+  nodeType: 1
+  effectType: 14
+  effectValuePerLevel: 1
+  maxLevel: 1
+  baseCost: 5000
+  growthFactor: 1
+  prerequisiteNodeIds:
+  - node_sv_kinetic
