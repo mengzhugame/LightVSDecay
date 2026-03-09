@@ -13,6 +13,7 @@ using LightVsDecay.Data;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
 using SettlementData = LightVsDecay.Core.SettlementData;
+using UnityEngine.SceneManagement;
 
 namespace LightVsDecay.Logic
 {
@@ -136,10 +137,11 @@ namespace LightVsDecay.Logic
         private void Start()
         {
             // 订阅事件
-            GameEvents.OnEnemyDied += OnEnemyDied;
-            GameEvents.OnGameStart += ResetSession;
-            GameEvents.OnXPOrbCollected += OnXPOrbCollected; 
-            
+            SubscribeToGameEvents();
+    
+            // 监听场景加载（应对 ClearAllEvents 清空订阅）
+            SceneManager.sceneLoaded += OnSceneLoaded;
+    
             // 初始化局内进度
             ResetSession();
         }
@@ -151,20 +153,50 @@ namespace LightVsDecay.Logic
         
         protected override void OnSingletonDestroy()
         {
-            GameEvents.OnEnemyDied -= OnEnemyDied;
-            GameEvents.OnGameStart -= ResetSession;
+            UnsubscribeFromGameEvents();
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+        /// <summary>
+        /// 场景加载回调 —— 重新订阅被 ClearAllEvents 清空的事件
+        /// </summary>
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // 每次场景加载都重新订阅，防止 ClearAllEvents 清空
+            SubscribeToGameEvents();
+    
+            if (showDebugInfo)
+            {
+                Debug.Log($"[ProgressManager] 场景 '{scene.name}' 加载，重新订阅事件");
+            }
+        }
+        private void SubscribeToGameEvents()
+        {
+            // 先取消再订阅，防止重复注册
+            UnsubscribeFromGameEvents();
+    
+            GameEvents.OnEnemyDied      += OnEnemyDied;
+            GameEvents.OnGameStart      += ResetSession;
+            GameEvents.OnXPOrbCollected += OnXPOrbCollected;
+    
+            if (showDebugInfo)
+            {
+                Debug.Log("[ProgressManager] 事件订阅完成");
+            }
+        }
+        private void UnsubscribeFromGameEvents()
+        {
+            GameEvents.OnEnemyDied      -= OnEnemyDied;
+            GameEvents.OnGameStart      -= ResetSession;
             GameEvents.OnXPOrbCollected -= OnXPOrbCollected;
         }
-        
         /// <summary>
         /// 经验光点被收集
         /// </summary>
         private void OnXPOrbCollected(int xp)
         {
-            if (xp > 0)
-            {
-                AddExp(xp);
-            }
+            if (xp <= 0) return;
+    
+            AddExp(xp);
         }
         
         private void OnApplicationQuit() => meta.Save();

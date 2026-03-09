@@ -298,6 +298,7 @@ namespace LightVsDecay.UI.Panels
         
         private void OnExpChanged(int current, int required)
         {
+            Debug.Log($"[HUDPanel] ★ OnExpChanged 收到! {current}/{required}, expBar={expBar != null}");
             UpdateExpDisplay(current, required);
         }
         

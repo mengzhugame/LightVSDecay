@@ -233,7 +233,9 @@ namespace LightVsDecay.Core
         // 波次事件触发
         public static void TriggerWaveStateChanged(Logic.WaveState state, int wave) 
             => OnWaveStateChanged?.Invoke(state, wave);
-        
+        // 调试用：检查订阅者数量
+        public static int OnXPOrbCollectedListenerCount() 
+            => OnXPOrbCollected?.GetInvocationList().Length ?? 0;
         public static void TriggerWaveStart(int current, int total)
         {
             OnWaveStart?.Invoke(current, total);

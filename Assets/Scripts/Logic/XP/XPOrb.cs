@@ -172,6 +172,8 @@ namespace LightVsDecay.Logic.XP
         {
             if (isCollected) return;
             isCollected = true;
+            // ← 加这行
+            Debug.Log($"[XPOrb] ★ OnArrive 触发！xpValue={xpValue}, 监听者数量={GameEvents.OnXPOrbCollectedListenerCount()}");
             // 【新增】播放收集音效
             if (AudioManager.Instance != null)
             {
