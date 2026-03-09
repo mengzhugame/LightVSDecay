@@ -1,0 +1,210 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64aa65cebc317f545ac1491badeaae0a, type: 3}
+  m_Name: LevelWave_10_Test
+  m_EditorClassIdentifier: 
+  totalWaves: 10
+  waveInterval: 10
+  globalEnemyLimit: 200
+  waves:
+  - waveNumber: 1
+    displayName: "第1波 - 建立认知"
+    description: 
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 3
+      count: 10
+      pattern: 0
+      customInterval: -1
+      spawnZone: 1
+    difficultyMultiplier: 1
+    isBossWave: 0
+    hintText: "测试波次1：基础怪"
+  - waveNumber: 2
+    displayName: "第2波 - 初步成长"
+    description: 
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 3
+      count: 15
+      pattern: 1
+      customInterval: -1
+      spawnZone: 1
+    - spawnTime: 15
+      enemyType: 3
+      count: 10
+      pattern: 0
+      customInterval: -1
+      spawnZone: 3
+    difficultyMultiplier: 1.1
+    isBossWave: 0
+    hintText: "测试波次2：怪物增多"
+  - waveNumber: 3
+    displayName: "第3波 - 爽感初现"
+    description: 
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 3
+      count: 25
+      pattern: 3
+      customInterval: -1
+      spawnZone: 0
+    - spawnTime: 10
+      enemyType: 0
+      count: 15
+      pattern: 2
+      customInterval: -1
+      spawnZone: 2
+    difficultyMultiplier: 1.2
+    isBossWave: 0
+    hintText: "测试波次3：享受割草"
+  - waveNumber: 4
+    displayName: "第4波 - 首个压力点"
+    description: 
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 0
+      count: 20
+      pattern: 1
+      customInterval: -1
+      spawnZone: 1
+    - spawnTime: 15
+      enemyType: 2
+      count: 5
+      pattern: 0
+      customInterval: -1
+      spawnZone: 2
+    - spawnTime: 30
+      enemyType: 3
+      count: 15
+      pattern: 1
+      customInterval: -1
+      spawnZone: 3
+    difficultyMultiplier: 1.4
+    isBossWave: 0
+    hintText: "测试波次4：精英重甲出现"
+  - waveNumber: 5
+    displayName: "第5波 - 经验获取期"
+    description: 
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 3
+      count: 40
+      pattern: 4
+      customInterval: -1
+      spawnZone: 1
+    difficultyMultiplier: 1.5
+    isBossWave: 0
+    hintText: "测试波次5：大量基础怪，刷经验"
+  - waveNumber: 6
+    displayName: "第6波 - 属性验证"
+    description: 
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 2
+      count: 15
+      pattern: 2
+      customInterval: -1
+      spawnZone: 3
+    - spawnTime: 15
+      enemyType: 0
+      count: 20
+      pattern: 1
+      customInterval: -1
+      spawnZone: 0
+    - spawnTime: 30
+      enemyType: 1
+      count: 4
+      pattern: 0
+      customInterval: -1
+      spawnZone: 1
+    difficultyMultiplier: 1.8
+    isBossWave: 0
+    hintText: "测试波次6：大量重甲考验输出"
+  - waveNumber: 7
+    displayName: "第7波 - 满屏割草"
+    description: 
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 3
+      count: 50
+      pattern: 4
+      customInterval: -1
+      spawnZone: 1
+    - spawnTime: 10
+      enemyType: 0
+      count: 30
+      pattern: 3
+      customInterval: -1
+      spawnZone: 2
+    difficultyMultiplier: 2.0
+    isBossWave: 0
+    hintText: "测试波次7：弹幕成型，满屏割草"
+  - waveNumber: 8
+    displayName: "第8波 - 强度墙预警"
+    description: 
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 1
+      count: 6
+      pattern: 2
+      customInterval: -1
+      spawnZone: 3
+    - spawnTime: 15
+      enemyType: 2
+      count: 20
+      pattern: 1
+      customInterval: -1
+      spawnZone: 4
+    difficultyMultiplier: 2.5
+    isBossWave: 0
+    hintText: "测试波次8：高血量怪群"
+  - waveNumber: 9
+    displayName: "第9波 - 高压测试"
+    description: 
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 3
+      count: 40
+      pattern: 4
+      customInterval: -1
+      spawnZone: 1
+    - spawnTime: 5
+      enemyType: 0
+      count: 30
+      pattern: 3
+      customInterval: -1
+      spawnZone: 2
+    - spawnTime: 15
+      enemyType: 2
+      count: 25
+      pattern: 2
+      customInterval: -1
+      spawnZone: 3
+    - spawnTime: 25
+      enemyType: 1
+      count: 5
+      pattern: 1
+      customInterval: -1
+      spawnZone: 0
+    difficultyMultiplier: 3.0
+    isBossWave: 0
+    hintText: "测试波次9：混合怪海！小心防线！"
+  - waveNumber: 10
+    displayName: "第10波 - 最终Boss"
+    description: 
+    spawnGroups: []
+    difficultyMultiplier: 3.5
+    isBossWave: 1
+    hintText: "测试波次10：Boss降临！"
+  bossHealth: 800000
+  bossMoveSpeed: 0.2

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48f8786be12a6274da7cebb81259e9af, type: 3}
   m_Name: GameSettings
   m_EditorClassIdentifier: 
-  expBase: 100
-  expGrowth: 50
+  expBase: 120
+  expGrowth: 40
   maxLevel: 20
   comboTimeout: 2
   maxEnergy: 5
