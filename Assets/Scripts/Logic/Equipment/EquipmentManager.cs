@@ -394,7 +394,17 @@ namespace LightVsDecay.Logic.Equipment
             // ItemRarity: Common=0(不存在实际装备) Uncommon=1 Rare=2 Epic=3 Legendary=4
             return Mathf.Clamp(lowest, 0, 4);
         }
+        /// <summary>直接增加图纸数量（结算奖励用）</summary>
+        public void AddBlueprints(int count)
+        {
+            if (count <= 0) return;
+            _blueprints += count;
+            Save();
+            OnBlueprintsChanged?.Invoke(_blueprints);
 
+            if (showDebugInfo)
+                Debug.Log($"[EquipManager] 获得图纸 ×{count}，当前共 {_blueprints}");
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 辅助
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

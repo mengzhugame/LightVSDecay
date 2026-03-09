@@ -593,6 +593,20 @@ namespace LightVsDecay.Logic.Statistics
             if (showDebugInfo) Debug.Log("[BattleStatistics] ⚡ 记录大招释放！");
         }
         /// <summary>
+        /// 获取整局战斗的总伤害（所有波次 dmgDealtTotal 之和）
+        /// 供 ProgressManager.GetSettlementData() 调用
+        /// </summary>
+        public float GetTotalDamageDealt()
+        {
+            float total = 0f;
+            foreach (var stat in _allWaveStats)
+                total += stat.dmgDealtTotal;
+
+            // 加上当前波次尚未结算的实时伤害
+            total += _waveTotalDamage;
+            return total;
+        }
+        /// <summary>
         /// 上报敌人总血量（生成时调用）
         /// </summary>
         public void RecordEnemyHP(float hp)

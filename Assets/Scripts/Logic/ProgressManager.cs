@@ -12,6 +12,7 @@ using LightVsDecay.Core.Pool;
 using LightVsDecay.Data;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Logic.Statistics;
 using SettlementData = LightVsDecay.Core.SettlementData;
 using UnityEngine.SceneManagement;
 
@@ -505,16 +506,45 @@ namespace LightVsDecay.Logic
         
         public SettlementData GetSettlementData()
         {
+            // ── 胜负状态（从 GameManager 读取）───────────────
+            bool victory = GameManager.Instance != null &&
+                           GameManager.Instance.CurrentState == GameState.Victory;
+
+            // isPerfect：胜利且满血（如有专属属性可替换此处）
+            // 暂时：胜利即视为 isPerfect，后续可接 HP 判断
+            bool isPerfect = victory;
+
+            // ── 波次信息 ─────────────────────────────────────
+            int wavesCleared = 0;
+            int totalWaves   = 12;
+
+            if (WaveManager.Instance != null)
+            {
+                int waveNum  = WaveManager.Instance.CurrentWaveNumber;
+                totalWaves   = WaveManager.Instance.TotalWaves;
+                wavesCleared = victory ? waveNum : Mathf.Max(0, waveNum - 1);
+            }
+
+            // ── 总伤害 ────────────────────────────────────────
+            long totalDamage = 0;
+            if (BattleStatistics.Instance != null)
+                totalDamage = (long)BattleStatistics.Instance.GetTotalDamageDealt();
+
             return new SettlementData
             {
-                totalCoins = session.coins,
-                coinsEarned = session.coins,
+                isVictory    = victory,
+                isPerfect    = isPerfect,
+                totalCoins   = session.coins,
+                coinsEarned  = session.coins,
                 survivalTime = GameManager.Instance != null ? GameManager.Instance.GameTimer : 0f,
-                totalKills = session.totalKills,
-                killCount = session.totalKills,
-                maxCombo = session.maxCombo,
-                maxHitCount = session.maxCombo,
-                finalLevel = session.level
+                totalKills   = session.totalKills,
+                killCount    = session.totalKills,
+                maxCombo     = session.maxCombo,
+                maxHitCount  = session.maxCombo,
+                finalLevel   = session.level,
+                totalDamage  = totalDamage,
+                wavesCleared = wavesCleared,
+                totalWaves   = totalWaves,
             };
         }
         

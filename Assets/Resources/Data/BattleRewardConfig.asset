@@ -1,0 +1,128 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5ceed8d4d99f6c47aa570764b3f93ab, type: 3}
+  m_Name: BattleRewardConfig
+  m_EditorClassIdentifier: 
+  blueprintsPerWave: 3
+  difficultyMultipliers:
+  - 1
+  - 1.2
+  - 1.5
+  - 1.75
+  - 2
+  bossKillBlueprintBonus: 15
+  perfectClearBlueprintBonus: 10
+  chapterDropTables:
+  - chapterIndex: 0
+    entries:
+    - equipmentId: core_uncommon
+      rarity: 1
+      weight: 30
+      bossOnlyDrop: 0
+    - equipmentId: base_uncommon
+      rarity: 1
+      weight: 30
+      bossOnlyDrop: 0
+    - equipmentId: proc_uncommon
+      rarity: 1
+      weight: 30
+      bossOnlyDrop: 0
+    - equipmentId: core_rare
+      rarity: 2
+      weight: 8
+      bossOnlyDrop: 0
+    - equipmentId: base_rare
+      rarity: 2
+      weight: 8
+      bossOnlyDrop: 0
+    - equipmentId: proc_rare
+      rarity: 2
+      weight: 8
+      bossOnlyDrop: 0
+    - equipmentId: core_rare
+      rarity: 2
+      weight: 5
+      bossOnlyDrop: 1
+    - equipmentId: base_rare
+      rarity: 2
+      weight: 5
+      bossOnlyDrop: 1
+    - equipmentId: proc_rare
+      rarity: 2
+      weight: 5
+      bossOnlyDrop: 1
+  - chapterIndex: 1
+    entries:
+    - equipmentId: core_rare
+      rarity: 2
+      weight: 25
+      bossOnlyDrop: 0
+    - equipmentId: base_rare
+      rarity: 2
+      weight: 25
+      bossOnlyDrop: 0
+    - equipmentId: proc_rare
+      rarity: 2
+      weight: 25
+      bossOnlyDrop: 0
+    - equipmentId: core_epic
+      rarity: 3
+      weight: 10
+      bossOnlyDrop: 0
+    - equipmentId: base_epic
+      rarity: 0
+      weight: 10
+      bossOnlyDrop: 0
+    - equipmentId: proc_epic
+      rarity: 0
+      weight: 10
+      bossOnlyDrop: 0
+    - equipmentId: core_epic
+      rarity: 3
+      weight: 8
+      bossOnlyDrop: 1
+    - equipmentId: base_epic
+      rarity: 3
+      weight: 8
+      bossOnlyDrop: 1
+    - equipmentId: proc_epic
+      rarity: 3
+      weight: 8
+      bossOnlyDrop: 1
+  - chapterIndex: 2
+    entries:
+    - equipmentId: core_epic
+      rarity: 3
+      weight: 20
+      bossOnlyDrop: 0
+    - equipmentId: base_epic
+      rarity: 3
+      weight: 20
+      bossOnlyDrop: 0
+    - equipmentId: proc_epic
+      rarity: 3
+      weight: 20
+      bossOnlyDrop: 0
+    - equipmentId: core_legendary
+      rarity: 4
+      weight: 10
+      bossOnlyDrop: 1
+    - equipmentId: base_legendary
+      rarity: 4
+      weight: 10
+      bossOnlyDrop: 1
+    - equipmentId: proc_legendary
+      rarity: 4
+      weight: 10
+      bossOnlyDrop: 1
+  maxEquipmentDropsPerBattle: 3
+  minWavesForEquipmentDrop: 3
