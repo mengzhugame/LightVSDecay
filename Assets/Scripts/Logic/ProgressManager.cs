@@ -504,22 +504,16 @@ namespace LightVsDecay.Logic
         // 结算数据
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        public SettlementData GetSettlementData()
+        public SettlementData GetSettlementData(bool victory)
         {
-            // ── 胜负状态（从 GameManager 读取）───────────────
-            bool victory = GameManager.Instance != null &&
-                           GameManager.Instance.CurrentState == GameState.Victory;
-
-            // isPerfect：胜利且满血（如有专属属性可替换此处）
-            // 暂时：胜利即视为 isPerfect，后续可接 HP 判断
-            bool isPerfect = victory;
-
             // ── 波次信息 ─────────────────────────────────────
             int wavesCleared = 0;
             int totalWaves   = 12;
 
             if (WaveManager.Instance != null)
             {
+                // 胜利：boss波就是最后一波，CurrentWaveNumber即为总通关数
+                // 失败：当前波次没打完，减1
                 int waveNum  = WaveManager.Instance.CurrentWaveNumber;
                 totalWaves   = WaveManager.Instance.TotalWaves;
                 wavesCleared = victory ? waveNum : Mathf.Max(0, waveNum - 1);
@@ -533,7 +527,7 @@ namespace LightVsDecay.Logic
             return new SettlementData
             {
                 isVictory    = victory,
-                isPerfect    = isPerfect,
+                isPerfect    = victory,   // 后续可改为 victory && hp未损失
                 totalCoins   = session.coins,
                 coinsEarned  = session.coins,
                 survivalTime = GameManager.Instance != null ? GameManager.Instance.GameTimer : 0f,

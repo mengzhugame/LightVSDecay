@@ -24460,7 +24460,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 292b06d2fe53f2543852e082a82cc6a4, type: 2}
-  waveConfig: {fileID: 11400000, guid: 64a106ff6e1cecf44b30c4873532fae8, type: 2}
+  waveConfig: {fileID: 11400000, guid: 9967bbae06fefc1438e76fc06f774805, type: 2}
   chapterDatabase: {fileID: 11400000, guid: 0a37e3ccc35aee84fae4acd3540d5507, type: 2}
   mainMenuSceneName: MainScene
   gameSceneName: GameScene

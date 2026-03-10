@@ -31,10 +31,14 @@ namespace LightVsDecay.UI.Panels
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         [Header("标题")]
-        [SerializeField] private GameObject victoryTitle;
-        [SerializeField] private GameObject defeatTitle;
-        [SerializeField] private GameObject crownIcon;
+        [SerializeField] private GameObject victoryTitle;   // VictoryTitle 节点
+        [SerializeField] private GameObject defeatTitle;    // DefeatPanel 节点
+        [Header("胜败效果")]
+        [Tooltip("VictoryEffect 节点（含 GuangXiao + Crown，胜利时显示）")]
+        [SerializeField] private GameObject victoryEffect;
 
+        [Tooltip("DefeatEffect 节点（失败特效，失败时显示）")]
+        [SerializeField] private GameObject defeatEffect;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector — 统计数字（对应 InfoPanel 下各行的值文本）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -128,14 +132,13 @@ namespace LightVsDecay.UI.Panels
             isVictory       = victory;
             _rewardsApplied = false;
 
+            // ★ 关键修复：传入 victory，不再从 GameManager.CurrentState 推断
             settlementData = ProgressManager.Instance != null
-                ? ProgressManager.Instance.GetSettlementData()
-                : new Core.SettlementData();
+                ? ProgressManager.Instance.GetSettlementData(victory)
+                : new Core.SettlementData { isVictory = victory, isPerfect = victory };
 
             _pendingReward = CalculateRewards(victory);
-
             NotifySystemUnlocks(victory);
-
             SetupButtons();
             StartCoroutine(ShowContentCoroutine());
         }
@@ -182,11 +185,29 @@ namespace LightVsDecay.UI.Panels
 
         private IEnumerator ShowContentCoroutine()
         {
+            // 标题
             if (victoryTitle != null) victoryTitle.SetActive(isVictory);
             if (defeatTitle  != null) defeatTitle.SetActive(!isVictory);
-            if (crownIcon    != null) crownIcon.SetActive(isVictory && settlementData.isPerfect);
 
-            // 面板淡入
+            // 效果节点（VictoryEffect 激活 → GuangXiao 动画自动播放 + Crown 显示）
+            if (victoryEffect != null)
+            {
+                victoryEffect.SetActive(isVictory);
+                // 手动重播 Legacy Animation（解决父节点隐藏后动画不自动播放的问题）
+                if (isVictory)
+                {
+                    var anim = victoryEffect.GetComponentInChildren<Animation>();
+                    if (anim != null)
+                    {
+                        anim.Rewind();   // 倒回到第0帧
+                        anim.Play();     // 重新播放
+                    }
+                }
+            }
+
+            if (defeatEffect  != null) defeatEffect.SetActive(!isVictory);
+
+            // 淡入
             if (canvasGroup != null)
             {
                 canvasGroup.alpha = 0f;
@@ -200,10 +221,7 @@ namespace LightVsDecay.UI.Panels
                 canvasGroup.alpha = 1f;
             }
 
-            // 数字滚动
             yield return StartCoroutine(AnimateNumbersCoroutine());
-
-            // 奖励卡片逐个弹出
             yield return new WaitForSecondsRealtime(0.15f);
             yield return StartCoroutine(ShowRewardsCoroutine());
         }
