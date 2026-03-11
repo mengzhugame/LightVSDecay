@@ -24,3 +24,4 @@ MonoBehaviour:
   growthFactor: 1.07
   prerequisiteNodeIds:
   - node_fp_cap1
+  prerequisiteMinLevel: 50

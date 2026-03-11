@@ -133,6 +133,8 @@ namespace LightVsDecay.UI
 
             // 消费战斗场景遗留的 Pending 通知，延迟0.5秒再弹（等场景加载完）
             CheckAndShowPendingUnlockTips();
+            if (TipsPanelController.Instance != null)
+                TipsPanelController.Instance.gameObject.SetActive(false);
         }
 
         private void OnEnable()

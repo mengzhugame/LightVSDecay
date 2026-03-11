@@ -84,7 +84,7 @@ namespace LightVsDecay.UI.TechTree
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+        private CanvasGroup _buttonCanvasGroup;
         private TechTreeNodeData _data;
         private TechTreePanel    _parent;
         private Coroutine        _longPressCoroutine;
@@ -102,7 +102,8 @@ namespace LightVsDecay.UI.TechTree
             if (upgradeButton != null)
             {
                 _buttonImage = upgradeButton.GetComponent<Image>();
-
+                _buttonCanvasGroup = upgradeButton.GetComponent<CanvasGroup>()
+                                     ?? upgradeButton.gameObject.AddComponent<CanvasGroup>();
                 var et = upgradeButton.gameObject.GetComponent<UnityEngine.EventSystems.EventTrigger>()
                          ?? upgradeButton.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
 
@@ -175,33 +176,30 @@ namespace LightVsDecay.UI.TechTree
 
         private void RefreshStats(int curLv, bool isMax)
         {
-            // ★ Lv.0 特殊处理：左列预览 Lv.1，右列预览 Lv.2
-            //    Lv.1+ 恢复正常：左列=当前，右列=下一级
-            int displayLeft  = curLv == 0 ? 1 : curLv;
-            int displayRight = curLv == 0 ? 2 : curLv + 1;
-
-            // 右列是否超出最大等级（Lv.0 时若 maxLevel==1，右列也显示 MAX）
-            bool rightIsMax = isMax || displayRight > _data.maxLevel;
-
-            // ── 左列 ──────────────────────────────────────────────
+            // Lv.0 显示"未激活"状态；Lv.1+ 左列=当前，右列=下一级
             if (levelLeftText != null)
-                levelLeftText.text = $"Lv.{displayLeft}";
+                levelLeftText.text = curLv == 0
+                    ? "<color=#888888>未激活</color>"
+                    : $"Lv.{curLv}";
 
             if (statLeftText != null)
-                statLeftText.text = BuildStatText(displayLeft);
+                statLeftText.text = curLv == 0
+                    ? "<color=#888888>—</color>"
+                    : BuildStatText(curLv);
 
-            // ── 右列 ──────────────────────────────────────────────
+            int nextLv = curLv + 1;
+            bool rightIsMax = isMax || nextLv > _data.maxLevel;
+
             if (levelRightText != null)
                 levelRightText.text = rightIsMax
                     ? "<color=#FFD700>MAX</color>"
-                    : $"<color=#66FF66>Lv.{displayRight}</color>";
+                    : $"<color=#66FF66>Lv.{nextLv}</color>";
 
             if (statRightText != null)
                 statRightText.text = rightIsMax
                     ? "<color=#888888>已满级</color>"
-                    : $"<color=#66FF66>{BuildStatText(displayRight)}</color>";
+                    : $"<color=#66FF66>{BuildStatText(nextLv)}</color>";
         }
-
         // ── 解锁提示 ─────────────────────────────────────────
 
         private void RefreshDescText(int curLv, bool isMax)
@@ -290,6 +288,9 @@ namespace LightVsDecay.UI.TechTree
                     upgradeButtonText.text = $"<color=#{hex}>x{cost:N0}</color>";
                 }
             }
+            // ★ CanvasGroup 统一 dim 按钮内所有子元素（"升级"文字 + 金币图标）
+            if (_buttonCanvasGroup != null)
+                _buttonCanvasGroup.alpha = canUpgrade ? 1f : 0.45f;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -338,6 +339,8 @@ namespace LightVsDecay.UI.TechTree
 
         private void OnUpgradeDown()
         {
+            // ★ EventTrigger 不检查 interactable，必须手动拦截
+            if (upgradeButton != null && !upgradeButton.interactable) return;
             TryUpgrade();
             if (_longPressCoroutine != null) StopCoroutine(_longPressCoroutine);
             _longPressCoroutine = StartCoroutine(LongPressRoutine());
@@ -373,6 +376,7 @@ namespace LightVsDecay.UI.TechTree
 
                 Refresh();
                 _parent?.RefreshAll();
+                TopAreaController.RefreshIfExists();   // ★ 刷新顶部金币显示
                 return true;
             }
 

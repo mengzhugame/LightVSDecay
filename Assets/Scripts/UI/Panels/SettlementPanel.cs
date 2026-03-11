@@ -178,6 +178,14 @@ namespace LightVsDecay.UI.Panels
             int diff   = GameManager.Instance != null ? GameManager.Instance.CurrentDifficulty   : 1;
             int waves  = settlementData.wavesCleared;   // ★ 新增：传入实际完成波次数
             SystemUnlockManager.Instance.CheckAndProcessUnlocks(ch, diff, victory, waves);
+            // ★ 新增：通关时写入章节进度，解锁难度星级 & 下一章节
+            if (victory && ProgressManager.Instance != null)
+            {
+                bool unlockedNext = ProgressManager.Instance.CompleteChapterDifficulty(ch, diff);
+                if (showDebugInfo)
+                    Debug.Log($"[SettlementPanel] 章节{ch+1} 难度{diff} 完成" +
+                              (unlockedNext ? "，解锁下一章节！" : ""));
+            }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

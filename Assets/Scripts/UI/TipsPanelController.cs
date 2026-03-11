@@ -154,13 +154,10 @@ namespace LightVsDecay.UI
         public void ShowTip(string message)
         {
             if (string.IsNullOrEmpty(message)) return;
+    
+            gameObject.SetActive(true);   // ★ 先激活，协程才能跑
             _queue.Enqueue(message);
-
-            if (showDebugInfo)
-                Debug.Log($"[TipsPanelController] 加入队列: \"{message}\" (队列长度={_queue.Count})");
-
-            if (!_isPlaying)
-                StartCoroutine(PlayQueueRoutine());
+            if (!_isPlaying) StartCoroutine(PlayQueueRoutine());
         }
 
         /// <summary>
@@ -168,12 +165,14 @@ namespace LightVsDecay.UI
         /// </summary>
         public void ShowTips(IEnumerable<string> messages)
         {
+            bool hasAny = false;
             foreach (var m in messages)
-                if (!string.IsNullOrEmpty(m))
-                    _queue.Enqueue(m);
+                if (!string.IsNullOrEmpty(m)) { _queue.Enqueue(m); hasAny = true; }
 
-            if (!_isPlaying)
-                StartCoroutine(PlayQueueRoutine());
+            if (!hasAny) return;
+    
+            gameObject.SetActive(true);   // ★ 先激活
+            if (!_isPlaying) StartCoroutine(PlayQueueRoutine());
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -198,6 +197,7 @@ namespace LightVsDecay.UI
             }
 
             _isPlaying = false;
+            gameObject.SetActive(false);   // ★ 所有提示播完后自动隐藏
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

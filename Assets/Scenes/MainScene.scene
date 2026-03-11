@@ -2320,6 +2320,7 @@ GameObject:
   - component: {fileID: 189967671}
   - component: {fileID: 189967670}
   - component: {fileID: 189967669}
+  - component: {fileID: 189967672}
   m_Layer: 5
   m_HasEditorInfo: 1
   m_Name: Update_Button
@@ -2377,7 +2378,7 @@ MonoBehaviour:
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
@@ -2434,6 +2435,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 189967667}
   m_CullTransparentMesh: 1
+--- !u!225 &189967672
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 189967667}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &196988113
 GameObject:
   m_ObjectHideFlags: 0
@@ -3496,10 +3509,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92300c85b0fac214bb75f213c0041539, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settingButton: {fileID: 1650999880}
-  gemText: {fileID: 615935639}
-  goldCoinText: {fileID: 93303051}
-  energyText: {fileID: 608902364}
   chapterCardImage: {fileID: 344738302}
   chapterTitleText: {fileID: 1663929134}
   lockIcon: {fileID: 1353923111}
@@ -4886,9 +4895,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gemText: {fileID: 615935639}
-  goldCoinText: {fileID: 2118694466}
+  goldCoinText: {fileID: 93303051}
   energyText: {fileID: 608902364}
-  blueprintText: {fileID: 93303051}
+  blueprintText: {fileID: 2118694466}
   settingButton: {fileID: 1650999880}
   backButton: {fileID: 1412907346}
   settingsPanel: {fileID: 674470183}
@@ -10373,7 +10382,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2617382046388239003, guid: 4ee97612d2ec13641955908b97eba771, type: 3}
       propertyPath: m_Name
-      value: GemText
+      value: BlueprintText
       objectReference: {fileID: 0}
     - target: {fileID: 5257488739711779241, guid: 4ee97612d2ec13641955908b97eba771, type: 3}
       propertyPath: m_Sprite
@@ -17894,8 +17903,6 @@ MonoBehaviour:
   mainPanel: {fileID: 252727451}
   keJiPanel: {fileID: 1486388539}
   zhuangBeiPanel: {fileID: 388340649}
-  settingButton: {fileID: 1650999878}
-  backButton: {fileID: 1412907343}
   keJiButton: {fileID: 1407984597}
   zhuangBeiButton: {fileID: 1643958194}
   keJiButtonText: {fileID: 1153305583}
