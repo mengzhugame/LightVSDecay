@@ -174,13 +174,14 @@ namespace LightVsDecay.UI.Panels
         private void NotifySystemUnlocks(bool victory)
         {
             if (SystemUnlockManager.Instance == null) return;
-            int ch   = GameManager.Instance != null ? GameManager.Instance.CurrentChapterIndex : 0;
-            int diff = GameManager.Instance != null ? GameManager.Instance.CurrentDifficulty   : 1;
-            SystemUnlockManager.Instance.CheckAndProcessUnlocks(ch, diff, victory);
+            int ch     = GameManager.Instance != null ? GameManager.Instance.CurrentChapterIndex : 0;
+            int diff   = GameManager.Instance != null ? GameManager.Instance.CurrentDifficulty   : 1;
+            int waves  = settlementData.wavesCleared;   // ★ 新增：传入实际完成波次数
+            SystemUnlockManager.Instance.CheckAndProcessUnlocks(ch, diff, victory, waves);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 显示流程
+        // 显示流程 清除所有PlayerPrefs
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private IEnumerator ShowContentCoroutine()

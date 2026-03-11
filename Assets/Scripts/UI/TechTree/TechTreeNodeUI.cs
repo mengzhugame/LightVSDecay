@@ -88,7 +88,7 @@ namespace LightVsDecay.UI.TechTree
             bool canUp    = mgr != null && mgr.CanUpgrade(nodeData.nodeId);
             bool isMax    = lv >= nodeData.maxLevel;
             bool buttonDisabled = lv == 0 && !canUp;   // 按钮禁用（前置不足）
-            bool showLock       = lv == 0;             // 锁图标（未升级就显示）
+            bool showLock       = buttonDisabled;      // ★ 只有真正无法升级
 
             // 锁图标
             if (lockIcon != null) lockIcon.SetActive(showLock);
