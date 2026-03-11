@@ -5,7 +5,9 @@
 // ============================================================
 
 #if UNITY_EDITOR
+using LightVsDecay.Data.Runtime;
 using LightVsDecay.Logic;
+using LightVsDecay.Logic.Equipment;
 using UnityEngine;
 using UnityEditor;
 
@@ -79,6 +81,11 @@ namespace LightVsDecay.Editor
                     PlayerPrefs.DeleteKey("SysUnlock_PendingEquipNotify");
                     PlayerPrefs.Save();
                 }
+                // ★ 清除装备内存（含图纸）
+                if (EquipmentManager.Instance != null)
+                    EquipmentManager.Instance.ResetAll();
+                else
+                    EquipmentSaveData.Reset();   // 兜底
                 Debug.Log("[调试工具] 所有PlayerPrefs已清除");
             }
         }

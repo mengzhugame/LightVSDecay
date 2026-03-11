@@ -116,11 +116,9 @@ namespace LightVsDecay.UI
 
         private void Awake()
         {
-            // 单例
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
 
-            // 自动取组件（若 Inspector 未绑定）
             if (panelRect   == null) panelRect   = GetComponent<RectTransform>();
             if (canvasGroup == null)
             {
@@ -130,13 +128,15 @@ namespace LightVsDecay.UI
             if (tipsText == null) tipsText = GetComponentInChildren<TextMeshProUGUI>(true);
             if (textRect == null && tipsText != null) textRect = tipsText.rectTransform;
 
-            // 记录初始位置
             if (panelRect != null) _panelOrigin = panelRect.anchoredPosition;
             if (textRect  != null) _textOrigin  = textRect.anchoredPosition;
 
-            // 初始隐藏
-            canvasGroup.alpha = 0f;
-            gameObject.SetActive(false);
+            // ★ 不再 SetActive(false)！改用 CanvasGroup 完全透明+不响应输入
+            //   GameObject 保持激活，协程才能正常启动
+            canvasGroup.alpha          = 0f;
+            canvasGroup.interactable   = false;
+            canvasGroup.blocksRaycasts = false;
+            // gameObject.SetActive(false);  ← 删除这行
         }
 
         private void OnDestroy()
@@ -206,36 +206,30 @@ namespace LightVsDecay.UI
 
         private IEnumerator PlayOneTipRoutine(string message)
         {
-            // ── 准备 ──────────────────────────────────────────
             if (tipsText != null)
             {
                 tipsText.text  = message;
                 tipsText.color = textColor;
             }
-            // 还原文字 scale（上一条可能留了残值）
             if (textRect != null)
             {
-                textRect.localScale        = Vector3.one;
-                textRect.anchoredPosition  = _textOrigin;
+                textRect.localScale       = Vector3.one;
+                textRect.anchoredPosition = _textOrigin;
             }
 
-            gameObject.SetActive(true);
+            // ★ 不用 SetActive，直接用 CanvasGroup 显示
+            canvasGroup.interactable   = true;
+            canvasGroup.blocksRaycasts = true;
 
-            // ── Phase 1: 面板滑入 + 淡入 ─────────────────────
             yield return StartCoroutine(SlideInRoutine());
-
-            // ── Phase 2: 文字 Scale Punch ─────────────────────
             yield return StartCoroutine(TextPunchRoutine());
-
-            // ── Phase 3: 文字飘浮停留 ─────────────────────────
             yield return StartCoroutine(FloatHoldRoutine());
-
-            // ── Phase 4: 面板滑出 + 淡出 ─────────────────────
             yield return StartCoroutine(SlideOutRoutine());
 
-            // ── 收尾：隐藏并复位 ──────────────────────────────
-            canvasGroup.alpha = 0f;
-            gameObject.SetActive(false);
+            // 收尾：隐藏
+            canvasGroup.alpha          = 0f;
+            canvasGroup.interactable   = false;
+            canvasGroup.blocksRaycasts = false;
 
             if (panelRect != null) panelRect.anchoredPosition = _panelOrigin;
             if (textRect  != null)

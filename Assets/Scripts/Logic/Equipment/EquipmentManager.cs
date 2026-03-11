@@ -448,7 +448,28 @@ namespace LightVsDecay.Logic.Equipment
             if (showDebugInfo)
                 Debug.Log($"[EquipManager] 读档完成：背包 {_inventory.Count} 格，图纸 {_blueprints}");
         }
+        /// <summary>
+        /// 重置所有装备数据（内存 + PlayerPrefs），供 PlayerDataResetTool 调用
+        /// </summary>
+        public void ResetAll()
+        {
+            _inventory  = new List<InventoryStack>();
+            _slots      = new EquippedSlotData[3]
+            {
+                EquippedSlotData.Empty(),
+                EquippedSlotData.Empty(),
+                EquippedSlotData.Empty(),
+            };
+            _blueprints = 0;
 
+            EquipmentSaveData.Reset();   // 同时清 PlayerPrefs
+
+            OnInventoryChanged?.Invoke();
+            OnBlueprintsChanged?.Invoke(0);
+
+            if (showDebugInfo)
+                Debug.Log("[EquipmentManager] ResetAll: 内存+存档全部清除");
+        }
 #if UNITY_EDITOR
         private void ParseDebugItems()
         {

@@ -23,16 +23,6 @@ namespace LightVsDecay.UI.Panels
     public class MainMenuPanel : MonoBehaviour
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Inspector 配置 - TopArea
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("═══ TopArea - 顶部区域 ═══")]
-        [SerializeField] private Button settingButton;
-        [SerializeField] private TextMeshProUGUI gemText;
-        [SerializeField] private TextMeshProUGUI goldCoinText;
-        [SerializeField] private TextMeshProUGUI energyText;
-        
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - MidArea 章节选择
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
@@ -106,13 +96,7 @@ namespace LightVsDecay.UI.Panels
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        // 玩家资源
-        private int playerGems = 0;
-        private int playerGoldCoins = 0;
-        private int playerEnergy = 5;
-        private int maxEnergy = 5;
-        
+
         // 章节选择状态
         private int currentViewIndex = 0;      // 当前查看的章节索引 (0-based)
         private int totalChapters = 3;         // 总章节数
@@ -191,13 +175,7 @@ namespace LightVsDecay.UI.Panels
             {
                 startButton.onClick.AddListener(OnStartButtonClicked);
             }
-            
-            // 设置按钮
-            if (settingButton != null)
-            {
-                settingButton.onClick.AddListener(OnSettingButtonClicked);
-            }
-            
+
             // 左箭头
             if (leftArrowButton != null)
             {
@@ -216,21 +194,8 @@ namespace LightVsDecay.UI.Panels
         /// </summary>
         private void LoadPlayerData()
         {
-            if (ProgressManager.Instance != null)
-            {
-                playerGems = ProgressManager.Instance.Gems;
-                playerGoldCoins = ProgressManager.Instance.GoldCoins;
-                playerEnergy = ProgressManager.Instance.Energy;
-                maxEnergy = ProgressManager.Instance.MaxEnergy;
-            }
-            else
-            {
-                // 降级方案：从 PlayerPrefs 加载
-                playerGems = PlayerPrefs.GetInt("PlayerGems", 0);
-                playerGoldCoins = PlayerPrefs.GetInt("PlayerGoldCoins", 0);
-                playerEnergy = PlayerPrefs.GetInt("PlayerEnergy", 5);
-                maxEnergy = 5;
-            }
+            // 资源数据（宝石/金币/能量/图纸）由 TopAreaController 统一管理
+            TopAreaController.RefreshIfExists();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -242,34 +207,12 @@ namespace LightVsDecay.UI.Panels
         /// </summary>
         private void UpdateAllUI()
         {
-            UpdateResourcesUI();
             UpdateChapterUI();
             UpdateArrowsUI();
             UpdateDifficultyUI();
             UpdateStartButtonUI();
         }
-        
-        /// <summary>
-        /// 更新资源显示（宝石、金币、能量）
-        /// </summary>
-        private void UpdateResourcesUI()
-        {
-            if (gemText != null)
-            {
-                gemText.text = playerGems.ToString();
-            }
-            
-            if (goldCoinText != null)
-            {
-                goldCoinText.text = playerGoldCoins.ToString();
-            }
-            
-            if (energyText != null)
-            {
-                energyText.text = $"{playerEnergy} / {maxEnergy}";
-            }
-        }
-        
+
         /// <summary>
         /// 更新章节显示（卡片图、标题、锁定状态）
         /// </summary>
@@ -412,7 +355,10 @@ namespace LightVsDecay.UI.Panels
         private void UpdateStartButtonUI()
         {
             bool isUnlocked = IsChapterUnlocked(currentViewIndex);
-            bool hasEnergy = playerEnergy > 0;
+            int  currentEnergy = ProgressManager.Instance != null
+                ? ProgressManager.Instance.Energy
+                : PlayerPrefs.GetInt("PlayerEnergy", 5);
+            bool hasEnergy = currentEnergy > 0;
             
             // 如果章节未解锁，隐藏开始按钮
             if (startButtonContainer != null)
@@ -553,10 +499,12 @@ namespace LightVsDecay.UI.Panels
             }
             
             // 检查能量是否足够
-            if (playerEnergy <= 0)
+            int currentEnergy = ProgressManager.Instance != null
+                ? ProgressManager.Instance.Energy
+                : PlayerPrefs.GetInt("PlayerEnergy", 5);
+            if (currentEnergy <= 0)
             {
                 Debug.Log("[MainMenuPanel] 能量不足！");
-                // TODO: 显示能量不足提示
                 return;
             }
             
@@ -580,8 +528,8 @@ namespace LightVsDecay.UI.Panels
             }
             else
             {
-                playerEnergy--;
-                PlayerPrefs.SetInt("PlayerEnergy", playerEnergy);
+                int e = PlayerPrefs.GetInt("PlayerEnergy", 5);
+                PlayerPrefs.SetInt("PlayerEnergy", Mathf.Max(0, e - 1));
                 PlayerPrefs.Save();
             }
             
@@ -596,30 +544,7 @@ namespace LightVsDecay.UI.Panels
                 UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
             }
         }
-        
-        /// <summary>
-        /// 设置按钮点击
-        /// </summary>
-        private void OnSettingButtonClicked()
-        {
-            PlayButtonSound();
-            
-            if (showDebugInfo)
-            {
-                Debug.Log("[MainMenuPanel] 点击设置按钮");
-            }
-            
-            // 打开设置面板（不显示底部按钮区域）
-            if (settingsPanel != null)
-            {
-                settingsPanel.Show(false);
-            }
-            else
-            {
-                Debug.LogWarning("[MainMenuPanel] settingsPanel 未设置！");
-            }
-        }
-        
+
         /// <summary>
         /// 播放按钮音效
         /// </summary>

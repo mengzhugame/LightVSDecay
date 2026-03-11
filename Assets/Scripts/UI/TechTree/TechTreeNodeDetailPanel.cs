@@ -175,23 +175,31 @@ namespace LightVsDecay.UI.TechTree
 
         private void RefreshStats(int curLv, bool isMax)
         {
-            // 左列：当前等级
+            // ★ Lv.0 特殊处理：左列预览 Lv.1，右列预览 Lv.2
+            //    Lv.1+ 恢复正常：左列=当前，右列=下一级
+            int displayLeft  = curLv == 0 ? 1 : curLv;
+            int displayRight = curLv == 0 ? 2 : curLv + 1;
+
+            // 右列是否超出最大等级（Lv.0 时若 maxLevel==1，右列也显示 MAX）
+            bool rightIsMax = isMax || displayRight > _data.maxLevel;
+
+            // ── 左列 ──────────────────────────────────────────────
             if (levelLeftText != null)
-                levelLeftText.text = $"Lv.{curLv}";
+                levelLeftText.text = $"Lv.{displayLeft}";
 
             if (statLeftText != null)
-                statLeftText.text = curLv > 0 ? BuildStatText(curLv) : "—";
+                statLeftText.text = BuildStatText(displayLeft);
 
-            // 右列：下一级
+            // ── 右列 ──────────────────────────────────────────────
             if (levelRightText != null)
-                levelRightText.text = isMax
+                levelRightText.text = rightIsMax
                     ? "<color=#FFD700>MAX</color>"
-                    : $"<color=#66FF66>Lv.{curLv + 1}</color>";
+                    : $"<color=#66FF66>Lv.{displayRight}</color>";
 
             if (statRightText != null)
-                statRightText.text = isMax
+                statRightText.text = rightIsMax
                     ? "<color=#888888>已满级</color>"
-                    : $"<color=#66FF66>{BuildStatText(curLv + 1)}</color>";
+                    : $"<color=#66FF66>{BuildStatText(displayRight)}</color>";
         }
 
         // ── 解锁提示 ─────────────────────────────────────────
@@ -232,7 +240,10 @@ namespace LightVsDecay.UI.TechTree
                 if (node == null) continue;
                 if (node.prerequisiteNodeIds != null
                     && node.prerequisiteNodeIds.Contains(_data.nodeId))
-                    return 1; // 有后续节点，Lv.1 即可解锁
+                {
+                    // ★ 返回后续节点配置的前置最低等级（例如 Lv.50）
+                    return Mathf.Max(1, node.prerequisiteMinLevel);
+                }
             }
             return 0;
         }
@@ -262,7 +273,7 @@ namespace LightVsDecay.UI.TechTree
             if (_buttonImage != null)
                 _buttonImage.color = canUpgrade ? buttonNormalColor : buttonDisabledColor;
 
-            // 按钮文字
+// 按钮文字
             if (upgradeButtonText != null)
             {
                 if (!prereqOk)
@@ -271,12 +282,12 @@ namespace LightVsDecay.UI.TechTree
                 }
                 else
                 {
-                    // 金币数字：可负担=白色，不可负担=红色
+                    // ★ 只显示金币数量，金币足够=白色，不足=红色
                     string hex = canAfford
                         ? ColorUtility.ToHtmlStringRGB(costNormalColor)
                         : ColorUtility.ToHtmlStringRGB(costInsufficientColor);
 
-                    upgradeButtonText.text = $"升级  🪙  <color=#{hex}>+{cost:N0}</color>";
+                    upgradeButtonText.text = $"<color=#{hex}>x{cost:N0}</color>";
                 }
             }
         }

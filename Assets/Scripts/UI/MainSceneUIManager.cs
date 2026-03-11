@@ -45,14 +45,6 @@ namespace LightVsDecay.UI
         [SerializeField] private GameObject zhuangBeiPanel;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Inspector — TopArea 按钮
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-        [Header("═══ TopArea 按钮 ═══")]
-        [SerializeField] private GameObject settingButton;
-        [SerializeField] private GameObject backButton;
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector — BottomArea 按钮
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -294,8 +286,8 @@ namespace LightVsDecay.UI
             SetActive(mainPanel,        true);
             SetActive(keJiPanel,        false);
             SetActive(zhuangBeiPanel,   false);
-            SetActive(settingButton,    true);
-            SetActive(backButton,       false);
+            TopAreaController.Instance?.SetNavState(MainSceneState.Main);
+            TopAreaController.RefreshIfExists();   // 返回主界面时顺带刷新资源数据
         }
 
         private void ApplyKeJiState()
@@ -304,8 +296,7 @@ namespace LightVsDecay.UI
             SetActive(mainPanel,        false);
             SetActive(keJiPanel,        true);
             SetActive(zhuangBeiPanel,   false);
-            SetActive(settingButton,    false);
-            SetActive(backButton,       true);
+            TopAreaController.Instance?.SetNavState(MainSceneState.KeJi);
         }
 
         private void ApplyZhuangBeiState()
@@ -314,8 +305,7 @@ namespace LightVsDecay.UI
             SetActive(mainPanel,        false);
             SetActive(keJiPanel,        false);
             SetActive(zhuangBeiPanel,   true);
-            SetActive(settingButton,    false);
-            SetActive(backButton,       true);
+            TopAreaController.Instance?.SetNavState(MainSceneState.ZhuangBei);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
