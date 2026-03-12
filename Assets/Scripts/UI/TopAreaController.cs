@@ -98,16 +98,19 @@ namespace LightVsDecay.UI
         private void OnEnable()
         {
             EquipmentManager.OnBlueprintsChanged += OnBlueprintsChanged;
+            ProgressManager.OnGoldCoinsChanged   += OnGoldCoinsChanged;
         }
 
         private void OnDisable()
         {
             EquipmentManager.OnBlueprintsChanged -= OnBlueprintsChanged;
+            ProgressManager.OnGoldCoinsChanged   -= OnGoldCoinsChanged;
         }
 
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
+            ProgressManager.OnGoldCoinsChanged   -= OnGoldCoinsChanged;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -231,7 +234,15 @@ namespace LightVsDecay.UI
             if (showDebugInfo)
                 Debug.Log($"[TopAreaController] 图纸更新: {newCount}");
         }
+        /// <summary>局外金币变化时实时刷新（ProgressManager 事件驱动）</summary>
+        private void OnGoldCoinsChanged(int newAmount)
+        {
+            if (goldCoinText != null)
+                goldCoinText.text = newAmount.ToString();
 
+            if (showDebugInfo)
+                Debug.Log($"[TopAreaController] 金币更新: {newAmount}");
+        }
         private void PlayButtonSound()
         {
             if (AudioManager.Instance != null)

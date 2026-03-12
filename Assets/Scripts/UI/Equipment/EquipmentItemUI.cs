@@ -38,7 +38,11 @@ namespace LightVsDecay.UI.Equipment
 
         [Tooltip("选中高亮框（可为 null）")]
         [SerializeField] private GameObject selectionHighlight;
-
+        [Tooltip("边框 Image 组件")]
+        [SerializeField] private Image borderImage;
+        [Header("品质边框 Sprites（按 ItemRarity 顺序拖入）")]
+        [Tooltip("索引对应 ItemRarity 枚举值：0=Common(不用), 1=Uncommon(绿), 2=Rare(蓝), 3=Epic(紫), 4=Legendary(橙)")]
+        [SerializeField] private Sprite[] rarityBorderSprites;
         [Header("配置")]
         [Tooltip("数量为1时是否隐藏数量文字")]
         [SerializeField] private bool hideCountWhenOne = true;
@@ -74,7 +78,15 @@ namespace LightVsDecay.UI.Equipment
                 iconImage.enabled = hasIcon;
                 if (hasIcon) iconImage.sprite = data.icon;
             }
-
+            //底框
+            if (borderImage != null && rarityBorderSprites != null)
+            {
+                int rarityIndex = (int)stack.rarity;
+                if (rarityIndex >= 0 && rarityIndex < rarityBorderSprites.Length && rarityBorderSprites[rarityIndex] != null)
+                {
+                    borderImage.sprite = rarityBorderSprites[rarityIndex];
+                }
+            }
             // 数量
             if (countText != null)
             {

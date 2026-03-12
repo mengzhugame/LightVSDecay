@@ -1,32 +1,6 @@
 // ============================================================
 // UpgradePanel.cs
 // 文件位置: Assets/Scripts/UI/Equipment/UpgradePanel.cs
-//
-// UI 层级：
-//   UpdatePanel
-//   ├─ Background              ← 点击空白区域关闭
-//   ├─ Panel
-//   │   ├─ ItemFrame
-//   │   │   └─ Icon            ← itemIcon
-//   │   ├─ Text(TMP)           ← nameText（如"棱镜核心"）
-//   │   └─ Info
-//   │       ├─ Text(TMP)       ← leftLevelText  "Lv.1"（当前等级）
-//   │       ├─ Text(TMP)       ← leftStatsText  当前等级属性
-//   │       ├─ Text(TMP)       ← rightLevelText "Lv.2"（升级后等级）
-//   │       └─ Text(TMP)       ← rightStatsText 升级后等级属性（绿色）
-//   ├─ Close_Button            ← closeButton
-//   └─ Update_Button           ← upgradeButton
-//       ├─ goldCostText        ← 金币图标旁边的数量文本（如 "50"）
-//       └─ blueprintCostText   ← 图纸图标旁边的数量文本（如 "100"）
-//
-// 升级逻辑：
-//   点击升级后，左侧 Lv.N → Lv.N+1，右侧 Lv.N+1 → Lv.N+2（始终右比左多1）
-//   满级时右侧显示"MAX"，升级按钮置灰
-//   金币或图纸不足时升级按钮置灰
-//   支持长按连续升级
-//
-// 颜色规则：
-//   右侧（升级后）数值 > 左侧（当前），右侧显绿 + ▲；满级时右侧显灰
 // ============================================================
 
 using System.Collections;
@@ -57,33 +31,42 @@ namespace LightVsDecay.UI.Equipment
         [SerializeField] private TextMeshProUGUI nameText;
 
         [Header("Info — 左列（当前等级）")]
-        [SerializeField] private TextMeshProUGUI leftLevelText;   // "Lv.1"
-        [SerializeField] private TextMeshProUGUI leftStatsText;   // 当前等级属性
+        [SerializeField] private TextMeshProUGUI leftLevelText;
+        [SerializeField] private TextMeshProUGUI leftStatsText;
 
         [Header("Info — 右列（升级后等级）")]
-        [SerializeField] private TextMeshProUGUI rightLevelText;  // "Lv.2" / "MAX"
-        [SerializeField] private TextMeshProUGUI rightStatsText;  // 升级后属性（绿色）
+        [SerializeField] private TextMeshProUGUI rightLevelText;
+        [SerializeField] private TextMeshProUGUI rightStatsText;
 
-        [Header("升级按钮及消耗文本")]
+        [Header("升级按钮及消耗")]
         [SerializeField] private Button          upgradeButton;
-
-        [Tooltip("升级按钮内：金币消耗数量文本（图标另做在 UI 里）")]
         [SerializeField] private TextMeshProUGUI goldCostText;
-
-        [Tooltip("升级按钮内：图纸消耗数量文本")]
         [SerializeField] private TextMeshProUGUI blueprintCostText;
 
+        [Tooltip("按钮内的金币图标 Image（用于置灰）")]
+        [SerializeField] private Image goldIconImage;
+
+        [Tooltip("按钮内的图纸图标 Image（用于置灰）")]
+        [SerializeField] private Image blueprintIconImage;
+        [Tooltip("按钮内的'升级'静态标签文字")]
+        [SerializeField] private TextMeshProUGUI upgradeLabelText;
         [Header("关闭按钮")]
         [SerializeField] private Button closeButton;
 
+        [Header("按钮颜色（参考 TechTree 同款）")]
+        [SerializeField] private Color buttonNormalColor     = new Color(0.2f, 0.7f, 1f,  1f);
+        [SerializeField] private Color buttonDisabledColor   = new Color(0.35f,0.35f,0.35f,1f);
+        [SerializeField] private Color costNormalColor       = Color.white;
+        [SerializeField] private Color costInsufficientColor = new Color(1f, 0.3f, 0.3f, 1f);
+
         [Header("长按连升")]
-        [SerializeField] private float longPressDelay     = 0.5f;
+        [SerializeField] private float longPressDelay      = 0.5f;
         [SerializeField] private float autoUpgradeInterval = 0.1f;
 
-        // ── 颜色 ──────────────────────────────────────────────
-        private const string COLOR_UP    = "#00FF00";  // 升级后数值更高 — 绿
-        private const string COLOR_MAX   = "#888888";  // 满级 — 灰
-        private const string COLOR_WHITE = "#FFFFFF";  // 当前等级 — 白
+        // ── 颜色常量（属性对比文本用） ──────────────────────────
+        private const string COLOR_UP    = "#00FF00";
+        private const string COLOR_MAX   = "#888888";
+        private const string COLOR_WHITE = "#FFFFFF";
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时
@@ -92,6 +75,7 @@ namespace LightVsDecay.UI.Equipment
         private EquipmentSlotType _slot;
         private EquipmentPanel    _parent;
         private Coroutine         _longPress;
+        private Image             _buttonImage;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 生命周期
@@ -102,9 +86,12 @@ namespace LightVsDecay.UI.Equipment
             if (closeButton      != null) closeButton.onClick.AddListener(Close);
             if (backgroundButton != null) backgroundButton.onClick.AddListener(Close);
 
-            // 升级按钮：点击 + 长按
             if (upgradeButton != null)
             {
+                // 缓存按钮背景 Image
+                _buttonImage = upgradeButton.GetComponent<Image>();
+
+                // 长按支持
                 var et = upgradeButton.gameObject.GetComponent<EventTrigger>()
                          ?? upgradeButton.gameObject.AddComponent<EventTrigger>();
                 AddTrigger(et, EventTriggerType.PointerDown, _ => OnUpgradeDown());
@@ -130,7 +117,7 @@ namespace LightVsDecay.UI.Equipment
 
         private void Refresh()
         {
-            var mgr      = EquipmentManager.Instance;
+            var mgr = EquipmentManager.Instance;
             if (mgr == null) { Close(); return; }
 
             var slotData = mgr.GetSlot(_slot);
@@ -142,6 +129,8 @@ namespace LightVsDecay.UI.Equipment
             bool isMax = curLv >= maxLv;
             int  nxtLv = Mathf.Min(curLv + 1, maxLv);
 
+            Debug.Log($"[UpgradePanel] GoldCoins={ProgressManager.Instance?.GoldCoins}, Blueprints={EquipmentManager.Instance?.Blueprints}, GoldCost={data.GetLevelUpGoldCost(curLv)}, BpCost={data.GetLevelUpBlueprintCost(curLv)}");
+            
             // ── 图标 / 名称 ──
             if (itemIcon != null && data.icon != null) itemIcon.sprite = data.icon;
             if (nameText != null) nameText.text = data.displayName;
@@ -152,71 +141,119 @@ namespace LightVsDecay.UI.Equipment
 
             var curStats = data.GetStatsAtLevel(curLv);
             if (leftStatsText != null)
-                leftStatsText.text = BuildStatsText(curStats, COLOR_WHITE, showSymbol: false);
+                leftStatsText.text = BuildStatsText(curStats, COLOR_WHITE, false);
 
             // ── 右列：升级后等级 ──
+            if (rightLevelText != null)
+                rightLevelText.text = isMax
+                    ? $"<color={COLOR_MAX}>MAX</color>"
+                    : $"<color={COLOR_UP}>Lv.{nxtLv}</color>";
+
+            if (rightStatsText != null)
+            {
+                if (isMax)
+                {
+                    rightStatsText.text = $"<color={COLOR_MAX}>已满级</color>";
+                }
+                else
+                {
+                    var nxtStats = data.GetStatsAtLevel(nxtLv);
+                    rightStatsText.text = BuildStatsDiffText(curStats, nxtStats);
+                }
+            }
+
+            // ── 消耗显示 + 按钮状态 ──
             if (isMax)
             {
-                if (rightLevelText != null) rightLevelText.text = $"<color={COLOR_MAX}>MAX</color>";
-                if (rightStatsText != null) rightStatsText.text = $"<color={COLOR_MAX}>已满级</color>";
+                if (goldCostText      != null) { goldCostText.text = "—";  goldCostText.color = Color.gray; }
+                if (blueprintCostText != null) { blueprintCostText.text = "—"; blueprintCostText.color = Color.gray; }
+                RefreshButtonVisuals(false, false, false);
             }
             else
-            {
-                if (rightLevelText != null)
-                    rightLevelText.text = $"<color={COLOR_UP}>Lv.{nxtLv}</color>";
-
-                var nxtStats = data.GetStatsAtLevel(nxtLv);
-                if (rightStatsText != null)
-                    rightStatsText.text = BuildStatsDiffText(curStats, nxtStats);
-            }
-
-            // ── 消耗显示 ──
-            if (!isMax)
             {
                 int goldCost = data.GetLevelUpGoldCost(curLv);
                 int bpCost   = data.GetLevelUpBlueprintCost(curLv);
+
+                bool hasGold = HasEnoughGold(goldCost);
+                bool hasBp   = HasEnoughBlueprints(bpCost);
+
+                // 纯文本，颜色由 RefreshButtonVisuals 控制
                 if (goldCostText      != null) goldCostText.text      = goldCost.ToString();
                 if (blueprintCostText != null) blueprintCostText.text = bpCost.ToString();
+
+                RefreshButtonVisuals(hasGold, hasBp, true);
             }
-            else
-            {
-                if (goldCostText      != null) goldCostText.text      = "—";
-                if (blueprintCostText != null) blueprintCostText.text = "—";
-            }
-
-            // ── 升级按钮可交互状态 ──
-            RefreshButtonState(data, curLv, isMax);
-        }
-
-        private void RefreshButtonState(EquipmentData data, int curLv, bool isMax)
-        {
-            if (upgradeButton == null) return;
-
-            if (isMax)
-            {
-                upgradeButton.interactable = false;
-                return;
-            }
-
-            bool canAfford = CanAffordUpgrade(data, curLv);
-            upgradeButton.interactable = canAfford;
-        }
-
-        private bool CanAffordUpgrade(EquipmentData data, int curLv)
-        {
-            if (ProgressManager.Instance == null) return false;
-            int goldCost = data.GetLevelUpGoldCost(curLv);
-            int bpCost   = data.GetLevelUpBlueprintCost(curLv);
-            return ProgressManager.Instance.GoldCoins >= goldCost
-                   && EquipmentManager.Instance.Blueprints >= bpCost;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 升级按钮
+        // 按钮状态刷新（参考 TechTree 同款逻辑）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void RefreshButtonVisuals(bool hasGold, bool hasBp, bool notMax)
+        {
+            bool canUpgrade = notMax && hasGold && hasBp;
+
+            // 1. 按钮交互 + 背景色
+            upgradeButton.interactable = canUpgrade;
+            if (_buttonImage != null)
+                _buttonImage.color = canUpgrade ? buttonNormalColor : buttonDisabledColor;
+
+            // 2. "升级" 标签文字：可升级=白，否则=灰
+            if (upgradeLabelText != null)
+                upgradeLabelText.color = canUpgrade ? costNormalColor : Color.gray;
+
+            // 3. 金币数字颜色规则：
+            //    自身不足 → 红；对方不足（自身足够）→ 灰；都足够 → 白
+            Color goldColor = !hasGold ? costInsufficientColor
+                : (!hasBp  ? Color.gray
+                    : costNormalColor);
+
+            // 4. 图纸数字颜色规则（对称）
+            Color bpColor   = !hasBp   ? costInsufficientColor
+                : (!hasGold ? Color.gray
+                    : costNormalColor);
+
+            // 5. 图标颜色：可升级=白，否则统一灰
+            Color iconColor = canUpgrade ? Color.white : Color.gray;
+
+            if (goldCostText       != null) goldCostText.color       = goldColor;
+            if (blueprintCostText  != null) blueprintCostText.color  = bpColor;
+            if (goldIconImage      != null) goldIconImage.color      = iconColor;
+            if (blueprintIconImage != null) blueprintIconImage.color = iconColor;
+        }
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 资源判断
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private bool HasEnoughGold(int cost)
+        {
+            if (ProgressManager.Instance == null)
+            {
+                Debug.LogWarning("[UpgradePanel] ProgressManager.Instance 为空，无法检查金币！");
+                return false;
+            }
+            return ProgressManager.Instance.GoldCoins >= cost;
+        }
+
+        private bool HasEnoughBlueprints(int cost)
+        {
+            if (EquipmentManager.Instance == null)
+            {
+                Debug.LogWarning("[UpgradePanel] EquipmentManager.Instance 为空，无法检查图纸！");
+                return false;
+            }
+            return EquipmentManager.Instance.Blueprints >= cost;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 升级按钮逻辑
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private void OnUpgradeDown()
         {
+            // ★ EventTrigger 不检查 interactable，必须手动拦截（与 TechTree 同款修复）
+            if (upgradeButton != null && !upgradeButton.interactable) return;
+
             TryUpgrade();
             if (_longPress != null) StopCoroutine(_longPress);
             _longPress = StartCoroutine(LongPressRoutine());
@@ -245,12 +282,9 @@ namespace LightVsDecay.UI.Equipment
                 Refresh();
                 return true;
             }
-            // 不足时刷新按钮状态（确保置灰）
-            if (result == LevelUpResult.InsufficientGold
-                || result == LevelUpResult.InsufficientBlueprints)
-            {
-                if (upgradeButton != null) upgradeButton.interactable = false;
-            }
+
+            // 升级失败：刷新按钮状态（确保显示正确）
+            Refresh();
             return false;
         }
 
@@ -269,7 +303,6 @@ namespace LightVsDecay.UI.Equipment
         // 属性文本构建
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        /// <summary>纯色文本（左列用）</summary>
         private string BuildStatsText(EquipmentStats s, string color, bool showSymbol)
         {
             var sb = new System.Text.StringBuilder();
@@ -277,52 +310,42 @@ namespace LightVsDecay.UI.Equipment
             if (s.hpBonus      != 0) sb.AppendLine($"生命值：<color={color}>+{s.hpBonus}</color>");
             if (s.shieldBonus  != 0) sb.AppendLine($"护盾值：<color={color}>+{s.shieldBonus}</color>");
             if (s.critBonus    > 0f) sb.AppendLine($"暴击率：<color={color}>+{s.critBonus * 100:F1}%</color>");
-            if (s.chargeBonus  > 0f) sb.AppendLine($"充能效率：<color={color}>+{s.chargeBonus * 100:F1}%</color>");
+            if (s.chargeBonus  > 0f) sb.AppendLine($"充能率：<color={color}>+{s.chargeBonus * 100:F1}%</color>");
             return sb.Length > 0 ? sb.ToString().TrimEnd() : $"<color={color}>无属性</color>";
         }
 
-        /// <summary>右列：升级后属性，与当前对比，上涨值用绿色 + ▲</summary>
         private string BuildStatsDiffText(EquipmentStats cur, EquipmentStats nxt)
         {
             var sb = new System.Text.StringBuilder();
-            AppendUpgrade(sb, "攻击力",  cur.attackBonus,        nxt.attackBonus,        "+{0}",    "+{0}");
-            AppendUpgrade(sb, "生命值",  cur.hpBonus,            nxt.hpBonus,            "+{0}",    "+{0}");
-            AppendUpgrade(sb, "护盾值",  cur.shieldBonus,        nxt.shieldBonus,        "+{0}",    "+{0}");
-            AppendUpgradeF(sb,"暴击率",  cur.critBonus   * 100f, nxt.critBonus   * 100f, "+{0:F1}%","+{0:F1}%");
-            AppendUpgradeF(sb,"充能效率",cur.chargeBonus * 100f, nxt.chargeBonus * 100f, "+{0:F1}%","+{0:F1}%");
+            AppendUpgrade(sb,  "攻击力",   cur.attackBonus,        nxt.attackBonus,        "+{0}",    "+{0}");
+            AppendUpgrade(sb,  "生命值",   cur.hpBonus,            nxt.hpBonus,            "+{0}",    "+{0}");
+            AppendUpgrade(sb,  "护盾值",   cur.shieldBonus,        nxt.shieldBonus,        "+{0}",    "+{0}");
+            AppendUpgradeF(sb, "暴击率",   cur.critBonus   * 100f, nxt.critBonus   * 100f, "+{0:F1}%","+{0:F1}%");
+            AppendUpgradeF(sb, "充能率", cur.chargeBonus * 100f, nxt.chargeBonus * 100f, "+{0:F1}%","+{0:F1}%");
             return sb.Length > 0 ? sb.ToString().TrimEnd() : $"<color={COLOR_UP}>无变化</color>";
         }
 
-        private void AppendUpgrade(
-            System.Text.StringBuilder sb,
-            string label, int curVal, int nxtVal,
-            string curFmt, string nxtFmt)
+        private void AppendUpgrade(System.Text.StringBuilder sb,
+            string label, int curVal, int nxtVal, string curFmt, string nxtFmt)
         {
             if (curVal == 0 && nxtVal == 0) return;
             bool increased = nxtVal > curVal;
-            string color   = increased ? COLOR_UP : COLOR_WHITE;
-            string symbol  = increased ? " ▲" : "";
-            string val     = string.Format(nxtFmt, nxtVal);
-            sb.AppendLine($"{label}：<color={color}>{val}{symbol}</color>");
+            string color  = increased ? COLOR_UP : COLOR_WHITE;
+            string symbol = increased ? " ▲" : "";
+            sb.AppendLine($"{label}：<color={color}>{string.Format(nxtFmt, nxtVal)}{symbol}</color>");
         }
 
-        private void AppendUpgradeF(
-            System.Text.StringBuilder sb,
-            string label, float curVal, float nxtVal,
-            string curFmt, string nxtFmt)
+        private void AppendUpgradeF(System.Text.StringBuilder sb,
+            string label, float curVal, float nxtVal, string curFmt, string nxtFmt)
         {
             if (curVal < 0.001f && nxtVal < 0.001f) return;
             bool increased = nxtVal > curVal + 0.001f;
-            string color   = increased ? COLOR_UP : COLOR_WHITE;
-            string symbol  = increased ? " ▲" : "";
-            string val     = string.Format(nxtFmt, nxtVal);
-            sb.AppendLine($"{label}：<color={color}>{val}{symbol}</color>");
+            string color  = increased ? COLOR_UP : COLOR_WHITE;
+            string symbol = increased ? " ▲" : "";
+            sb.AppendLine($"{label}：<color={color}>{string.Format(nxtFmt, nxtVal)}{symbol}</color>");
         }
 
-        // ── 工具 ──────────────────────────────────────────────
-
-        private static void AddTrigger(
-            EventTrigger et, EventTriggerType type,
+        private static void AddTrigger(EventTrigger et, EventTriggerType type,
             UnityEngine.Events.UnityAction<BaseEventData> action)
         {
             var e = new EventTrigger.Entry { eventID = type };

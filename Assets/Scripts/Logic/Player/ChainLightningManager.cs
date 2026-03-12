@@ -98,6 +98,8 @@ namespace LightVsDecay.Logic.Player
         // 本帧被激光直接命中的敌人（用于触发传导）
         private Dictionary<int, LaserHitData> frameHitEnemies = new Dictionary<int, LaserHitData>();
         
+        private Color chainColor = Color.white;
+        private bool hasCustomChainColor = false;
         /// <summary>激光命中数据</summary>
         private struct LaserHitData
         {
@@ -268,7 +270,24 @@ namespace LightVsDecay.Logic.Player
             activeChainGroups.Clear();
             frameHitEnemies.Clear();
         }
-        
+        /// <summary>设置所有传导线颜色（跟随主激光）</summary>
+        public void SetChainColor(Color color)
+        {
+            chainColor = color;
+            hasCustomChainColor = true;
+            // 更新所有当前活跃的传导线
+            foreach (var r in activeRenderers)
+                if (r != null && r.IsActive) r.SetColor(color);
+        }
+
+        /// <summary>重置传导线颜色为默认</summary>
+        public void ResetChainColor()
+        {
+            hasCustomChainColor = false;
+            chainColor = Color.white;
+            foreach (var r in activeRenderers)
+                if (r != null && r.IsActive) r.SetColor(Color.white);
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 私有方法 - 初始化
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -485,6 +504,8 @@ namespace LightVsDecay.Logic.Player
                     bounceIndex,
                     group.isMainLaser
                 );
+                if (hasCustomChainColor)
+                    renderer.SetColor(chainColor);
             }
             
             var link = new ChainLink

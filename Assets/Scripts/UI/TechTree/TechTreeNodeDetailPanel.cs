@@ -67,7 +67,13 @@ namespace LightVsDecay.UI.TechTree
         [Header("升级按钮")]
         [SerializeField] private Button          upgradeButton;
         [SerializeField] private TextMeshProUGUI upgradeButtonText;
-
+        
+        [Header("升级按钮内子元素（用于独立置灰）")]
+        [Tooltip("按钮内'升级'静态标签文字")]
+        [SerializeField] private TextMeshProUGUI upgradeLabelText;
+        [Tooltip("按钮内金币图标 Image")]
+        [SerializeField] private Image goldIconImage;
+        
         [Header("按钮颜色")]
         [SerializeField] private Color buttonNormalColor     = new Color(0.2f, 0.7f, 1f, 1f);
         [SerializeField] private Color buttonDisabledColor   = new Color(0.35f, 0.35f, 0.35f, 1f);
@@ -84,7 +90,6 @@ namespace LightVsDecay.UI.TechTree
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        private CanvasGroup _buttonCanvasGroup;
         private TechTreeNodeData _data;
         private TechTreePanel    _parent;
         private Coroutine        _longPressCoroutine;
@@ -102,8 +107,7 @@ namespace LightVsDecay.UI.TechTree
             if (upgradeButton != null)
             {
                 _buttonImage = upgradeButton.GetComponent<Image>();
-                _buttonCanvasGroup = upgradeButton.GetComponent<CanvasGroup>()
-                                     ?? upgradeButton.gameObject.AddComponent<CanvasGroup>();
+
                 var et = upgradeButton.gameObject.GetComponent<UnityEngine.EventSystems.EventTrigger>()
                          ?? upgradeButton.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
 
@@ -260,10 +264,10 @@ namespace LightVsDecay.UI.TechTree
 
             upgradeButton.gameObject.SetActive(true);
 
-            bool prereqOk  = TechTreeManager.Instance != null
-                             && TechTreeManager.Instance.CanUpgrade(_data.nodeId);
-            bool canAfford = ProgressManager.Instance != null
-                             && ProgressManager.Instance.GoldCoins >= cost;
+            bool prereqOk   = TechTreeManager.Instance != null
+                              && TechTreeManager.Instance.CanUpgrade(_data.nodeId);
+            bool canAfford  = ProgressManager.Instance != null
+                              && ProgressManager.Instance.GoldCoins >= cost;
             bool canUpgrade = prereqOk && canAfford;
 
             // 按钮交互 + 背景色
@@ -271,26 +275,28 @@ namespace LightVsDecay.UI.TechTree
             if (_buttonImage != null)
                 _buttonImage.color = canUpgrade ? buttonNormalColor : buttonDisabledColor;
 
-// 按钮文字
+            // "升级" 标签文字：可升级=白，否则=灰
+            if (upgradeLabelText != null)
+                upgradeLabelText.color = canUpgrade ? costNormalColor : Color.gray;
+
+            // 金币数字：前置不满足=灰，金币不足=红，正常=白
             if (upgradeButtonText != null)
             {
                 if (!prereqOk)
                 {
-                    upgradeButtonText.text = "<color=#888888>前置未满足</color>";
+                    upgradeButtonText.text  = $"{cost:N0}";
+                    upgradeButtonText.color = Color.gray;
                 }
                 else
                 {
-                    // ★ 只显示金币数量，金币足够=白色，不足=红色
-                    string hex = canAfford
-                        ? ColorUtility.ToHtmlStringRGB(costNormalColor)
-                        : ColorUtility.ToHtmlStringRGB(costInsufficientColor);
-
-                    upgradeButtonText.text = $"<color=#{hex}>x{cost:N0}</color>";
+                    upgradeButtonText.text  = $"{cost:N0}";
+                    upgradeButtonText.color = canAfford ? costNormalColor : costInsufficientColor;
                 }
             }
-            // ★ CanvasGroup 统一 dim 按钮内所有子元素（"升级"文字 + 金币图标）
-            if (_buttonCanvasGroup != null)
-                _buttonCanvasGroup.alpha = canUpgrade ? 1f : 0.45f;
+
+            // 金币图标：可升级=白，否则=灰
+            if (goldIconImage != null)
+                goldIconImage.color = canUpgrade ? Color.white : Color.gray;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -112,7 +112,8 @@ namespace LightVsDecay.Logic
         
         /// <summary>获取游戏设置</summary>
         public GameSettings Settings => settings;
-        
+        /// <summary>局外金币数量变化事件（参数：新金额）</summary>
+        public static event System.Action<int> OnGoldCoinsChanged;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -471,12 +472,26 @@ namespace LightVsDecay.Logic
             return true;
         }
         
-        public void AddGoldCoins(int amount) { meta.goldCoins += amount; meta.Save(); }
+        public void AddGoldCoins(int amount)
+        {
+            if (amount <= 0) return;
+            meta.goldCoins += amount;
+            meta.Save();
+            OnGoldCoinsChanged?.Invoke(meta.goldCoins);   // ★ 新增触发
+
+            if (showDebugInfo)
+                Debug.Log($"[ProgressManager] +{amount} 局外金币, 总计: {meta.goldCoins}");
+        }
+        
         public bool ConsumeGoldCoins(int amount)
         {
             if (meta.goldCoins < amount) return false;
             meta.goldCoins -= amount;
             meta.Save();
+            OnGoldCoinsChanged?.Invoke(meta.goldCoins);   // ★ 新增触发
+
+            if (showDebugInfo)
+                Debug.Log($"[ProgressManager] -{amount} 局外金币, 剩余: {meta.goldCoins}");
             return true;
         }
         

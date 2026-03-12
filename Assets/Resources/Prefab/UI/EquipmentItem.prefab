@@ -226,7 +226,7 @@ GameObject:
   - component: {fileID: 7357251095123580348}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: zhuangbei_Icon
+  m_Name: EquipmentItem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -351,6 +351,13 @@ MonoBehaviour:
   iconImage: {fileID: 712049010790029904}
   countText: {fileID: 627236365117296912}
   selectionHighlight: {fileID: 9156989660204072500}
+  borderImage: {fileID: 8218350159214996845}
+  rarityBorderSprites:
+  - {fileID: 21300000, guid: 920cdd5e4f5e99b4ea7bef9725907f2a, type: 3}
+  - {fileID: 21300000, guid: 1e89f7cdffe0e8a4ead7d84b119b3590, type: 3}
+  - {fileID: 21300000, guid: 95e78b8d4fde8f74ab62e153e48f60d5, type: 3}
+  - {fileID: 21300000, guid: e2bb0dfa6e5fd784c8144e4127989119, type: 3}
+  - {fileID: 21300000, guid: 0664662cb437d3a4190581c90b87709d, type: 3}
   hideCountWhenOne: 1
   itemButton: {fileID: 2779002379486940216}
 --- !u!1 &9156989660204072500

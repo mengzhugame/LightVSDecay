@@ -300,6 +300,10 @@ namespace LightVsDecay.Logic.Player
         
         private void PerformDamageDetection()
         {
+            mainLaserBeam?.ForceUpdatePath();
+            foreach (var subLaser in subLasers)
+                subLaser.beam?.ForceUpdatePath();
+            
             hitEnemies.Clear();
             hitBosses.Clear();
             hitCrates.Clear();
@@ -374,7 +378,7 @@ namespace LightVsDecay.Logic.Player
     
             if (usePenetration)
             {
-                detectLength = maxLaserLength;
+                detectLength = CurrentLaserLength;   // 使用含技能倍率的实际长度
                 detectCenter = segmentStart + segmentDir * (detectLength / 2f);
             }
             else
@@ -949,6 +953,7 @@ namespace LightVsDecay.Logic.Player
                     subLaser.beam.SetColor(color);
                 }
             }
+            ChainLightningManager.Instance?.SetChainColor(color);
         }
         
         public void ResetLaserColor()
@@ -967,6 +972,7 @@ namespace LightVsDecay.Logic.Player
                     subLaser.beam.ResetColor();
                 }
             }
+            ChainLightningManager.Instance?.ResetChainColor();
         }
         
         public void ResetVFXColor()
@@ -1025,23 +1031,21 @@ namespace LightVsDecay.Logic.Player
         public void AddLengthPercent(float percent, float minPercent = 0.8f)
         {
             float newMultiplier = skillLengthMultiplier + percent;
-    
-            if (newMultiplier < minPercent)
-            {
-                newMultiplier = minPercent;
-            }
-    
+            if (newMultiplier < minPercent) newMultiplier = minPercent;
             skillLengthMultiplier = newMultiplier;
-    
+
             if (mainLaserBeam != null)
-            {
                 mainLaserBeam.SetMaxLength(CurrentLaserLength);
-            }
-    
-            if (showDebugInfo)
+
+            // ✅ 新增：同步更新所有副激光长度
+            foreach (var subLaser in subLasers)
             {
-                Debug.Log($"[LaserController] 激光长度倍率: {skillLengthMultiplier:P0}, 当前长度: {CurrentLaserLength:F1}");
+                if (subLaser.beam != null)
+                    subLaser.beam.SetMaxLength(CurrentLaserLength * subLaser.lengthMultiplier);
             }
+
+            if (showDebugInfo)
+                Debug.Log($"[LaserController] 激光长度倍率: {skillLengthMultiplier:P0}, 当前长度: {CurrentLaserLength:F1}");
         }
         
         public void ResetDropBonuses()
@@ -1053,7 +1057,11 @@ namespace LightVsDecay.Logic.Player
             {
                 mainLaserBeam.SetMaxLength(CurrentLaserLength);
             }
-    
+            foreach (var subLaser in subLasers)
+            {
+                if (subLaser.beam != null)
+                    subLaser.beam.SetMaxLength(CurrentLaserLength * subLaser.lengthMultiplier);
+            }
             if (showDebugInfo)
             {
                 Debug.Log("[LaserController] 空投加成已重置");
