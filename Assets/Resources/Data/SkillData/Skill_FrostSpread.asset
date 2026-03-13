@@ -10,24 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4e18ec0e0bd528438a29401d6451dfa, type: 3}
-  m_Name: Passive_Crit
+  m_Name: Skill_FrostSpread
   m_EditorClassIdentifier: 
-  type: 8
-  category: 1
-  cardType: 1
-  displayName: "\u81F4\u547D\u66B4\u51FB"
-  icon: {fileID: 21300000, guid: 895215fe79d8d8a49b6f3849663df51a, type: 3}
-  description: "\u63D0\u9AD8\u6FC0\u5149\u66B4\u51FB\u7387\uFF0C\u66B4\u51FB\u65F6\u9020\u6210\u53CC\u500D\u4F24\u5BB3,\u98D8\u5B57X2\uFF0C\u5B9E\u9645\u662F1"
+  type: 5
+  category: 0
+  cardType: 0
+  displayName: "\u5BD2\u971C\u8513\u5EF6"
+  icon: {fileID: 21300000, guid: 6c8d27890a4bd6545be00ab8f2892671, type: 3}
+  description: "\u5904\u4E8E\u51CF\u901F/\u51BB\u7ED3\u72B6\u6001\u7684\u654C\u4EBA\u4F1A\u5411\u5468\u56F4\u6563\u5E03\u5BD2\u6C14\uFF0C\u4F7F\u9644\u8FD1\u7684\u654C\u4EBA\u4E5F\u9677\u5165\u51CF\u901F\u3002"
   changeColor: 0
   skillColor: {r: 1, g: 1, b: 1, a: 1}
   maxLevel: 5
   isRepeatable: 0
   levelData:
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+3%</color>\n\u66B4\u51FB\u4F24\u5BB3
-      <color=#00FF00>+15%</color>"
+  - description: "\u51CF\u901F/\u51BB\u7ED3\u654C\u4EBA\u5411\u5468\u56F4\u6269\u6563\u5BD2\u6C14\uFF0C\u8303\u56F4
+      <color=#00BFFF>1.5</color>\uFF0C\u51CF\u901F\u5F3A\u5EA6 <color=#00BFFF>30%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
-    knockbackMultiplier: 0
+    knockbackMultiplier: 1
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -35,46 +35,12 @@ MonoBehaviour:
     splitCount: 0
     splitDamageMultiplier: 0.3
     splitLength: 3
-    widthMultiplier: 0
+    widthMultiplier: 1
     chainBounces: 0
     chainRange: 0
     chainDamageDecay: 0.2
-    critRateBonus: 0.03
-    critDamageBonus: 0.15
-    critKnockback: 0
-    penetrationCount: 0
-    penetrationDecay: 0.1
-    dealsTrueDamageToBoss: 0
-    shatterDamageBonus: 0
-    shatterExplosionOnKill: 0
-    shatterExplosionRadius: 0
-    frostSpreadRadius: 0
-    frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 0
-    frostNovaDamageScale: 0
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 0
-    rotationSpeedBonus: 0
-    knockbackBonus: 0
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+6%</color>\n\u66B4\u51FB\u4F24\u5BB3
-      <color=#00FF00>+30%</color>"
-    damageMultiplier: 1
-    bossDamageBonus: 0
-    knockbackMultiplier: 0
-    slowPercent: 0
-    slowDuration: 0
-    freezeThreshold: 0
-    freezeDuration: 0
-    splitCount: 0
-    splitDamageMultiplier: 0.3
-    splitLength: 3
-    widthMultiplier: 0
-    chainBounces: 0
-    chainRange: 0
-    chainDamageDecay: 0.2
-    critRateBonus: 0.06
-    critDamageBonus: 0.3
+    critRateBonus: 0
+    critDamageBonus: 0
     critKnockback: 0
     penetrationCount: 0
     penetrationDecay: 0.1
@@ -83,6 +49,74 @@ MonoBehaviour:
     shatterExplosionOnKill: 0
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
+    frostSpreadSlowRatio: 0.3
+    enableFrostNova: 0
+    frostNovaRadius: 3
+    frostNovaDamageScale: 2
+    frostNovaSlowPercent: 0.2
+    frostNovaSlowDuration: 2
+    rotationSpeedBonus: 0
+    knockbackBonus: 0
+  - description: "\u51CF\u901F/\u51BB\u7ED3\u654C\u4EBA\u5411\u5468\u56F4\u6269\u6563\u5BD2\u6C14\uFF0C\u8303\u56F4
+      <color=#00BFFF>2.0</color>\uFF0C\u51CF\u901F\u5F3A\u5EA6 <color=#00BFFF>40%</color>"
+    damageMultiplier: 1
+    bossDamageBonus: 0
+    knockbackMultiplier: 1
+    slowPercent: 0
+    slowDuration: 0
+    freezeThreshold: 0
+    freezeDuration: 0
+    splitCount: 0
+    splitDamageMultiplier: 0.3
+    splitLength: 3
+    widthMultiplier: 1
+    chainBounces: 0
+    chainRange: 0
+    chainDamageDecay: 0
+    critRateBonus: 0
+    critDamageBonus: 0
+    critKnockback: 0
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
+    frostSpreadRadius: 2
+    frostSpreadSlowRatio: 0.4
+    enableFrostNova: 0
+    frostNovaRadius: 3
+    frostNovaDamageScale: 2
+    frostNovaSlowPercent: 0.2
+    frostNovaSlowDuration: 2
+    rotationSpeedBonus: 0
+    knockbackBonus: 0
+  - description: "\u51CF\u901F/\u51BB\u7ED3\u654C\u4EBA\u5411\u5468\u56F4\u6269\u6563\u5BD2\u6C14\uFF0C\u8303\u56F4
+      <color=#00BFFF>2.5</color>\uFF0C\u51CF\u901F\u5F3A\u5EA6 <color=#00BFFF>50%</color>"
+    damageMultiplier: 1
+    bossDamageBonus: 0
+    knockbackMultiplier: 1
+    slowPercent: 0
+    slowDuration: 0
+    freezeThreshold: 0
+    freezeDuration: 0
+    splitCount: 0
+    splitDamageMultiplier: 0.3
+    splitLength: 3
+    widthMultiplier: 1
+    chainBounces: 0
+    chainRange: 0
+    chainDamageDecay: 0
+    critRateBonus: 0
+    critDamageBonus: 0
+    critKnockback: 0
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
+    frostSpreadRadius: 2.5
     frostSpreadSlowRatio: 0.5
     enableFrostNova: 0
     frostNovaRadius: 3
@@ -91,11 +125,11 @@ MonoBehaviour:
     frostNovaSlowDuration: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+9%</color>\n\u66B4\u51FB\u4F24\u5BB3
-      <color=#00FF00>+45%</color>"
+  - description: "\u51CF\u901F/\u51BB\u7ED3\u654C\u4EBA\u5411\u5468\u56F4\u6269\u6563\u5BD2\u6C14\uFF0C\u8303\u56F4
+      <color=#00BFFF>3.0</color>\uFF0C\u51CF\u901F\u5F3A\u5EA6 <color=#00BFFF>60%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
-    knockbackMultiplier: 0
+    knockbackMultiplier: 1
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -103,12 +137,12 @@ MonoBehaviour:
     splitCount: 0
     splitDamageMultiplier: 0.3
     splitLength: 3
-    widthMultiplier: 0
+    widthMultiplier: 1
     chainBounces: 0
     chainRange: 0
-    chainDamageDecay: 0.2
-    critRateBonus: 0.09
-    critDamageBonus: 0.45
+    chainDamageDecay: 0.05
+    critRateBonus: 0
+    critDamageBonus: 0
     critKnockback: 0
     penetrationCount: 0
     penetrationDecay: 0.1
@@ -116,8 +150,8 @@ MonoBehaviour:
     shatterDamageBonus: 0
     shatterExplosionOnKill: 0
     shatterExplosionRadius: 2
-    frostSpreadRadius: 1.5
-    frostSpreadSlowRatio: 0.5
+    frostSpreadRadius: 3
+    frostSpreadSlowRatio: 0.6
     enableFrostNova: 0
     frostNovaRadius: 3
     frostNovaDamageScale: 2
@@ -125,11 +159,13 @@ MonoBehaviour:
     frostNovaSlowDuration: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+12%</color>\n\u66B4\u51FB\u4F24\u5BB3
-      <color=#00FF00>+60%</color>"
+  - description: "\u51BB\u7ED3\u654C\u4EBA\u81EA\u7136\u89E3\u51BB\u65F6\u89E6\u53D1\u51B0\u971C\u65B0\u661F\uFF0C\u5468\u56F4
+      <color=#00BFFF>3.m</color> \u5185\u9020\u6210 <color=#00BFFF>2\xD7</color>
+      \u4F24\u5BB3\uFF0C\u5E76\u65BD\u52A0 <color=#00BFFF>20%</color> \u51CF\u901F
+      <color=#00BFFF>2s</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
-    knockbackMultiplier: 0
+    knockbackMultiplier: 1
     slowPercent: 0
     slowDuration: 0
     freezeThreshold: 0
@@ -137,12 +173,12 @@ MonoBehaviour:
     splitCount: 0
     splitDamageMultiplier: 0.3
     splitLength: 3
-    widthMultiplier: 0
-    chainBounces: 0
-    chainRange: 0
-    chainDamageDecay: 0.2
-    critRateBonus: 0.12
-    critDamageBonus: 0.6
+    widthMultiplier: 1
+    chainBounces: 5
+    chainRange: 3
+    chainDamageDecay: 0
+    critRateBonus: 0
+    critDamageBonus: 0
     critKnockback: 0
     penetrationCount: 0
     penetrationDecay: 0.1
@@ -150,43 +186,9 @@ MonoBehaviour:
     shatterDamageBonus: 0
     shatterExplosionOnKill: 0
     shatterExplosionRadius: 2
-    frostSpreadRadius: 1.5
-    frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
-    rotationSpeedBonus: 0
-    knockbackBonus: 0
-  - description: "\u66B4\u51FB\u7387 <color=#00FF00>+15%</color>\n\u66B4\u51FB\u4F24\u5BB3
-      <color=#00FF00>+90%</color>,\u9644\u5E26\u6280\u80FD\u6253\u65AD"
-    damageMultiplier: 1
-    bossDamageBonus: 0
-    knockbackMultiplier: 0
-    slowPercent: 0
-    slowDuration: 0
-    freezeThreshold: 0
-    freezeDuration: 0
-    splitCount: 0
-    splitDamageMultiplier: 0.3
-    splitLength: 3
-    widthMultiplier: 0
-    chainBounces: 0
-    chainRange: 0
-    chainDamageDecay: 0.2
-    critRateBonus: 0.15
-    critDamageBonus: 0.9
-    critKnockback: 1
-    penetrationCount: 0
-    penetrationDecay: 0.1
-    dealsTrueDamageToBoss: 0
-    shatterDamageBonus: 0
-    shatterExplosionOnKill: 0
-    shatterExplosionRadius: 2
-    frostSpreadRadius: 1.5
-    frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
+    frostSpreadRadius: 3
+    frostSpreadSlowRatio: 0.6
+    enableFrostNova: 1
     frostNovaRadius: 3
     frostNovaDamageScale: 2
     frostNovaSlowPercent: 0.2

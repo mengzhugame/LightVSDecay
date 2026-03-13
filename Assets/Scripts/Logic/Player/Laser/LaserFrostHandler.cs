@@ -146,57 +146,55 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>
-        /// 应用寒气扩散效果（每 Tick 结束时调用）
+        /// 应用寒气扩散效果（每 Tick 结束时调用，需要 FrostSpread 技能才生效）
         /// </summary>
-        public void ApplyFrostSpread(float slowPercent, float duration, LayerMask detectionLayer)
+        /// <param name="directSlowPercent">直接减速百分比（来自 Frost 技能）</param>
+        /// <param name="directSlowDuration">直接减速持续时间</param>
+        /// <param name="spreadRadius">扩散检测半径（来自 FrostSpread 技能配置）</param>
+        /// <param name="spreadSlowRatio">扩散减速比例（占直接减速的比例）</param>
+        /// <param name="detectionLayer">检测层</param>
+        public void ApplyFrostSpread(float directSlowPercent, float directSlowDuration, 
+            float spreadRadius, float spreadSlowRatio, LayerMask detectionLayer)
         {
             if (directHitEnemiesThisTick.Count == 0) return;
-            if (slowPercent <= 0f) return;
-            
-            // 计算扩散减速效果（直接效果的 50%）
-            float spreadSlowPercent = slowPercent * FROST_SPREAD_RATIO;
-            
-            // 遍历所有直接命中的敌人
+            if (directSlowPercent <= 0f) return;
+
+            float spreadSlowPercent = directSlowPercent * spreadSlowRatio;
+
             foreach (var sourceEnemy in directHitEnemiesThisTick)
             {
                 if (sourceEnemy == null) continue;
-                
-                // 检测扩散范围内的敌人
+
                 int hitCount = Physics2D.OverlapCircleNonAlloc(
                     sourceEnemy.transform.position,
-                    FROST_SPREAD_RADIUS,
+                    spreadRadius,
                     spreadCheckBuffer,
-                    detectionLayer
-                );
-                
+                    detectionLayer);
+
                 for (int i = 0; i < hitCount; i++)
                 {
-                    Collider2D col = spreadCheckBuffer[i];
+                    var col = spreadCheckBuffer[i];
                     if (col == null) continue;
-                    
-                    EnemyBlob targetEnemy = col.GetComponentInParent<EnemyBlob>();
-                    if (targetEnemy == null) continue;
-                    
-                    // 跳过自己
-                    if (targetEnemy == sourceEnemy) continue;
-                    
-                    // 跳过已被直接命中的敌人
-                    if (directHitEnemiesThisTick.Contains(targetEnemy)) continue;
-                    
-                    int targetId = targetEnemy.GetInstanceID();
-                    
-                    // 去重：本 Tick 只受一次扩散效果
-                    if (spreadAffectedEnemyIds.Contains(targetId)) continue;
-                    spreadAffectedEnemyIds.Add(targetId);
-                    
-                    // 应用扩散减速（不触发冰冻累积，不播放粒子）
-                    targetEnemy.ApplyFrostSlow(spreadSlowPercent, duration);
+
+                    var enemy = col.GetComponent<LightVsDecay.Logic.Enemy.EnemyBlob>();
+                    if (enemy == null || enemy.IsDead) continue;
+
+                    int enemyId = enemy.GetInstanceID();
+
+                    // 直接命中的敌人已在 ApplyFrostEffect 中处理，跳过
+                    if (directHitEnemiesThisTick.Contains(enemy)) continue;
+
+                    // 本 Tick 内去重
+                    if (spreadAffectedEnemyIds.Contains(enemyId)) continue;
+                    spreadAffectedEnemyIds.Add(enemyId);
+
+                    enemy.ApplyFrostSlow(spreadSlowPercent, directSlowDuration);
+
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"[LaserFrostHandler] 寒霜蔓延 → 敌人ID:{enemyId}, 减速:{spreadSlowPercent:P0}");
+                    }
                 }
-            }
-            
-            if (showDebugInfo && spreadAffectedEnemyIds.Count > 0)
-            {
-                Debug.Log($"[LaserFrostHandler] ❄️ 寒气扩散影响了 {spreadAffectedEnemyIds.Count} 个敌人");
             }
         }
         

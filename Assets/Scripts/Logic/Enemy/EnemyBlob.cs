@@ -1315,6 +1315,16 @@ namespace LightVsDecay.Logic.Enemy
         {
             frostExposureTime = 0f;
         }
+        /// <summary>
+        /// 追加额外击退力（Crit Lv5 暴击时调用）
+        /// </summary>
+        public void AddExtraKnockback(Vector2 force)
+        {
+            if (rb != null && !isFrozen)
+            {
+                rb.AddForce(force, ForceMode2D.Impulse);
+            }
+        }
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Frost Debuff 接口
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
