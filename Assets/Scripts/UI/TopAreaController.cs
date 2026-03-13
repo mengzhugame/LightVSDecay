@@ -32,6 +32,7 @@ using TMPro;
 using LightVsDecay.Audio;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Equipment;
+using LightVsDecay.UI.Panels;
 
 namespace LightVsDecay.UI
 {
@@ -53,7 +54,12 @@ namespace LightVsDecay.UI
         [SerializeField] private TextMeshProUGUI energyText;
         [Tooltip("图纸数量文本 ← 必须拖入！")]
         [SerializeField] private TextMeshProUGUI blueprintText;
-
+        [Tooltip("体力区域点击按钮（套在体力文本外的 Button）")]
+        [SerializeField] private Button energyButton;
+        [Tooltip("金币区域点击按钮")]
+        [SerializeField] private Button goldCoinButton;
+        [Tooltip("图纸区域点击按钮")]
+        [SerializeField] private Button blueprintButton;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector — 导航按钮
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -64,7 +70,8 @@ namespace LightVsDecay.UI
 
         [Tooltip("返回按钮（科技树/装备面板时显示）")]
         [SerializeField] private Button backButton;
-
+        [Tooltip("资源提示面板（体力/金币/图纸）")]
+        [SerializeField] private TopBarTipsPanel topBarTipsPanel;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector — 面板引用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -99,12 +106,14 @@ namespace LightVsDecay.UI
         {
             EquipmentManager.OnBlueprintsChanged += OnBlueprintsChanged;
             ProgressManager.OnGoldCoinsChanged   += OnGoldCoinsChanged;
+            ProgressManager.OnEnergyChanged += OnEnergyChanged;
         }
 
         private void OnDisable()
         {
             EquipmentManager.OnBlueprintsChanged -= OnBlueprintsChanged;
             ProgressManager.OnGoldCoinsChanged   -= OnGoldCoinsChanged;
+            ProgressManager.OnEnergyChanged -= OnEnergyChanged;
         }
 
         private void OnDestroy()
@@ -124,6 +133,9 @@ namespace LightVsDecay.UI
 
             if (backButton != null)
                 backButton.onClick.AddListener(OnBackClicked);
+            if (energyButton    != null) energyButton.onClick.AddListener(OnEnergyClicked);
+            if (goldCoinButton  != null) goldCoinButton.onClick.AddListener(OnGoldClicked);
+            if (blueprintButton != null) blueprintButton.onClick.AddListener(OnBlueprintClicked);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -209,6 +221,7 @@ namespace LightVsDecay.UI
             if (gemText      != null) gemText.text     = gems.ToString();
             if (goldCoinText != null) goldCoinText.text = gold.ToString();
             if (energyText   != null) energyText.text   = $"{energy}/{maxEnergy}";
+            if (energyText != null) energyText.text = $"{energy}/{maxEnergy}";
         }
 
         private void RefreshBlueprints()
@@ -251,5 +264,30 @@ namespace LightVsDecay.UI
 
         /// <summary>静态便捷刷新（无单例引用时调用）</summary>
         public static void RefreshIfExists() => Instance?.Refresh();
+        
+        private void OnEnergyClicked()
+        {
+            PlayButtonSound();
+            topBarTipsPanel?.Show();
+
+            if (showDebugInfo)
+                Debug.Log("[TopAreaController] 打开提示面板");
+        }
+        private void OnGoldClicked()
+        {
+            PlayButtonSound();
+            topBarTipsPanel?.Show(TopBarResourceType.Gold);
+        }
+        private void OnBlueprintClicked()
+        {
+            PlayButtonSound();
+            topBarTipsPanel?.Show(TopBarResourceType.Blueprint);
+        }
+        private void OnEnergyChanged(int current, int max)
+        {
+            // 体力变化时实时刷新显示
+            if (energyText != null)
+                energyText.text = $"{current}/{max}";
+        }
     }
 }

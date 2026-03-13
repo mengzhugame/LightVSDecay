@@ -49,8 +49,18 @@ namespace LightVsDecay.Data.SO
         public int maxEnergy = 5;
         
         [Tooltip("能量恢复间隔（秒）")]
-        public float energyRecoveryInterval = 600f; // 10分钟
-        
+        public float energyRecoveryInterval = 1800f; // 10分钟
+        // ── 广告体力 ──────────────────────────────────────
+        [Tooltip("每次看广告恢复的体力量")]
+        public int adEnergyReward = 2;
+
+        [Tooltip("每日通过看广告恢复体力的次数上限")]
+        public int maxDailyAdWatches = 5;
+        [Tooltip("每次看广告获得的金币奖励")]
+        public int adGoldReward = 500;
+
+        [Tooltip("每次看广告获得的图纸奖励")]
+        public int adBlueprintReward = 30;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 激光系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

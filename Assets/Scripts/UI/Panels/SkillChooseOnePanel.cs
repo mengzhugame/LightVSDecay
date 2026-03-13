@@ -157,7 +157,8 @@ namespace LightVsDecay.UI.Panels
             GenerateAndDisplayChoices();
             
             gameObject.SetActive(true);
-            
+            // ★ 清除 EventSystem 当前选中，防止首次点击被吞
+            UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(null);
             if (showDebugInfo)
             {
                 Debug.Log($"[SkillChooseOnePanel] 显示升级面板 Lv.{level}");

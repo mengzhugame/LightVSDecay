@@ -69,7 +69,9 @@ namespace LightVsDecay.UI.Panels
         
         [Header("═══ 设置面板 ═══")]
         [SerializeField] private SettingsPanel settingsPanel;
-        
+        [Header("═══ 面板引用 ═══")]
+        [Tooltip("体力不足时弹出的面板")]
+        [SerializeField] private TopBarTipsPanel topBarTipsPanel;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 - 显示设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -504,7 +506,12 @@ namespace LightVsDecay.UI.Panels
                 : PlayerPrefs.GetInt("PlayerEnergy", 5);
             if (currentEnergy <= 0)
             {
-                Debug.Log("[MainMenuPanel] 能量不足！");
+                // 原: Debug.Log("[MainMenuPanel] 能量不足！");
+                // 新: 弹出体力面板引导玩家
+                if (topBarTipsPanel != null)
+                    topBarTipsPanel.Show();
+                else
+                    Debug.Log("[MainMenuPanel] 能量不足！");  // 降级兜底
                 return;
             }
             

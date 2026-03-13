@@ -17,7 +17,9 @@ MonoBehaviour:
   maxLevel: 20
   comboTimeout: 2
   maxEnergy: 5
-  energyRecoveryInterval: 600
+  energyRecoveryInterval: 1800
+  adEnergyReward: 2
+  maxDailyAdWatches: 5
   baseDPS: 1000
   tickRate: 0.1
   baseKnockbackForce: 10
