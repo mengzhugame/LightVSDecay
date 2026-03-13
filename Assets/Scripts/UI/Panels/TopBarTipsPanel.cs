@@ -65,11 +65,16 @@ namespace LightVsDecay.UI.Panels
 
         [Header("═══ 广告按钮 ═══")]
         [SerializeField] private Button          adButton;
+        [Tooltip("按钮上的视频播放图标（置灰时一起变色）")]
+        [SerializeField] private Image adVideoIcon;
         [Tooltip("按钮上的资源图标（随模式切换 Sprite）")]
         [SerializeField] private Image           adResourceIcon;
         [Tooltip("按钮上的数量文字，如 '+2' / '+500'")]
         [SerializeField] private TextMeshProUGUI adButtonText;
-
+        [Tooltip("按钮禁用时的置灰颜色")]
+        [SerializeField] private Color adDisabledColor = new Color(0.5f, 0.5f, 0.5f, 1f);
+        [Tooltip("按钮启用时图标和文字的正常颜色")]
+        [SerializeField] private Color adNormalColor = Color.white;
         [Header("═══ 今日次数 & 提示 ═══")]
         [Tooltip("今日广告次数，如 '今日已观看 2/5 次'")]
         [SerializeField] private TextMeshProUGUI adCountText;
@@ -106,12 +111,8 @@ namespace LightVsDecay.UI.Panels
         [SerializeField] private string blueprintInfo       = "图纸是强化装备的关键！\n观看短视频广告，立即获取额外图纸！";
 
         [Header("═══ 通用文案 ═══")]
-        [Tooltip("广告按钮可用时前缀，{0}=奖励量")]
-        [SerializeField] private string adButtonPrefix      = "+{0}";
-        [Tooltip("广告次数耗尽时按钮文案")]
-        [SerializeField] private string adExhaustedText     = "今日已达上限";
-        [Tooltip("今日次数格式，{0}=已看，{1}=上限")]
-        [SerializeField] private string adCountFormat       = "今日已观看 {0}/{1} 次";
+        [Tooltip("次数耗尽时 InfoMainText 显示的说明文字")]
+        [SerializeField] private string adExhaustedInfo = "今日广告次数已达上限\n明天再来领取吧！";
         [Tooltip("底部关闭提示文字")]
         [SerializeField] private string closeHint           = "点击空白处 关闭界面";
 
@@ -208,30 +209,28 @@ namespace LightVsDecay.UI.Panels
         {
             var pm = ProgressManager.Instance;
 
-            // 标题
             SetTitle(energyTitle);
-
-            // 资源图标
             SetAdIcon(energyIcon);
 
-            // 倒计时组
-            bool isFull = pm == null || pm.IsEnergyFull;
-            SetCountdownGroupVisible(!isFull);
+            bool isFull   = pm == null || pm.IsEnergyFull;
+            bool canWatch = pm != null && pm.CanWatchAdForEnergy;
 
+            // 倒计时：满载或次数耗尽时隐藏
+            SetCountdownGroupVisible(!isFull && canWatch);
+
+            // InfoMainText：满载 / 可看 / 已耗尽 三种状态
             if (infoMainText != null)
-                infoMainText.text = isFull ? energyInfoFull : energyInfoRecover;
+            {
+                if (isFull)
+                    infoMainText.text = energyInfoFull;
+                else if (canWatch)
+                    infoMainText.text = energyInfoRecover;
+                // 耗尽时由 SetAdButton 覆写
+            }
 
             RefreshCountdown();
 
-            // 广告按钮
-            bool canWatch = pm != null && pm.CanWatchAdForEnergy;
-            SetAdButton(
-                canWatch,
-                canWatch ? string.Format(adButtonPrefix, pm?.AdEnergyReward ?? 2) : adExhaustedText
-            );
-
-            // 次数
-            SetAdCount(pm?.DailyAdWatchCount ?? 0, pm?.MaxDailyAdWatches ?? 5);
+            SetAdButton(canWatch, $"+{pm?.AdEnergyReward ?? 2}", adExhaustedInfo);
         }
 
         private void RefreshCountdown()
@@ -258,18 +257,14 @@ namespace LightVsDecay.UI.Panels
 
             SetTitle(goldTitle);
             SetAdIcon(goldIcon);
-            SetCountdownGroupVisible(false);  // 金币无倒计时
-
-            if (infoMainText != null)
-                infoMainText.text = goldInfo;
+            SetCountdownGroupVisible(false);
 
             bool canWatch = pm != null && pm.CanWatchAdForGold;
-            SetAdButton(
-                canWatch,
-                canWatch ? string.Format(adButtonPrefix, pm?.AdGoldReward ?? 500) : adExhaustedText
-            );
 
-            SetAdCount(pm?.DailyAdGoldWatchCount ?? 0, pm?.MaxDailyAdWatches ?? 5);
+            if (infoMainText != null && canWatch)
+                infoMainText.text = goldInfo;
+
+            SetAdButton(canWatch, $"+{pm?.AdGoldReward ?? 500}", adExhaustedInfo);
         }
 
         // ── 图纸模式 ──────────────────────────────────────────
@@ -280,18 +275,14 @@ namespace LightVsDecay.UI.Panels
 
             SetTitle(blueprintTitle);
             SetAdIcon(blueprintIcon);
-            SetCountdownGroupVisible(false);  // 图纸无倒计时
-
-            if (infoMainText != null)
-                infoMainText.text = blueprintInfo;
+            SetCountdownGroupVisible(false);
 
             bool canWatch = pm != null && pm.CanWatchAdForBlueprint;
-            SetAdButton(
-                canWatch,
-                canWatch ? string.Format(adButtonPrefix, pm?.AdBlueprintReward ?? 3) : adExhaustedText
-            );
 
-            SetAdCount(pm?.DailyAdBlueprintWatchCount ?? 0, pm?.MaxDailyAdWatches ?? 5);
+            if (infoMainText != null && canWatch)
+                infoMainText.text = blueprintInfo;
+
+            SetAdButton(canWatch, $"+{pm?.AdBlueprintReward ?? 3}", adExhaustedInfo);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -315,16 +306,24 @@ namespace LightVsDecay.UI.Panels
                 countdownText.gameObject.SetActive(visible);
         }
 
-        private void SetAdButton(bool interactable, string text)
+        private void SetAdButton(bool interactable, string buttonAmountText, string exhaustedInfoText = "")
         {
-            if (adButton     != null) adButton.interactable  = interactable;
-            if (adButtonText != null) adButtonText.text      = text;
-        }
+            // 按钮可交互状态
+            if (adButton != null) adButton.interactable = interactable;
 
-        private void SetAdCount(int current, int max)
-        {
-            if (adCountText != null)
-                adCountText.text = string.Format(adCountFormat, current, max);
+            // 按钮内文字（仅显示数量，如 "+2"）
+            if (adButtonText != null)
+                adButtonText.text = interactable ? buttonAmountText : "";
+
+            // 按钮内图标和文字颜色置灰
+            Color iconColor = interactable ? adNormalColor : adDisabledColor;
+            if (adVideoIcon    != null) adVideoIcon.color    = iconColor;
+            if (adResourceIcon != null) adResourceIcon.color = iconColor;
+            if (adButtonText   != null) adButtonText.color   = iconColor;
+
+            // 次数耗尽时，InfoMainText 切换为提示文案
+            if (!interactable && infoMainText != null && !string.IsNullOrEmpty(exhaustedInfoText))
+                infoMainText.text = exhaustedInfoText;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -339,21 +338,22 @@ namespace LightVsDecay.UI.Panels
             bool success = false;
             switch (_currentMode)
             {
-                case TopBarResourceType.Energy:
-                    success = pm.WatchAdForEnergy();
-                    break;
-                case TopBarResourceType.Gold:
-                    success = pm.WatchAdForGold();
-                    break;
-                case TopBarResourceType.Blueprint:
-                    success = pm.WatchAdForBlueprint();
-                    break;
+                case TopBarResourceType.Energy:    success = pm.WatchAdForEnergy();    break;
+                case TopBarResourceType.Gold:      success = pm.WatchAdForGold();      break;
+                case TopBarResourceType.Blueprint: success = pm.WatchAdForBlueprint(); break;
             }
 
             if (showDebugInfo)
                 Debug.Log($"[TopBarTipsPanel] 广告({_currentMode}) 结果: {success}");
 
-            // 刷新按钮状态（次数/奖励由事件驱动）
+            // ★ 广告成功后关闭面板
+            if (success)
+            {
+                Hide();
+                return;
+            }
+
+            // 失败（次数已耗尽）→ 刷新显示
             RefreshAll();
         }
 

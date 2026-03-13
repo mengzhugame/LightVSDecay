@@ -141,6 +141,7 @@ namespace LightVsDecay.Logic.Player
         
         private void LateUpdate()
         {
+            CalculateLaserPath();
             UpdateLaserVisuals();
         }
         /// <summary>
