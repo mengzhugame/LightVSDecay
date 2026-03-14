@@ -26195,7 +26195,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 292b06d2fe53f2543852e082a82cc6a4, type: 2}
   chapterDatabase: {fileID: 11400000, guid: 0a37e3ccc35aee84fae4acd3540d5507, type: 2}
-  showDebugInfo: 1
+  showDebugInfo: 0
 --- !u!114 &1882754930772611034
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27793,23 +27793,24 @@ MonoBehaviour:
   infoMainText: {fileID: 735331142}
   countdownText: {fileID: 826769437}
   adButton: {fileID: 3691409759531648270}
+  adVideoIcon: {fileID: 7437120064569493208}
   adResourceIcon: {fileID: 436305631}
   adButtonText: {fileID: 1882754930845952064}
-  adCountText: {fileID: 0}
+  adDisabledColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  adNormalColor: {r: 1, g: 1, b: 1, a: 1}
+  adCountText: {fileID: 1882754930845952064}
   closeHintText: {fileID: 2695550159872149911}
   energyIcon: {fileID: 21300000, guid: 3eee7bc29c3d89542992149e1a615e51, type: 3}
   goldIcon: {fileID: 21300000, guid: 03a04bde7366da3439f56fa1958677f6, type: 3}
   blueprintIcon: {fileID: 21300000, guid: 15af5293540bd3b4c8bd055d2ff37eb8, type: 3}
-  energyTitle: "\u4F53\u529B\u8017\u5C3D"
+  energyTitle: "\u83B7\u53D6\u4F53\u529B"
   energyInfoFull: "\u4F53\u529B\u5DF2\u6EE1\uFF0C\u65E0\u9700\u7B49\u5F85\uFF01"
   energyInfoRecover: "\u8DDD\u79BB\u4E0B\u6B21\u4F53\u529B\u6062\u590D\u9700\u8981"
   goldTitle: "\u83B7\u53D6\u91D1\u5E01"
   goldInfo: "\u89C2\u770B\u77ED\u89C6\u9891\u5E7F\u544A\uFF0C\u7ACB\u5373\u9886\u53D6\u91D1\u5E01\u8865\u7ED9\uFF01"
   blueprintTitle: "\u83B7\u53D6\u56FE\u7EB8"
   blueprintInfo: "\u89C2\u770B\u77ED\u89C6\u9891\u5E7F\u544A\uFF0C\u7ACB\u5373\u83B7\u53D6\u989D\u5916\u56FE\u7EB8\uFF01"
-  adButtonPrefix: +{0}
-  adExhaustedText: "\u4ECA\u65E5\u5DF2\u8FBE\u4E0A\u9650"
-  adCountFormat: "\u4ECA\u65E5\u5DF2\u89C2\u770B {0}/{1} \u6B21"
+  adExhaustedInfo: "\u4ECA\u65E5\u5E7F\u544A\u6B21\u6570\u5DF2\u8FBE\u4E0A\u9650\n\u660E\u5929\u518D\u6765\u9886\u53D6\u5427\uFF01"
   closeHint: "\u70B9\u51FB\u7A7A\u767D\u5904 \u5173\u95ED\u754C\u9762"
   showDebugInfo: 0
 --- !u!224 &5651048600813606781
@@ -27898,7 +27899,7 @@ GameObject:
   - component: {fileID: 3691409759531648270}
   m_Layer: 5
   m_HasEditorInfo: 1
-  m_Name: RestartButton
+  m_Name: AdButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

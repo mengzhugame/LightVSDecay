@@ -375,7 +375,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             while (landedCount < 3 && timer < timeout)
             {
                 yield return null;
-                timer += Time.unscaledDeltaTime;
+                timer += Time.deltaTime;
             }
         }
         
