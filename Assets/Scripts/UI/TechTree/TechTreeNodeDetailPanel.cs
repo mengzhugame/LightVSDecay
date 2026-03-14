@@ -67,7 +67,13 @@ namespace LightVsDecay.UI.TechTree
         [Header("升级按钮")]
         [SerializeField] private Button          upgradeButton;
         [SerializeField] private TextMeshProUGUI upgradeButtonText;
-
+        
+        [Header("升级按钮内子元素（用于独立置灰）")]
+        [Tooltip("按钮内'升级'静态标签文字")]
+        [SerializeField] private TextMeshProUGUI upgradeLabelText;
+        [Tooltip("按钮内金币图标 Image")]
+        [SerializeField] private Image goldIconImage;
+        
         [Header("按钮颜色")]
         [SerializeField] private Color buttonNormalColor     = new Color(0.2f, 0.7f, 1f, 1f);
         [SerializeField] private Color buttonDisabledColor   = new Color(0.35f, 0.35f, 0.35f, 1f);
@@ -84,7 +90,6 @@ namespace LightVsDecay.UI.TechTree
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
         private TechTreeNodeData _data;
         private TechTreePanel    _parent;
         private Coroutine        _longPressCoroutine;
@@ -175,25 +180,30 @@ namespace LightVsDecay.UI.TechTree
 
         private void RefreshStats(int curLv, bool isMax)
         {
-            // 左列：当前等级
+            // Lv.0 显示"未激活"状态；Lv.1+ 左列=当前，右列=下一级
             if (levelLeftText != null)
-                levelLeftText.text = $"Lv.{curLv}";
+                levelLeftText.text = curLv == 0
+                    ? "<color=#888888>未激活</color>"
+                    : $"Lv.{curLv}";
 
             if (statLeftText != null)
-                statLeftText.text = curLv > 0 ? BuildStatText(curLv) : "—";
+                statLeftText.text = curLv == 0
+                    ? "<color=#888888>—</color>"
+                    : BuildStatText(curLv);
 
-            // 右列：下一级
+            int nextLv = curLv + 1;
+            bool rightIsMax = isMax || nextLv > _data.maxLevel;
+
             if (levelRightText != null)
-                levelRightText.text = isMax
+                levelRightText.text = rightIsMax
                     ? "<color=#FFD700>MAX</color>"
-                    : $"<color=#66FF66>Lv.{curLv + 1}</color>";
+                    : $"<color=#66FF66>Lv.{nextLv}</color>";
 
             if (statRightText != null)
-                statRightText.text = isMax
+                statRightText.text = rightIsMax
                     ? "<color=#888888>已满级</color>"
-                    : $"<color=#66FF66>{BuildStatText(curLv + 1)}</color>";
+                    : $"<color=#66FF66>{BuildStatText(nextLv)}</color>";
         }
-
         // ── 解锁提示 ─────────────────────────────────────────
 
         private void RefreshDescText(int curLv, bool isMax)
@@ -232,7 +242,10 @@ namespace LightVsDecay.UI.TechTree
                 if (node == null) continue;
                 if (node.prerequisiteNodeIds != null
                     && node.prerequisiteNodeIds.Contains(_data.nodeId))
-                    return 1; // 有后续节点，Lv.1 即可解锁
+                {
+                    // ★ 返回后续节点配置的前置最低等级（例如 Lv.50）
+                    return Mathf.Max(1, node.prerequisiteMinLevel);
+                }
             }
             return 0;
         }
@@ -251,10 +264,10 @@ namespace LightVsDecay.UI.TechTree
 
             upgradeButton.gameObject.SetActive(true);
 
-            bool prereqOk  = TechTreeManager.Instance != null
-                             && TechTreeManager.Instance.CanUpgrade(_data.nodeId);
-            bool canAfford = ProgressManager.Instance != null
-                             && ProgressManager.Instance.GoldCoins >= cost;
+            bool prereqOk   = TechTreeManager.Instance != null
+                              && TechTreeManager.Instance.CanUpgrade(_data.nodeId);
+            bool canAfford  = ProgressManager.Instance != null
+                              && ProgressManager.Instance.GoldCoins >= cost;
             bool canUpgrade = prereqOk && canAfford;
 
             // 按钮交互 + 背景色
@@ -262,23 +275,28 @@ namespace LightVsDecay.UI.TechTree
             if (_buttonImage != null)
                 _buttonImage.color = canUpgrade ? buttonNormalColor : buttonDisabledColor;
 
-            // 按钮文字
+            // "升级" 标签文字：可升级=白，否则=灰
+            if (upgradeLabelText != null)
+                upgradeLabelText.color = canUpgrade ? costNormalColor : Color.gray;
+
+            // 金币数字：前置不满足=灰，金币不足=红，正常=白
             if (upgradeButtonText != null)
             {
                 if (!prereqOk)
                 {
-                    upgradeButtonText.text = "<color=#888888>前置未满足</color>";
+                    upgradeButtonText.text  = $"{cost:N0}";
+                    upgradeButtonText.color = Color.gray;
                 }
                 else
                 {
-                    // 金币数字：可负担=白色，不可负担=红色
-                    string hex = canAfford
-                        ? ColorUtility.ToHtmlStringRGB(costNormalColor)
-                        : ColorUtility.ToHtmlStringRGB(costInsufficientColor);
-
-                    upgradeButtonText.text = $"升级  🪙  <color=#{hex}>+{cost:N0}</color>";
+                    upgradeButtonText.text  = $"{cost:N0}";
+                    upgradeButtonText.color = canAfford ? costNormalColor : costInsufficientColor;
                 }
             }
+
+            // 金币图标：可升级=白，否则=灰
+            if (goldIconImage != null)
+                goldIconImage.color = canUpgrade ? Color.white : Color.gray;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -327,6 +345,8 @@ namespace LightVsDecay.UI.TechTree
 
         private void OnUpgradeDown()
         {
+            // ★ EventTrigger 不检查 interactable，必须手动拦截
+            if (upgradeButton != null && !upgradeButton.interactable) return;
             TryUpgrade();
             if (_longPressCoroutine != null) StopCoroutine(_longPressCoroutine);
             _longPressCoroutine = StartCoroutine(LongPressRoutine());
@@ -362,6 +382,7 @@ namespace LightVsDecay.UI.TechTree
 
                 Refresh();
                 _parent?.RefreshAll();
+                TopAreaController.RefreshIfExists();   // ★ 刷新顶部金币显示
                 return true;
             }
 

@@ -93,7 +93,9 @@ namespace LightVsDecay.Logic
         private Camera gameCamera;
         private Vector2 screenMin;
         private Vector2 screenMax;
-        
+        // ★ 波次卡死检测计时器
+        private float stuckCheckTimer = 0f;
+        private const float STUCK_CHECK_INTERVAL = 3f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -136,6 +138,31 @@ namespace LightVsDecay.Logic
             if (currentState == WaveState.Spawning)
             {
                 ProcessSpawning();
+            }
+            
+            // ★ 安全网：检测波次卡死（Battle状态下无存活敌人但击杀数不足）
+            if (currentState == WaveState.Battle)
+            {
+                stuckCheckTimer += Time.deltaTime;
+                if (stuckCheckTimer >= STUCK_CHECK_INTERVAL)
+                {
+                    stuckCheckTimer = 0f;
+                    int activeEnemies = EnemyPoolManager.Instance != null 
+                        ? EnemyPoolManager.Instance.TotalActiveEnemies : 0;
+                    
+                    if (activeEnemies == 0 && enemiesKilled < totalEnemiesInWave)
+                    {
+                        Debug.LogWarning($"[WaveManager] ⚠️ 波次卡死修复！" +
+                                         $"击杀={enemiesKilled}/{totalEnemiesInWave}, " +
+                                         $"已生成={enemiesSpawned}, 强制完成波次");
+                        totalEnemiesInWave = enemiesKilled;
+                        OnWaveComplete();
+                    }
+                }
+            }
+            else
+            {
+                stuckCheckTimer = 0f;
             }
         }
         
@@ -311,16 +338,8 @@ namespace LightVsDecay.Logic
             waveTimer = 0f;
             enemiesSpawned = 0;
             enemiesKilled = 0;
+            
             totalEnemiesInWave = currentWaveData.TotalEnemyCount;
-            // 【新增】获取章节难度的敌人数量倍率
-            float countMultiplier = 1f;
-            if (GameManager.Instance != null && GameManager.Instance.CurrentDifficultySettings != null)
-            {
-                countMultiplier = GameManager.Instance.CurrentDifficultySettings.enemyCountMultiplier;
-            }
-            // 计算调整后的敌人总数
-            int baseCount = currentWaveData.TotalEnemyCount;
-            totalEnemiesInWave = Mathf.RoundToInt(baseCount * countMultiplier);
             
             // 重置所有刷怪组状态
             currentWaveData.ResetSpawnStates();
@@ -731,7 +750,14 @@ namespace LightVsDecay.Logic
         private void CheckWaveComplete()
         {
             if (currentState != WaveState.Battle) return;
-            
+            // ★★★ 诊断日志 ★★★
+            int activeEnemies = EnemyPoolManager.Instance != null ? EnemyPoolManager.Instance.TotalActiveEnemies : -1;
+            if (enemiesKilled < totalEnemiesInWave && activeEnemies == 0)
+            {
+                Debug.LogError($"[DIAG] ⚠️ 波次卡死！击杀={enemiesKilled}/{totalEnemiesInWave}, " +
+                               $"已生成={enemiesSpawned}, 场上存活={activeEnemies}, " +
+                               $"丢失={totalEnemiesInWave - enemiesKilled}只敌人未触发死亡事件！");
+            }
             if (enemiesKilled >= totalEnemiesInWave)
             {
                 OnWaveComplete();
@@ -761,6 +787,11 @@ namespace LightVsDecay.Logic
         /// </summary>
         private void StartWaveInterval()
         {
+            // ★★★ 诊断日志 ★★★
+            Debug.Log($"[DIAG] StartWaveInterval 调用！Wave={currentWaveNumber}, " +
+                      $"TacticalDropManager.Instance={TacticalDropManager.Instance != null}, " +
+                      $"IsBossWave={IsBossWave}, " +
+                      $"OnWaveComplete订阅数={GameEvents.GetWaveCompleteListenerCount()}");
 // 【新增】如果有宝箱系统，交给宝箱系统处理
             if (TacticalDropManager.Instance != null)
             {

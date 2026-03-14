@@ -182,7 +182,7 @@ namespace LightVsDecay.UI.Equipment
             AppendStatLine(sb, "生命值",   self.hpBonus,              other.hpBonus,             "+{0}",    isSelf);
             AppendStatLine(sb, "护盾值",   self.shieldBonus,          other.shieldBonus,         "+{0}",    isSelf);
             AppendStatLinef(sb,"暴击率",   self.critBonus   * 100f,   other.critBonus   * 100f,  "+{0:F1}%", isSelf);
-            AppendStatLinef(sb,"充能效率", self.chargeBonus * 100f,   other.chargeBonus * 100f,  "+{0:F1}%", isSelf);
+            AppendStatLinef(sb,"充能率", self.chargeBonus * 100f,   other.chargeBonus * 100f,  "+{0:F1}%", isSelf);
 
             return sb.Length > 0 ? sb.ToString().TrimEnd() : "<color=#888888>无属性</color>";
         }

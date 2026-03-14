@@ -24,3 +24,4 @@ MonoBehaviour:
   growthFactor: 1.07
   prerequisiteNodeIds:
   - node_tc_charge
+  prerequisiteMinLevel: 50

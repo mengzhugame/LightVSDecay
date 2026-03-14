@@ -311,5 +311,12 @@ namespace LightVsDecay.Core
             OnWaveComplete = null;
             OnWaveProgressUpdated = null;
         }
+        /// <summary>
+        /// 诊断用：返回 OnWaveComplete 订阅者数量
+        /// </summary>
+        public static int GetWaveCompleteListenerCount()
+        {
+            return OnWaveComplete?.GetInvocationList()?.Length ?? 0;
+        }
     }
 }

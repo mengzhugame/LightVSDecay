@@ -67,7 +67,7 @@ namespace LightVsDecay.UI
             Core.GameEvents.OnGameDefeat += OnGameDefeat;
             Core.GameEvents.OnGamePaused += OnGamePaused;
             Core.GameEvents.OnGameResumed += OnGameResumed;
-            
+            Core.GameEvents.OnLevelUp += OnLevelUpShowSkillPanel;
             if (showDebugInfo)
             {
                 Debug.Log("[UIManager] 事件已订阅");
@@ -81,16 +81,13 @@ namespace LightVsDecay.UI
             Core.GameEvents.OnGameDefeat -= OnGameDefeat;
             Core.GameEvents.OnGamePaused -= OnGamePaused;
             Core.GameEvents.OnGameResumed -= OnGameResumed;
-            
+            Core.GameEvents.OnLevelUp -= OnLevelUpShowSkillPanel;
             if (showDebugInfo)
             {
                 Debug.Log("[UIManager] 事件已取消订阅");
             }
         }
         
-        private void OnSingletonDestroy()
-        {
-        }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件回调
@@ -135,7 +132,21 @@ namespace LightVsDecay.UI
             
             HidePausePanel();
         }
-        
+        private void OnLevelUpShowSkillPanel(int level)
+        {
+            // 停止激光音效
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.StopLaserLoop();
+
+            // 暂停游戏时间
+            Time.timeScale = 0f;
+
+            // 弹出技能三选一面板
+            ShowSkillChoosePanel(level);
+
+            if (showDebugInfo)
+                Debug.Log($"[UIManager] 升级！Lv.{level} → 弹出技能选择面板，游戏暂停");
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 面板控制 - 结算面板
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

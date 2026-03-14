@@ -174,7 +174,23 @@ namespace LightVsDecay.Data.Runtime
         
         /// <summary>最大能量</summary>
         public int maxEnergy = 5;
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 体力系统 —— 离线恢复 & 广告计数
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>上次保存的 UTC 时间戳（ISO-8601 格式），用于离线体力补算</summary>
+        public string lastSaveTimestamp = "";
+
+        /// <summary>今日已看广告次数</summary>
+        public int adWatchCountToday = 0;
+
+        /// <summary>最近一次广告计数重置的日期（yyyy-MM-dd 格式）</summary>
+        public string adLastResetDate = "";
+        /// <summary>今日金币广告已看次数</summary>
+        public int adGoldWatchCountToday = 0;
+
+        /// <summary>今日图纸广告已看次数</summary>
+        public int adBlueprintWatchCountToday = 0;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 章节进度数据（新增）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -194,7 +210,11 @@ namespace LightVsDecay.Data.Runtime
         private const string KEY_ENERGY = "PlayerEnergy";
         private const string KEY_CHAPTER_PROGRESS = "ChapterProgress";  // JSON格式存储
         private const string KEY_VIEW_CHAPTER = "CurrentViewChapter";
-        
+        private const string KEY_LAST_SAVE_TIME = "StaminaLastSaveTime";
+        private const string KEY_AD_WATCH_COUNT = "StaminaAdWatchCount";
+        private const string KEY_AD_RESET_DATE  = "StaminaAdResetDate";
+        private const string KEY_AD_GOLD_COUNT      = "AdGoldWatchCount";
+        private const string KEY_AD_BLUEPRINT_COUNT = "AdBlueprintWatchCount";
         // 默认章节数量
         private const int DEFAULT_CHAPTER_COUNT = 3;
         
@@ -326,7 +346,12 @@ namespace LightVsDecay.Data.Runtime
             goldCoins = PlayerPrefs.GetInt(KEY_GOLD, 0);
             energy = PlayerPrefs.GetInt(KEY_ENERGY, defaultMaxEnergy);
             maxEnergy = defaultMaxEnergy;
-            
+            // 体力系统
+            lastSaveTimestamp  = PlayerPrefs.GetString(KEY_LAST_SAVE_TIME, "");
+            adWatchCountToday  = PlayerPrefs.GetInt   (KEY_AD_WATCH_COUNT, 0);
+            adLastResetDate    = PlayerPrefs.GetString(KEY_AD_RESET_DATE,  "");
+            adGoldWatchCountToday      = PlayerPrefs.GetInt(KEY_AD_GOLD_COUNT,      0);
+            adBlueprintWatchCountToday = PlayerPrefs.GetInt(KEY_AD_BLUEPRINT_COUNT, 0);
             // 加载章节进度
             LoadChapterProgress(chapterCount);
             
@@ -420,7 +445,12 @@ namespace LightVsDecay.Data.Runtime
             PlayerPrefs.SetInt(KEY_GEMS, gems);
             PlayerPrefs.SetInt(KEY_GOLD, goldCoins);
             PlayerPrefs.SetInt(KEY_ENERGY, energy);
-            
+            // 体力系统
+            PlayerPrefs.SetString(KEY_LAST_SAVE_TIME, lastSaveTimestamp);
+            PlayerPrefs.SetInt   (KEY_AD_WATCH_COUNT, adWatchCountToday);
+            PlayerPrefs.SetString(KEY_AD_RESET_DATE,  adLastResetDate);
+            PlayerPrefs.SetInt(KEY_AD_GOLD_COUNT,      adGoldWatchCountToday);
+            PlayerPrefs.SetInt(KEY_AD_BLUEPRINT_COUNT, adBlueprintWatchCountToday);
             // 保存章节进度（JSON格式）
             SaveChapterProgress();
             
@@ -453,7 +483,10 @@ namespace LightVsDecay.Data.Runtime
             energy = defaultMaxEnergy;
             maxEnergy = defaultMaxEnergy;
             currentViewChapterIndex = 0;
-            
+            adWatchCountToday          = 0;
+            adGoldWatchCountToday      = 0;
+            adBlueprintWatchCountToday = 0;
+            adLastResetDate            = "";
             // 重置章节进度
             InitializeDefaultChapterProgress(chapterCount);
             

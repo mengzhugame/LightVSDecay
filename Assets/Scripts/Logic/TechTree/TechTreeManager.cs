@@ -70,10 +70,9 @@ namespace LightVsDecay.Logic.TechTree
             get
             {
                 if (forceUnlocked) return true;
-                if (ProgressManager.Instance == null) return false;
-                // 已完成第 unlockAfterChapter 章（索引从0起，普通难度=1）
-                var progress = ProgressManager.Instance.GetChapterProgress(unlockAfterChapter - 1);
-                return progress != null && progress.completedDifficulty >= 1;
+                // ★ 统一读取 SystemUnlockManager 存档标记（不再依赖通关记录）
+                return SystemUnlockManager.Instance != null
+                       && SystemUnlockManager.Instance.IsTechTreeUnlocked;
             }
         }
 

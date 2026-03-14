@@ -86,6 +86,7 @@ namespace LightVsDecay.Logic.Player
         private int critLevel = 0;
         private int shatterLevel = 0;  // 【新增】数据破碎等级
         private int chainLevel = 0;  // 连锁反应等级
+        private int frostSpreadLevel = 0; // 已在上面合并，只需确保不重复
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 累计加成
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -105,7 +106,7 @@ namespace LightVsDecay.Logic.Player
         // 运行时状态 - 缓存的配置数据【新增】
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-// Focus 配置缓存
+        // Focus 配置缓存
         private float cachedFocusDamageBonus = 0f;  // 【改名】存储加成值，不是倍率
         private float cachedFocusBossDamageBonus = 0f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -124,8 +125,10 @@ namespace LightVsDecay.Logic.Player
         
         // Impact 配置缓存
         private float cachedImpactKnockbackMultiplier = 1f;
-        private float cachedShatterDamageMultiplier = 1f;  // 【新增】碎冰伤害倍率
-        private bool cachedEnableExecution = false;        // 【新增】是否启用处决
+        // ── Crit ──（新增 critDamageBonus）
+        private float cachedCritRateBonus = 0f;
+        private float cachedCritDamageBonus = 0f;   // 【新增】
+        private bool  cachedCritKnockback = false;  // 【新增】
         // 【新增】Shatter (数据破碎) 配置缓存
         private float cachedShatterDamageBonus = 0f;           // 对受损敌人额外伤害
         private bool cachedShatterExplosionOnKill = false;     // 是否触发漏洞扩散
@@ -139,6 +142,14 @@ namespace LightVsDecay.Logic.Player
         private int cachedChainBounces = 1;
         private float cachedChainRange = 3f;
         private float cachedChainDamageDecay = 0.2f;
+        // ── FrostSpread ──（全部新增）
+        private float cachedFrostSpreadRadius = 1.5f;
+        private float cachedFrostSpreadSlowRatio = 0.5f;
+        private bool  cachedFrostSpreadEnableNova = false;
+        private float cachedFrostNovaRadius = 3f;
+        private float cachedFrostNovaDamageScale = 2f;
+        private float cachedFrostNovaSlowPercent = 0.2f;
+        private float cachedFrostNovaSlowDuration = 2f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -270,7 +281,9 @@ namespace LightVsDecay.Logic.Player
                 case SkillType.Frost:
                     ApplyFrostEffect(newLevel, skillData);
                     break;
-                    
+                case SkillType.FrostSpread:   // 【新增】
+                    ApplyFrostSpreadEffect(newLevel, skillData);
+                    break;  
                 case SkillType.Chain:
                     ApplyChainEffect(newLevel, skillData);
                     break;
@@ -402,6 +415,7 @@ namespace LightVsDecay.Logic.Player
         
         /// <summary>
         /// 应用 Impact（冲击模块）效果
+        /// 【重构】回归纯物理击退，移除碎冰增伤和处决
         /// </summary>
         private void ApplyImpactEffect(int level, SkillData skillData)
         {
@@ -413,10 +427,8 @@ namespace LightVsDecay.Logic.Player
                 Debug.LogError($"[SkillEffectManager] ❌ Impact Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
-    
+
             cachedImpactKnockbackMultiplier = levelData.knockbackMultiplier;
-            cachedShatterDamageMultiplier = levelData.shatterDamageMultiplier;  // 【新增】
-            cachedEnableExecution = levelData.enableExecution;                   // 【新增】
 
             if (laserController != null)
             {
@@ -426,10 +438,8 @@ namespace LightVsDecay.Logic.Player
             if (showDebugInfo)
             {
                 string canPushBoss = (level >= 5) ? "，可推BOSS" : "";
-                string executionInfo = cachedEnableExecution ? "，启用处决" : "";
                 Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} - " +
-                          $"击退力:{cachedImpactKnockbackMultiplier:F2}x, " +
-                          $"碎冰:{cachedShatterDamageMultiplier:F2}x{canPushBoss}{executionInfo}");
+                          $"击退力:{cachedImpactKnockbackMultiplier:F2}x{canPushBoss}");
             }
         }
         
@@ -588,26 +598,39 @@ namespace LightVsDecay.Logic.Player
         }
         /// <summary>
         /// 应用 Crit（致命暴击）效果
+        /// Lv1-4：每级 +3% 暴击率 / +15% 暴击伤害
+        /// Lv5：+5% 暴击率 / +30% 暴击伤害 / 暴击时附带微弱击退
         /// </summary>
         private void ApplyCritEffect(int level, SkillData skillData)
         {
             critLevel = level;
-    
+
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
                 Debug.LogError($"[SkillEffectManager] ❌ Crit Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
-    
+
+            cachedCritRateBonus   = levelData.critRateBonus;
+            cachedCritDamageBonus = levelData.critDamageBonus;
+            cachedCritKnockback   = levelData.critKnockback;
+
             if (laserController != null)
             {
-                laserController.SetCritLevelFromConfig(level, levelData.critRateBonus);
+                laserController.SetCritLevelFromConfig(
+                    level,
+                    cachedCritRateBonus,
+                    cachedCritDamageBonus,
+                    cachedCritKnockback);
             }
-    
+
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} - 暴击率加成:{levelData.critRateBonus:P0}");
+                Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} - " +
+                          $"暴击率+{cachedCritRateBonus:P0}, " +
+                          $"暴击伤害+{cachedCritDamageBonus:P0}, " +
+                          $"击退={cachedCritKnockback}");
             }
         }
         /// <summary>
@@ -636,6 +659,38 @@ namespace LightVsDecay.Logic.Player
                 string explosionInfo = cachedShatterExplosionOnKill ? "，启用漏洞扩散" : "";
                 Debug.Log($"[SkillEffectManager] ✓ Shatter Lv.{level} - " +
                           $"受损加伤:{cachedShatterDamageBonus:P0}{explosionInfo}");
+            }
+        }
+        /// <summary>
+        /// 应用 FrostSpread（寒霜蔓延）效果
+        /// Lv1-4：为直接命中的敌人周围产生扩散减速光环
+        /// Lv5：冰冻敌人自然解冻时触发冰霜新星
+        /// </summary>
+        private void ApplyFrostSpreadEffect(int level, SkillData skillData)
+        {
+            frostSpreadLevel = level;
+
+            var levelData = GetLevelData(skillData, level);
+            if (levelData == null)
+            {
+                Debug.LogError($"[SkillEffectManager] ❌ FrostSpread Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
+            }
+
+            cachedFrostSpreadRadius      = levelData.frostSpreadRadius;
+            cachedFrostSpreadSlowRatio   = levelData.frostSpreadSlowRatio;
+            cachedFrostSpreadEnableNova  = levelData.enableFrostNova;
+            cachedFrostNovaRadius        = levelData.frostNovaRadius;
+            cachedFrostNovaDamageScale   = levelData.frostNovaDamageScale;
+            cachedFrostNovaSlowPercent   = levelData.frostNovaSlowPercent;
+            cachedFrostNovaSlowDuration  = levelData.frostNovaSlowDuration;
+
+            if (showDebugInfo)
+            {
+                string novaInfo = cachedFrostSpreadEnableNova ? $"，Lv5冰霜新星(r={cachedFrostNovaRadius})" : "";
+                Debug.Log($"[SkillEffectManager] ✓ FrostSpread Lv.{level} - " +
+                          $"扩散半径:{cachedFrostSpreadRadius}m, " +
+                          $"减速比例:{cachedFrostSpreadSlowRatio:P0}{novaInfo}");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -905,31 +960,61 @@ namespace LightVsDecay.Logic.Player
             threshold = cachedFrostFreezeThreshold;
             duration = cachedFrostFreezeDuration;
         }
+        /// <summary>寒霜蔓延技能等级</summary>
+        public int GetFrostSpreadLevel() => frostSpreadLevel;
+
+        /// <summary>寒霜蔓延是否启用</summary>
+        public bool IsFrostSpreadEnabled => frostSpreadLevel > 0;
+
         /// <summary>
-        /// 获取碎冰伤害倍率
+        /// 获取寒霜蔓延扩散参数
         /// </summary>
-        public float GetShatterDamageMultiplier()
+        public void GetFrostSpreadParams(out float spreadRadius, out float spreadSlowRatio)
         {
-            return cachedShatterDamageMultiplier;
+            spreadRadius    = cachedFrostSpreadRadius;
+            spreadSlowRatio = cachedFrostSpreadSlowRatio;
         }
-        
+
         /// <summary>
-        /// 是否启用处决（LV5秒杀冰冻普通怪）
+        /// 获取冰霜新星参数（Lv5）
         /// </summary>
-        public bool IsExecutionEnabled()
+        public void GetFrostNovaParams(out bool enabled, out float radius, 
+            out float damageScale, out float slowPercent, out float slowDuration)
         {
-            return cachedEnableExecution;
+            enabled      = cachedFrostSpreadEnableNova;
+            radius       = cachedFrostNovaRadius;
+            damageScale  = cachedFrostNovaDamageScale;
+            slowPercent  = cachedFrostNovaSlowPercent;
+            slowDuration = cachedFrostNovaSlowDuration;
         }
-        
+
         /// <summary>
-        /// 获取碎冰参数（一次性获取）
+        /// Lv5 冰霜新星触发入口（由 EnemyBlob 在自然解冻时回调）
         /// </summary>
-        /// <param name="shatterMultiplier">碎冰伤害倍率</param>
-        /// <param name="enableExecution">是否启用处决</param>
-        public void GetShatterParams(out float shatterMultiplier, out bool enableExecution)
+        public void OnEnemyThawedNaturally(Vector3 position)
         {
-            shatterMultiplier = cachedShatterDamageMultiplier;
-            enableExecution = cachedEnableExecution;
+            if (!cachedFrostSpreadEnableNova) return;
+
+            float panelDPS = laserController != null ? laserController.GetPanelDPS() : 100f;
+            float novaDamage = panelDPS * cachedFrostNovaDamageScale;
+
+            Collider2D[] hits = Physics2D.OverlapCircleAll(position, cachedFrostNovaRadius);
+            int hitCount = 0;
+            foreach (var col in hits)
+            {
+                var enemy = col.GetComponent<LightVsDecay.Logic.Enemy.EnemyBlob>();
+                if (enemy == null || enemy.IsDead) continue;
+
+                enemy.TakeDamage(novaDamage, Vector2.zero, false, true);
+                enemy.ApplyFrostSlow(cachedFrostNovaSlowPercent, cachedFrostNovaSlowDuration);
+                hitCount++;
+            }
+
+            if (showDebugInfo)
+            {
+                Debug.Log($"[SkillEffectManager] ❄️ 冰霜新星! 位置:{position}, " +
+                          $"伤害:{novaDamage:F1}, 半径:{cachedFrostNovaRadius}, 命中:{hitCount}");
+            }
         }
         /// <summary>
         /// Lv.5 Frost 完全冰冻判定（旧接口，基于概率）

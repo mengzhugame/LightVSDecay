@@ -18,7 +18,7 @@ namespace LightVsDecay.UI
     /// 主界面：仅显示音乐/音效开关
     /// 战斗场景：显示音乐/音效开关 + 返回主页/重新开始按钮
     /// </summary>
-    public class SettingsPanel : MonoBehaviour, IPointerClickHandler
+    public class SettingsPanel : MonoBehaviour
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // UI 组件引用 - 音频开关
@@ -71,11 +71,12 @@ namespace LightVsDecay.UI
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // UI 组件引用 - 内容区域（用于点击空白关闭判断）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        [Header("═══ 内容区域 ═══")]
-        [Tooltip("内容区域（点击此区域外关闭面板）")]
-        [SerializeField] private RectTransform contentArea;
-        
+
+        [Header("═══ 关闭按钮 ═══")]
+        [Tooltip("背景遮罩按钮（点击空白处关闭）")]
+        [SerializeField] private Button backgroundButton;
+        [Tooltip("右上角 X 关闭按钮（可选）")]
+        [SerializeField] private Button closeButton;
         [Header("═══ 调试 ═══")]
         [SerializeField] private bool showDebugInfo = false;
         
@@ -155,15 +156,11 @@ namespace LightVsDecay.UI
         
         private void SetupButtons()
         {
-            if (homeButton != null)
-            {
-                homeButton.onClick.AddListener(OnHomeButtonClicked);
-            }
-            
-            if (restartButton != null)
-            {
-                restartButton.onClick.AddListener(OnRestartButtonClicked);
-            }
+            if (homeButton       != null) homeButton.onClick.AddListener(OnHomeButtonClicked);
+            if (restartButton    != null) restartButton.onClick.AddListener(OnRestartButtonClicked);
+            // ★ 新增
+            if (backgroundButton != null) backgroundButton.onClick.AddListener(OnCloseClicked);
+            if (closeButton      != null) closeButton.onClick.AddListener(OnCloseClicked);
         }
         
         private void RefreshToggleStates()
@@ -352,27 +349,16 @@ namespace LightVsDecay.UI
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 点击空白处关闭
+        // 关闭界面
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        public void OnPointerClick(PointerEventData eventData)
+        private void OnCloseClicked()
         {
-            // 检查点击位置是否在内容区域外
-            if (contentArea != null)
-            {
-                if (!RectTransformUtility.RectangleContainsScreenPoint(
-                    contentArea, eventData.position, eventData.pressEventCamera))
-                {
-                    // 点击在内容区域外，关闭面板
-                    PlayButtonSound();
-                    Hide();
-                    
-                    if (showDebugInfo)
-                    {
-                        Debug.Log("[SettingsPanel] 点击空白处，关闭面板");
-                    }
-                }
-            }
+            PlayButtonSound();
+            Hide();
+
+            if (showDebugInfo)
+                Debug.Log("[SettingsPanel] 点击关闭");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -396,7 +382,8 @@ namespace LightVsDecay.UI
             
             // 显示面板
             gameObject.SetActive(true);
-            
+            // ★ 清除 EventSystem 当前选中，防止首次点击被吞
+            UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(null);
             if (showDebugInfo)
             {
                 Debug.Log($"[SettingsPanel] Show - 显示底部区域: {showBottom}");

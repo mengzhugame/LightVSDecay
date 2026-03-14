@@ -169,13 +169,14 @@ namespace LightVsDecay.Logic.Player
         public float CurrentSubLaserWidth => CurrentLaserWidth * SUB_LASER_WIDTH_RATIO * overloadWidthMultiplier;
         public float CurrentKnockbackForce => knockbackHandler.CurrentKnockbackForce;
         public float CurrentCritRate => critSystem.CurrentCritRate;
-        public float CritMultiplier => critSystem.CritMultiplier;
+        public float CritMultiplier => critSystem.TotalCritMultiplier;
         public int SubLaserCount => subLasers.Count;
         public float CurrentLaserLength => maxLaserLength * skillLengthMultiplier;
         public float CurrentDamagePerTick => damageCalculator.CurrentDamagePerTick;
         public float CurrentPanelDPS => damageCalculator.CurrentPanelDPS;
         public bool IsOverloadActive => isOverloadActive;
-        
+        /// <summary>获取面板 DPS（供 SkillEffectManager 计算爆炸伤害用）</summary>
+        public float GetPanelDPS() => damageCalculator.CurrentPanelDPS;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -300,6 +301,10 @@ namespace LightVsDecay.Logic.Player
         
         private void PerformDamageDetection()
         {
+            mainLaserBeam?.ForceUpdatePath();
+            foreach (var subLaser in subLasers)
+                subLaser.beam?.ForceUpdatePath();
+            
             hitEnemies.Clear();
             hitBosses.Clear();
             hitCrates.Clear();
@@ -374,7 +379,7 @@ namespace LightVsDecay.Logic.Player
     
             if (usePenetration)
             {
-                detectLength = maxLaserLength;
+                detectLength = CurrentLaserLength;   // 使用含技能倍率的实际长度
                 detectCenter = segmentStart + segmentDir * (detectLength / 2f);
             }
             else
@@ -600,11 +605,11 @@ namespace LightVsDecay.Logic.Player
             
             if (penetrationHandler.TrueDamageToBoss)
             {
-                bossHealth.TakeTrueCoreDamage(bossDamage, collider.transform.position, isCrit, critSystem.CritMultiplier);
+                bossHealth.TakeTrueCoreDamage(bossDamage, collider.transform.position, isCrit, critSystem.TotalCritMultiplier);
             }
             else
             {
-                bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critSystem.CritMultiplier);
+                bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critSystem.TotalCritMultiplier);
             }
             
             // Boss推力处理
@@ -657,22 +662,22 @@ namespace LightVsDecay.Logic.Player
             {
                 if (isEyeOpen)
                 {
-                    bossHealth.TakeTrueCoreDamage(bossDamage, collider.transform.position, isCrit, critSystem.CritMultiplier);
+                    bossHealth.TakeTrueCoreDamage(bossDamage, collider.transform.position, isCrit, critSystem.TotalCritMultiplier);
                 }
                 else
                 {
-                    bossHealth.TakeTrueBodyDamage(bossDamage, collider.transform.position, isCrit, critSystem.CritMultiplier);
+                    bossHealth.TakeTrueBodyDamage(bossDamage, collider.transform.position, isCrit, critSystem.TotalCritMultiplier);
                 }
             }
             else
             {
                 if (isEyeOpen)
                 {
-                    bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critSystem.CritMultiplier);
+                    bossHealth.TakeCoreDamage(bossDamage, collider.transform.position, isCrit, critSystem.TotalCritMultiplier);
                 }
                 else
                 {
-                    bossHealth.TakeBodyDamage(bossDamage, collider.transform.position, isCrit, critSystem.CritMultiplier);
+                    bossHealth.TakeBodyDamage(bossDamage, collider.transform.position, isCrit, critSystem.TotalCritMultiplier);
                 }
             }
             
@@ -713,41 +718,8 @@ namespace LightVsDecay.Logic.Player
             {
                 baseDamage *= (1f + shatterBonus);
             }
-            
-            // 碎冰系统
-            float shatterMultiplier = 1f;
-            bool enableExecution = false;
-            bool isShatter = false;
-            bool isExecution = false;
-            
-            if (SkillEffectManager.Instance != null)
-            {
-                SkillEffectManager.Instance.GetShatterParams(out shatterMultiplier, out enableExecution);
-            }
-            
-            if (shatterMultiplier > 1f && enemy.IsControlled)
-            {
-                isShatter = true;
-                if (enableExecution && enemy.IsFullyFrozen && !enemy.IsEliteOrBoss)
-                {
-                    isExecution = true;
-                }
-            }
-            
-            float finalDamage;
-            if (isExecution)
-            {
-                finalDamage = enemy.MaxHealth * 100f;
-                enemy.MarkAsExecuted();
-            }
-            else if (isShatter)
-            {
-                finalDamage = baseDamage * shatterMultiplier;
-            }
-            else
-            {
-                finalDamage = baseDamage;
-            }
+
+            float finalDamage = baseDamage;
             
             // 击退
             Vector2 knockbackDir = segment.Direction;
@@ -756,24 +728,18 @@ namespace LightVsDecay.Logic.Player
             
             DamageSource damageSource = isMainLaser ? DamageSource.MainLaser : DamageSource.SubLaser;
             
-            if (isExecution)
-            {
-                enemy.TakeDamage(finalDamage, knockbackDir * knockbackMagnitude, enemyCrit, false, damageSource, false);
-                if (FloatingTextManager.Instance != null)
-                {
-                    FloatingTextManager.Instance.ShowExecution(enemy.transform.position);
-                }
-            }
-            else
-            {
-                enemy.TakeDamage(finalDamage, knockbackDir * knockbackMagnitude, enemyCrit, false, damageSource, isShatter);
-            }
+            enemy.TakeDamage(finalDamage, knockbackDir * knockbackMagnitude, enemyCrit, false, damageSource, false);
 
             audioHandler.UpdateFrameHitType(LaserHitType.Burn);
-            
+
             // Frost效果
             ApplyEnemyFrostEffect(enemy);
-            
+            // 【新增】Crit Lv5：暴击时附带微弱击退
+            if (enemyCrit && critSystem.IsCritKnockbackEnabled && knockbackMagnitude > 0f)
+            {
+                Vector2 extraKnockback = knockbackDir * (knockbackMagnitude * (critSystem.CritKnockbackMultiplier - 1f));
+                enemy.AddExtraKnockback(extraKnockback);
+            }
             // 穿透特效
             if (penetratedCount > 0 && VFXPoolManager.Instance != null)
             {
@@ -820,11 +786,18 @@ namespace LightVsDecay.Logic.Player
         private void ApplyFrostSpread()
         {
             if (SkillEffectManager.Instance == null) return;
-            
-            float slowPercent, duration;
-            SkillEffectManager.Instance.GetFrostParams(out slowPercent, out duration);
-            
-            frostHandler.ApplyFrostSpread(slowPercent, duration, combinedDetectionLayer);
+
+            // 【修改】只有持有「寒霜蔓延」技能时才触发扩散
+            if (!SkillEffectManager.Instance.IsFrostSpreadEnabled) return;
+
+            float slowPercent, slowDuration;
+            SkillEffectManager.Instance.GetFrostParams(out slowPercent, out slowDuration);
+            if (slowPercent <= 0f) return;
+
+            float spreadRadius, spreadSlowRatio;
+            SkillEffectManager.Instance.GetFrostSpreadParams(out spreadRadius, out spreadSlowRatio);
+
+            frostHandler.ApplyFrostSpread(slowPercent, slowDuration, spreadRadius, spreadSlowRatio, combinedDetectionLayer);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -949,6 +922,7 @@ namespace LightVsDecay.Logic.Player
                     subLaser.beam.SetColor(color);
                 }
             }
+            ChainLightningManager.Instance?.SetChainColor(color);
         }
         
         public void ResetLaserColor()
@@ -967,6 +941,7 @@ namespace LightVsDecay.Logic.Player
                     subLaser.beam.ResetColor();
                 }
             }
+            ChainLightningManager.Instance?.ResetChainColor();
         }
         
         public void ResetVFXColor()
@@ -1025,23 +1000,21 @@ namespace LightVsDecay.Logic.Player
         public void AddLengthPercent(float percent, float minPercent = 0.8f)
         {
             float newMultiplier = skillLengthMultiplier + percent;
-    
-            if (newMultiplier < minPercent)
-            {
-                newMultiplier = minPercent;
-            }
-    
+            if (newMultiplier < minPercent) newMultiplier = minPercent;
             skillLengthMultiplier = newMultiplier;
-    
+
             if (mainLaserBeam != null)
-            {
                 mainLaserBeam.SetMaxLength(CurrentLaserLength);
-            }
-    
-            if (showDebugInfo)
+
+            // ✅ 新增：同步更新所有副激光长度
+            foreach (var subLaser in subLasers)
             {
-                Debug.Log($"[LaserController] 激光长度倍率: {skillLengthMultiplier:P0}, 当前长度: {CurrentLaserLength:F1}");
+                if (subLaser.beam != null)
+                    subLaser.beam.SetMaxLength(CurrentLaserLength * subLaser.lengthMultiplier);
             }
+
+            if (showDebugInfo)
+                Debug.Log($"[LaserController] 激光长度倍率: {skillLengthMultiplier:P0}, 当前长度: {CurrentLaserLength:F1}");
         }
         
         public void ResetDropBonuses()
@@ -1053,7 +1026,11 @@ namespace LightVsDecay.Logic.Player
             {
                 mainLaserBeam.SetMaxLength(CurrentLaserLength);
             }
-    
+            foreach (var subLaser in subLasers)
+            {
+                if (subLaser.beam != null)
+                    subLaser.beam.SetMaxLength(CurrentLaserLength * subLaser.lengthMultiplier);
+            }
             if (showDebugInfo)
             {
                 Debug.Log("[LaserController] 空投加成已重置");
@@ -1167,9 +1144,9 @@ namespace LightVsDecay.Logic.Player
             penetrationHandler.SetPenetrationParams(count, decay, trueDamage);
         }
 
-        public void SetCritLevelFromConfig(int level, float critBonus)
+        public void SetCritLevelFromConfig(int level, float critRateBonus, float critDamageBonus, bool enableKnockback)
         {
-            critSystem.SetCritLevelFromConfig(level, critBonus);
+            critSystem.SetCritLevelFromConfig(level, critRateBonus, critDamageBonus, enableKnockback);
         }
 
         public void SetVFXColor(Color color)

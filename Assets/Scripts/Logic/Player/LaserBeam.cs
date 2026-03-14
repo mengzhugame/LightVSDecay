@@ -141,11 +141,16 @@ namespace LightVsDecay.Logic.Player
         
         private void LateUpdate()
         {
-            // 每帧都计算激光路径（确保实时响应旋转）
             CalculateLaserPath();
             UpdateLaserVisuals();
         }
-        
+        /// <summary>
+        /// 主动强制更新路径（由 LaserController 在 Update 伤害检测前调用）
+        /// </summary>
+        public void ForceUpdatePath()
+        {
+            CalculateLaserPath();
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 初始化
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

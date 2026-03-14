@@ -114,3 +114,10 @@ MonoBehaviour:
   pollutionBallMass: 5
   pollutionBossDamagePercent: 0.05
   pollutionMaxCount: 5
+  unstoppableText: "\u9738\u4F53\u72B6\u6001"
+  frozenText: "\u51B0\u51BB\u72B6\u6001"
+  enragedText: "\u72C2\u66B4\u72B6\u6001"
+  interruptedText: "\u88AB\u6253\u65AD\u72B6\u6001"
+  counteredText: "\u88AB\u53CD\u51FB\u72B6\u6001"
+  overloadText: "\u8FC7\u8F7D\u72B6\u6001"
+  exhaustedText: "\u75B2\u52B3\u72B6\u6001"

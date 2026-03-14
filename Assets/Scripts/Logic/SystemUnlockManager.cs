@@ -1,14 +1,18 @@
 // ============================================================
 // SystemUnlockManager.cs
 // 文件位置: Assets/Scripts/Logic/SystemUnlockManager.cs
-// 用途：管理外围系统（装备系统、科技树）的解锁状态
 //
-// 解锁规则：
-//   装备系统  → 第一局战斗结束（无论输赢）
-//   科技树    → 第一章难度1通关（第一次击败Boss）
-//   第二章    → 第一章难度1通关
-//   第三章    → 第二章难度1通关
-//   （以此类推）
+// 解锁规则（v2 — 按第1波完成触发）：
+//   科技树  ：第一章（chapterIndex=0）打完第1波（wavesCleared>=1）
+//             不管胜负，结算面板出现时触发
+//   装备系统：第二章（chapterIndex=1）打完第1波（wavesCleared>=1）
+//             不管胜负，结算面板出现时触发
+//
+// Pending 通知机制：
+//   战斗场景结算时写 "待通知" PlayerPrefs Key；
+//   MainScene 启动时由 MainSceneUIManager.Start() 调用
+//   ConsumePendingNotifications() 消费这些 Key，
+//   得到需要展示的提示文字列表，驱动 TipsPanelController。
 // ============================================================
 
 using System;
@@ -17,53 +21,51 @@ using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic
 {
-    /// <summary>
-    /// 系统解锁管理器（PersistentSingleton）
-    /// 挂载到 PersistentManagers 预制体下
-    /// </summary>
     public class SystemUnlockManager : PersistentSingleton<SystemUnlockManager>
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // PlayerPrefs 存储键
+        // PlayerPrefs Keys
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private const string KEY_EQUIPMENT_UNLOCKED  = "SysUnlock_Equipment_v1";
-        private const string KEY_TECH_TREE_UNLOCKED  = "SysUnlock_TechTree_v1";
+        private const string KEY_EQUIPMENT_UNLOCKED   = "SysUnlock_Equipment_v1";
+        private const string KEY_TECH_TREE_UNLOCKED   = "SysUnlock_TechTree_v1";
         private const string KEY_TOTAL_BATTLES_PLAYED = "SysUnlock_TotalBattles_v1";
+
+        // 待通知 Key（在战斗场景中写入，回到 MainScene 后消费并清除）
+        private const string KEY_PENDING_TECH_NOTIFY  = "SysUnlock_PendingTechNotify";
+        private const string KEY_PENDING_EQUIP_NOTIFY = "SysUnlock_PendingEquipNotify";
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [SerializeField] private bool showDebugInfo = false;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        /// <summary>装备系统解锁时触发（仅触发一次）</summary>
+        /// <summary>装备系统首次解锁时触发（同帧）</summary>
         public static event Action OnEquipmentSystemUnlocked;
 
-        /// <summary>科技树解锁时触发（仅触发一次）</summary>
+        /// <summary>科技树首次解锁时触发（同帧）</summary>
         public static event Action OnTechTreeUnlocked;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 运行时状态
+        // 私有状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private bool _isEquipmentUnlocked;
         private bool _isTechTreeUnlocked;
         private int  _totalBattlesPlayed;
 
-        [Header("调试")]
-        [SerializeField] private bool showDebugInfo = false;
-
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 只读属性
+        // 公共属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        /// <summary>装备合成系统是否已解锁</summary>
-        public bool IsEquipmentUnlocked => _isEquipmentUnlocked;
-
-        /// <summary>科技树系统是否已解锁</summary>
-        public bool IsTechTreeUnlocked => _isTechTreeUnlocked;
-
-        /// <summary>总战斗局数</summary>
-        public int TotalBattlesPlayed => _totalBattlesPlayed;
+        public bool IsEquipmentUnlocked  => _isEquipmentUnlocked;
+        public bool IsTechTreeUnlocked   => _isTechTreeUnlocked;
+        public int  TotalBattlesPlayed   => _totalBattlesPlayed;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 生命周期
@@ -76,56 +78,105 @@ namespace LightVsDecay.Logic
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 核心：战斗结束后检查并处理解锁
+        // 核心：战斗结算后调用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         /// <summary>
-        /// 每局战斗结束后调用（由 SettlementPanel 或 ProgressManager 调用）
+        /// 每局战斗结算时由 SettlementPanel 调用。
         /// </summary>
-        /// <param name="chapterIndex">完成的章节（0-based）</param>
-        /// <param name="difficulty">完成的难度（1-5）</param>
+        /// <param name="chapterIndex">本局章节索引（0-based）</param>
+        /// <param name="difficulty">本局难度（1-5）</param>
         /// <param name="isVictory">是否通关</param>
-        /// <returns>本次解锁了哪些系统的文字提示列表（供结算UI展示"新功能已解锁"）</returns>
-        public UnlockResult CheckAndProcessUnlocks(int chapterIndex, int difficulty, bool isVictory)
+        /// <param name="wavesCleared">本局实际完成的波次数（失败时=死前最后完成的波）</param>
+        /// <returns>本次新解锁的系统列表</returns>
+        public UnlockResult CheckAndProcessUnlocks(
+            int chapterIndex, int difficulty, bool isVictory, int wavesCleared = 0)
         {
-            var unlockResult = new UnlockResult();
+            var result = new UnlockResult();
 
             _totalBattlesPlayed++;
-            Save();
 
-            // ── 1. 装备系统：第一局战斗结束即解锁 ──────────────
-            if (!_isEquipmentUnlocked)
-            {
-                _isEquipmentUnlocked = true;
-                unlockResult.equipmentSystemNewlyUnlocked = true;
-                OnEquipmentSystemUnlocked?.Invoke();
-
-                if (showDebugInfo)
-                    Debug.Log("[SystemUnlockManager] ✅ 装备合成系统已解锁！");
-            }
-
-            // ── 2. 科技树：第一章难度1通关 ──────────────────────
-            if (!_isTechTreeUnlocked && isVictory && chapterIndex == 0 && difficulty == 1)
+            // ── 科技树：第一章打完第1波即解锁（不要求胜利）────────
+            if (!_isTechTreeUnlocked && chapterIndex == 0 && wavesCleared >= 1)
             {
                 _isTechTreeUnlocked = true;
-                unlockResult.techTreeNewlyUnlocked = true;
+                result.techTreeNewlyUnlocked = true;
                 OnTechTreeUnlocked?.Invoke();
 
+                // 写入 Pending 通知 Key，供 MainScene 启动时弹窗
+                PlayerPrefs.SetInt(KEY_PENDING_TECH_NOTIFY, 1);
+
                 if (showDebugInfo)
-                    Debug.Log("[SystemUnlockManager] ✅ 科技树系统已解锁！");
+                    Debug.Log("[SystemUnlockManager] ✅ 科技树已解锁！（第一章第1波完成）");
+            }
+
+            // ── 装备系统：第二章打完第1波即解锁（不要求胜利）──────
+            if (!_isEquipmentUnlocked && chapterIndex == 1 && wavesCleared >= 1)
+            {
+                _isEquipmentUnlocked = true;
+                result.equipmentSystemNewlyUnlocked = true;
+                OnEquipmentSystemUnlocked?.Invoke();
+
+                // 写入 Pending 通知 Key
+                PlayerPrefs.SetInt(KEY_PENDING_EQUIP_NOTIFY, 1);
+
+                if (showDebugInfo)
+                    Debug.Log("[SystemUnlockManager] ✅ 装备系统已解锁！（第二章第1波完成）");
             }
 
             Save();
 
             if (showDebugInfo)
-                Debug.Log($"[SystemUnlockManager] 战斗结束处理: Chapter={chapterIndex+1}, " +
-                          $"Difficulty={difficulty}, Victory={isVictory}, TotalBattles={_totalBattlesPlayed}");
+                Debug.Log($"[SystemUnlockManager] 结算处理: " +
+                          $"Chapter={chapterIndex + 1}, Diff={difficulty}, " +
+                          $"Victory={isVictory}, WavesCleared={wavesCleared}, " +
+                          $"TotalBattles={_totalBattlesPlayed}");
 
-            return unlockResult;
+            return result;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 强制解锁（调试/购买用）
+        // Pending 通知消费（由 MainSceneUIManager.Start() 调用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 消费并清除所有"待通知"标记，返回需要在 MainScene 展示的提示文字列表。
+        /// 每次 MainScene 加载时调用一次即可。
+        /// </summary>
+        /// <returns>待展示的提示字符串列表（顺序：科技树在前，装备在后）</returns>
+        public System.Collections.Generic.List<string> ConsumePendingNotifications()
+        {
+            var messages = new System.Collections.Generic.List<string>();
+
+            bool pendingTech  = PlayerPrefs.GetInt(KEY_PENDING_TECH_NOTIFY,  0) == 1;
+            bool pendingEquip = PlayerPrefs.GetInt(KEY_PENDING_EQUIP_NOTIFY, 0) == 1;
+
+            if (pendingTech)
+            {
+                messages.Add("🔓 科技树系统已解锁！快去升级分支能力吧！");
+                PlayerPrefs.DeleteKey(KEY_PENDING_TECH_NOTIFY);
+            }
+
+            if (pendingEquip)
+            {
+                messages.Add("🔓 装备合成系统已解锁！打造属于你的专属装备！");
+                PlayerPrefs.DeleteKey(KEY_PENDING_EQUIP_NOTIFY);
+            }
+
+            if (messages.Count > 0)
+            {
+                PlayerPrefs.Save();
+
+                if (showDebugInfo)
+                    Debug.Log($"[SystemUnlockManager] 消费 {messages.Count} 条待通知：" +
+                              string.Join(", ", messages));
+            }
+
+            return messages;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 强制解锁（调试 / 外部购买 / 引导系统用）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         public void ForceUnlockEquipment()
@@ -134,6 +185,9 @@ namespace LightVsDecay.Logic
             _isEquipmentUnlocked = true;
             Save();
             OnEquipmentSystemUnlocked?.Invoke();
+
+            if (showDebugInfo)
+                Debug.Log("[SystemUnlockManager] 强制解锁：装备系统");
         }
 
         public void ForceUnlockTechTree()
@@ -142,6 +196,33 @@ namespace LightVsDecay.Logic
             _isTechTreeUnlocked = true;
             Save();
             OnTechTreeUnlocked?.Invoke();
+
+            if (showDebugInfo)
+                Debug.Log("[SystemUnlockManager] 强制解锁：科技树");
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 全量重置（供 PlayerDataResetTool 和 DebugMenu 调用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 清除所有解锁状态及待通知标记（内存 + PlayerPrefs）
+        /// </summary>
+        public void ResetAll()
+        {
+            _isEquipmentUnlocked = false;
+            _isTechTreeUnlocked  = false;
+            _totalBattlesPlayed  = 0;
+
+            PlayerPrefs.DeleteKey(KEY_EQUIPMENT_UNLOCKED);
+            PlayerPrefs.DeleteKey(KEY_TECH_TREE_UNLOCKED);
+            PlayerPrefs.DeleteKey(KEY_TOTAL_BATTLES_PLAYED);
+            PlayerPrefs.DeleteKey(KEY_PENDING_TECH_NOTIFY);
+            PlayerPrefs.DeleteKey(KEY_PENDING_EQUIP_NOTIFY);
+            PlayerPrefs.Save();
+
+            if (showDebugInfo)
+                Debug.Log("[SystemUnlockManager] 所有解锁状态已重置");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -150,64 +231,59 @@ namespace LightVsDecay.Logic
 
         private void Save()
         {
-            PlayerPrefs.SetInt(KEY_EQUIPMENT_UNLOCKED,   _isEquipmentUnlocked  ? 1 : 0);
-            PlayerPrefs.SetInt(KEY_TECH_TREE_UNLOCKED,   _isTechTreeUnlocked   ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_EQUIPMENT_UNLOCKED,   _isEquipmentUnlocked ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_TECH_TREE_UNLOCKED,   _isTechTreeUnlocked  ? 1 : 0);
             PlayerPrefs.SetInt(KEY_TOTAL_BATTLES_PLAYED, _totalBattlesPlayed);
             PlayerPrefs.Save();
         }
 
         private void Load()
         {
-            _isEquipmentUnlocked  = PlayerPrefs.GetInt(KEY_EQUIPMENT_UNLOCKED,   0) == 1;
-            _isTechTreeUnlocked   = PlayerPrefs.GetInt(KEY_TECH_TREE_UNLOCKED,   0) == 1;
-            _totalBattlesPlayed   = PlayerPrefs.GetInt(KEY_TOTAL_BATTLES_PLAYED, 0);
+            _isEquipmentUnlocked = PlayerPrefs.GetInt(KEY_EQUIPMENT_UNLOCKED,   0) == 1;
+            _isTechTreeUnlocked  = PlayerPrefs.GetInt(KEY_TECH_TREE_UNLOCKED,   0) == 1;
+            _totalBattlesPlayed  = PlayerPrefs.GetInt(KEY_TOTAL_BATTLES_PLAYED, 0);
 
             if (showDebugInfo)
-                Debug.Log($"[SystemUnlockManager] 读档: Equipment={_isEquipmentUnlocked}, " +
-                          $"TechTree={_isTechTreeUnlocked}, Battles={_totalBattlesPlayed}");
+                Debug.Log($"[SystemUnlockManager] 读档: " +
+                          $"Equipment={_isEquipmentUnlocked}, " +
+                          $"TechTree={_isTechTreeUnlocked}, " +
+                          $"Battles={_totalBattlesPlayed}");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 调试
+        // Editor 调试
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 #if UNITY_EDITOR
-        [ContextMenu("Debug: Reset All Unlock Flags")]
-        private void DebugResetAll()
-        {
-            _isEquipmentUnlocked = false;
-            _isTechTreeUnlocked  = false;
-            _totalBattlesPlayed  = 0;
-            Save();
-            Debug.Log("[SystemUnlockManager] 调试：所有解锁标记已重置");
-        }
+        [ContextMenu("Debug: Reset All")]
+        private void DebugResetAll() => ResetAll();
 
         [ContextMenu("Debug: Unlock All")]
         private void DebugUnlockAll()
         {
             ForceUnlockEquipment();
             ForceUnlockTechTree();
-            Debug.Log("[SystemUnlockManager] 调试：所有系统已解锁");
+        }
+
+        [ContextMenu("Debug: Print State")]
+        private void DebugPrint()
+        {
+            Debug.Log($"[SystemUnlockManager] Equipment={_isEquipmentUnlocked}, " +
+                      $"TechTree={_isTechTreeUnlocked}, Battles={_totalBattlesPlayed}\n" +
+                      $"PendingTech={PlayerPrefs.GetInt(KEY_PENDING_TECH_NOTIFY, 0)}, " +
+                      $"PendingEquip={PlayerPrefs.GetInt(KEY_PENDING_EQUIP_NOTIFY, 0)}");
         }
 #endif
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 解锁结果数据
+    // 解锁结果（供 SettlementPanel 使用）
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    /// <summary>
-    /// 本次战斗结束触发的解锁结果（供 SettlementPanel 显示"新系统解锁"提示）
-    /// </summary>
     public class UnlockResult
     {
-        /// <summary>本次是否首次解锁装备系统</summary>
         public bool equipmentSystemNewlyUnlocked;
-
-        /// <summary>本次是否首次解锁科技树</summary>
         public bool techTreeNewlyUnlocked;
-
-        /// <summary>是否有任何新解锁</summary>
         public bool HasAnyUnlock => equipmentSystemNewlyUnlocked || techTreeNewlyUnlocked;
     }
 }

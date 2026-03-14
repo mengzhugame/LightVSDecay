@@ -71,30 +71,27 @@ namespace LightVsDecay.UI.Panels
         private void BindBlueprint(int count)
         {
             SetIcon(blueprintIcon);
-            SetLabel($"图纸 x{count}");
+            SetLabel($"x{count}");
         }
 
         // ── 装备 ─────────────────────────────────────────────
 
         private void BindEquipment(BattleDropItem drop)
         {
-            // 从 EquipmentDatabase 找到对应数据，读取其 icon 和 displayName
             EquipmentData data = null;
             if (EquipmentDatabase.Instance != null)
                 data = EquipmentDatabase.Instance.GetById(drop.equipmentId);
 
-            // 图标：优先用 EquipmentData.icon，否则用 defaultEquipmentIcon
             Sprite icon = (data?.icon != null) ? data.icon : defaultEquipmentIcon;
             SetIcon(icon);
 
-            // 标签：装备名 + 数量（数量>1才显示 x）
-            string name = data?.displayName ?? drop.equipmentId;
-            SetLabel(drop.count > 1 ? $"{name} x{drop.count}" : name);
+            // 只显示数量
+            SetLabel($"x{drop.count}");
         }
         private void BindCoin(int count)
         {
             SetIcon(coinIcon);
-            SetLabel($"金币 x{count}");
+            SetLabel($"x{count}");
         }
 
         // ── 通用 ──────────────────────────────────────────────

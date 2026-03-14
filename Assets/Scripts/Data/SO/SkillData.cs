@@ -20,6 +20,7 @@ namespace LightVsDecay.Data.SO
         Impact,     // 冲击模块 - 控制/防近身
         Chain,     // 连锁反应 - 激光传导（替代原 Reflex）
         Frost,      // 极寒光束 - 减速辅助
+        FrostSpread, // 【新增】寒霜蔓延 - 扩散控制（被动）
         // 被动技能（最多5级）- 青色/蓝色卡
         Power,      // 功率超频 - +DPS
         Wide,       // 广域透镜 - +激光宽度
@@ -75,13 +76,6 @@ namespace LightVsDecay.Data.SO
         [Header("击退相关（冲击模块）")]
         [Tooltip("击退力倍率")]
         public float knockbackMultiplier = 1.0f;
-// 【新增】碎冰相关（冲击模块）
-        [Header("碎冰相关（冲击模块）")]
-        [Tooltip("碎冰伤害倍率 (1.5 = +50% 额外伤害)")]
-        public float shatterDamageMultiplier = 1.0f;
-
-        [Tooltip("是否启用终极粉碎（LV5秒杀冰冻普通怪）")]
-        public bool enableExecution = false;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 减速/冰冻相关（极寒光束）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -145,7 +139,14 @@ namespace LightVsDecay.Data.SO
         [Tooltip("暴击率加成 (0.05 = +5%)")]
         [Range(0f, 0.5f)]
         public float critRateBonus = 0f;
-        
+        // 【新增】
+        [Tooltip("暴击伤害加成 (0.15 = +15%)")]
+        [Range(0f, 2f)]
+        public float critDamageBonus = 0f;
+
+// 【新增】
+        [Tooltip("暴击时附带微弱击退（Lv5 专属）")]
+        public bool critKnockback = false;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 穿透相关（聚能透镜 Lv5）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -172,6 +173,33 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("漏洞扩散爆炸半径")]
         public float shatterExplosionRadius = 2f;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 寒霜蔓延相关（FrostSpread）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("寒霜蔓延相关（FrostSpread）")]
+        [Tooltip("扩散检测半径（米）")]
+        public float frostSpreadRadius = 1.5f;
+
+        [Tooltip("扩散减速比例，占直接减速的比例（0.5 = 50%）")]
+        [Range(0f, 1f)]
+        public float frostSpreadSlowRatio = 0.5f;
+
+        [Tooltip("Lv5：冰霜新星 - 敌人自然解冻时触发范围伤害并重新施加轻度减速")]
+        public bool enableFrostNova = false;
+
+        [Tooltip("冰霜新星爆炸半径")]
+        public float frostNovaRadius = 3f;
+
+        [Tooltip("冰霜新星伤害系数（基于面板DPS）")]
+        public float frostNovaDamageScale = 2f;
+
+        [Tooltip("冰霜新星触发的轻度减速比例")]
+        [Range(0f, 1f)]
+        public float frostNovaSlowPercent = 0.2f;
+
+        [Tooltip("冰霜新星减速持续时间（秒）")]
+        public float frostNovaSlowDuration = 2f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 其他
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -322,6 +350,7 @@ namespace LightVsDecay.Data.SO
                 case SkillType.Impact:  // 冲击模块
                 case SkillType.Chain:  // 反射透镜
                 case SkillType.Frost:   // 极寒光束
+                case SkillType.FrostSpread:
                     cardType = SkillCardType.Attack;
                     break;
                     
@@ -329,7 +358,7 @@ namespace LightVsDecay.Data.SO
                 case SkillType.Power:
                 case SkillType.Wide:
                 case SkillType.Crit: 
-                case SkillType.Shatter:  // 【新增】数据破碎 - 被动技能
+                case SkillType.Shatter:  // 【新增】数据破碎 - 被动技能    
                     cardType = SkillCardType.Passive;
                     break;
             }

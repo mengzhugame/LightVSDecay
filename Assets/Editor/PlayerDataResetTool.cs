@@ -5,6 +5,9 @@
 // ============================================================
 
 #if UNITY_EDITOR
+using LightVsDecay.Data.Runtime;
+using LightVsDecay.Logic;
+using LightVsDecay.Logic.Equipment;
 using UnityEngine;
 using UnityEditor;
 
@@ -63,6 +66,26 @@ namespace LightVsDecay.Editor
             {
                 PlayerPrefs.DeleteAll();
                 PlayerPrefs.Save();
+                // ★ 重置所有系统解锁标记（补充之前遗漏的部分）
+                if (SystemUnlockManager.Instance != null)
+                {
+                    SystemUnlockManager.Instance.ResetAll();
+                }
+                else
+                {
+                    // 兜底：如果 Manager 未激活，直接删除 PlayerPrefs Key
+                    PlayerPrefs.DeleteKey("SysUnlock_Equipment_v1");
+                    PlayerPrefs.DeleteKey("SysUnlock_TechTree_v1");
+                    PlayerPrefs.DeleteKey("SysUnlock_TotalBattles_v1");
+                    PlayerPrefs.DeleteKey("SysUnlock_PendingTechNotify");
+                    PlayerPrefs.DeleteKey("SysUnlock_PendingEquipNotify");
+                    PlayerPrefs.Save();
+                }
+                // ★ 清除装备内存（含图纸）
+                if (EquipmentManager.Instance != null)
+                    EquipmentManager.Instance.ResetAll();
+                else
+                    EquipmentSaveData.Reset();   // 兜底
                 Debug.Log("[调试工具] 所有PlayerPrefs已清除");
             }
         }
