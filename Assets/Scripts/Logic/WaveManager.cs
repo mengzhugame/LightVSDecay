@@ -800,7 +800,13 @@ namespace LightVsDecay.Logic
                 {
                     Debug.LogWarning("[WaveManager] ⚠️ 检测到 Drop 阶段异常（无宝箱），强制进入下一波！");
                 }
-        
+
+                // 重置 TacticalDropManager 的 drop 状态，避免 isDropPhase 脏留
+                if (TacticalDropManager.Instance != null && TacticalDropManager.Instance.IsDropPhase)
+                {
+                    TacticalDropManager.Instance.ForceResetDropPhase();
+                }
+
                 // 强制开始下一波，防止卡死
                 StartNextWave();
             }
