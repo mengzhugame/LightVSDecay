@@ -108,6 +108,11 @@ namespace LightVsDecay.Logic.Statistics
         private int _waveStartHullHP = 0;
         private int _waveStartShieldHP = 0;
         
+        private int _wavePlayerHitCount = 0;     // 本波受击次数
+        private int _waveExpGained = 0;           // 本波获得经验
+        private int _waveGoldGained = 0;          // 本波获得金币
+        private int _lastKnownTotalCoins = 0;     // 金币快照（差值法）
+        private float _waveDangerTime = 0f;       // 濒死累计时长
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - Frost
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -177,6 +182,8 @@ namespace LightVsDecay.Logic.Statistics
             GameEvents.OnGameDefeat += OnGameDefeat;
             GameEvents.OnSkillApplied += OnSkillApplied;
             GameEvents.OnEnemyDied += OnEnemyDied;
+            GameEvents.OnXPOrbCollected += OnXPOrbCollectedForStats;
+            GameEvents.OnCoinChanged += OnCoinChangedForStats;
         }
         
         private void OnDisable()
@@ -188,6 +195,8 @@ namespace LightVsDecay.Logic.Statistics
             GameEvents.OnGameDefeat -= OnGameDefeat;
             GameEvents.OnSkillApplied -= OnSkillApplied;
             GameEvents.OnEnemyDied -= OnEnemyDied;
+            GameEvents.OnXPOrbCollected -= OnXPOrbCollectedForStats;
+            GameEvents.OnCoinChanged -= OnCoinChangedForStats;
         }
         
         private void Update()
@@ -211,6 +220,14 @@ namespace LightVsDecay.Logic.Statistics
             {
                 _waveBossPushbackTime += Time.deltaTime;
             }
+            // 【V4.2】濒死时长追踪（血量 < 30%）
+            if (turretHealth != null && turretHealth.CurrentHullHP > 0)
+            {
+                if (turretHealth.HullPercent < 0.2f)
+                {
+                    _waveDangerTime += Time.deltaTime;
+                }
+            }
         }
         
         private void FixedUpdate()
@@ -230,7 +247,7 @@ namespace LightVsDecay.Logic.Statistics
             ResetSession();
             _isTracking = true;
             _sessionStartTime = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            
+            _lastKnownTotalCoins = 0; // 新游戏从 0 开始
             if (showDebugInfo)
             {
                 Debug.Log("[BattleStatistics] 🎮 开始采集数据 V4.0");
@@ -288,7 +305,26 @@ namespace LightVsDecay.Logic.Statistics
             if (!CanRecord()) return;
             _waveKills.Add(type);
         }
-        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 经验 / 金币追踪
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void OnXPOrbCollectedForStats(int xp)
+        {
+            if (!CanRecord()) return;
+            _waveExpGained += xp;
+        }
+
+        private void OnCoinChangedForStats(int totalCoins)
+        {
+            if (!CanRecord()) return;
+            int delta = totalCoins - _lastKnownTotalCoins;
+            if (delta > 0)
+            {
+                _waveGoldGained += delta;
+            }
+            _lastKnownTotalCoins = totalCoins;
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 波次管理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -314,6 +350,12 @@ namespace LightVsDecay.Logic.Statistics
             // 重置玩家受伤
             _waveDmgFromMobs = 0f;
             _waveDmgFromBoss = 0f;
+            
+            _wavePlayerHitCount = 0;
+            _waveExpGained = 0;
+            _waveGoldGained = 0;
+            _waveDangerTime = 0f;
+            
             _waveChainDamage = 0f;
             _waveOverloadCount = 0;
             // 重置伤害来源
@@ -458,7 +500,13 @@ namespace LightVsDecay.Logic.Statistics
                 
                 // 其他
                 dpsPeak = _peakDPS,
-                enemyTotalHP = _waveTotalEnemyHP
+                enemyTotalHP = _waveTotalEnemyHP,
+                // V4.2 新增
+                effectiveDPS = timeToClear > 0f ? _waveTotalDamage / timeToClear : 0f,
+                playerHitCount = _wavePlayerHitCount,
+                expGained = _waveExpGained,
+                goldGained = _waveGoldGained,
+                timeInDanger = _waveDangerTime,
             };
             
             _allWaveStats.Add(data);
@@ -625,7 +673,7 @@ namespace LightVsDecay.Logic.Statistics
         public void RecordPlayerDamage(float damage, PlayerDamageSource source)
         {
             if (!CanRecord()) return;
-            
+            _wavePlayerHitCount++;
             switch (source)
             {
                 case PlayerDamageSource.MobCollision:
@@ -903,7 +951,7 @@ namespace LightVsDecay.Logic.Statistics
         }
         
         // CSV字段总数
-        private const int CSV_FIELD_COUNT = 58;
+        private const int CSV_FIELD_COUNT = 63;
         
         /// <summary>
         /// 构建CSV表头
@@ -936,7 +984,8 @@ namespace LightVsDecay.Logic.Statistics
                 // 技能路径 (2)
                 "Skill_Path,Skill_Levels,Overload_Count," +
                 // 其他 (2)
-                "DPS_Peak,Enemy_Total_HP";
+                "DPS_Peak,Enemy_Total_HP,"+
+                "Effective_DPS,Player_Hit_Count,Exp_Gained,Gold_Gained,Time_In_Danger";
         }
         
         /// <summary>
@@ -957,7 +1006,7 @@ namespace LightVsDecay.Logic.Statistics
                 "{5},{6},{7},{8},{9},{10}," +
                 // 3. 玩家状态 (11-18)
                 "{11},{12},{13},{14},{15:F0},{16:F0},{17:F0},{18:F2}," +
-                // 4. 伤害输出 (19-27) [新增 Chain 在 22]
+                // 4. 伤害输出 (19-27)
                 "{19:F0},{20:F0},{21:F0},{22:F0},{23:F0},{24},{25},{26:F2},{27:F0}," +
                 // 5. Frost统计 (28-30)
                 "{28},{29},{30:F1}," +
@@ -967,10 +1016,12 @@ namespace LightVsDecay.Logic.Statistics
                 "{34},{35},{36},{37:F0},{38:F0},{39:F1},{40:F1},{41:F1},{42:F1},{43},{44},{45}," +
                 // 8. Boss战数据 (46-54)
                 "{46:F0},{47:F0},{48:F1},{49},{50:F2},{51},{52},{53},{54}," +
-                // 9. 技能与大招 (55-57) [新增 Overload 在 57]
+                // 9. 技能与大招 (55-57)
                 "{55},{56},{57}," +
                 // 10. 其他 (58-59)
-                "{58:F0},{59:F0}",
+                "{58:F0},{59:F0}," +
+                // 11. V4.2 新增 (60-64)
+                "{60:F1},{61},{62},{63},{64:F2}",
 
                 // ================= 参数列表 =================
                 
@@ -984,11 +1035,11 @@ namespace LightVsDecay.Logic.Statistics
                 d.hpStartHull, d.hpStartShield, d.hpEndHull, d.hpEndShield,
                 d.dmgFromMobs, d.dmgFromBoss, d.playerHPLost, d.tankAbsorbedRatio,
                 
-                // 4. 伤害输出 (注意顺序)
+                // 4. 伤害输出
                 d.dmgMainLaser,     // 19
                 d.dmgSubLaser,      // 20
                 d.dmgExplosion,     // 21
-                d.dmgChain,         // 22 [新增] 连锁伤害
+                d.dmgChain,         // 22
                 d.critDamageTotal,  // 23
                 d.critHitCount,     // 24
                 d.normalHitCount,   // 25
@@ -1012,12 +1063,20 @@ namespace LightVsDecay.Logic.Statistics
                 d.bossPhase, d.bossHPRemaining, d.bossChargeCount, d.bossPressCount, d.bossSummonCount, d.bossStunCount,
                 
                 // 9. 技能与大招
-                escapedPath,    // 55
-                escapedLevels,  // 56
-                d.overloadCount,// 57 [新增] 大招次数
+                escapedPath,         // 55
+                escapedLevels,       // 56
+                d.overloadCount,     // 57
                 
                 // 10. 其他
-                d.dpsPeak, d.enemyTotalHP
+                d.dpsPeak,           // 58
+                d.enemyTotalHP,      // 59
+                
+                // 11. V4.2 新增
+                d.effectiveDPS,      // 60
+                d.playerHitCount,    // 61
+                d.expGained,         // 62
+                d.goldGained,        // 63
+                d.timeInDanger       // 64
             );
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1047,6 +1106,7 @@ namespace LightVsDecay.Logic.Statistics
             Debug.Log($"  伤害: 主{data.dmgMainLaser:F0} 副{data.dmgSubLaser:F0} 爆{data.dmgExplosion:F0} = {data.dmgDealtTotal:F0}");
             Debug.Log($"  暴击: {data.critHitCount}次 共{data.critDamageTotal:F0}伤害");
             Debug.Log($"  技能路径: {data.skillPath}");
+            Debug.Log($"  V4.2: DPS_eff:{data.effectiveDPS:F1} | 受击:{data.playerHitCount}次 | XP:{data.expGained} Gold:{data.goldGained} | 濒死:{data.timeInDanger:F1}s");
         }
 #endif
     }

@@ -206,5 +206,11 @@ namespace LightVsDecay.Logic.Statistics
         // ═══ 其他 (2) ═══
         public float dpsPeak;
         public float enemyTotalHP;
+        // ═══ V4.2 新增统计 (5) ═══
+        public float effectiveDPS;      // 有效DPS = dmgDealtTotal / timeToClear
+        public int playerHitCount;       // 玩家受击次数
+        public int expGained;            // 本波获得经验值
+        public int goldGained;           // 本波获得金币
+        public float timeInDanger;       // 濒死时长（血量<30%的持续秒数）
     }
 }
