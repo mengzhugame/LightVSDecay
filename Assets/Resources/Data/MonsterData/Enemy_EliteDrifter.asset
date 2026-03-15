@@ -18,7 +18,7 @@ MonoBehaviour:
   maxHealth: 12500
   moveSpeed: 1
   mass: 1
-  contactDamage: 750
+  contactDamage: 250
   attackInterval: 1
   isSuicide: 0
   knockbackResistance: 0.5

@@ -22,19 +22,19 @@ MonoBehaviour:
     spawnGroups:
     - spawnTime: 0
       enemyType: 0
-      count: 15
+      count: 8
       pattern: 0
       customInterval: -1
       spawnZone: 1
     - spawnTime: 20
       enemyType: 0
-      count: 20
+      count: 12
       pattern: 1
       customInterval: -1
       spawnZone: 2
     - spawnTime: 40
       enemyType: 0
-      count: 15
+      count: 10
       pattern: 1
       customInterval: -1
       spawnZone: 0

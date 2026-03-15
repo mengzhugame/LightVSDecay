@@ -33,18 +33,27 @@ MonoBehaviour:
     freezeThreshold: 0
     freezeDuration: 0
     splitCount: 2
-    splitDamageMultiplier: 0.25
+    splitDamageMultiplier: 0.4
     splitLength: 8
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    critDamageBonus: 0
+    critKnockback: 0
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
+    frostSpreadRadius: 1.5
+    frostSpreadSlowRatio: 0.5
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u526F\u6FC0\u5149\u4F24\u5BB3\u63D0\u5347\u81F3 <color=#00FF00>35%</color>\n\u957F\u5EA6\u63D0\u81F3
+  - description: "\u526F\u6FC0\u5149\u4F24\u5BB3\u63D0\u5347\u81F3 <color=#00FF00>55%</color>\n\u957F\u5EA6\u63D0\u81F3
       <color=#00FF00>12.0</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
@@ -54,15 +63,24 @@ MonoBehaviour:
     freezeThreshold: 0
     freezeDuration: 0
     splitCount: 2
-    splitDamageMultiplier: 0.35
+    splitDamageMultiplier: 0.55
     splitLength: 12
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    critDamageBonus: 0
+    critKnockback: 0
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
+    frostSpreadRadius: 1.5
+    frostSpreadSlowRatio: 0.5
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u5206\u88C2\u6570\u91CF\u589E\u81F3 <color=#00FF00>4\u6761</color>"
@@ -74,18 +92,27 @@ MonoBehaviour:
     freezeThreshold: 0
     freezeDuration: 0
     splitCount: 4
-    splitDamageMultiplier: 0.35
+    splitDamageMultiplier: 0.55
     splitLength: 12
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    critDamageBonus: 0
+    critKnockback: 0
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
+    frostSpreadRadius: 1.5
+    frostSpreadSlowRatio: 0.5
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u526F\u6FC0\u5149\u4F24\u5BB3\u63D0\u5347\u81F3 <color=#00FF00>50%</color>\n\u957F\u5EA6\u63D0\u81F3
+  - description: "\u526F\u6FC0\u5149\u4F24\u5BB3\u63D0\u5347\u81F3 <color=#00FF00>70%</color>\n\u957F\u5EA6\u63D0\u81F3
       <color=#00FF00>16.0</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
@@ -95,15 +122,24 @@ MonoBehaviour:
     freezeThreshold: 0
     freezeDuration: 0
     splitCount: 4
-    splitDamageMultiplier: 0.5
+    splitDamageMultiplier: 0.7
     splitLength: 16
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    critDamageBonus: 0
+    critKnockback: 0
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
+    frostSpreadRadius: 1.5
+    frostSpreadSlowRatio: 0.5
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u5206\u88C2\u6570\u91CF\u589E\u81F3 <color=#00FF00>6\u6761</color>"
@@ -115,16 +151,28 @@ MonoBehaviour:
     freezeThreshold: 0
     freezeDuration: 0
     splitCount: 6
-    splitDamageMultiplier: 0.5
+    splitDamageMultiplier: 0.7
     splitLength: 16
     widthMultiplier: 0
-    reflexDamageMultiplier: 0.5
-    reflexLengthBonus: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
     critRateBonus: 0
-    explosionOnKill: 0
-    explosionDamage: 100
-    explosionRadius: 2
+    critDamageBonus: 0
+    critKnockback: 0
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
+    frostSpreadRadius: 1.5
+    frostSpreadSlowRatio: 0.5
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   baseWeight: 100
   weightPerLevel: 50
+  hasPrerequisite: 0
+  prerequisiteSkill: 0
+  prerequisiteWeightBonus: 200

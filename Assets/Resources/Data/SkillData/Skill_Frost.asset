@@ -23,72 +23,12 @@ MonoBehaviour:
   maxLevel: 5
   isRepeatable: 0
   levelData:
-  - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>40%</color>,\u6301\u7EED
-      <color=#00BFFF>0.5s</color>"
-    damageMultiplier: 1
-    bossDamageBonus: 0
-    knockbackMultiplier: 0
-    slowPercent: 0.4
-    slowDuration: 0.5
-    freezeThreshold: 0
-    freezeDuration: 0
-    splitCount: 0
-    splitDamageMultiplier: 0.3
-    splitLength: 3
-    widthMultiplier: 0
-    chainBounces: 1
-    chainRange: 3
-    chainDamageDecay: 0.2
-    critRateBonus: 0
-    critDamageBonus: 0
-    critKnockback: 0
-    penetrationCount: 0
-    penetrationDecay: 0.1
-    dealsTrueDamageToBoss: 0
-    shatterDamageBonus: 0
-    shatterExplosionOnKill: 0
-    shatterExplosionRadius: 2
-    frostSpreadRadius: 1.5
-    frostSpreadSlowRatio: 0.5
-    frostSpreadFreezeRate: 0
-    rotationSpeedBonus: 0
-    knockbackBonus: 0
-  - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>50%</color>,\u6301\u7EED
-      <color=#00BFFF>0.8s</color>"
-    damageMultiplier: 1
-    bossDamageBonus: 0
-    knockbackMultiplier: 0
-    slowPercent: 0.5
-    slowDuration: 0.8
-    freezeThreshold: 0
-    freezeDuration: 0
-    splitCount: 0
-    splitDamageMultiplier: 0.3
-    splitLength: 3
-    widthMultiplier: 0
-    chainBounces: 1
-    chainRange: 3
-    chainDamageDecay: 0.2
-    critRateBonus: 0
-    critDamageBonus: 0
-    critKnockback: 0
-    penetrationCount: 0
-    penetrationDecay: 0.1
-    dealsTrueDamageToBoss: 0
-    shatterDamageBonus: 0
-    shatterExplosionOnKill: 0
-    shatterExplosionRadius: 2
-    frostSpreadRadius: 1.5
-    frostSpreadSlowRatio: 0.5
-    frostSpreadFreezeRate: 0
-    rotationSpeedBonus: 0
-    knockbackBonus: 0
-  - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>60%</color>,\u6301\u7EED
+  - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>20%</color>,\u6301\u7EED
       <color=#00BFFF>1.0s</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    slowPercent: 0.6
+    slowPercent: 0.2
     slowDuration: 1
     freezeThreshold: 0
     freezeDuration: 0
@@ -108,18 +48,78 @@ MonoBehaviour:
     shatterDamageBonus: 0
     shatterExplosionOnKill: 0
     shatterExplosionRadius: 2
+    frostSpreadRadius: 0
+    frostSpreadSlowRatio: 0.5
+    frostSpreadFreezeRate: 0
+    rotationSpeedBonus: 0
+    knockbackBonus: 0
+  - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>30%</color>,\u6301\u7EED
+      <color=#00BFFF>1.5s</color>"
+    damageMultiplier: 1
+    bossDamageBonus: 0
+    knockbackMultiplier: 0
+    slowPercent: 0.3
+    slowDuration: 1.5
+    freezeThreshold: 0
+    freezeDuration: 0
+    splitCount: 0
+    splitDamageMultiplier: 0.3
+    splitLength: 3
+    widthMultiplier: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
+    critRateBonus: 0
+    critDamageBonus: 0
+    critKnockback: 0
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
     frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>70%</color>,\u6301\u7EED
-      <color=#00BFFF>1.2s</color>"
+  - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>30%</color>,\u6301\u7EED
+      <color=#00BFFF>2.0s</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    slowPercent: 0.7
-    slowDuration: 1.2
+    slowPercent: 0.3
+    slowDuration: 2
+    freezeThreshold: 0
+    freezeDuration: 0
+    splitCount: 0
+    splitDamageMultiplier: 0.3
+    splitLength: 3
+    widthMultiplier: 0
+    chainBounces: 1
+    chainRange: 3
+    chainDamageDecay: 0.2
+    critRateBonus: 0
+    critDamageBonus: 0
+    critKnockback: 0
+    penetrationCount: 0
+    penetrationDecay: 0.1
+    dealsTrueDamageToBoss: 0
+    shatterDamageBonus: 0
+    shatterExplosionOnKill: 0
+    shatterExplosionRadius: 2
+    frostSpreadRadius: 1.5
+    frostSpreadSlowRatio: 0.5
+    frostSpreadFreezeRate: 0
+    rotationSpeedBonus: 0
+    knockbackBonus: 0
+  - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>45%</color>,\u6301\u7EED
+      <color=#00BFFF>2.5s</color>"
+    damageMultiplier: 1
+    bossDamageBonus: 0
+    knockbackMultiplier: 0
+    slowPercent: 0.45
+    slowDuration: 2.5
     freezeThreshold: 0
     freezeDuration: 0
     splitCount: 0
@@ -144,14 +144,14 @@ MonoBehaviour:
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u7EDD\u5BF9\u96F6\u5EA6\uFF1A \u6301\u7EED\u7167\u5C04\u76EE\u6807
-      <color=#00BFFF>1s</color> \u540E\uFF0C\n\u5B8C\u5168\u51BB\u7ED3 <color=#00BFFF>2.0s</color>"
+      <color=#00BFFF>1s</color> \u540E\uFF0C\n\u5B8C\u5168\u51BB\u7ED3 <color=#00BFFF>1.5s</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
-    slowPercent: 0.7
-    slowDuration: 1.2
+    slowPercent: 0.45
+    slowDuration: 2.5
     freezeThreshold: 1
-    freezeDuration: 2
+    freezeDuration: 1.5
     splitCount: 0
     splitDamageMultiplier: 0.3
     splitLength: 3
