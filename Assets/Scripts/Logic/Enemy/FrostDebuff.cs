@@ -362,11 +362,7 @@ namespace LightVsDecay.Logic.Enemy
                 if (frozenDuration <= 0f)
                 {
                     isFrozen = false;
-                    // 【新增】冰霜新星回调（FrostSpread Lv5：自然解冻触发冰霜新星）
-                    if (enemyBlob != null && SkillEffectManager.Instance != null)
-                    {
-                        SkillEffectManager.Instance.OnEnemyThawedNaturally(enemyBlob.transform.position);
-                    }
+
                     // 隐藏冰冻覆盖
                     targetOverlayAlpha = 0f;
                     

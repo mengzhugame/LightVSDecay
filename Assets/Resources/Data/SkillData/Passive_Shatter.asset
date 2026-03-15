@@ -15,7 +15,7 @@ MonoBehaviour:
   type: 9
   category: 1
   cardType: 1
-  displayName: "\u6570\u636E\u7834\u788E"
+  displayName: "\u51B0\u7ED3\u788E\u706D"
   icon: {fileID: 21300000, guid: b692295543babf748b77ecc97db6b580, type: 3}
   description: "\u5BF9\u53D7\u635F\u602A\u7269\u589E\u52A0\u4F24\u5BB3"
   changeColor: 0
@@ -23,7 +23,8 @@ MonoBehaviour:
   maxLevel: 5
   isRepeatable: 0
   levelData:
-  - description: "\u5BF9\u53D7\u635F\u654C\u4EBA<color=#00BFFF> +30%</color> \u4F24\u5BB3"
+  - description: "\u5BF9\u51CF\u901F\u6216\u51B0\u51BB\u654C\u4EBA<color=#00BFFF>
+      +30%</color> \u4F24\u5BB3"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
@@ -49,14 +50,11 @@ MonoBehaviour:
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u5BF9\u53D7\u635F\u654C\u4EBA<color=#00BFFF> +50%</color> \u4F24\u5BB3"
+  - description: "\u5BF9\u51CF\u901F\u6216\u51B0\u51BB\u654C\u4EBA<color=#00BFFF>
+      +50%</color> \u4F24\u5BB3"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
@@ -82,14 +80,11 @@ MonoBehaviour:
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u5BF9\u53D7\u635F\u654C\u4EBA<color=#00BFFF> +70%</color> \u4F24\u5BB3"
+  - description: "\u5BF9\u51CF\u901F\u6216\u51B0\u51BB\u654C\u4EBA<color=#00BFFF>
+      +70%</color> \u4F24\u5BB3"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
@@ -115,14 +110,11 @@ MonoBehaviour:
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u5BF9\u53D7\u635F\u654C\u4EBA<color=#00BFFF> +100%</color> \u4F24\u5BB3"
+  - description: "\u5BF9\u51CF\u901F\u6216\u51B0\u51BB\u654C\u4EBA<color=#00BFFF>
+      +90%</color> \u4F24\u5BB3"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
@@ -143,20 +135,17 @@ MonoBehaviour:
     penetrationCount: 0
     penetrationDecay: 0.1
     dealsTrueDamageToBoss: 0
-    shatterDamageBonus: 1
+    shatterDamageBonus: 0.9
     shatterExplosionOnKill: 0
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u5BF9\u53D7\u635F\u654C\u4EBA<color=#00BFFF> +150%</color> \u4F24\u5BB3\n\u51FB\u6740\u5C0F\u602A\u5F15\u53D1
-      <color=#00BFFF>200% \u8303\u56F4\u7206\u70B8</color> "
+  - description: "\u5BF9\u51CF\u901F\u6216\u51B0\u51BB\u654C\u4EBA<color=#00BFFF>
+      +120%</color> \u4F24\u5BB3,\u51FB\u6740\u65F6\u89E6\u53D1 <color=#00BFFF>200%
+      </color> \u788E\u51B0\u7206\u70B8"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
@@ -177,17 +166,16 @@ MonoBehaviour:
     penetrationCount: 0
     penetrationDecay: 0.1
     dealsTrueDamageToBoss: 0
-    shatterDamageBonus: 1.5
+    shatterDamageBonus: 1.2
     shatterExplosionOnKill: 1
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   baseWeight: 100
-  weightPerLevel: 0
+  weightPerLevel: 50
+  hasPrerequisite: 1
+  prerequisiteSkill: 4
+  prerequisiteWeightBonus: 200

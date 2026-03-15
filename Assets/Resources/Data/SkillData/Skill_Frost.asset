@@ -24,8 +24,7 @@ MonoBehaviour:
   isRepeatable: 0
   levelData:
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>40%</color>,\u6301\u7EED
-      <color=#00BFFF>0.5s</color>\n\u83B7\u5F97<color=#FF0000>\u3010\u5BD2\u6C14\u6269\u6563\u3011</color>\uFF08\u5468\u56F4\u654C\u4EBA\u51CF\u901F
-      20%\uFF09"
+      <color=#00BFFF>0.5s</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
@@ -51,11 +50,7 @@ MonoBehaviour:
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>50%</color>,\u6301\u7EED
@@ -85,11 +80,7 @@ MonoBehaviour:
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>60%</color>,\u6301\u7EED
@@ -119,11 +110,7 @@ MonoBehaviour:
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u51FB\u4E2D\u51CF\u901F <color=#00BFFF>70%</color>,\u6301\u7EED
@@ -153,11 +140,7 @@ MonoBehaviour:
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u7EDD\u5BF9\u96F6\u5EA6\uFF1A \u6301\u7EED\u7167\u5C04\u76EE\u6807
@@ -187,12 +170,11 @@ MonoBehaviour:
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5
     frostSpreadSlowRatio: 0.5
-    enableFrostNova: 0
-    frostNovaRadius: 3
-    frostNovaDamageScale: 2
-    frostNovaSlowPercent: 0.2
-    frostNovaSlowDuration: 2
+    frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
   baseWeight: 100
   weightPerLevel: 50
+  hasPrerequisite: 0
+  prerequisiteSkill: 0
+  prerequisiteWeightBonus: 200

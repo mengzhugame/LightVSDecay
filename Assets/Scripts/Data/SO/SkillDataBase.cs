@@ -241,7 +241,19 @@ namespace LightVsDecay.Data.SO
                     }
                     continue;
                 }
-                
+                // 【V4.2 新增】前置解锁检查（流派系统）
+                if (skill.hasPrerequisite)
+                {
+                    int prereqLevel = currentSkillLevels.GetValueOrDefault(skill.prerequisiteSkill, 0);
+                    if (prereqLevel <= 0)
+                    {
+                        if (showDebugInfo)
+                        {
+                            Debug.Log($"[SkillDatabase] 前置未满足，跳过: {skill.displayName} (需要 {skill.prerequisiteSkill} Lv≥1)");
+                        }
+                        continue;
+                    }
+                }
                 pool.Add(skill);
             }
             
@@ -261,7 +273,21 @@ namespace LightVsDecay.Data.SO
                     }
                     continue;
                 }
-                
+
+                // 【V4.2 新增】前置解锁检查（流派系统）
+                if (skill.hasPrerequisite)
+                {
+                    int prereqLevel = currentSkillLevels.GetValueOrDefault(skill.prerequisiteSkill, 0);
+                    if (prereqLevel <= 0)
+                    {
+                        if (showDebugInfo)
+                        {
+                            Debug.Log($"[SkillDatabase] 前置未满足，跳过: {skill.displayName} (需要 {skill.prerequisiteSkill} Lv≥1)");
+                        }
+                        continue;
+                    }
+                }
+
                 pool.Add(skill);
             }
             
@@ -328,6 +354,12 @@ namespace LightVsDecay.Data.SO
             
             // 基础权重 + 等级加成
             int weight = skill.baseWeight + (currentLevel * skill.weightPerLevel);
+            
+            // 【V4.2 新增】前置解锁权重加成（流派技能极大概率出现）
+            if (skill.hasPrerequisite)
+            {
+                weight += skill.prerequisiteWeightBonus;
+            }
             
             // 确保权重至少为1（否则永远选不到）
             return Mathf.Max(1, weight);

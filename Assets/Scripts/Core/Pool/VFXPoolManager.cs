@@ -286,11 +286,28 @@ namespace LightVsDecay.Core.Pool
             Play(VFXType.LaserHit, position);
         }
         /// <summary>
-        /// 播放极寒光束命中特效
+        /// 播放极寒光束命中特效（确保默认缩放）
         /// </summary>
         public void PlayFrostHit(Vector3 position)
         {
-            Play(VFXType.FrostHit, position);
+            var go = Play(VFXType.FrostHit, position);
+            // 重置缩放，防止复用寒霜蔓延缩放后的实例
+            if (go != null)
+            {
+                go.transform.localScale = Vector3.one;
+            }
+        }
+
+        /// <summary>
+        /// 播放寒霜蔓延扩散特效（带缩放，基于扩散半径）
+        /// </summary>
+        public void PlayFrostSpread(Vector3 position, float scale)
+        {
+            var go = Play(VFXType.FrostHit, position);
+            if (go != null)
+            {
+                go.transform.localScale = Vector3.one * scale;
+            }
         }
         /// <summary>
         /// 播放护盾破碎特效

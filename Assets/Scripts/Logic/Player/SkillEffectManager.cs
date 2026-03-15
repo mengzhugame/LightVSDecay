@@ -145,11 +145,8 @@ namespace LightVsDecay.Logic.Player
         // ── FrostSpread ──（全部新增）
         private float cachedFrostSpreadRadius = 1.5f;
         private float cachedFrostSpreadSlowRatio = 0.5f;
-        private bool  cachedFrostSpreadEnableNova = false;
-        private float cachedFrostNovaRadius = 3f;
-        private float cachedFrostNovaDamageScale = 2f;
-        private float cachedFrostNovaSlowPercent = 0.2f;
-        private float cachedFrostNovaSlowDuration = 2f;
+        // 【V4.2 新增】寒霜蔓延 Lv5 扩散冰冻
+        private float cachedFrostSpreadFreezeRate;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -663,8 +660,9 @@ namespace LightVsDecay.Logic.Player
         }
         /// <summary>
         /// 应用 FrostSpread（寒霜蔓延）效果
-        /// Lv1-4：为直接命中的敌人周围产生扩散减速光环
-        /// Lv5：冰冻敌人自然解冻时触发冰霜新星
+        /// 【V4.2 重构】
+        /// Lv1-4：为直接命中的敌人周围产生扩散减速 + VFX
+        /// Lv5 质变：扩散也能缓慢累积冰冻（深寒传染）
         /// </summary>
         private void ApplyFrostSpreadEffect(int level, SkillData skillData)
         {
@@ -677,20 +675,17 @@ namespace LightVsDecay.Logic.Player
                 return;
             }
 
-            cachedFrostSpreadRadius      = levelData.frostSpreadRadius;
-            cachedFrostSpreadSlowRatio   = levelData.frostSpreadSlowRatio;
-            cachedFrostSpreadEnableNova  = levelData.enableFrostNova;
-            cachedFrostNovaRadius        = levelData.frostNovaRadius;
-            cachedFrostNovaDamageScale   = levelData.frostNovaDamageScale;
-            cachedFrostNovaSlowPercent   = levelData.frostNovaSlowPercent;
-            cachedFrostNovaSlowDuration  = levelData.frostNovaSlowDuration;
+            cachedFrostSpreadRadius    = levelData.frostSpreadRadius;
+            cachedFrostSpreadSlowRatio = levelData.frostSpreadSlowRatio;
+            cachedFrostSpreadFreezeRate = levelData.frostSpreadFreezeRate;
 
             if (showDebugInfo)
             {
-                string novaInfo = cachedFrostSpreadEnableNova ? $"，Lv5冰霜新星(r={cachedFrostNovaRadius})" : "";
+                string lv5Info = (level >= 5 && cachedFrostSpreadFreezeRate > 0f) 
+                    ? $"，Lv5深寒传染(冰冻速率:{cachedFrostSpreadFreezeRate:P0})" : "";
                 Debug.Log($"[SkillEffectManager] ✓ FrostSpread Lv.{level} - " +
                           $"扩散半径:{cachedFrostSpreadRadius}m, " +
-                          $"减速比例:{cachedFrostSpreadSlowRatio:P0}{novaInfo}");
+                          $"减速比例:{cachedFrostSpreadSlowRatio:P0}{lv5Info}");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -974,48 +969,10 @@ namespace LightVsDecay.Logic.Player
             spreadRadius    = cachedFrostSpreadRadius;
             spreadSlowRatio = cachedFrostSpreadSlowRatio;
         }
-
         /// <summary>
-        /// 获取冰霜新星参数（Lv5）
+        /// 【V4.2 新增】获取寒霜蔓延 Lv5 扩散冰冻累积速率
         /// </summary>
-        public void GetFrostNovaParams(out bool enabled, out float radius, 
-            out float damageScale, out float slowPercent, out float slowDuration)
-        {
-            enabled      = cachedFrostSpreadEnableNova;
-            radius       = cachedFrostNovaRadius;
-            damageScale  = cachedFrostNovaDamageScale;
-            slowPercent  = cachedFrostNovaSlowPercent;
-            slowDuration = cachedFrostNovaSlowDuration;
-        }
-
-        /// <summary>
-        /// Lv5 冰霜新星触发入口（由 EnemyBlob 在自然解冻时回调）
-        /// </summary>
-        public void OnEnemyThawedNaturally(Vector3 position)
-        {
-            if (!cachedFrostSpreadEnableNova) return;
-
-            float panelDPS = laserController != null ? laserController.GetPanelDPS() : 100f;
-            float novaDamage = panelDPS * cachedFrostNovaDamageScale;
-
-            Collider2D[] hits = Physics2D.OverlapCircleAll(position, cachedFrostNovaRadius);
-            int hitCount = 0;
-            foreach (var col in hits)
-            {
-                var enemy = col.GetComponent<LightVsDecay.Logic.Enemy.EnemyBlob>();
-                if (enemy == null || enemy.IsDead) continue;
-
-                enemy.TakeDamage(novaDamage, Vector2.zero, false, true);
-                enemy.ApplyFrostSlow(cachedFrostNovaSlowPercent, cachedFrostNovaSlowDuration);
-                hitCount++;
-            }
-
-            if (showDebugInfo)
-            {
-                Debug.Log($"[SkillEffectManager] ❄️ 冰霜新星! 位置:{position}, " +
-                          $"伤害:{novaDamage:F1}, 半径:{cachedFrostNovaRadius}, 命中:{hitCount}");
-            }
-        }
+        public float GetFrostSpreadFreezeRate() => cachedFrostSpreadFreezeRate;
         /// <summary>
         /// Lv.5 Frost 完全冰冻判定（旧接口，基于概率）
         /// </summary>

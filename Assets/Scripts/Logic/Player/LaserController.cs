@@ -787,7 +787,7 @@ namespace LightVsDecay.Logic.Player
         {
             if (SkillEffectManager.Instance == null) return;
 
-            // 【修改】只有持有「寒霜蔓延」技能时才触发扩散
+            // 只有持有「寒霜蔓延」技能时才触发扩散
             if (!SkillEffectManager.Instance.IsFrostSpreadEnabled) return;
 
             float slowPercent, slowDuration;
@@ -797,7 +797,15 @@ namespace LightVsDecay.Logic.Player
             float spreadRadius, spreadSlowRatio;
             SkillEffectManager.Instance.GetFrostSpreadParams(out spreadRadius, out spreadSlowRatio);
 
-            frostHandler.ApplyFrostSpread(slowPercent, slowDuration, spreadRadius, spreadSlowRatio, combinedDetectionLayer);
+            // 【V4.2 新增】传递 Lv5 扩散冰冻参数
+            int frostSpreadLevel = SkillEffectManager.Instance.GetFrostSpreadLevel();
+            float spreadFreezeRate = SkillEffectManager.Instance.GetFrostSpreadFreezeRate();
+            float freezeThreshold, freezeDuration;
+            SkillEffectManager.Instance.GetFrostFreezeParams(out freezeThreshold, out freezeDuration);
+
+            frostHandler.ApplyFrostSpread(slowPercent, slowDuration, spreadRadius, spreadSlowRatio, 
+                combinedDetectionLayer, frostSpreadLevel, spreadFreezeRate, 
+                freezeThreshold, freezeDuration, tickRate);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

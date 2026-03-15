@@ -185,21 +185,9 @@ namespace LightVsDecay.Data.SO
         [Range(0f, 1f)]
         public float frostSpreadSlowRatio = 0.5f;
 
-        [Tooltip("Lv5：冰霜新星 - 敌人自然解冻时触发范围伤害并重新施加轻度减速")]
-        public bool enableFrostNova = false;
-
-        [Tooltip("冰霜新星爆炸半径")]
-        public float frostNovaRadius = 3f;
-
-        [Tooltip("冰霜新星伤害系数（基于面板DPS）")]
-        public float frostNovaDamageScale = 2f;
-
-        [Tooltip("冰霜新星触发的轻度减速比例")]
+        [Tooltip("Lv5 深寒传染：扩散冰冻累积速率（占直接照射的比例，0=不累积，0.3=30%速率）")]
         [Range(0f, 1f)]
-        public float frostNovaSlowPercent = 0.2f;
-
-        [Tooltip("冰霜新星减速持续时间（秒）")]
-        public float frostNovaSlowDuration = 2f;
+        public float frostSpreadFreezeRate = 0f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 其他
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -275,7 +263,15 @@ namespace LightVsDecay.Data.SO
         
         [Tooltip("每升一级后权重变化")]
         public int weightPerLevel = 0;
-        
+        [Header("前置解锁（流派系统）")]
+        [Tooltip("是否需要前置技能才能加入技能池")]
+        public bool hasPrerequisite = false;
+
+        [Tooltip("前置技能类型（需要该技能 Lv≥1 才解锁）")]
+        public SkillType prerequisiteSkill;
+
+        [Tooltip("满足前置条件时的额外权重加成（让流派技能极大概率出现）")]
+        public int prerequisiteWeightBonus = 200;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 便捷方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
