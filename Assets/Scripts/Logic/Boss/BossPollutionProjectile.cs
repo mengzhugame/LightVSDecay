@@ -157,7 +157,7 @@ namespace LightVsDecay.Logic.Boss
 
             if (showDebugInfo)
             {
-                Debug.Log($"[PollutionProjectile] V3.0 生成 @ {transform.position}, HP={currentHP}, Mass={mass}");
+                GameLogger.Log($"[PollutionProjectile] V3.0 生成 @ {transform.position}, HP={currentHP}, Mass={mass}");
             }
             PermanentIgnoreBossCollision();
         }
@@ -184,7 +184,7 @@ namespace LightVsDecay.Logic.Boss
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log("[PollutionProjectile] 恢复追踪模式");
+                        GameLogger.Log("[PollutionProjectile] 恢复追踪模式");
                     }
                 }
                 
@@ -291,7 +291,7 @@ namespace LightVsDecay.Logic.Boss
     
             if (showDebugInfo)
             {
-                Debug.Log("[PollutionProjectile] 永久忽略Boss碰撞");
+                GameLogger.Log("[PollutionProjectile] 永久忽略Boss碰撞");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -320,7 +320,7 @@ namespace LightVsDecay.Logic.Boss
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[PollutionProjectile] 受击！伤害={damage:F0}, 推力={pushForce.magnitude:F0}, 剩余HP={currentHP:F0}");
+                    GameLogger.Log($"[PollutionProjectile] 受击！伤害={damage:F0}, 推力={pushForce.magnitude:F0}, 剩余HP={currentHP:F0}");
                 }
             }
             
@@ -332,7 +332,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[PollutionProjectile] 被击爆！");
+                    GameLogger.Log("[PollutionProjectile] 被击爆！");
                 }
                 DestroyProjectile(true);
             }
@@ -372,7 +372,7 @@ namespace LightVsDecay.Logic.Boss
     
             if (showDebugInfo)
             {
-                Debug.Log($"[PollutionProjectile] 碰撞: {collision.gameObject.name}, Layer: {layerName}");
+                GameLogger.Log($"[PollutionProjectile] 碰撞: {collision.gameObject.name}, Layer: {layerName}");
             }
     
             // 撞到玩家塔/护盾
@@ -387,7 +387,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[PollutionProjectile] 撞击空气墙，销毁");
+                    GameLogger.Log("[PollutionProjectile] 撞击空气墙，销毁");
                 }
                 DestroyProjectile(false);
                 return;
@@ -422,7 +422,7 @@ namespace LightVsDecay.Logic.Boss
         {
             if (showDebugInfo)
             {
-                Debug.Log($"[PollutionProjectile] 🎯 命中玩家！造成 {shieldDamage} 点护盾伤害");
+                GameLogger.Log($"[PollutionProjectile] 🎯 命中玩家！造成 {shieldDamage} 点护盾伤害");
             }
             
             ApplyDamageToPlayer();
@@ -501,7 +501,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[PollutionProjectile] 销毁 (爆炸: {playExplosion})");
+                GameLogger.Log($"[PollutionProjectile] 销毁 (爆炸: {playExplosion})");
             }
         }
         
@@ -512,7 +512,7 @@ namespace LightVsDecay.Logic.Boss
         {
             if (showDebugInfo)
             {
-                Debug.Log("[PollutionProjectile] 强制销毁（数量限制）");
+                GameLogger.Log("[PollutionProjectile] 强制销毁（数量限制）");
             }
             DestroyProjectile(false);
         }
@@ -581,7 +581,7 @@ namespace LightVsDecay.Logic.Boss
     
             if (showDebugInfo)
             {
-                Debug.Log($"[PollutionProjectile] 初始方向角度: {angleOffset}°");
+                GameLogger.Log($"[PollutionProjectile] 初始方向角度: {angleOffset}°");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

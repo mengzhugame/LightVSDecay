@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -134,12 +135,12 @@ namespace LightVsDecay.Data.SO
                 if (eq == null) continue;
                 if (_lookupById.ContainsKey(eq.equipmentId))
                 {
-                    Debug.LogWarning($"[EquipmentDatabase] 重复的 equipmentId: {eq.equipmentId}，请检查 SO 配置");
+                    GameLogger.LogWarning($"[EquipmentDatabase] 重复的 equipmentId: {eq.equipmentId}，请检查 SO 配置");
                     continue;
                 }
                 _lookupById[eq.equipmentId] = eq;
             }
-            Debug.Log($"[EquipmentDatabase] 初始化完成，共 {_lookupById.Count} 件装备模板");
+            GameLogger.Log($"[EquipmentDatabase] 初始化完成，共 {_lookupById.Count} 件装备模板");
         }
 
         /// <summary>按 ID 查找装备模板</summary>
@@ -188,12 +189,12 @@ namespace LightVsDecay.Data.SO
                 if (eq == null) continue;
                 if (!ids.Add(eq.equipmentId))
                 {
-                    Debug.LogError($"重复ID: {eq.equipmentId} ({eq.name})");
+                    GameLogger.LogError($"重复ID: {eq.equipmentId} ({eq.name})");
                     dupCount++;
                 }
             }
             if (dupCount == 0)
-                Debug.Log($"验证通过：{allEquipments.Count} 件装备，ID全部唯一");
+                GameLogger.Log($"验证通过：{allEquipments.Count} 件装备，ID全部唯一");
         }
 #endif
     }

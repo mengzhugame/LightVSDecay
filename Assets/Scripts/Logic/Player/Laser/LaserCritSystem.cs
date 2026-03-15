@@ -6,6 +6,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -88,7 +89,7 @@ namespace LightVsDecay.Logic.Player
 
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserCritSystem] 初始化: 基础暴击率={baseRate:P0}, " +
+                GameLogger.Log($"[LaserCritSystem] 初始化: 基础暴击率={baseRate:P0}, " +
                           $"基础暴击倍率={damageMultiplier:F2}x, 上限={MAX_CRIT_RATE:P0}");
             }
         }
@@ -134,7 +135,7 @@ namespace LightVsDecay.Logic.Player
             critRateBonus += bonus;
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserCritSystem] 暴击率加成 +{bonus:P0}, " +
+                GameLogger.Log($"[LaserCritSystem] 暴击率加成 +{bonus:P0}, " +
                           $"当前={CurrentCritRate:P0}（上限{MAX_CRIT_RATE:P0}）");
             }
         }
@@ -163,7 +164,7 @@ namespace LightVsDecay.Logic.Player
 
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserCritSystem] Crit Lv.{level}: " +
+                GameLogger.Log($"[LaserCritSystem] Crit Lv.{level}: " +
                           $"暴击率加成={rateBonus:P0} → 总={CurrentCritRate:P0}（上限{MAX_CRIT_RATE:P0}）, " +
                           $"暴击倍率={TotalCritMultiplier:F2}x, 击退={enableKnockback}");
             }

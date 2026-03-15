@@ -161,7 +161,7 @@ namespace LightVsDecay.UI.Panels
             UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(null);
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillChooseOnePanel] 显示升级面板 Lv.{level}");
+                GameLogger.Log($"[SkillChooseOnePanel] 显示升级面板 Lv.{level}");
             }
         }
         
@@ -182,7 +182,7 @@ namespace LightVsDecay.UI.Panels
             // 检查数据库
             if (skillDatabase == null)
             {
-                Debug.LogError("[SkillChooseOnePanel] ❌ SkillDatabase 未设置！请在 Inspector 中配置");
+                GameLogger.LogError("[SkillChooseOnePanel] ❌ SkillDatabase 未设置！请在 Inspector 中配置");
                 return;
             }
             
@@ -191,7 +191,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillChooseOnePanel] 当前已有技能数量: {currentSkillLevels.Count}");
+                GameLogger.Log($"[SkillChooseOnePanel] 当前已有技能数量: {currentSkillLevels.Count}");
             }
             
             // 从数据库生成三选一
@@ -199,13 +199,13 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillChooseOnePanel] 生成选项数量: {currentChoices.Count}");
+                GameLogger.Log($"[SkillChooseOnePanel] 生成选项数量: {currentChoices.Count}");
             }
             
             // 如果没有生成选项，显示警告
             if (currentChoices.Count == 0)
             {
-                Debug.LogError("[SkillChooseOnePanel] ❌ 没有可选技能！检查 SkillDatabase 中是否已添加技能");
+                GameLogger.LogError("[SkillChooseOnePanel] ❌ 没有可选技能！检查 SkillDatabase 中是否已添加技能");
                 return;
             }
             
@@ -231,7 +231,7 @@ namespace LightVsDecay.UI.Panels
         {
             if (ProgressManager.Instance == null)
             {
-                Debug.LogWarning("[SkillChooseOnePanel] ⚠️ ProgressManager.Instance 为空，返回空字典");
+                GameLogger.LogWarning("[SkillChooseOnePanel] ⚠️ ProgressManager.Instance 为空，返回空字典");
                 return new Dictionary<SkillType, int>();
             }
             
@@ -241,7 +241,7 @@ namespace LightVsDecay.UI.Panels
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[SkillChooseOnePanel] ❌ 调用 GetSkillLevels 失败: {e.Message}");
+                GameLogger.LogError($"[SkillChooseOnePanel] ❌ 调用 GetSkillLevels 失败: {e.Message}");
                 return new Dictionary<SkillType, int>();
             }
         }
@@ -302,7 +302,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillChooseOnePanel] 卡片{index}: {skill.displayName} (Lv.{currentLv}→{nextLv}, Max={isMaxLevel})");
+                GameLogger.Log($"[SkillChooseOnePanel] 卡片{index}: {skill.displayName} (Lv.{currentLv}→{nextLv}, Max={isMaxLevel})");
             }
         }
         
@@ -411,7 +411,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillChooseOnePanel] 重掷，剩余次数: {retryCountRemaining}");
+                GameLogger.Log($"[SkillChooseOnePanel] 重掷，剩余次数: {retryCountRemaining}");
             }
         }
         
@@ -438,7 +438,7 @@ namespace LightVsDecay.UI.Panels
         {
             if (index < 0 || index >= currentChoices.Count)
             {
-                Debug.LogError($"[SkillChooseOnePanel] 无效的选项索引: {index}");
+                GameLogger.LogError($"[SkillChooseOnePanel] 无效的选项索引: {index}");
                 return;
             }
             // 【新增】播放技能选择音效
@@ -450,7 +450,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillChooseOnePanel] 选择了: {selectedSkill.displayName}");
+                GameLogger.Log($"[SkillChooseOnePanel] 选择了: {selectedSkill.displayName}");
             }
             
             // 应用技能（更新 SessionData.skillLevels）
@@ -473,7 +473,7 @@ namespace LightVsDecay.UI.Panels
             GameEvents.TriggerLevelUpChoiceComplete();
             if (showDebugInfo)
             {
-                Debug.Log("[SkillChooseOnePanel] 选择完成，游戏恢复");
+                GameLogger.Log("[SkillChooseOnePanel] 选择完成，游戏恢复");
             }
         }
     }

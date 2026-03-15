@@ -792,7 +792,7 @@ namespace LightVsDecay.Logic.Enemy
     
 #if UNITY_EDITOR
                 if(showDebugInfo)
-                    Debug.Log($"[EnemyBlob] Drifter 弹飞! Force: {finalForce.magnitude:F1}, FullyEntered: {hasFullyEnteredScreen}");
+                    GameLogger.Log($"[EnemyBlob] Drifter 弹飞! Force: {finalForce.magnitude:F1}, FullyEntered: {hasFullyEnteredScreen}");
 #endif
     
                 return; // 提前返回
@@ -815,7 +815,7 @@ namespace LightVsDecay.Logic.Enemy
             {
 #if UNITY_EDITOR
                 if(showDebugInfo)
-                    Debug.Log($"[EnemyBlob] {gameObject.name} 尚未完全入境，不触发弹飞");
+                    GameLogger.Log($"[EnemyBlob] {gameObject.name} 尚未完全入境，不触发弹飞");
 #endif
                 return;
             }
@@ -829,7 +829,7 @@ namespace LightVsDecay.Logic.Enemy
     
 #if UNITY_EDITOR
             if(showDebugInfo)
-                Debug.Log($"[EnemyBlob] {gameObject.name} 进入弹飞状态");
+                GameLogger.Log($"[EnemyBlob] {gameObject.name} 进入弹飞状态");
 #endif
         }
 
@@ -841,7 +841,7 @@ namespace LightVsDecay.Logic.Enemy
             isBeingKnockedBack = false;
 #if UNITY_EDITOR
             if(showDebugInfo)
-                Debug.Log($"[EnemyBlob] Drifter 弹飞结束，恢复移动");
+                GameLogger.Log($"[EnemyBlob] Drifter 弹飞结束，恢复移动");
 #endif
         }
 
@@ -1296,7 +1296,7 @@ namespace LightVsDecay.Logic.Enemy
     
 #if UNITY_EDITOR
             if(showDebugInfo)
-                Debug.Log($"[EnemyBlob] {gameObject.name} 已完全入境，可以弹飞");
+                GameLogger.Log($"[EnemyBlob] {gameObject.name} 已完全入境，可以弹飞");
 #endif
         }
 

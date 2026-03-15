@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Boss;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -119,7 +120,7 @@ namespace LightVsDecay.Logic.Player
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[LaserFrostHandler] ❄️ 敌人冰冻! 照射时间达到 {freezeThreshold}s");
+                        GameLogger.Log($"[LaserFrostHandler] ❄️ 敌人冰冻! 照射时间达到 {freezeThreshold}s");
                     }
                 }
             }
@@ -229,14 +230,14 @@ namespace LightVsDecay.Logic.Player
                             
                             if (showDebugInfo)
                             {
-                                Debug.Log($"[LaserFrostHandler] ❄️ 扩散冰冻! 敌人ID:{enemyId} 累积达到阈值 {freezeThreshold}s");
+                                GameLogger.Log($"[LaserFrostHandler] ❄️ 扩散冰冻! 敌人ID:{enemyId} 累积达到阈值 {freezeThreshold}s");
                             }
                         }
                     }
 
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[LaserFrostHandler] 寒霜蔓延 → 敌人ID:{enemyId}, 减速:{spreadSlowPercent:P0}");
+                        GameLogger.Log($"[LaserFrostHandler] 寒霜蔓延 → 敌人ID:{enemyId}, 减速:{spreadSlowPercent:P0}");
                     }
                 }
             }

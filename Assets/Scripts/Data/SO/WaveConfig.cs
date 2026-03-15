@@ -8,6 +8,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -259,7 +260,7 @@ namespace LightVsDecay.Data.SO
                 return waves[index];
             }
             
-            Debug.LogWarning($"[WaveConfig] 波次 {waveNumber} 不存在！");
+            GameLogger.LogWarning($"[WaveConfig] 波次 {waveNumber} 不存在！");
             return null;
         }
         
@@ -469,20 +470,20 @@ namespace LightVsDecay.Data.SO
             UnityEditor.EditorUtility.SetDirty(this);
             #endif
             
-            Debug.Log("=== WaveConfig v3.0 已生成 ===");
-            Debug.Log("目标：11波结束达到 Lv.16 (累计6770 XP)");
-            Debug.Log("总敌人数：516只（含2只精英）");
-            Debug.Log("");
-            Debug.Log("增量统计：");
-            Debug.Log("  W7:  +22 (原24 → 46)");
-            Debug.Log("  W8:  +19 (原36 → 55)");
-            Debug.Log("  W9:  +21 (原38 → 59) + Elite Phantom");
-            Debug.Log("  W10: +35 (原59 → 94)");
-            Debug.Log("  W11: +36 (原80 → 116)");
-            Debug.Log("");
-            Debug.Log("精英怪：");
-            Debug.Log("  W6 @35s: Elite Tank (HP×5, DMG×2, XP×5=250)");
-            Debug.Log("  W9 @25s: Elite Phantom (HP×5, Speed×1.5, XP×5=100)");
+            GameLogger.Log("=== WaveConfig v3.0 已生成 ===");
+            GameLogger.Log("目标：11波结束达到 Lv.16 (累计6770 XP)");
+            GameLogger.Log("总敌人数：516只（含2只精英）");
+            GameLogger.Log("");
+            GameLogger.Log("增量统计：");
+            GameLogger.Log("  W7:  +22 (原24 → 46)");
+            GameLogger.Log("  W8:  +19 (原36 → 55)");
+            GameLogger.Log("  W9:  +21 (原38 → 59) + Elite Phantom");
+            GameLogger.Log("  W10: +35 (原59 → 94)");
+            GameLogger.Log("  W11: +36 (原80 → 116)");
+            GameLogger.Log("");
+            GameLogger.Log("精英怪：");
+            GameLogger.Log("  W6 @35s: Elite Tank (HP×5, DMG×2, XP×5=250)");
+            GameLogger.Log("  W9 @25s: Elite Phantom (HP×5, Speed×1.5, XP×5=100)");
         }
         // ============================================================
         // WaveConfig.cs 新增方法 (v4.0)
@@ -653,21 +654,21 @@ namespace LightVsDecay.Data.SO
             UnityEditor.EditorUtility.SetDirty(this);
             #endif
             
-            Debug.Log("=== WaveConfig v4.0 普通模式已生成 ===");
-            Debug.Log("目标：7波结束达到 Lv.18 (累计 8,520 XP)");
-            Debug.Log("总敌人数：656只（含2只精英）+ Boss");
-            Debug.Log("");
-            Debug.Log("经验分配：");
-            Debug.Log("  W1: 500 XP  → Lv.4");
-            Debug.Log("  W2: 700 XP  → Lv.6");
-            Debug.Log("  W3: 900 XP  → Lv.8");
-            Debug.Log("  W4: 1,110 XP → Lv.11");
-            Debug.Log("  W5: 1,310 XP → Lv.13 (Elite Tank @25s)");
-            Debug.Log("  W6: 1,690 XP → Lv.15");
-            Debug.Log("  W7: 2,310 XP → Lv.18 (Elite Drifter @30s)");
-            Debug.Log("  W8: Boss战");
-            Debug.Log("");
-            Debug.Log("难度倍率：W1=1.0, W2=1.0, W3=1.1, W4=1.2, W5=1.3, W6=1.4, W7=1.5");
+            GameLogger.Log("=== WaveConfig v4.0 普通模式已生成 ===");
+            GameLogger.Log("目标：7波结束达到 Lv.18 (累计 8,520 XP)");
+            GameLogger.Log("总敌人数：656只（含2只精英）+ Boss");
+            GameLogger.Log("");
+            GameLogger.Log("经验分配：");
+            GameLogger.Log("  W1: 500 XP  → Lv.4");
+            GameLogger.Log("  W2: 700 XP  → Lv.6");
+            GameLogger.Log("  W3: 900 XP  → Lv.8");
+            GameLogger.Log("  W4: 1,110 XP → Lv.11");
+            GameLogger.Log("  W5: 1,310 XP → Lv.13 (Elite Tank @25s)");
+            GameLogger.Log("  W6: 1,690 XP → Lv.15");
+            GameLogger.Log("  W7: 2,310 XP → Lv.18 (Elite Drifter @30s)");
+            GameLogger.Log("  W8: Boss战");
+            GameLogger.Log("");
+            GameLogger.Log("难度倍率：W1=1.0, W2=1.0, W3=1.1, W4=1.2, W5=1.3, W6=1.4, W7=1.5");
         }
         
         [ContextMenu("生成困难模式8波配置 v4.0（7波=Lv.18）")]
@@ -803,30 +804,30 @@ namespace LightVsDecay.Data.SO
             UnityEditor.EditorUtility.SetDirty(this);
             #endif
             
-            Debug.Log("=== WaveConfig v4.0 困难模式已生成 ===");
-            Debug.Log("目标：7波结束达到 Lv.18 (累计 8,520 XP)");
-            Debug.Log("总敌人数：656只（含2只精英）+ Boss");
-            Debug.Log("");
-            Debug.Log("难度倍率（困难模式）：");
-            Debug.Log("  W1=1.2, W2=1.3, W3=1.4, W4=1.6, W5=1.8, W6=2.0, W7=2.2");
-            Debug.Log("");
-            Debug.Log("与普通模式对比：");
-            Debug.Log("  W1: 1.0 → 1.2 (+20%)");
-            Debug.Log("  W2: 1.0 → 1.3 (+30%)");
-            Debug.Log("  W3: 1.1 → 1.4 (+27%)");
-            Debug.Log("  W4: 1.2 → 1.6 (+33%)");
-            Debug.Log("  W5: 1.3 → 1.8 (+38%)");
-            Debug.Log("  W6: 1.4 → 2.0 (+43%)");
-            Debug.Log("  W7: 1.5 → 2.2 (+47%)");
+            GameLogger.Log("=== WaveConfig v4.0 困难模式已生成 ===");
+            GameLogger.Log("目标：7波结束达到 Lv.18 (累计 8,520 XP)");
+            GameLogger.Log("总敌人数：656只（含2只精英）+ Boss");
+            GameLogger.Log("");
+            GameLogger.Log("难度倍率（困难模式）：");
+            GameLogger.Log("  W1=1.2, W2=1.3, W3=1.4, W4=1.6, W5=1.8, W6=2.0, W7=2.2");
+            GameLogger.Log("");
+            GameLogger.Log("与普通模式对比：");
+            GameLogger.Log("  W1: 1.0 → 1.2 (+20%)");
+            GameLogger.Log("  W2: 1.0 → 1.3 (+30%)");
+            GameLogger.Log("  W3: 1.1 → 1.4 (+27%)");
+            GameLogger.Log("  W4: 1.2 → 1.6 (+33%)");
+            GameLogger.Log("  W5: 1.3 → 1.8 (+38%)");
+            GameLogger.Log("  W6: 1.4 → 2.0 (+43%)");
+            GameLogger.Log("  W7: 1.5 → 2.2 (+47%)");
         }
         
         [ContextMenu("验证8波配置经验计算 v4.0")]
         public void ValidateExpCalculation_v4()
         {
-            Debug.Log("=== WaveConfig v4.0 经验验证 ===");
-            Debug.Log("怪物经验值: Slime=10, Drifter=20, Rusher=8, Tank=50");
-            Debug.Log("精英加成: ×5 (Elite Tank=250, Elite Drifter=100)");
-            Debug.Log("");
+            GameLogger.Log("=== WaveConfig v4.0 经验验证 ===");
+            GameLogger.Log("怪物经验值: Slime=10, Drifter=20, Rusher=8, Tank=50");
+            GameLogger.Log("精英加成: ×5 (Elite Tank=250, Elite Drifter=100)");
+            GameLogger.Log("");
             
             // 各波次经验计算（基于配置）
             int[] waveExp = {
@@ -864,13 +865,13 @@ namespace LightVsDecay.Data.SO
                     expToNext = levelUpReq[currentLevel - 1];
                 }
                 
-                Debug.Log($"W{w + 1}: +{waveExp[w]} XP | 累计: {cumulative} | → Lv.{currentLevel}");
+                GameLogger.Log($"W{w + 1}: +{waveExp[w]} XP | 累计: {cumulative} | → Lv.{currentLevel}");
             }
             
-            Debug.Log("");
-            Debug.Log($"最终等级: Lv.{currentLevel}");
-            Debug.Log($"目标: Lv.18 (需要 8,500 XP)");
-            Debug.Log($"实际: {cumulative} XP → {(cumulative >= 8500 ? "✓ 达标" : "✗ 未达标")}");
+            GameLogger.Log("");
+            GameLogger.Log($"最终等级: Lv.{currentLevel}");
+            GameLogger.Log($"目标: Lv.18 (需要 8,500 XP)");
+            GameLogger.Log($"实际: {cumulative} XP → {(cumulative >= 8500 ? "✓ 达标" : "✗ 未达标")}");
         }
         
         private WaveData CreateWave(int number, string name, string hint, float difficulty, bool isBoss, params SpawnGroup[] groups)
@@ -891,7 +892,7 @@ namespace LightVsDecay.Data.SO
         [ContextMenu("验证配置")]
         public void ValidateConfig()
         {
-            Debug.Log("=== 波次配置验证 ===");
+            GameLogger.Log("=== 波次配置验证 ===");
             
             int errorCount = 0;
             int totalEnemies = 0;
@@ -902,7 +903,7 @@ namespace LightVsDecay.Data.SO
                 
                 if (wave.waveNumber != i + 1)
                 {
-                    Debug.LogWarning($"[{i}] 波次编号不匹配: 预期 {i + 1}, 实际 {wave.waveNumber}");
+                    GameLogger.LogWarning($"[{i}] 波次编号不匹配: 预期 {i + 1}, 实际 {wave.waveNumber}");
                     errorCount++;
                 }
                 
@@ -912,22 +913,22 @@ namespace LightVsDecay.Data.SO
                 int eliteCount = 0;
                 string eliteStr = eliteCount > 0 ? $", 精英x{eliteCount}" : "";
                 
-                Debug.Log($"[Wave {wave.waveNumber}] {wave.displayName}: " +
+                GameLogger.Log($"[Wave {wave.waveNumber}] {wave.displayName}: " +
                           $"{wave.spawnGroups.Count} 组, {waveEnemies} 敌人{eliteStr}, " +
                           $"难度x{wave.difficultyMultiplier:F1}, BOSS={wave.isBossWave}");
             }
             
-            Debug.Log($"=== 验证完成: {waves.Count} 波, {totalEnemies} 总敌人, {errorCount} 个错误 ===");
+            GameLogger.Log($"=== 验证完成: {waves.Count} 波, {totalEnemies} 总敌人, {errorCount} 个错误 ===");
         }
         
         
         [ContextMenu("验证经验计算")]
         public void ValidateExpCalculation()
         {
-            Debug.Log("=== WaveConfig v3.0 经验验证 ===");
-            Debug.Log("怪物经验值: Slime=10, Drifter=20, Rusher=8, Tank=50");
-            Debug.Log("精英加成: ×5");
-            Debug.Log("");
+            GameLogger.Log("=== WaveConfig v3.0 经验验证 ===");
+            GameLogger.Log("怪物经验值: Slime=10, Drifter=20, Rusher=8, Tank=50");
+            GameLogger.Log("精英加成: ×5");
+            GameLogger.Log("");
             
             // 各波次经验计算
             int[] waveExp = {
@@ -969,13 +970,13 @@ namespace LightVsDecay.Data.SO
                     expToNext = levelUpReq[currentLevel - 1];
                 }
                 
-                Debug.Log($"W{w + 1}: +{waveExp[w]} XP | 累计: {cumulative} | → Lv.{currentLevel}");
+                GameLogger.Log($"W{w + 1}: +{waveExp[w]} XP | 累计: {cumulative} | → Lv.{currentLevel}");
             }
             
-            Debug.Log("");
-            Debug.Log($"最终等级: Lv.{currentLevel}");
-            Debug.Log($"目标: Lv.16 (需要6750 XP)");
-            Debug.Log($"实际: {cumulative} XP → {(cumulative >= 6750 ? "✓ 达标" : "✗ 未达标")}");
+            GameLogger.Log("");
+            GameLogger.Log($"最终等级: Lv.{currentLevel}");
+            GameLogger.Log($"目标: Lv.16 (需要6750 XP)");
+            GameLogger.Log($"实际: {cumulative} XP → {(cumulative >= 6750 ? "✓ 达标" : "✗ 未达标")}");
         }
 #endif
     }

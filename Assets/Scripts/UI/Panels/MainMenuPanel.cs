@@ -12,6 +12,7 @@ using LightVsDecay.Logic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -153,7 +154,7 @@ namespace LightVsDecay.UI.Panels
             }
             else
             {
-                Debug.LogWarning("[MainMenuPanel] ProgressManager 未找到！使用默认值");
+                GameLogger.LogWarning("[MainMenuPanel] ProgressManager 未找到！使用默认值");
                 totalChapters = 3;
                 currentViewIndex = 0;
             }
@@ -163,7 +164,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[MainMenuPanel] 初始化: 总章节={totalChapters}, 当前查看={currentViewIndex}");
+                GameLogger.Log($"[MainMenuPanel] 初始化: 总章节={totalChapters}, 当前查看={currentViewIndex}");
             }
         }
         
@@ -264,7 +265,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[MainMenuPanel] 章节UI更新: index={currentViewIndex}, unlocked={isUnlocked}");
+                GameLogger.Log($"[MainMenuPanel] 章节UI更新: index={currentViewIndex}, unlocked={isUnlocked}");
             }
         }
         
@@ -347,7 +348,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[MainMenuPanel] 难度UI更新: chapter={currentViewIndex}, completed={completedDifficulty}");
+                GameLogger.Log($"[MainMenuPanel] 难度UI更新: chapter={currentViewIndex}, completed={completedDifficulty}");
             }
         }
         
@@ -450,7 +451,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[MainMenuPanel] 切换到章节 {currentViewIndex + 1}");
+                GameLogger.Log($"[MainMenuPanel] 切换到章节 {currentViewIndex + 1}");
             }
         }
         
@@ -473,7 +474,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[MainMenuPanel] 切换到章节 {currentViewIndex + 1}");
+                GameLogger.Log($"[MainMenuPanel] 切换到章节 {currentViewIndex + 1}");
             }
         }
         
@@ -496,7 +497,7 @@ namespace LightVsDecay.UI.Panels
             // 检查章节是否解锁
             if (!IsChapterUnlocked(currentViewIndex))
             {
-                Debug.Log("[MainMenuPanel] 章节未解锁！");
+                GameLogger.Log("[MainMenuPanel] 章节未解锁！");
                 return;
             }
             
@@ -506,12 +507,12 @@ namespace LightVsDecay.UI.Panels
                 : PlayerPrefs.GetInt("PlayerEnergy", 5);
             if (currentEnergy <= 0)
             {
-                // 原: Debug.Log("[MainMenuPanel] 能量不足！");
+                // 原: GameLogger.Log("[MainMenuPanel] 能量不足！");
                 // 新: 弹出体力面板引导玩家
                 if (topBarTipsPanel != null)
                     topBarTipsPanel.Show();
                 else
-                    Debug.Log("[MainMenuPanel] 能量不足！");  // 降级兜底
+                    GameLogger.Log("[MainMenuPanel] 能量不足！");  // 降级兜底
                 return;
             }
             
@@ -522,7 +523,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log($"[MainMenuPanel] 开始游戏: 章节={currentViewIndex + 1}, 难度={difficulty}");
+                GameLogger.Log($"[MainMenuPanel] 开始游戏: 章节={currentViewIndex + 1}, 难度={difficulty}");
             }
             
             // 设置游戏会话配置
@@ -585,7 +586,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                Debug.Log("[MainMenuPanel] UI 已刷新");
+                GameLogger.Log("[MainMenuPanel] UI 已刷新");
             }
         }
         

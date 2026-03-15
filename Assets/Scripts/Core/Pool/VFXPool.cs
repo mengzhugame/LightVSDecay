@@ -90,7 +90,7 @@ namespace LightVsDecay.Core.Pool
             
             if (instance == null)
             {
-                Debug.LogWarning($"[VFXPool] {prefab.name} 池已满！");
+                GameLogger.LogWarning($"[VFXPool] {prefab.name} 池已满！");
                 return null;
             }
             

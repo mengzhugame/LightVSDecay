@@ -129,7 +129,7 @@ namespace LightVsDecay.Logic.Enemy
             
             if (showDebugInfo)
             {
-                Debug.Log($"[DrifterSpawnHelper] 准备在 {spawnPos} 生成 Drifter");
+                GameLogger.Log($"[DrifterSpawnHelper] 准备在 {spawnPos} 生成 Drifter");
             }
             
             // 2. 播放传送门特效
@@ -156,7 +156,7 @@ namespace LightVsDecay.Logic.Enemy
             // 3. 从对象池生成 Drifter
             if (EnemyPoolManager.Instance == null)
             {
-                Debug.LogError("[DrifterSpawnHelper] EnemyPoolManager 不存在！");
+                GameLogger.LogError("[DrifterSpawnHelper] EnemyPoolManager 不存在！");
                 yield break;
             }
             
@@ -164,7 +164,7 @@ namespace LightVsDecay.Logic.Enemy
             
             if (drifter == null)
             {
-                Debug.LogWarning("[DrifterSpawnHelper] Drifter 生成失败（可能达到上限）");
+                GameLogger.LogWarning("[DrifterSpawnHelper] Drifter 生成失败（可能达到上限）");
                 yield break;
             }
             
@@ -179,7 +179,7 @@ namespace LightVsDecay.Logic.Enemy
             
             if (showDebugInfo)
             {
-                Debug.Log($"[DrifterSpawnHelper] Drifter 生成完成 @ {spawnPos}");
+                GameLogger.Log($"[DrifterSpawnHelper] Drifter 生成完成 @ {spawnPos}");
             }
             
             // 7. 回调
@@ -242,7 +242,7 @@ namespace LightVsDecay.Logic.Enemy
             // 获取屏幕边界
             if (ScreenBoundaryManager.Instance == null)
             {
-                Debug.LogWarning("[DrifterSpawnHelper] ScreenBoundaryManager 不存在，使用默认位置");
+                GameLogger.LogWarning("[DrifterSpawnHelper] ScreenBoundaryManager 不存在，使用默认位置");
                 return new Vector3(0, 5f, 0);
             }
             
@@ -274,7 +274,7 @@ namespace LightVsDecay.Logic.Enemy
             // 找不到理想位置，返回屏幕上方中央
             if (showDebugInfo)
             {
-                Debug.LogWarning("[DrifterSpawnHelper] 无法找到理想安全位置，使用备选位置");
+                GameLogger.LogWarning("[DrifterSpawnHelper] 无法找到理想安全位置，使用备选位置");
             }
             
             return new Vector3(0, top - 1f, 0);

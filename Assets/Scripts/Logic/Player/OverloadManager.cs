@@ -222,7 +222,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[OverloadManager] 组件缓存: TurretController={turretController != null}, LaserController={laserController != null}");
+                GameLogger.Log($"[OverloadManager] 组件缓存: TurretController={turretController != null}, LaserController={laserController != null}");
             }
         }
         
@@ -322,7 +322,7 @@ namespace LightVsDecay.Logic.Player
             if (showDebugInfo)
             {
                 string enemyInfo = nearestEnemy != null ? nearestEnemy.name : "None";
-                Debug.Log($"[OverloadManager] 自动瞄准: 目标={enemyInfo}, 角度={currentAutoAimAngle:F1}°");
+                GameLogger.Log($"[OverloadManager] 自动瞄准: 目标={enemyInfo}, 角度={currentAutoAimAngle:F1}°");
             }
         }
         
@@ -366,7 +366,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[OverloadManager] 状态切换: {oldState} → {newState}");
+                GameLogger.Log($"[OverloadManager] 状态切换: {oldState} → {newState}");
             }
             
             // 进入新状态的处理
@@ -410,7 +410,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log("[OverloadManager] ⚡ 大招已就绪！");
+                GameLogger.Log("[OverloadManager] ⚡ 大招已就绪！");
             }
         }
         
@@ -453,7 +453,7 @@ namespace LightVsDecay.Logic.Player
             }
             if (showDebugInfo)
             {
-                Debug.Log($"[OverloadManager] 🔥 大招激活！持续 {activeDuration} 秒");
+                GameLogger.Log($"[OverloadManager] 🔥 大招激活！持续 {activeDuration} 秒");
             }
         }
         
@@ -479,7 +479,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log("[OverloadManager] 大招结束，开始重新充能");
+                GameLogger.Log("[OverloadManager] 大招结束，开始重新充能");
             }
         }
         
@@ -541,7 +541,7 @@ namespace LightVsDecay.Logic.Player
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[OverloadManager] 无法激活：当前状态为 {currentState}");
+                    GameLogger.Log($"[OverloadManager] 无法激活：当前状态为 {currentState}");
                 }
                 return;
             }
@@ -569,7 +569,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log("[OverloadManager] 游戏开始，重置充能");
+                GameLogger.Log("[OverloadManager] 游戏开始，重置充能");
             }
         }
         
@@ -578,7 +578,7 @@ namespace LightVsDecay.Logic.Player
             // 暂停时 Update 中的 Time.timeScale 检查会自动停止更新
             if (showDebugInfo)
             {
-                Debug.Log("[OverloadManager] 游戏暂停，充能暂停");
+                GameLogger.Log("[OverloadManager] 游戏暂停，充能暂停");
             }
         }
         
@@ -586,7 +586,7 @@ namespace LightVsDecay.Logic.Player
         {
             if (showDebugInfo)
             {
-                Debug.Log("[OverloadManager] 游戏恢复，充能继续");
+                GameLogger.Log("[OverloadManager] 游戏恢复，充能继续");
             }
         }
         

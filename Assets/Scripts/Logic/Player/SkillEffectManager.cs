@@ -200,7 +200,7 @@ namespace LightVsDecay.Logic.Player
             // 验证 SkillDatabase
             if (skillDatabase == null)
             {
-                Debug.LogError("[SkillEffectManager] ❌ SkillDatabase 未设置！技能系统将无法正常工作 波次");
+                GameLogger.LogError("[SkillEffectManager] ❌ SkillDatabase 未设置！技能系统将无法正常工作 波次");
             }
             
             // 订阅事件
@@ -254,7 +254,7 @@ namespace LightVsDecay.Logic.Player
         {
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] 收到技能应用: {skillType} -> Lv.{newLevel}");
+                GameLogger.Log($"[SkillEffectManager] 收到技能应用: {skillType} -> Lv.{newLevel}");
             }
             
             // 获取技能配置
@@ -343,7 +343,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Prism Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ Prism Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
     
@@ -356,7 +356,7 @@ namespace LightVsDecay.Logic.Player
     
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Prism Lv.{level} - " +
+                GameLogger.Log($"[SkillEffectManager] ✓ Prism Lv.{level} - " +
                           $"分裂数:{levelData.splitCount}, 伤害:{levelData.splitDamageMultiplier:P0}, 长度:{levelData.splitLength}");
             }
         }
@@ -371,7 +371,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Focus Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ Focus Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
 
@@ -402,7 +402,7 @@ namespace LightVsDecay.Logic.Player
                     : $"穿透{cachedFocusPenetrationCount}个";
                 string trueDamageInfo = cachedFocusTrueDamageToBoss ? ", Boss真实伤害" : "";
         
-                Debug.Log($"[SkillEffectManager] ✓ Focus Lv.{level} - " +
+                GameLogger.Log($"[SkillEffectManager] ✓ Focus Lv.{level} - " +
                           $"伤害:+{cachedFocusDamageBonus:P0}, {penetrationInfo}, " +
                           $"衰减:{cachedFocusPenetrationDecay:P0}{trueDamageInfo}");
             }
@@ -421,7 +421,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Impact Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ Impact Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
 
@@ -435,7 +435,7 @@ namespace LightVsDecay.Logic.Player
             if (showDebugInfo)
             {
                 string canPushBoss = (level >= 5) ? "，可推BOSS" : "";
-                Debug.Log($"[SkillEffectManager] ✓ Impact Lv.{level} - " +
+                GameLogger.Log($"[SkillEffectManager] ✓ Impact Lv.{level} - " +
                           $"击退力:{cachedImpactKnockbackMultiplier:F2}x{canPushBoss}");
             }
         }
@@ -450,7 +450,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Frost Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ Frost Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
     
@@ -461,7 +461,7 @@ namespace LightVsDecay.Logic.Player
     
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Frost Lv.{level} - " +
+                GameLogger.Log($"[SkillEffectManager] ✓ Frost Lv.{level} - " +
                           $"减速:{cachedFrostSlowPercent:P0}/{cachedFrostSlowDuration:F1}s, " +
                           $"冰冻阈值:{cachedFrostFreezeThreshold:F1}s");
             }
@@ -491,7 +491,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Chain Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ Chain Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
 
@@ -513,7 +513,7 @@ namespace LightVsDecay.Logic.Player
 
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Chain Lv.{level} - " +
+                GameLogger.Log($"[SkillEffectManager] ✓ Chain Lv.{level} - " +
                           $"跳数:{cachedChainBounces}, 距离:{cachedChainRange}m, 衰减:{cachedChainDamageDecay:P0}");
             }
         }
@@ -532,7 +532,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Power Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ Power Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
     
@@ -540,7 +540,7 @@ namespace LightVsDecay.Logic.Player
     
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Power Lv.{level} - 伤害加成:{totalDamageBonus:P0}");
+                GameLogger.Log($"[SkillEffectManager] ✓ Power Lv.{level} - 伤害加成:{totalDamageBonus:P0}");
             }
     
             UpdateDamageMultiplier();
@@ -556,7 +556,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Wide Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ Wide Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
     
@@ -564,7 +564,7 @@ namespace LightVsDecay.Logic.Player
 
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Wide Lv.{level} - 宽度加成:{totalWidthBonus:P0}");
+                GameLogger.Log($"[SkillEffectManager] ✓ Wide Lv.{level} - 宽度加成:{totalWidthBonus:P0}");
             }
 
             UpdateWidthMultiplier();
@@ -590,7 +590,7 @@ namespace LightVsDecay.Logic.Player
 
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] 宽度倍率更新: Wide=+{wideBonus:P0}, 最终={finalMultiplier:F2}x");
+                GameLogger.Log($"[SkillEffectManager] 宽度倍率更新: Wide=+{wideBonus:P0}, 最终={finalMultiplier:F2}x");
             }
         }
         /// <summary>
@@ -605,7 +605,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Crit Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ Crit Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
 
@@ -624,7 +624,7 @@ namespace LightVsDecay.Logic.Player
 
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] ✓ Crit Lv.{level} - " +
+                GameLogger.Log($"[SkillEffectManager] ✓ Crit Lv.{level} - " +
                           $"暴击率+{cachedCritRateBonus:P0}, " +
                           $"暴击伤害+{cachedCritDamageBonus:P0}, " +
                           $"击退={cachedCritKnockback}");
@@ -642,7 +642,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ Shatter Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ Shatter Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
             
@@ -654,7 +654,7 @@ namespace LightVsDecay.Logic.Player
             if (showDebugInfo)
             {
                 string explosionInfo = cachedShatterExplosionOnKill ? "，启用漏洞扩散" : "";
-                Debug.Log($"[SkillEffectManager] ✓ Shatter Lv.{level} - " +
+                GameLogger.Log($"[SkillEffectManager] ✓ Shatter Lv.{level} - " +
                           $"受损加伤:{cachedShatterDamageBonus:P0}{explosionInfo}");
             }
         }
@@ -671,7 +671,7 @@ namespace LightVsDecay.Logic.Player
             var levelData = GetLevelData(skillData, level);
             if (levelData == null)
             {
-                Debug.LogError($"[SkillEffectManager] ❌ FrostSpread Lv.{level} 配置缺失！请检查 SkillDatabase");
+                GameLogger.LogError($"[SkillEffectManager] ❌ FrostSpread Lv.{level} 配置缺失！请检查 SkillDatabase");
                 return;
             }
 
@@ -683,7 +683,7 @@ namespace LightVsDecay.Logic.Player
             {
                 string lv5Info = (level >= 5 && cachedFrostSpreadFreezeRate > 0f) 
                     ? $"，Lv5深寒传染(冰冻速率:{cachedFrostSpreadFreezeRate:P0})" : "";
-                Debug.Log($"[SkillEffectManager] ✓ FrostSpread Lv.{level} - " +
+                GameLogger.Log($"[SkillEffectManager] ✓ FrostSpread Lv.{level} - " +
                           $"扩散半径:{cachedFrostSpreadRadius}m, " +
                           $"减速比例:{cachedFrostSpreadSlowRatio:P0}{lv5Info}");
             }
@@ -720,14 +720,14 @@ namespace LightVsDecay.Logic.Player
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log("[SkillEffectManager] 颜色重置为原始材质颜色");
+                    GameLogger.Log("[SkillEffectManager] 颜色重置为原始材质颜色");
                 }
                 return;
             }
 
             if (skillDatabase == null)
             {
-                Debug.LogWarning("[SkillEffectManager] SkillDatabase 未设置，无法更新颜色");
+                GameLogger.LogWarning("[SkillEffectManager] SkillDatabase 未设置，无法更新颜色");
                 return;
             }
 
@@ -784,7 +784,7 @@ namespace LightVsDecay.Logic.Player
             {
                 string colorSource = (hasFocus && hasFrost) ? "混合紫色" : 
                     (hasFocus ? "Focus颜色" : "Frost颜色");
-                Debug.Log($"[SkillEffectManager] 激光颜色更新: {colorSource}");
+                GameLogger.Log($"[SkillEffectManager] 激光颜色更新: {colorSource}");
             }
         }
         
@@ -832,7 +832,7 @@ namespace LightVsDecay.Logic.Player
     
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] 伤害倍率更新 (加法区): " +
+                GameLogger.Log($"[SkillEffectManager] 伤害倍率更新 (加法区): " +
                           $"基础=1.0, Power=+{powerBonus:P0}, Focus=+{focusBonus:P0}, " +
                           $"最终={finalMultiplier:F2}x");
             }
@@ -911,7 +911,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillEffectManager] 💥 Shatter Lv5 漏洞扩散! " +
+                GameLogger.Log($"[SkillEffectManager] 💥 Shatter Lv5 漏洞扩散! " +
                           $"位置:{position}, 面板DPS:{panelDPS:F1}, " +
                           $"爆炸伤害:{explosionDamage:F1} (×{SHATTER_EXPLOSION_DAMAGE_SCALE}), " +
                           $"半径:{cachedShatterExplosionRadius}, 命中:{actualHitCount}/{hits.Length}");
@@ -1013,7 +1013,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log("[SkillEffectManager] Adrenaline 效果结束");
+                GameLogger.Log("[SkillEffectManager] Adrenaline 效果结束");
             }
         }
         /// <summary>

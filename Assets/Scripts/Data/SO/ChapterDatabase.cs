@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -79,7 +80,7 @@ namespace LightVsDecay.Data.SO
                 return chapters[chapterIndex];
             }
             
-            Debug.LogWarning($"[ChapterDatabase] 章节索引 {chapterIndex} 超出范围！(总数: {ChapterCount})");
+            GameLogger.LogWarning($"[ChapterDatabase] 章节索引 {chapterIndex} 超出范围！(总数: {ChapterCount})");
             return null;
         }
         
@@ -161,7 +162,7 @@ namespace LightVsDecay.Data.SO
         [ContextMenu("验证所有章节")]
         public void ValidateAllChapters()
         {
-            Debug.Log($"[ChapterDatabase] 开始验证 {ChapterCount} 个章节...");
+            GameLogger.Log($"[ChapterDatabase] 开始验证 {ChapterCount} 个章节...");
             
             bool allValid = true;
             
@@ -171,7 +172,7 @@ namespace LightVsDecay.Data.SO
                 
                 if (chapter == null)
                 {
-                    Debug.LogError($"[ChapterDatabase] 章节 {i} 为空！");
+                    GameLogger.LogError($"[ChapterDatabase] 章节 {i} 为空！");
                     allValid = false;
                     continue;
                 }
@@ -179,13 +180,13 @@ namespace LightVsDecay.Data.SO
                 // 检查索引是否匹配
                 if (chapter.chapterIndex != i)
                 {
-                    Debug.LogWarning($"[ChapterDatabase] 章节 '{chapter.chapterName}' 的 chapterIndex ({chapter.chapterIndex}) 与数组位置 ({i}) 不匹配！");
+                    GameLogger.LogWarning($"[ChapterDatabase] 章节 '{chapter.chapterName}' 的 chapterIndex ({chapter.chapterIndex}) 与数组位置 ({i}) 不匹配！");
                 }
                 
                 // 检查编号是否正确
                 if (chapter.chapterNumber != i + 1)
                 {
-                    Debug.LogWarning($"[ChapterDatabase] 章节 '{chapter.chapterName}' 的 chapterNumber ({chapter.chapterNumber}) 应为 {i + 1}");
+                    GameLogger.LogWarning($"[ChapterDatabase] 章节 '{chapter.chapterName}' 的 chapterNumber ({chapter.chapterNumber}) 应为 {i + 1}");
                 }
                 
                 // 调用章节自身的验证
@@ -195,25 +196,25 @@ namespace LightVsDecay.Data.SO
             // 检查默认资源
             if (lockIcon == null)
             {
-                Debug.LogWarning("[ChapterDatabase] 锁定图标未设置！");
+                GameLogger.LogWarning("[ChapterDatabase] 锁定图标未设置！");
                 allValid = false;
             }
             
             if (difficultyIconActive == null)
             {
-                Debug.LogWarning("[ChapterDatabase] 难度图标（亮）未设置！");
+                GameLogger.LogWarning("[ChapterDatabase] 难度图标（亮）未设置！");
                 allValid = false;
             }
             
             if (difficultyIconInactive == null)
             {
-                Debug.LogWarning("[ChapterDatabase] 难度图标（暗）未设置！");
+                GameLogger.LogWarning("[ChapterDatabase] 难度图标（暗）未设置！");
                 allValid = false;
             }
             
             if (allValid)
             {
-                Debug.Log($"[ChapterDatabase] 所有章节验证通过 ✓");
+                GameLogger.Log($"[ChapterDatabase] 所有章节验证通过 ✓");
             }
         }
         
@@ -234,7 +235,7 @@ namespace LightVsDecay.Data.SO
             }
             
             UnityEditor.EditorUtility.SetDirty(this);
-            Debug.Log($"[ChapterDatabase] 已自动修复 {ChapterCount} 个章节的索引");
+            GameLogger.Log($"[ChapterDatabase] 已自动修复 {ChapterCount} 个章节的索引");
         }
         
         /// <summary>
@@ -243,23 +244,23 @@ namespace LightVsDecay.Data.SO
         [ContextMenu("打印章节信息")]
         public void PrintChapterInfo()
         {
-            Debug.Log($"[ChapterDatabase] ========== 章节信息 ==========");
-            Debug.Log($"总章节数: {ChapterCount}");
+            GameLogger.Log($"[ChapterDatabase] ========== 章节信息 ==========");
+            GameLogger.Log($"总章节数: {ChapterCount}");
             
             for (int i = 0; i < chapters.Count; i++)
             {
                 var ch = chapters[i];
                 if (ch != null)
                 {
-                    Debug.Log($"  [{i}] {ch.DisplayTitle} - 机制: {ch.mechanicType}");
+                    GameLogger.Log($"  [{i}] {ch.DisplayTitle} - 机制: {ch.mechanicType}");
                 }
                 else
                 {
-                    Debug.Log($"  [{i}] (空)");
+                    GameLogger.Log($"  [{i}] (空)");
                 }
             }
             
-            Debug.Log($"[ChapterDatabase] ================================");
+            GameLogger.Log($"[ChapterDatabase] ================================");
         }
 #endif
     }

@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Enemy
 {
@@ -50,7 +51,7 @@ namespace LightVsDecay.Logic.Enemy
             }
             else
             {
-                Debug.LogWarning("[EnemyEyes] Tower not found! LookAt disabled.");
+                GameLogger.LogWarning("[EnemyEyes] Tower not found! LookAt disabled.");
                 enableLookAt = false;
             }
         }

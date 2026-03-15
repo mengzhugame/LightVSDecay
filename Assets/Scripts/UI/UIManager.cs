@@ -70,7 +70,7 @@ namespace LightVsDecay.UI
             Core.GameEvents.OnLevelUp += OnLevelUpShowSkillPanel;
             if (showDebugInfo)
             {
-                Debug.Log("[UIManager] 事件已订阅");
+                GameLogger.Log("[UIManager] 事件已订阅");
             }
         }
         
@@ -84,7 +84,7 @@ namespace LightVsDecay.UI
             Core.GameEvents.OnLevelUp -= OnLevelUpShowSkillPanel;
             if (showDebugInfo)
             {
-                Debug.Log("[UIManager] 事件已取消订阅");
+                GameLogger.Log("[UIManager] 事件已取消订阅");
             }
         }
         
@@ -97,7 +97,7 @@ namespace LightVsDecay.UI
         {
             if (showDebugInfo)
             {
-                Debug.Log("[UIManager] 收到胜利事件，显示结算面板");
+                GameLogger.Log("[UIManager] 收到胜利事件，显示结算面板");
             }
             
             ShowSettlementPanel(true);
@@ -107,7 +107,7 @@ namespace LightVsDecay.UI
         {
             if (showDebugInfo)
             {
-                Debug.Log("[UIManager] 收到失败事件，显示结算面板");
+                GameLogger.Log("[UIManager] 收到失败事件，显示结算面板");
             }
             
             ShowSettlementPanel(false);
@@ -117,7 +117,7 @@ namespace LightVsDecay.UI
         {
             if (showDebugInfo)
             {
-                Debug.Log("[UIManager] 收到暂停事件");
+                GameLogger.Log("[UIManager] 收到暂停事件");
             }
             
             ShowPausePanel();
@@ -127,7 +127,7 @@ namespace LightVsDecay.UI
         {
             if (showDebugInfo)
             {
-                Debug.Log("[UIManager] 收到恢复事件");
+                GameLogger.Log("[UIManager] 收到恢复事件");
             }
             
             HidePausePanel();
@@ -145,7 +145,7 @@ namespace LightVsDecay.UI
             ShowSkillChoosePanel(level);
 
             if (showDebugInfo)
-                Debug.Log($"[UIManager] 升级！Lv.{level} → 弹出技能选择面板，游戏暂停");
+                GameLogger.Log($"[UIManager] 升级！Lv.{level} → 弹出技能选择面板，游戏暂停");
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 面板控制 - 结算面板
@@ -165,7 +165,7 @@ namespace LightVsDecay.UI
 
             if (settlementPanel == null)
             {
-                Debug.LogWarning("[UIManager] settlementPanel 未设置！");
+                GameLogger.LogWarning("[UIManager] settlementPanel 未设置！");
                 return;
             }
             
@@ -184,7 +184,7 @@ namespace LightVsDecay.UI
             
             if (showDebugInfo)
             {
-                Debug.Log($"[UIManager] 结算面板已显示 (胜利: {isVictory})");
+                GameLogger.Log($"[UIManager] 结算面板已显示 (胜利: {isVictory})");
             }
         }
         
@@ -214,7 +214,7 @@ namespace LightVsDecay.UI
         {
             if (revivePanel == null)
             {
-                Debug.LogWarning("[UIManager] revivePanel 未设置！");
+                GameLogger.LogWarning("[UIManager] revivePanel 未设置！");
                 return;
             }
             
@@ -223,7 +223,7 @@ namespace LightVsDecay.UI
             
             if (showDebugInfo)
             {
-                Debug.Log("[UIManager] 复活面板已显示");
+                GameLogger.Log("[UIManager] 复活面板已显示");
             }
         }
         
@@ -264,7 +264,7 @@ namespace LightVsDecay.UI
             
             if (showDebugInfo)
             {
-                Debug.Log("[UIManager] 暂停面板已显示");
+                GameLogger.Log("[UIManager] 暂停面板已显示");
             }
         }
         
@@ -291,7 +291,7 @@ namespace LightVsDecay.UI
         {
             if (skillChoosePanel == null)
             {
-                Debug.LogWarning("[UIManager] skillChoosePanel 未设置！");
+                GameLogger.LogWarning("[UIManager] skillChoosePanel 未设置！");
                 return;
             }
 
@@ -315,12 +315,12 @@ namespace LightVsDecay.UI
             }
             else
             {
-                Debug.LogError("[UIManager] SkillChooseOnePanel 组件未找到！");
+                GameLogger.LogError("[UIManager] SkillChooseOnePanel 组件未找到！");
             }
 
             if (showDebugInfo)
             {
-                Debug.Log($"[UIManager] 技能选择面板已显示 Lv.{level}");
+                GameLogger.Log($"[UIManager] 技能选择面板已显示 Lv.{level}");
             }
         }
 

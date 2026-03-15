@@ -250,19 +250,19 @@ namespace LightVsDecay.Logic.Player
                 mainLaserBeam.SetLaserPivot(laserPivot);
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[LaserController] 已将 LaserPivot 传递给 LaserBeam: {laserPivot.name}");
+                    GameLogger.Log($"[LaserController] 已将 LaserPivot 传递给 LaserBeam: {laserPivot.name}");
                 }
             }
             else
             {
-                Debug.LogError($"[LaserController] 无法传递 LaserPivot! mainLaserBeam={mainLaserBeam != null}, laserPivot={laserPivot != null}");
+                GameLogger.LogError($"[LaserController] 无法传递 LaserPivot! mainLaserBeam={mainLaserBeam != null}, laserPivot={laserPivot != null}");
             }
             
             // 验证 LaserPivot
             if (laserPivot == null && mainLaserBeam != null)
             {
                 laserPivot = mainLaserBeam.transform.parent;
-                Debug.LogWarning("[LaserController] LaserPivot 未设置，使用 mainLaserBeam 的父物体");
+                GameLogger.LogWarning("[LaserController] LaserPivot 未设置，使用 mainLaserBeam 的父物体");
             }
             
             // 验证 FirePoint
@@ -283,7 +283,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserController] 初始化完成 - DPS={damageCalculator.BaseDPS}, 暴击率={critSystem.CurrentCritRate:P0}");
+                GameLogger.Log($"[LaserController] 初始化完成 - DPS={damageCalculator.BaseDPS}, 暴击率={critSystem.CurrentCritRate:P0}");
             }
         }
         
@@ -855,7 +855,7 @@ namespace LightVsDecay.Logic.Player
         {
             if (laserBeamPrefab == null || laserPivot == null)
             {
-                Debug.LogError("[LaserController] Prefab 或 Pivot 未设置！");
+                GameLogger.LogError("[LaserController] Prefab 或 Pivot 未设置！");
                 return;
             }
     
@@ -867,7 +867,7 @@ namespace LightVsDecay.Logic.Player
             LaserBeam beam = subLaserObj.GetComponent<LaserBeam>();
             if (beam == null)
             {
-                Debug.LogError($"[LaserController] 副激光 Prefab 缺少 LaserBeam 组件！");
+                GameLogger.LogError($"[LaserController] 副激光 Prefab 缺少 LaserBeam 组件！");
                 Destroy(subLaserObj);
                 return;
             }
@@ -893,7 +893,7 @@ namespace LightVsDecay.Logic.Player
     
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserController] 创建副激光: 角度={angle}°, 伤害倍率={damageMultiplier:P0}, 长度={subLength:F1}");
+                GameLogger.Log($"[LaserController] 创建副激光: 角度={angle}°, 伤害倍率={damageMultiplier:P0}, 长度={subLength:F1}");
             }
         }
         
@@ -977,7 +977,7 @@ namespace LightVsDecay.Logic.Player
         public void SetWidthMultiplier(float multiplier)
         {
             if(showDebugInfo)
-                Debug.Log($"[LaserController] SetWidthMultiplier 被调用: {multiplier:F2}x");
+                GameLogger.Log($"[LaserController] SetWidthMultiplier 被调用: {multiplier:F2}x");
             skillWidthMultiplier = Mathf.Max(0.1f, multiplier);
             UpdateAllLaserWidths();
         }
@@ -1022,7 +1022,7 @@ namespace LightVsDecay.Logic.Player
             }
 
             if (showDebugInfo)
-                Debug.Log($"[LaserController] 激光长度倍率: {skillLengthMultiplier:P0}, 当前长度: {CurrentLaserLength:F1}");
+                GameLogger.Log($"[LaserController] 激光长度倍率: {skillLengthMultiplier:P0}, 当前长度: {CurrentLaserLength:F1}");
         }
         
         public void ResetDropBonuses()
@@ -1041,7 +1041,7 @@ namespace LightVsDecay.Logic.Player
             }
             if (showDebugInfo)
             {
-                Debug.Log("[LaserController] 空投加成已重置");
+                GameLogger.Log("[LaserController] 空投加成已重置");
             }
         }
         
@@ -1087,7 +1087,7 @@ namespace LightVsDecay.Logic.Player
             
             if (level <= 0 || splitCount <= 0)
             {
-                if (showDebugInfo) Debug.Log("[LaserController] Prism 等级为 0 或分裂数为 0，无副激光");
+                if (showDebugInfo) GameLogger.Log("[LaserController] Prism 等级为 0 或分裂数为 0，无副激光");
                 return;
             }
             
@@ -1104,7 +1104,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserController] Prism Lv.{level}: 分裂数={splitCount}, 伤害={splitDamageMultiplier:P0}, 长度={splitLength}");
+                GameLogger.Log($"[LaserController] Prism Lv.{level}: 分裂数={splitCount}, 伤害={splitDamageMultiplier:P0}, 长度={splitLength}");
             }
         }
 
@@ -1143,7 +1143,7 @@ namespace LightVsDecay.Logic.Player
     
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserController] Focus伤害设置: +{damageBonus:P0}");
+                GameLogger.Log($"[LaserController] Focus伤害设置: +{damageBonus:P0}");
             }
         }
         
@@ -1190,11 +1190,11 @@ namespace LightVsDecay.Logic.Player
             {
                 if (active)
                 {
-                    Debug.Log($"[LaserController] ⚡ 大招激活！伤害×{damageMultiplier}, 宽度×{widthMultiplier}");
+                    GameLogger.Log($"[LaserController] ⚡ 大招激活！伤害×{damageMultiplier}, 宽度×{widthMultiplier}");
                 }
                 else
                 {
-                    Debug.Log("[LaserController] 大招结束，倍率恢复");
+                    GameLogger.Log("[LaserController] 大招结束，倍率恢复");
                 }
             }
         }

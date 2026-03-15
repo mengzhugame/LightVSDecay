@@ -190,7 +190,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[ChainLightningManager] 设置参数: Lv.{level}, 跳数={maxBounces}, 距离={range}m, 衰减={decay:P0}");
+                GameLogger.Log($"[ChainLightningManager] 设置参数: Lv.{level}, 跳数={maxBounces}, 距离={range}m, 衰减={decay:P0}");
             }
             
             // 如果等级为0，清除所有传导
@@ -252,7 +252,7 @@ namespace LightVsDecay.Logic.Player
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[ChainLightningManager] 激光离开，移除传导链: {enemy.name}");
+                        GameLogger.Log($"[ChainLightningManager] 激光离开，移除传导链: {enemy.name}");
                     }
                 }
             }
@@ -318,7 +318,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[ChainLightningManager] 对象池初始化: 预热{poolPrewarmCount}, 上限{poolMaxCount}");
+                GameLogger.Log($"[ChainLightningManager] 对象池初始化: 预热{poolPrewarmCount}, 上限{poolMaxCount}");
             }
         }
         
@@ -349,7 +349,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log("[ChainLightningManager] 已创建默认传导线预制体");
+                GameLogger.Log("[ChainLightningManager] 已创建默认传导线预制体");
             }
         }
         
@@ -418,7 +418,7 @@ namespace LightVsDecay.Logic.Player
             {
                 if (showDebugInfo)
                 {
-                    Debug.LogWarning("[ChainLightningManager] 达到传导链组上限，跳过创建");
+                    GameLogger.LogWarning("[ChainLightningManager] 达到传导链组上限，跳过创建");
                 }
                 return;
             }
@@ -444,7 +444,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[ChainLightningManager] 创建传导链: {rootEnemy.name}, 主激光={isMainLaser}, 最大跳数={group.maxBounces}");
+                GameLogger.Log($"[ChainLightningManager] 创建传导链: {rootEnemy.name}, 主激光={isMainLaser}, 最大跳数={group.maxBounces}");
             }
         }
         
@@ -523,7 +523,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[ChainLightningManager] 创建链接: {source.name} -> {target.name}, 跳数={bounceIndex}, DPS={linkDamage:F1}");
+                GameLogger.Log($"[ChainLightningManager] 创建链接: {source.name} -> {target.name}, 跳数={bounceIndex}, DPS={linkDamage:F1}");
             }
         }
         
@@ -772,7 +772,7 @@ namespace LightVsDecay.Logic.Player
             {
                 if (showDebugInfo)
                 {
-                    Debug.LogWarning("[ChainLightningManager] 渲染器对象池已满");
+                    GameLogger.LogWarning("[ChainLightningManager] 渲染器对象池已满");
                 }
                 return null;
             }
@@ -804,7 +804,7 @@ namespace LightVsDecay.Logic.Player
         {
             if (chainLightningPrefab == null)
             {
-                Debug.LogError("[ChainLightningManager] 传导线预制体未设置！");
+                GameLogger.LogError("[ChainLightningManager] 传导线预制体未设置！");
                 return null;
             }
             

@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Equipment;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -68,7 +69,7 @@ namespace LightVsDecay.Logic.Player
             int tier = debugPreviewTier >= 0 ? debugPreviewTier : GetCurrentTier();
             ApplyTier(tier);
             if (showDebugInfo)
-                Debug.Log($"[TowerAppearance] 当前档次: {tier}");
+                GameLogger.Log($"[TowerAppearance] 当前档次: {tier}");
         }
 
         private int GetCurrentTier()

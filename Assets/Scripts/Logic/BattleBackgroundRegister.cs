@@ -5,6 +5,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic
 {
@@ -36,7 +37,7 @@ namespace LightVsDecay.Logic
             if (GameManager.Instance != null && spriteRenderer != null)
             {
                 GameManager.Instance.SetBattleBackground(spriteRenderer);
-                Debug.Log("[BattleBackgroundRegister] 背景已注册到 GameManager");
+                GameLogger.Log("[BattleBackgroundRegister] 背景已注册到 GameManager");
             }
         }
     }

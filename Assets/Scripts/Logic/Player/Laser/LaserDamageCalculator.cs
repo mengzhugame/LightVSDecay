@@ -5,6 +5,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -81,7 +82,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserDamageCalculator] 初始化: DPS={dps}, TickRate={tick}s");
+                GameLogger.Log($"[LaserDamageCalculator] 初始化: DPS={dps}, TickRate={tick}s");
             }
         }
         
@@ -148,7 +149,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserDamageCalculator] 伤害倍率设置: {multiplier:P0}");
+                GameLogger.Log($"[LaserDamageCalculator] 伤害倍率设置: {multiplier:P0}");
             }
         }
         
@@ -169,7 +170,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserDamageCalculator] 固定攻击力 +{value}, 总加成: {flatDamageBonus}, 当前DPS: {CurrentPanelDPS:F0}");
+                GameLogger.Log($"[LaserDamageCalculator] 固定攻击力 +{value}, 总加成: {flatDamageBonus}, 当前DPS: {CurrentPanelDPS:F0}");
             }
         }
         
@@ -185,11 +186,11 @@ namespace LightVsDecay.Logic.Player
             {
                 if (active)
                 {
-                    Debug.Log($"[LaserDamageCalculator] ⚡ 大招激活！伤害×{damageMultiplier}");
+                    GameLogger.Log($"[LaserDamageCalculator] ⚡ 大招激活！伤害×{damageMultiplier}");
                 }
                 else
                 {
-                    Debug.Log("[LaserDamageCalculator] 大招结束");
+                    GameLogger.Log("[LaserDamageCalculator] 大招结束");
                 }
             }
         }
@@ -203,7 +204,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log("[LaserDamageCalculator] 空投加成已重置");
+                GameLogger.Log("[LaserDamageCalculator] 空投加成已重置");
             }
         }
         

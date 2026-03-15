@@ -112,7 +112,7 @@ namespace LightVsDecay.Core
             wallLayerIndex = LayerMask.NameToLayer(GameConstants.WALL_LAYER);
             if (wallLayerIndex == -1)
             {
-                Debug.LogError($"[ScreenBoundaryManager] Layer '{GameConstants.WALL_LAYER}' 不存在！请在 Unity 中创建。");
+                GameLogger.LogError($"[ScreenBoundaryManager] Layer '{GameConstants.WALL_LAYER}' 不存在！请在 Unity 中创建。");
                 return;
             }
             
@@ -173,11 +173,11 @@ namespace LightVsDecay.Core
             
             if (showDebugInfo)
             {
-                Debug.Log($"[ScreenBoundaryManager] 屏幕边界计算完成:");
-                Debug.Log($"  宽度: {screenWidth:F2}, 高度: {screenHeight:F2}");
-                Debug.Log($"  Left: {screenLeft:F2}, Right: {screenRight:F2}");
-                Debug.Log($"  Top: {screenTop:F2}, Bottom: {screenBottom:F2}");
-                Debug.Log($"  相机 Aspect: {gameCamera.aspect:F2}, OrthoSize: {gameCamera.orthographicSize:F2}");
+                GameLogger.Log($"[ScreenBoundaryManager] 屏幕边界计算完成:");
+                GameLogger.Log($"  宽度: {screenWidth:F2}, 高度: {screenHeight:F2}");
+                GameLogger.Log($"  Left: {screenLeft:F2}, Right: {screenRight:F2}");
+                GameLogger.Log($"  Top: {screenTop:F2}, Bottom: {screenBottom:F2}");
+                GameLogger.Log($"  相机 Aspect: {gameCamera.aspect:F2}, OrthoSize: {gameCamera.orthographicSize:F2}");
             }
         }
         
@@ -199,7 +199,7 @@ namespace LightVsDecay.Core
             
             if (showDebugInfo)
             {
-                Debug.Log("[ScreenBoundaryManager] 空气墙创建完成");
+                GameLogger.Log("[ScreenBoundaryManager] 空气墙创建完成");
             }
         }
         
@@ -307,7 +307,7 @@ namespace LightVsDecay.Core
             
             if (showDebugInfo)
             {
-                Debug.Log("[ScreenBoundaryManager] 边界已重新计算");
+                GameLogger.Log("[ScreenBoundaryManager] 边界已重新计算");
             }
         }
         
@@ -478,7 +478,7 @@ namespace LightVsDecay.Core
             
             // 调试日志
             #if UNITY_EDITOR
-            Debug.Log($"[WallCollisionHandler] {edge} 墙被 {collision.gameObject.name} 撞击");
+            GameLogger.Log($"[WallCollisionHandler] {edge} 墙被 {collision.gameObject.name} 撞击");
             #endif
         }
         

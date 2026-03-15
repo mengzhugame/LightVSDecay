@@ -97,7 +97,7 @@ namespace LightVsDecay.Core
         {
             if (targetCamera == null)
             {
-                Debug.LogWarning("[CameraShake] 目标相机未设置！");
+                GameLogger.LogWarning("[CameraShake] 目标相机未设置！");
                 return;
             }
             
@@ -106,7 +106,7 @@ namespace LightVsDecay.Core
             
             if (showDebugInfo)
             {
-                Debug.Log($"[CameraShake] 开始震动 - 强度: {intensity}, 时长: {duration}s");
+                GameLogger.Log($"[CameraShake] 开始震动 - 强度: {intensity}, 时长: {duration}s");
             }
             
 #if DOTWEEN
@@ -195,7 +195,7 @@ namespace LightVsDecay.Core
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log("[CameraShake] 震动结束 (DOTween)");
+                        GameLogger.Log("[CameraShake] 震动结束 (DOTween)");
                     }
                 });
         }
@@ -232,7 +232,7 @@ namespace LightVsDecay.Core
             
             if (showDebugInfo)
             {
-                Debug.Log("[CameraShake] 震动结束 (Coroutine)");
+                GameLogger.Log("[CameraShake] 震动结束 (Coroutine)");
             }
         }
         

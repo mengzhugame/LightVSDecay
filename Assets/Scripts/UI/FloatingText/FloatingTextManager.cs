@@ -67,7 +67,7 @@ namespace LightVsDecay.UI.FloatingText
             
             if (Instance != this)
             {
-                Debug.LogWarning("[FloatingTextManager] 非单例实例，跳过初始化");
+                GameLogger.LogWarning("[FloatingTextManager] 非单例实例，跳过初始化");
                 yield break;
             }
             
@@ -82,12 +82,12 @@ namespace LightVsDecay.UI.FloatingText
         private void Initialize()
         {
             if(showDebugInfo)
-                Debug.Log("[FloatingTextManager] ===== 开始初始化 =====");
+                GameLogger.Log("[FloatingTextManager] ===== 开始初始化 =====");
             
             // 1. 验证配置
             if (config == null)
             {
-                Debug.LogError("[FloatingTextManager] 初始化失败: config 未设置！");
+                GameLogger.LogError("[FloatingTextManager] 初始化失败: config 未设置！");
                 return;
             }
             
@@ -102,11 +102,11 @@ namespace LightVsDecay.UI.FloatingText
             }
             if (targetCanvas == null)
             {
-                Debug.LogError("[FloatingTextManager] 初始化失败: 找不到 Canvas！");
+                GameLogger.LogError("[FloatingTextManager] 初始化失败: 找不到 Canvas！");
                 return;
             }
             if(showDebugInfo)
-                Debug.Log($"[FloatingTextManager] 使用 Canvas: {targetCanvas.name}");
+                GameLogger.Log($"[FloatingTextManager] 使用 Canvas: {targetCanvas.name}");
             
             // 3. 创建池容器
             GameObject containerGO = new GameObject("[FloatingTextPool]");
@@ -120,14 +120,14 @@ namespace LightVsDecay.UI.FloatingText
             
             poolContainer = containerGO.transform;
             if(showDebugInfo)
-                Debug.Log($"[FloatingTextManager] 池容器已创建: {poolContainer.name}");
+                GameLogger.Log($"[FloatingTextManager] 池容器已创建: {poolContainer.name}");
             
             // 4. 初始化各类型对象池
             InitializeTypePools();
             
             isInitialized = true;
             if(showDebugInfo)
-                Debug.Log($"[FloatingTextManager] ===== 初始化完成: 总创建={totalCreated} =====");
+                GameLogger.Log($"[FloatingTextManager] ===== 初始化完成: 总创建={totalCreated} =====");
         }
         
         /// <summary>
@@ -161,7 +161,7 @@ namespace LightVsDecay.UI.FloatingText
             GameObject prefab = config.GetPrefab(type);
             if (prefab == null)
             {
-                Debug.LogWarning($"[FloatingTextManager] {type} Prefab 未设置，跳过预热");
+                GameLogger.LogWarning($"[FloatingTextManager] {type} Prefab 未设置，跳过预热");
                 return;
             }
             
@@ -177,7 +177,7 @@ namespace LightVsDecay.UI.FloatingText
             
             if (showDebugInfo)
             {
-                Debug.Log($"[FloatingTextManager] 预热 {type}: {count} 个");
+                GameLogger.Log($"[FloatingTextManager] 预热 {type}: {count} 个");
             }
         }
         
@@ -285,20 +285,20 @@ namespace LightVsDecay.UI.FloatingText
             
             if (!isInitialized)
             {
-                Debug.LogWarning("[FloatingTextManager] Show 失败: 初始化未完成");
+                GameLogger.LogWarning("[FloatingTextManager] Show 失败: 初始化未完成");
                 return;
             }
             
             if (showDebugInfo)
             {
-                Debug.Log($"[FloatingTextManager] Show: '{text}' @ {worldPosition}, Type: {type}");
+                GameLogger.Log($"[FloatingTextManager] Show: '{text}' @ {worldPosition}, Type: {type}");
             }
             
             // 获取实例
             FloatingText ft = GetInstance(type);
             if (ft == null)
             {
-                Debug.LogWarning($"[FloatingTextManager] 无法获取 {type} 类型的飘字实例");
+                GameLogger.LogWarning($"[FloatingTextManager] 无法获取 {type} 类型的飘字实例");
                 return;
             }
             

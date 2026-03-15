@@ -21,6 +21,7 @@ using LightVsDecay.Logic.BattleReward;
 using LightVsDecay.Logic.Equipment;
 using LightVsDecay.Data.SO;
 using LightVsDecay.VFX.PostProcess;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -183,7 +184,7 @@ namespace LightVsDecay.UI.Panels
             {
                 bool unlockedNext = ProgressManager.Instance.CompleteChapterDifficulty(ch, diff);
                 if (showDebugInfo)
-                    Debug.Log($"[SettlementPanel] 章节{ch+1} 难度{diff} 完成" +
+                    GameLogger.Log($"[SettlementPanel] 章节{ch+1} 难度{diff} 完成" +
                               (unlockedNext ? "，解锁下一章节！" : ""));
             }
         }

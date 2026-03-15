@@ -88,7 +88,7 @@ namespace LightVsDecay.Core.Pool
                 }
             }
             
-            Debug.Log($"[ObjectPool] {prefab.name} 预热完成: {totalCreated} 个");
+            GameLogger.Log($"[ObjectPool] {prefab.name} 预热完成: {totalCreated} 个");
         }
         
         /// <summary>
@@ -115,7 +115,7 @@ namespace LightVsDecay.Core.Pool
             // 获取失败
             if (instance == null)
             {
-                Debug.LogWarning($"[ObjectPool] {prefab.name} 池已满！Active:{ActiveCount}, Max:{maxSize}");
+                GameLogger.LogWarning($"[ObjectPool] {prefab.name} 池已满！Active:{ActiveCount}, Max:{maxSize}");
                 return null;
             }
             
@@ -139,7 +139,7 @@ namespace LightVsDecay.Core.Pool
             // 确保是我们管理的实例
             if (!activeInstances.Contains(instance))
             {
-                Debug.LogWarning($"[ObjectPool] 尝试回收不属于此池的对象: {instance.name}");
+                GameLogger.LogWarning($"[ObjectPool] 尝试回收不属于此池的对象: {instance.name}");
                 return;
             }
             
@@ -167,7 +167,7 @@ namespace LightVsDecay.Core.Pool
                 Return(instance);
             }
             
-            Debug.Log($"[ObjectPool] {prefab.name} 全部回收: {availablePool.Count} 个");
+            GameLogger.Log($"[ObjectPool] {prefab.name} 全部回收: {availablePool.Count} 个");
         }
         
         /// <summary>
@@ -196,7 +196,7 @@ namespace LightVsDecay.Core.Pool
             }
             
             totalCreated = 0;
-            Debug.Log($"[ObjectPool] {prefab.name} 已清空");
+            GameLogger.Log($"[ObjectPool] {prefab.name} 已清空");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -175,17 +175,17 @@ namespace LightVsDecay.VFX.PostProcess
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log("[ScreenEffectController] Vignette 组件已获取");
+                        GameLogger.Log("[ScreenEffectController] Vignette 组件已获取");
                     }
                 }
                 else
                 {
-                    Debug.LogWarning("[ScreenEffectController] Volume Profile 中没有 Vignette 组件");
+                    GameLogger.LogWarning("[ScreenEffectController] Volume Profile 中没有 Vignette 组件");
                 }
             }
             else
             {
-                Debug.LogWarning("[ScreenEffectController] Post Process Volume 未设置");
+                GameLogger.LogWarning("[ScreenEffectController] Post Process Volume 未设置");
             }
         }
         
@@ -218,7 +218,7 @@ namespace LightVsDecay.VFX.PostProcess
         {
             if (showDebugInfo)
             {
-                Debug.Log("[ScreenEffectController] 开始低血量心跳效果");
+                GameLogger.Log("[ScreenEffectController] 开始低血量心跳效果");
             }
             
             StartHeartbeat();
@@ -228,7 +228,7 @@ namespace LightVsDecay.VFX.PostProcess
         {
             if (showDebugInfo)
             {
-                Debug.Log("[ScreenEffectController] 停止低血量心跳效果");
+                GameLogger.Log("[ScreenEffectController] 停止低血量心跳效果");
             }
             
             StopHeartbeat();
@@ -238,7 +238,7 @@ namespace LightVsDecay.VFX.PostProcess
         {
             if (showDebugInfo)
             {
-                Debug.Log("[ScreenEffectController] 播放护盾破碎效果");
+                GameLogger.Log("[ScreenEffectController] 播放护盾破碎效果");
             }
             
             PlayGlassCrack();
@@ -250,7 +250,7 @@ namespace LightVsDecay.VFX.PostProcess
         {
             if (showDebugInfo)
             {
-                Debug.Log("[ScreenEffectController] 游戏结束，停止所有效果");
+                GameLogger.Log("[ScreenEffectController] 游戏结束，停止所有效果");
             }
     
             StopAllEffects();
@@ -378,7 +378,7 @@ namespace LightVsDecay.VFX.PostProcess
         {
             if (glassCrackImage == null)
             {
-                Debug.LogWarning("[ScreenEffectController] GlassCrack Image 未设置");
+                GameLogger.LogWarning("[ScreenEffectController] GlassCrack Image 未设置");
                 yield break;
             }
             

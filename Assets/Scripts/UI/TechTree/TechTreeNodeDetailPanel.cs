@@ -32,6 +32,7 @@ using LightVsDecay.Data.SO;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.TechTree;
 using LightVsDecay.Audio;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI.TechTree
 {
@@ -387,7 +388,7 @@ namespace LightVsDecay.UI.TechTree
             }
 
             if (showDebugInfo)
-                Debug.Log($"[TechDetailPanel] 升级失败: {result}");
+                GameLogger.Log($"[TechDetailPanel] 升级失败: {result}");
 
             return false;
         }

@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI.TacticalDrop
 {
@@ -136,7 +137,7 @@ namespace LightVsDecay.UI.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[CrateProgressUI] 设置进度: {progress:P0}");
+                GameLogger.Log($"[CrateProgressUI] 设置进度: {progress:P0}");
             }
         }
         
@@ -167,7 +168,7 @@ namespace LightVsDecay.UI.TacticalDrop
     
             if (showDebugInfo)
             {
-                Debug.Log("[CrateProgressUI] 显示进度条");
+                GameLogger.Log("[CrateProgressUI] 显示进度条");
             }
         }
         
@@ -194,7 +195,7 @@ namespace LightVsDecay.UI.TacticalDrop
     
             if (showDebugInfo)
             {
-                Debug.Log("[CrateProgressUI] 隐藏进度条");
+                GameLogger.Log("[CrateProgressUI] 隐藏进度条");
             }
         }
         

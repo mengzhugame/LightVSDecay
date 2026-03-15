@@ -359,7 +359,7 @@ namespace LightVsDecay.Logic.Boss
                 if (showDebugInfo && Time.frameCount % 30 == 0)
                 {
                     float netForce = currentPushForce - pressDownForce;
-                    Debug.Log($"[BossController] 角力: 下压={pressDownForce:F0}, 上推={currentPushForce:F0}, 净力={netForce:F0}, Y速度={rb.velocity.y:F2}, 霸体={isUnstoppable}");
+                    GameLogger.Log($"[BossController] 角力: 下压={pressDownForce:F0}, 上推={currentPushForce:F0}, 净力={netForce:F0}, Y速度={rb.velocity.y:F2}, 霸体={isUnstoppable}");
                 }
             }
         }
@@ -419,7 +419,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[BossController] ❄️ 冰冻被霸体免疫！");
+                    GameLogger.Log("[BossController] ❄️ 冰冻被霸体免疫！");
                 }
                 ShowStatusText(BossStatusTextType.Unstoppable);
                 return false;
@@ -428,7 +428,7 @@ namespace LightVsDecay.Logic.Boss
             if (currentState == BossState.Press)
             {
                 if (showDebugInfo)
-                    Debug.Log("[BossController] ❄️ 冰冻被角力状态免疫！");
+                    GameLogger.Log("[BossController] ❄️ 冰冻被角力状态免疫！");
                 return false;
             }
             // 已经冰冻中
@@ -462,7 +462,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[BossController] 💫 僵直被霸体免疫！");
+                    GameLogger.Log("[BossController] 💫 僵直被霸体免疫！");
                 }
                 ShowStatusText(BossStatusTextType.Unstoppable);
                 return false;
@@ -486,7 +486,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 💫 僵直生效！时长: {actualDuration:F2}s, 控制层数: {controlStack}");
+                GameLogger.Log($"[BossController] 💫 僵直生效！时长: {actualDuration:F2}s, 控制层数: {controlStack}");
             }
             
             return true;
@@ -564,7 +564,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 🔴 进入霸体状态！持续 {unstoppableTimer:F1}s");
+                GameLogger.Log($"[BossController] 🔴 进入霸体状态！持续 {unstoppableTimer:F1}s");
             }
         }
         
@@ -587,7 +587,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🔴 霸体状态结束！控制计数已重置");
+                GameLogger.Log("[BossController] 🔴 霸体状态结束！控制计数已重置");
             }
         }
         
@@ -622,7 +622,7 @@ namespace LightVsDecay.Logic.Boss
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log("[BossController] ❄️ 冰冻累积已重置（照射中断）");
+                        GameLogger.Log("[BossController] ❄️ 冰冻累积已重置（照射中断）");
                     }
                 }
             }
@@ -651,7 +651,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] ❄️ 冰冻生效！时长: {duration:F2}s, 控制层数: {controlStack}");
+                GameLogger.Log($"[BossController] ❄️ 冰冻生效！时长: {duration:F2}s, 控制层数: {controlStack}");
             }
         }
 
@@ -706,7 +706,7 @@ namespace LightVsDecay.Logic.Boss
         {
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 状态切换: {currentState} -> {newState}");
+                GameLogger.Log($"[BossController] 状态切换: {currentState} -> {newState}");
             }
             
             ExitState(currentState);
@@ -811,7 +811,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] ❄️ 进入冰冻状态！时长: {frozenTimer:F2}s");
+                GameLogger.Log($"[BossController] ❄️ 进入冰冻状态！时长: {frozenTimer:F2}s");
             }
             
             // 等待冰冻结束
@@ -826,7 +826,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] ❄️ 冰冻结束！返回 Idle");
+                GameLogger.Log("[BossController] ❄️ 冰冻结束！返回 Idle");
             }
             
             // 检查是否触发霸体
@@ -887,7 +887,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 入场: {spawnPosition} -> {battleAnchorPosition}");
+                GameLogger.Log($"[BossController] 入场: {spawnPosition} -> {battleAnchorPosition}");
             }
             
 #if DOTWEEN
@@ -909,7 +909,7 @@ namespace LightVsDecay.Logic.Boss
             transform.position = battleAnchorPosition;
 #endif
             
-            if (showDebugInfo) Debug.Log("[BossController] BOSS 咆哮！");
+            if (showDebugInfo) GameLogger.Log("[BossController] BOSS 咆哮！");
             
             if (AudioManager.Instance != null)
             {
@@ -944,7 +944,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 进入 Idle, 时长: {currentIdleDuration:F1}s, 狂暴: {IsEnraged}");
+                GameLogger.Log($"[BossController] 进入 Idle, 时长: {currentIdleDuration:F1}s, 狂暴: {IsEnraged}");
             }
         }
         
@@ -960,7 +960,7 @@ namespace LightVsDecay.Logic.Boss
                 
                 if (summonCooldownReady)
                 {
-                    if (showDebugInfo) Debug.Log("[BossController] ⏰ 召唤冷却完成！打断Idle进入Summon");
+                    if (showDebugInfo) GameLogger.Log("[BossController] ⏰ 召唤冷却完成！打断Idle进入Summon");
                     ChangeState(BossState.Summon);
                     yield break;
                 }
@@ -998,12 +998,12 @@ namespace LightVsDecay.Logic.Boss
             
             if (useCharge)
             {
-                if (showDebugInfo) Debug.Log("[BossController] 🔴 选择技能: Charge (野蛮冲撞 - 快招)");
+                if (showDebugInfo) GameLogger.Log("[BossController] 🔴 选择技能: Charge (野蛮冲撞 - 快招)");
                 ChangeState(BossState.Charge);
             }
             else
             {
-                if (showDebugInfo) Debug.Log("[BossController] 🟣 选择技能: Press (重力碾压 - 慢招)");
+                if (showDebugInfo) GameLogger.Log("[BossController] 🟣 选择技能: Press (重力碾压 - 慢招)");
                 ChangeState(BossState.Press);
             }
         }
@@ -1032,7 +1032,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 召唤冷却重置: {cooldown}s");
+                GameLogger.Log($"[BossController] 召唤冷却重置: {cooldown}s");
             }
         }
         
@@ -1046,7 +1046,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🐙 召唤爪牙！身体收缩震动...");
+                GameLogger.Log("[BossController] 🐙 召唤爪牙！身体收缩震动...");
             }
             
             float blinkDuration = config != null ? config.blinkDuration : 0.75f;
@@ -1120,7 +1120,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 生成 {perSide * 2} 只 Rusher (狂暴: {IsEnraged})");
+                GameLogger.Log($"[BossController] 生成 {perSide * 2} 只 Rusher (狂暴: {IsEnraged})");
             }
         }
         
@@ -1151,7 +1151,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[BossController] ⚡ 战术召唤触发！玩家输出太安逸了！");
+                    GameLogger.Log("[BossController] ⚡ 战术召唤触发！玩家输出太安逸了！");
                 }
                 
                 continuousDamageTimer = 0f;
@@ -1169,7 +1169,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 战术召唤冷却结束");
+                GameLogger.Log("[BossController] 战术召唤冷却结束");
             }
         }
         
@@ -1182,7 +1182,7 @@ namespace LightVsDecay.Logic.Boss
             GameObject prefab = config != null ? config.pollutionProjectilePrefab : null;
             if (prefab == null)
             {
-                if (showDebugInfo) Debug.LogWarning("[BossController] Pollution Prefab 未设置！");
+                if (showDebugInfo) GameLogger.LogWarning("[BossController] Pollution Prefab 未设置！");
                 return;
             }
             
@@ -1197,7 +1197,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (toSpawn <= 0)
             {
-                if (showDebugInfo) Debug.Log("[BossController] 污秽球已达上限，跳过喷吐");
+                if (showDebugInfo) GameLogger.Log("[BossController] 污秽球已达上限，跳过喷吐");
                 return;
             }
             
@@ -1240,7 +1240,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 喷射 {toSpawn} 个污秽球");
+                GameLogger.Log($"[BossController] 喷射 {toSpawn} 个污秽球");
             }
         }
         
@@ -1254,7 +1254,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🔴 Charge Phase 1: 蓄力！");
+                GameLogger.Log("[BossController] 🔴 Charge Phase 1: 蓄力！");
             }
             
             if (redBodyEffect != null && !isUnstoppable)
@@ -1303,7 +1303,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🔴 Charge Phase 2: 冲锋！");
+                GameLogger.Log("[BossController] 🔴 Charge Phase 2: 冲锋！");
             }
             
             if (AudioManager.Instance != null)
@@ -1353,7 +1353,7 @@ namespace LightVsDecay.Logic.Boss
                 chargeInterrupted = true;
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[BossController] 频率打断！受击次数: {chargeHitCount}");
+                    GameLogger.Log($"[BossController] 频率打断！受击次数: {chargeHitCount}");
                 }
             }
         }
@@ -1365,7 +1365,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[BossController] ⚡ Charge 打断被霸体免疫！");
+                    GameLogger.Log("[BossController] ⚡ Charge 打断被霸体免疫！");
                 }
                 ShowStatusText(BossStatusTextType.Unstoppable);
                 return;
@@ -1382,7 +1382,7 @@ namespace LightVsDecay.Logic.Boss
             float damage = config != null ? config.chargeHitDamage : 300f;
             ApplyDamageToPlayer(damage, PlayerDamageSource.BossCollision);
             
-            if (showDebugInfo) Debug.Log($"[BossController] 💥 Charge 撞击玩家！伤害: {damage}");
+            if (showDebugInfo) GameLogger.Log($"[BossController] 💥 Charge 撞击玩家！伤害: {damage}");
             
             float shakeIntensity = config != null ? config.chargeHitShakeIntensity : 0.8f;
             float shakeDuration = config != null ? config.chargeHitShakeDuration : 0.3f;
@@ -1423,7 +1423,7 @@ namespace LightVsDecay.Logic.Boss
         private void OnChargeInterrupted()
         {
             if (showDebugInfo) 
-                Debug.Log("[BossController] 💥 Charge 蓄力被打断！进入僵直！");
+                GameLogger.Log("[BossController] 💥 Charge 蓄力被打断！进入僵直！");
             
             ShowStatusText(BossStatusTextType.Interrupted);
     
@@ -1438,7 +1438,7 @@ namespace LightVsDecay.Logic.Boss
             // 修复：如果晕眩失败（被霸体免疫），必须强制切换状态，否则会卡在 Charge 状态
             if (!TryApplyStun(baseDuration))
             {
-                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫打断僵直，强制返回 Idle");
+                if (showDebugInfo) GameLogger.Log("[BossController] 霸体免疫打断僵直，强制返回 Idle");
                 ChangeState(BossState.Idle);
             }
         }
@@ -1457,7 +1457,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🟣 Press Phase 1: 突进贴脸！（闭眼）");
+                GameLogger.Log("[BossController] 🟣 Press Phase 1: 突进贴脸！（闭眼）");
             }
             
             if (AudioManager.Instance != null)
@@ -1492,7 +1492,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🟣 Press Phase 2: 施压！眼睛缓缓睁开...");
+                GameLogger.Log("[BossController] 🟣 Press Phase 2: 施压！眼睛缓缓睁开...");
             }
             
             float glareDuration = config != null ? config.pressGlareDuration : 1.5f;
@@ -1511,7 +1511,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] Press Phase 3: 开始碾压！角力进行中...");
+                GameLogger.Log("[BossController] Press Phase 3: 开始碾压！角力进行中...");
             }
             
             pressOverloadDamage = 0f;
@@ -1538,14 +1538,14 @@ namespace LightVsDecay.Logic.Boss
                 
                 if (transform.position.y >= safeLineY)
                 {
-                    if (showDebugInfo) Debug.Log("[BossController] ✅ 玩家推回Boss！角力胜利！");
+                    if (showDebugInfo) GameLogger.Log("[BossController] ✅ 玩家推回Boss！角力胜利！");
                     OnPressCountered();
                     yield break;
                 }
                 
                 if (transform.position.y <= hitLineY)
                 {
-                    if (showDebugInfo) Debug.Log("[BossController] ❌ Boss碾压成功！玩家失败！");
+                    if (showDebugInfo) GameLogger.Log("[BossController] ❌ Boss碾压成功！玩家失败！");
                     OnPressHitPlayer();
                     yield break;
                 }
@@ -1553,7 +1553,7 @@ namespace LightVsDecay.Logic.Boss
                 float maxClashTime = config != null ? config.maxClashDuration : 6f;
                 if (clashTimer >= maxClashTime)
                 {
-                    if (showDebugInfo) Debug.Log("[BossController] ⏰ 角力超时！Boss疲劳撤退！");
+                    if (showDebugInfo) GameLogger.Log("[BossController] ⏰ 角力超时！Boss疲劳撤退！");
                     OnPressExhausted();
                     yield break;
                 }
@@ -1561,7 +1561,7 @@ namespace LightVsDecay.Logic.Boss
                 yield return null;
             }
             
-            if (showDebugInfo) Debug.Log("[BossController] ⏰ Press超时！自动结束");
+            if (showDebugInfo) GameLogger.Log("[BossController] ⏰ Press超时！自动结束");
             OnPressExhausted();
         }
         
@@ -1578,7 +1578,7 @@ namespace LightVsDecay.Logic.Boss
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[BossController] 🔥 摩擦伤害开始！Y={transform.position.y:F2}");
+                        GameLogger.Log($"[BossController] 🔥 摩擦伤害开始！Y={transform.position.y:F2}");
                     }
                 }
                 
@@ -1599,7 +1599,7 @@ namespace LightVsDecay.Logic.Boss
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log("[BossController] 🔥 摩擦伤害结束");
+                    GameLogger.Log("[BossController] 🔥 摩擦伤害结束");
                 }
             }
             
@@ -1624,7 +1624,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[BossController] 💥 Press 过载！累计伤害 {pressOverloadDamage:F0} >= {threshold:F0}");
+                    GameLogger.Log($"[BossController] 💥 Press 过载！累计伤害 {pressOverloadDamage:F0} >= {threshold:F0}");
                 }
                 OnPressOverload();
             }
@@ -1647,7 +1647,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🔥 Press 过载！Boss 核心过热撤退！");
+                GameLogger.Log("[BossController] 🔥 Press 过载！Boss 核心过热撤退！");
             }
             
             ShowStatusText(BossStatusTextType.Overload);
@@ -1655,7 +1655,7 @@ namespace LightVsDecay.Logic.Boss
             float shortDuration = config != null ? config.shortStunDuration : 1.5f;
             if (!TryApplyStun(shortDuration))
             {
-                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫过载僵直，强制返回 Idle");
+                if (showDebugInfo) GameLogger.Log("[BossController] 霸体免疫过载僵直，强制返回 Idle");
                 ChangeState(BossState.Idle);
             }
             
@@ -1678,7 +1678,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] ✅ Press 被反推！玩家胜利！");
+                GameLogger.Log("[BossController] ✅ Press 被反推！玩家胜利！");
             }
             
             ShowStatusText(BossStatusTextType.Countered);
@@ -1693,7 +1693,7 @@ namespace LightVsDecay.Logic.Boss
             // 修复：如果晕眩失败（被霸体免疫），必须强制切换状态，否则会卡在 Press 循环中
             if (!TryApplyStun(baseDuration))
             {
-                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫反制僵直，强制返回 Idle");
+                if (showDebugInfo) GameLogger.Log("[BossController] 霸体免疫反制僵直，强制返回 Idle");
                 ChangeState(BossState.Idle);
             }
         }
@@ -1710,7 +1710,7 @@ namespace LightVsDecay.Logic.Boss
             float damage = config != null ? config.chargeHitDamage : 300f;
             ApplyDamageToPlayer(damage, PlayerDamageSource.BossCollision);
             
-            if (showDebugInfo) Debug.Log($"[BossController] 💥 Press 碾压成功！伤害: {damage}");
+            if (showDebugInfo) GameLogger.Log($"[BossController] 💥 Press 碾压成功！伤害: {damage}");
             
             if (CameraShake.Instance != null)
             {
@@ -1736,7 +1736,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 😤 Boss 角力疲劳！强制撤退！");
+                GameLogger.Log("[BossController] 😤 Boss 角力疲劳！强制撤退！");
             }
             
             ShowStatusText(BossStatusTextType.Exhausted);
@@ -1778,7 +1778,7 @@ namespace LightVsDecay.Logic.Boss
             // 修复 Bug：如果霸体免疫了晕眩，必须强制返回 Idle，否则 Boss 会定住
             if (!TryApplyStun(baseDuration))
             {
-                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫疲劳僵直，强制返回 Idle");
+                if (showDebugInfo) GameLogger.Log("[BossController] 霸体免疫疲劳僵直，强制返回 Idle");
                 ChangeState(BossState.Idle);
             }
         }
@@ -1823,7 +1823,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossController] 收到推力更新: {currentPushForce:F2}");
+                GameLogger.Log($"[BossController] 收到推力更新: {currentPushForce:F2}");
             }
         }
         
@@ -1851,7 +1851,7 @@ namespace LightVsDecay.Logic.Boss
                 
                 if (showDebugInfo && accumulatedPushForceThisTick > maxForce)
                 {
-                    Debug.Log($"[BossController] 推力超限! {accumulatedPushForceThisTick:F0} -> {maxForce:F0}");
+                    GameLogger.Log($"[BossController] 推力超限! {accumulatedPushForceThisTick:F0} -> {maxForce:F0}");
                 }
             }
             
@@ -1873,7 +1873,7 @@ namespace LightVsDecay.Logic.Boss
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[BossController] 💫 进入僵直！时长: {duration}s");
+                    GameLogger.Log($"[BossController] 💫 进入僵直！时长: {duration}s");
                 }
             }
             else
@@ -1889,7 +1889,7 @@ namespace LightVsDecay.Logic.Boss
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[BossController] 💫 进入僵直！时长: {duration}s（奖励时间）");
+                    GameLogger.Log($"[BossController] 💫 进入僵直！时长: {duration}s（奖励时间）");
                 }
             }
             
@@ -1980,7 +1980,7 @@ namespace LightVsDecay.Logic.Boss
             // 修复 Bug：如果霸体免疫晕眩，强制返回 Idle
             if (!TryApplyStun(shortDuration))
             {
-                if (showDebugInfo) Debug.Log("[BossController] 霸体免疫短僵直，强制返回 Idle");
+                if (showDebugInfo) GameLogger.Log("[BossController] 霸体免疫短僵直，强制返回 Idle");
                 // 只有当当前状态不是 Idle 时才切换，避免逻辑混乱
                 if (currentState != BossState.Idle)
                 {
@@ -2106,7 +2106,7 @@ namespace LightVsDecay.Logic.Boss
         {
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🔥 Boss 进入狂暴状态！触发演出...");
+                GameLogger.Log("[BossController] 🔥 Boss 进入狂暴状态！触发演出...");
             }
     
             // 1. 短暂停顿（Boss停止当前动作）
@@ -2146,7 +2146,7 @@ namespace LightVsDecay.Logic.Boss
     
             if (showDebugInfo)
             {
-                Debug.Log("[BossController] 🔥 狂暴演出完成，Boss 变得更加狂暴！");
+                GameLogger.Log("[BossController] 🔥 狂暴演出完成，Boss 变得更加狂暴！");
             }
         }
 
@@ -2206,7 +2206,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo && !frostDebuff.IsSlowed)
             {
-                Debug.Log($"[BossController] ❄️ Boss 减速！{actualSlowPercent:P0} 持续 {actualDuration:F1}s");
+                GameLogger.Log($"[BossController] ❄️ Boss 减速！{actualSlowPercent:P0} 持续 {actualDuration:F1}s");
             }
         }
         

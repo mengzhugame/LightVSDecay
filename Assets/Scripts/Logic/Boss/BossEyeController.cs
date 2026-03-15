@@ -9,6 +9,7 @@ using UnityEngine;
 using System.Collections;
 #if DOTWEEN
 using DG.Tweening;
+using LightVsDecay.Core;
 #endif
 
 namespace LightVsDecay.Logic.Boss
@@ -172,7 +173,7 @@ namespace LightVsDecay.Logic.Boss
         {
             if (showDebugInfo)
             {
-                Debug.Log($"[BossEyeController] 👁️ 开始眨眼，持续 {duration}s");
+                GameLogger.Log($"[BossEyeController] 👁️ 开始眨眼，持续 {duration}s");
             }
     
             // 快速睁眼
@@ -186,7 +187,7 @@ namespace LightVsDecay.Logic.Boss
     
             if (showDebugInfo)
             {
-                Debug.Log("[BossEyeController] 👁️ 眨眼结束");
+                GameLogger.Log("[BossEyeController] 👁️ 眨眼结束");
             }
         }
         /// <summary>
@@ -200,7 +201,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossEyeController] 直接设置状态: {state}");
+                GameLogger.Log($"[BossEyeController] 直接设置状态: {state}");
             }
         }
         
@@ -258,7 +259,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossEyeController] 状态过渡完成: {targetState}");
+                GameLogger.Log($"[BossEyeController] 状态过渡完成: {targetState}");
             }
         }
         
@@ -273,7 +274,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossEyeController] 🔴 开始缓慢睁眼... {duration}秒");
+                GameLogger.Log($"[BossEyeController] 🔴 开始缓慢睁眼... {duration}秒");
             }
             
 #if DOTWEEN
@@ -313,7 +314,7 @@ namespace LightVsDecay.Logic.Boss
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log("[BossEyeController] 👁️ 弱点碰撞器激活！");
+                        GameLogger.Log("[BossEyeController] 👁️ 弱点碰撞器激活！");
                     }
                 }
                 
@@ -328,7 +329,7 @@ namespace LightVsDecay.Logic.Boss
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossEyeController] 👁️ 眼睛完全睁开！弱点暴露！");
+                GameLogger.Log("[BossEyeController] 👁️ 眼睛完全睁开！弱点暴露！");
             }
         }
         

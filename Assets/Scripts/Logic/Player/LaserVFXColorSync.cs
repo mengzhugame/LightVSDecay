@@ -5,6 +5,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -98,7 +99,7 @@ namespace LightVsDecay.Logic.Player
                 startVFXRenderers = startVFX.GetComponentsInChildren<ParticleSystemRenderer>(true);
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[LaserVFXColorSync] StartVFX 找到 {startVFXRenderers.Length} 个粒子渲染器");
+                    GameLogger.Log($"[LaserVFXColorSync] StartVFX 找到 {startVFXRenderers.Length} 个粒子渲染器");
                 }
             }
             
@@ -107,7 +108,7 @@ namespace LightVsDecay.Logic.Player
                 endVFXRenderers = endVFX.GetComponentsInChildren<ParticleSystemRenderer>(true);
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[LaserVFXColorSync] EndVFX 找到 {endVFXRenderers.Length} 个粒子渲染器");
+                    GameLogger.Log($"[LaserVFXColorSync] EndVFX 找到 {endVFXRenderers.Length} 个粒子渲染器");
                 }
             }
         }
@@ -127,7 +128,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserVFXColorSync] VFX颜色设置为: {color}");
+                GameLogger.Log($"[LaserVFXColorSync] VFX颜色设置为: {color}");
             }
         }
         

@@ -122,7 +122,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalCrate] 初始化: 类型={type}, HP={hp}");
+                GameLogger.Log($"[TacticalCrate] 初始化: 类型={type}, HP={hp}");
             }
         }
         
@@ -157,7 +157,7 @@ namespace LightVsDecay.Logic.TacticalDrop
                     }
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[TacticalCrate] 入场动画完成: {crateType}");
+                        GameLogger.Log($"[TacticalCrate] 入场动画完成: {crateType}");
                     }
                     
                     // 回调（由管理器统一启用伤害）
@@ -173,7 +173,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalCrate] 已启用伤害: {crateType}");
+                GameLogger.Log($"[TacticalCrate] 已启用伤害: {crateType}");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -205,7 +205,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalCrate] 受伤: -{damage:F1}, 剩余HP: {currentHP}/{maxHP}, 进度: {DamageProgress:P0}");
+                GameLogger.Log($"[TacticalCrate] 受伤: -{damage:F1}, 剩余HP: {currentHP}/{maxHP}, 进度: {DamageProgress:P0}");
             }
             
             // 检查死亡
@@ -253,7 +253,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalCrate] 宝箱被击破: {crateType}");
+                GameLogger.Log($"[TacticalCrate] 宝箱被击破: {crateType}");
             }
             
             // 禁用碰撞
@@ -302,7 +302,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalCrate] 宝箱消失: {crateType}");
+                GameLogger.Log($"[TacticalCrate] 宝箱消失: {crateType}");
             }
             
             // 禁用碰撞

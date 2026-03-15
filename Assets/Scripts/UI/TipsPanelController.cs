@@ -28,6 +28,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI
 {
@@ -188,7 +189,7 @@ namespace LightVsDecay.UI
                 string msg = _queue.Dequeue();
 
                 if (showDebugInfo)
-                    Debug.Log($"[TipsPanelController] 播放提示: \"{msg}\"");
+                    GameLogger.Log($"[TipsPanelController] 播放提示: \"{msg}\"");
 
                 yield return StartCoroutine(PlayOneTipRoutine(msg));
 

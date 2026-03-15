@@ -43,7 +43,7 @@ namespace LightVsDecay.Core
                 // 应用退出时不再创建新实例
                 if (_isQuitting)
                 {
-                    Debug.LogWarning($"[Singleton] {typeof(T).Name} 实例在应用退出时被请求，返回 null");
+                    GameLogger.LogWarning($"[Singleton] {typeof(T).Name} 实例在应用退出时被请求，返回 null");
                     return null;
                 }
                 
@@ -69,7 +69,7 @@ namespace LightVsDecay.Core
             {
                 if (_instance != null && _instance != this)
                 {
-                    Debug.LogWarning($"[Singleton] {typeof(T).Name} 已存在，销毁重复实例: {gameObject.name}");
+                    GameLogger.LogWarning($"[Singleton] {typeof(T).Name} 已存在，销毁重复实例: {gameObject.name}");
                     Destroy(gameObject);
                     return;
                 }
@@ -132,7 +132,7 @@ namespace LightVsDecay.Core
             // 如果已存在实例，销毁自己
             if (HasInstance && Instance != this)
             {
-                Debug.LogWarning($"[PersistentSingleton] {typeof(T).Name} 已存在，销毁重复实例: {gameObject.name}");
+                GameLogger.LogWarning($"[PersistentSingleton] {typeof(T).Name} 已存在，销毁重复实例: {gameObject.name}");
                 Destroy(gameObject);
                 return;
             }
@@ -188,7 +188,7 @@ namespace LightVsDecay.Core
                         {
                             GameObject go = new GameObject($"[{typeof(T).Name}]");
                             _instance = go.AddComponent<T>();
-                            Debug.Log($"[AutoSingleton] 自动创建 {typeof(T).Name}");
+                            GameLogger.Log($"[AutoSingleton] 自动创建 {typeof(T).Name}");
                         }
                     }
                     return _instance;

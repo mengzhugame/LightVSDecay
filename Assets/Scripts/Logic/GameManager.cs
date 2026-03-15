@@ -120,8 +120,8 @@ namespace LightVsDecay.Logic
         protected override void OnSingletonAwake()
         {
             // ★★★ 调试 ★★★
-            Debug.Log($"[GameManager] OnSingletonAwake - InstanceID: {this.GetInstanceID()}");
-            Debug.Log($"[GameManager] OnSingletonAwake - chapterDatabase: {(chapterDatabase != null ? chapterDatabase.name : "NULL")}");
+            GameLogger.Log($"[GameManager] OnSingletonAwake - InstanceID: {this.GetInstanceID()}");
+            GameLogger.Log($"[GameManager] OnSingletonAwake - chapterDatabase: {(chapterDatabase != null ? chapterDatabase.name : "NULL")}");
             // ★★★ 调试结束 ★★★
             LoadConfig();
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -165,7 +165,7 @@ namespace LightVsDecay.Logic
         {
             if (showDebugInfo)
             {
-                Debug.Log($"[GameManager] 场景加载: {scene.name}");
+                GameLogger.Log($"[GameManager] 场景加载: {scene.name}");
             }
             
             if (scene.name == gameSceneName)
@@ -237,24 +237,24 @@ namespace LightVsDecay.Logic
         private void InitializeChapterConfig()
         {
             // ★★★ 调试：检查时序和引用 ★★★
-            Debug.Log($"[GameManager] ========== InitializeChapterConfig 开始 ==========");
-            Debug.Log($"[GameManager] this.GetInstanceID(): {this.GetInstanceID()}");
-            Debug.Log($"[GameManager] chapterDatabase 是否为 null: {chapterDatabase == null}");
-            Debug.Log($"[GameManager] chapterDatabase: {(chapterDatabase != null ? chapterDatabase.name : "NULL")}");
-            Debug.Log($"[GameManager] GameSessionConfig.IsConfigured: {GameSessionConfig.IsConfigured}");
-            Debug.Log($"[GameManager] GameSessionConfig.SelectedChapterIndex: {GameSessionConfig.SelectedChapterIndex}");
-            Debug.Log($"[GameManager] GameSessionConfig.SelectedDifficulty: {GameSessionConfig.SelectedDifficulty}");
+            GameLogger.Log($"[GameManager] ========== InitializeChapterConfig 开始 ==========");
+            GameLogger.Log($"[GameManager] this.GetInstanceID(): {this.GetInstanceID()}");
+            GameLogger.Log($"[GameManager] chapterDatabase 是否为 null: {chapterDatabase == null}");
+            GameLogger.Log($"[GameManager] chapterDatabase: {(chapterDatabase != null ? chapterDatabase.name : "NULL")}");
+            GameLogger.Log($"[GameManager] GameSessionConfig.IsConfigured: {GameSessionConfig.IsConfigured}");
+            GameLogger.Log($"[GameManager] GameSessionConfig.SelectedChapterIndex: {GameSessionConfig.SelectedChapterIndex}");
+            GameLogger.Log($"[GameManager] GameSessionConfig.SelectedDifficulty: {GameSessionConfig.SelectedDifficulty}");
             if (chapterDatabase != null)
             {
-                Debug.Log($"[GameManager] chapterDatabase.ChapterCount: {chapterDatabase.ChapterCount}");
+                GameLogger.Log($"[GameManager] chapterDatabase.ChapterCount: {chapterDatabase.ChapterCount}");
                 var chapter = chapterDatabase.GetChapter(0);
-                Debug.Log($"[GameManager] chapterDatabase.GetChapter(0): {(chapter != null ? chapter.chapterName : "NULL")}");
+                GameLogger.Log($"[GameManager] chapterDatabase.GetChapter(0): {(chapter != null ? chapter.chapterName : "NULL")}");
                 if (chapter != null)
                 {
-                    Debug.Log($"[GameManager] chapter.waveConfig: {(chapter.waveConfig != null ? chapter.waveConfig.name : "NULL")}");
+                    GameLogger.Log($"[GameManager] chapter.waveConfig: {(chapter.waveConfig != null ? chapter.waveConfig.name : "NULL")}");
                 }
             }
-            Debug.Log($"[GameManager] ================================================");
+            GameLogger.Log($"[GameManager] ================================================");
             // 如果没有配置，使用默认值（直接启动 GameScene 调试时）
             if (!GameSessionConfig.IsConfigured)
             {
@@ -262,7 +262,7 @@ namespace LightVsDecay.Logic
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log("[GameManager] 使用默认章节配置（调试模式）");
+                    GameLogger.Log("[GameManager] 使用默认章节配置（调试模式）");
                 }
             }
             
@@ -290,11 +290,11 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log($"[GameManager] 章节配置初始化完成:");
-                Debug.Log($"  - 章节: {currentChapterIndex + 1} ({currentChapterConfig?.chapterName ?? "默认"})");
-                Debug.Log($"  - 难度: {currentDifficulty} ({currentDifficultySettings?.displayName ?? "默认"})");
-                Debug.Log($"  - 敌人血量倍率: x{currentDifficultySettings?.enemyHealthMultiplier ?? 1f}");
-                Debug.Log($"  - 敌人数量倍率: x{currentDifficultySettings?.enemyCountMultiplier ?? 1f}");
+                GameLogger.Log($"[GameManager] 章节配置初始化完成:");
+                GameLogger.Log($"  - 章节: {currentChapterIndex + 1} ({currentChapterConfig?.chapterName ?? "默认"})");
+                GameLogger.Log($"  - 难度: {currentDifficulty} ({currentDifficultySettings?.displayName ?? "默认"})");
+                GameLogger.Log($"  - 敌人血量倍率: x{currentDifficultySettings?.enemyHealthMultiplier ?? 1f}");
+                GameLogger.Log($"  - 敌人数量倍率: x{currentDifficultySettings?.enemyCountMultiplier ?? 1f}");
             }
         }
         
@@ -307,7 +307,7 @@ namespace LightVsDecay.Logic
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[GameManager] 无章节配置，使用默认设置");
+                    GameLogger.Log("[GameManager] 无章节配置，使用默认设置");
                 }
                 return;
             }
@@ -321,7 +321,7 @@ namespace LightVsDecay.Logic
             ApplyEnemyBlobColor();
             if (showDebugInfo)
             {
-                Debug.Log($"[GameManager] 章节配置已应用: {currentChapterConfig.chapterName}");
+                GameLogger.Log($"[GameManager] 章节配置已应用: {currentChapterConfig.chapterName}");
             }
         }
         
@@ -349,7 +349,7 @@ namespace LightVsDecay.Logic
         
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[GameManager] 战斗背景已设置: {currentChapterConfig.battleBackgroundImage.name}");
+                    GameLogger.Log($"[GameManager] 战斗背景已设置: {currentChapterConfig.battleBackgroundImage.name}");
                 }
             }
         }
@@ -368,7 +368,7 @@ namespace LightVsDecay.Logic
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[GameManager] 战斗BGM已设置: {currentChapterConfig.battleBGM.name}");
+                    GameLogger.Log($"[GameManager] 战斗BGM已设置: {currentChapterConfig.battleBGM.name}");
                 }
             }
             // 否则使用 AudioManager 的默认战斗 BGM（在 OnSceneLoaded 中已处理）
@@ -387,12 +387,12 @@ namespace LightVsDecay.Logic
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[GameManager] 流体底色已设置: {currentChapterConfig.enemyBlobColor}");
+                    GameLogger.Log($"[GameManager] 流体底色已设置: {currentChapterConfig.enemyBlobColor}");
                 }
             }
             else
             {
-                Debug.LogWarning("[GameManager] 未找到 MetaballsManager，无法设置流体颜色！");
+                GameLogger.LogWarning("[GameManager] 未找到 MetaballsManager，无法设置流体颜色！");
             }
         }
         /// <summary>
@@ -423,7 +423,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log($"[GameManager] 游戏开始 - 章节{currentChapterIndex + 1} 难度{currentDifficulty}");
+                GameLogger.Log($"[GameManager] 游戏开始 - 章节{currentChapterIndex + 1} 难度{currentDifficulty}");
             }
         }
         
@@ -440,7 +440,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log("[GameManager] 游戏暂停");
+                GameLogger.Log("[GameManager] 游戏暂停");
             }
         }
         
@@ -457,7 +457,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log("[GameManager] 游戏恢复");
+                GameLogger.Log("[GameManager] 游戏恢复");
             }
         }
         
@@ -478,7 +478,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log("[GameManager] 游戏胜利！");
+                GameLogger.Log("[GameManager] 游戏胜利！");
             }
         }
         
@@ -496,7 +496,7 @@ namespace LightVsDecay.Logic
                 
                 if (unlockedNew && showDebugInfo)
                 {
-                    Debug.Log($"[GameManager] 解锁新章节: {currentChapterIndex + 2}");
+                    GameLogger.Log($"[GameManager] 解锁新章节: {currentChapterIndex + 2}");
                 }
             }
         }
@@ -515,7 +515,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log("[GameManager] 游戏失败！");
+                GameLogger.Log("[GameManager] 游戏失败！");
             }
         }
         
@@ -568,7 +568,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log("[GameManager] 进入BOSS战！");
+                GameLogger.Log("[GameManager] 进入BOSS战！");
             }
         }
         
@@ -585,7 +585,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log($"[GameManager] 状态变化: {newState}");
+                GameLogger.Log($"[GameManager] 状态变化: {newState}");
             }
         }
         

@@ -119,7 +119,7 @@ namespace LightVsDecay.Core.Pool
             {
                 if (config.prefab == null)
                 {
-                    Debug.LogWarning($"[VFXPoolManager] {config.type} 的预制体未设置");
+                    GameLogger.LogWarning($"[VFXPoolManager] {config.type} 的预制体未设置");
                     continue;
                 }
                 
@@ -140,12 +140,12 @@ namespace LightVsDecay.Core.Pool
                     
                     pools[config.type] = pool;
                     if (showDebugInfo)
-                        Debug.Log($"[VFXPoolManager] {config.type} 池初始化: 预热{config.prewarmCount}, 上限{config.maxCount}");
+                        GameLogger.Log($"[VFXPoolManager] {config.type} 池初始化: 预热{config.prewarmCount}, 上限{config.maxCount}");
                 }
                 else
                 {
                     if (showDebugInfo)
-                        Debug.Log($"[VFXPoolManager] {config.type} 使用普通Instantiate（非池化）");
+                        GameLogger.Log($"[VFXPoolManager] {config.type} 使用普通Instantiate（非池化）");
                 }
             }
         }
@@ -165,7 +165,7 @@ namespace LightVsDecay.Core.Pool
         {
             if (!configMap.TryGetValue(type, out var config))
             {
-                Debug.LogWarning($"[VFXPoolManager] 未配置的VFX类型: {type}");
+                GameLogger.LogWarning($"[VFXPoolManager] 未配置的VFX类型: {type}");
                 return null;
             }
             
@@ -207,7 +207,7 @@ namespace LightVsDecay.Core.Pool
     
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[VFXPoolManager] 播放非池化VFX: {config.type}, 将在 {destroyDelay:F2}s 后销毁");
+                    GameLogger.Log($"[VFXPoolManager] 播放非池化VFX: {config.type}, 将在 {destroyDelay:F2}s 后销毁");
                 }
     
                 return go;

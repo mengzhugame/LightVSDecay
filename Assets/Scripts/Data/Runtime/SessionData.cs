@@ -7,6 +7,7 @@
 
 using LightVsDecay.Data.SO;
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.Runtime
 {
@@ -315,7 +316,7 @@ namespace LightVsDecay.Data.Runtime
                     {
                         nextProgress.Unlock();
                         shouldUnlockNext = true;
-                        Debug.Log($"[MetaData] 章节 {nextIndex + 1} 已解锁！");
+                        GameLogger.Log($"[MetaData] 章节 {nextIndex + 1} 已解锁！");
                     }
                 }
             }
@@ -358,7 +359,7 @@ namespace LightVsDecay.Data.Runtime
             // 加载UI状态
             currentViewChapterIndex = PlayerPrefs.GetInt(KEY_VIEW_CHAPTER, 0);
             
-            Debug.Log($"[MetaData] 加载完成: Gems={gems}, Gold={goldCoins}, Energy={energy}, " +
+            GameLogger.Log($"[MetaData] 加载完成: Gems={gems}, Gold={goldCoins}, Energy={energy}, " +
                       $"Chapters={chapterProgress?.Length ?? 0}, Unlocked={UnlockedChapterIndex + 1}");
         }
         
@@ -389,7 +390,7 @@ namespace LightVsDecay.Data.Runtime
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogWarning($"[MetaData] 章节进度解析失败: {e.Message}");
+                    GameLogger.LogWarning($"[MetaData] 章节进度解析失败: {e.Message}");
                 }
             }
             
@@ -410,7 +411,7 @@ namespace LightVsDecay.Data.Runtime
                 // 第一章默认解锁
             }
             
-            Debug.Log($"[MetaData] 初始化 {chapterCount} 个章节，第1章已解锁");
+            GameLogger.Log($"[MetaData] 初始化 {chapterCount} 个章节，第1章已解锁");
         }
         
         /// <summary>
@@ -433,7 +434,7 @@ namespace LightVsDecay.Data.Runtime
                 chapterProgress[i] = new ChapterProgressData(i, false, 0);
             }
             
-            Debug.Log($"[MetaData] 章节数组扩展: {oldProgress.Length} -> {newCount}");
+            GameLogger.Log($"[MetaData] 章节数组扩展: {oldProgress.Length} -> {newCount}");
         }
         
         /// <summary>
@@ -492,7 +493,7 @@ namespace LightVsDecay.Data.Runtime
             
             Save();
             
-            Debug.Log("[MetaData] 所有数据已重置");
+            GameLogger.Log("[MetaData] 所有数据已重置");
         }
         
         /// <summary>
@@ -504,7 +505,7 @@ namespace LightVsDecay.Data.Runtime
             InitializeDefaultChapterProgress(chapterCount);
             Save();
             
-            Debug.Log("[MetaData] 章节进度已重置");
+            GameLogger.Log("[MetaData] 章节进度已重置");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -516,11 +517,11 @@ namespace LightVsDecay.Data.Runtime
         /// </summary>
         public void PrintChapterProgress()
         {
-            Debug.Log("[MetaData] ========== 章节进度 ==========");
+            GameLogger.Log("[MetaData] ========== 章节进度 ==========");
             
             if (chapterProgress == null || chapterProgress.Length == 0)
             {
-                Debug.Log("  (无数据)");
+                GameLogger.Log("  (无数据)");
                 return;
             }
             
@@ -528,10 +529,10 @@ namespace LightVsDecay.Data.Runtime
             {
                 var p = chapterProgress[i];
                 string status = p.isUnlocked ? (p.HasCompletedAll ? "★全通关" : $"已解锁({p.completedDifficulty}/5)") : "🔒锁定";
-                Debug.Log($"  章节{i + 1}: {status}");
+                GameLogger.Log($"  章节{i + 1}: {status}");
             }
             
-            Debug.Log("[MetaData] ================================");
+            GameLogger.Log("[MetaData] ================================");
         }
         
         /// <summary>
@@ -547,7 +548,7 @@ namespace LightVsDecay.Data.Runtime
             }
             
             Save();
-            Debug.Log("[MetaData] 调试：已解锁所有章节");
+            GameLogger.Log("[MetaData] 调试：已解锁所有章节");
         }
         
         /// <summary>
@@ -564,7 +565,7 @@ namespace LightVsDecay.Data.Runtime
             }
             
             Save();
-            Debug.Log("[MetaData] 调试：已完成所有章节所有难度");
+            GameLogger.Log("[MetaData] 调试：已完成所有章节所有难度");
         }
     }
     

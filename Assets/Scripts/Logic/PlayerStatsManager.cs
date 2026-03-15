@@ -207,7 +207,7 @@ namespace LightVsDecay.Logic
             OnStatsChanged?.Invoke();
 
             if (showDebugInfo)
-                Debug.Log($"[PlayerStatsManager] 属性更新 → HP:{FinalMaxHP} " +
+                GameLogger.Log($"[PlayerStatsManager] 属性更新 → HP:{FinalMaxHP} " +
                           $"ATK+{FinalFlatAttackBonus} CritR:{FinalCritRate * 100:F1}% " +
                           $"CritD:{FinalCritDamageMultiplier:F2}x Shield:{FinalMaxShield}");
         }
@@ -219,7 +219,7 @@ namespace LightVsDecay.Logic
         [ContextMenu("Debug: Print Final Stats")]
         public void DebugPrintStats()
         {
-            Debug.Log($"[PlayerStats] ===== 最终属性 =====\n" +
+            GameLogger.Log($"[PlayerStats] ===== 最终属性 =====\n" +
                       $"HP:      {BaseMaxHP} + {EquipmentHPBonus}(装) + {TechTreeHPBonus}(科) = {FinalMaxHP}\n" +
                       $"Shield:  {BaseMaxShield} + {EquipmentShieldBonus}(装) = {FinalMaxShield}\n" +
                       $"ATK:     flat +{FinalFlatAttackBonus}(装{EquipmentAttackBonus}+科{TechTreeAttackBonus})\n" +

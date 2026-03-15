@@ -5,6 +5,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -214,7 +215,7 @@ namespace LightVsDecay.Data.SO
                 return difficulties[index];
             }
             
-            Debug.LogWarning($"[ChapterConfig] 难度 {difficulty} 不存在！");
+            GameLogger.LogWarning($"[ChapterConfig] 难度 {difficulty} 不存在！");
             return null;
         }
         
@@ -246,7 +247,7 @@ namespace LightVsDecay.Data.SO
             }
             
             UnityEditor.EditorUtility.SetDirty(this);
-            Debug.Log($"[ChapterConfig] 已生成 {MAX_DIFFICULTY} 个默认难度配置");
+            GameLogger.Log($"[ChapterConfig] 已生成 {MAX_DIFFICULTY} 个默认难度配置");
         }
         
         /// <summary>
@@ -259,31 +260,31 @@ namespace LightVsDecay.Data.SO
             
             if (string.IsNullOrEmpty(chapterName))
             {
-                Debug.LogWarning($"[ChapterConfig] 章节名称为空！");
+                GameLogger.LogWarning($"[ChapterConfig] 章节名称为空！");
                 isValid = false;
             }
             
             if (chapterCardImage == null)
             {
-                Debug.LogWarning($"[ChapterConfig] 章节卡片图片未设置！");
+                GameLogger.LogWarning($"[ChapterConfig] 章节卡片图片未设置！");
                 isValid = false;
             }
             
             if (waveConfig == null)
             {
-                Debug.LogWarning($"[ChapterConfig] 波次配置未设置！");
+                GameLogger.LogWarning($"[ChapterConfig] 波次配置未设置！");
                 isValid = false;
             }
             
             if (difficulties == null || difficulties.Length != MAX_DIFFICULTY)
             {
-                Debug.LogWarning($"[ChapterConfig] 难度配置数量不正确！应为 {MAX_DIFFICULTY} 个");
+                GameLogger.LogWarning($"[ChapterConfig] 难度配置数量不正确！应为 {MAX_DIFFICULTY} 个");
                 isValid = false;
             }
             
             if (isValid)
             {
-                Debug.Log($"[ChapterConfig] 配置验证通过 ✓");
+                GameLogger.Log($"[ChapterConfig] 配置验证通过 ✓");
             }
         }
 #endif

@@ -3,6 +3,7 @@
 
 using UnityEngine;
 using UnityEngine.UI;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Enemy
 {
@@ -65,7 +66,7 @@ namespace LightVsDecay.Logic.Enemy
             metaballsRT.Create();
             if (showDebugInfo)
             {
-                Debug.Log($"[MetaballsManager] RenderTexture created: {width}x{height}, Format: {rtFormat}");
+                GameLogger.Log($"[MetaballsManager] RenderTexture created: {width}x{height}, Format: {rtFormat}");
             }
         }
         
@@ -89,7 +90,7 @@ namespace LightVsDecay.Logic.Enemy
             metaballsCamera.depth = -100;
             if (showDebugInfo)
             {
-                Debug.Log(
+                GameLogger.Log(
                     $"[MetaballsManager] Camera setup complete. Culling Mask: {LayerMask.LayerToName((int) Mathf.Log(enemyBodyLayer.value, 2))}");
             }
         }
@@ -101,7 +102,7 @@ namespace LightVsDecay.Logic.Enemy
         {
             if (displayBodyRTObj == null)
             {
-                Debug.LogError("[MetaballsManager] displayBodyRT is not assigned!");
+                GameLogger.LogError("[MetaballsManager] displayBodyRT is not assigned!");
                 return;
             }
 
@@ -121,7 +122,7 @@ namespace LightVsDecay.Logic.Enemy
                 Destroy(metaballsRT);
                 if (showDebugInfo)
                 {
-                    Debug.Log("[MetaballsManager] RenderTexture cleaned up");
+                    GameLogger.Log("[MetaballsManager] RenderTexture cleaned up");
                 }
             }
         }
@@ -153,12 +154,12 @@ namespace LightVsDecay.Logic.Enemy
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[MetaballsManager] Blob颜色已设置: {color}");
+                    GameLogger.Log($"[MetaballsManager] Blob颜色已设置: {color}");
                 }
             }
             else
             {
-                Debug.LogWarning("[MetaballsManager] thresholdMaterial 未初始化，无法设置颜色！");
+                GameLogger.LogWarning("[MetaballsManager] thresholdMaterial 未初始化，无法设置颜色！");
             }
         }
     }

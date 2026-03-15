@@ -42,7 +42,7 @@ namespace LightVsDecay.Core
             {
                 if (_isQuitting)
                 {
-                    Debug.LogWarning($"[AutoPersistentSingleton] {typeof(T).Name} 实例在退出时被请求，返回 null");
+                    GameLogger.LogWarning($"[AutoPersistentSingleton] {typeof(T).Name} 实例在退出时被请求，返回 null");
                     return null;
                 }
                 
@@ -104,11 +104,11 @@ namespace LightVsDecay.Core
                 
                 if (_instance == null)
                 {
-                    Debug.LogError($"[AutoPersistentSingleton] 预制体 Resources/{typeName} 上没有 {typeName} 组件！");
+                    GameLogger.LogError($"[AutoPersistentSingleton] 预制体 Resources/{typeName} 上没有 {typeName} 组件！");
                     _instance = instance.AddComponent<T>();
                 }
                 
-                Debug.Log($"[AutoPersistentSingleton] {typeName} 已从预制体创建");
+                GameLogger.Log($"[AutoPersistentSingleton] {typeName} 已从预制体创建");
             }
             else
             {
@@ -116,7 +116,7 @@ namespace LightVsDecay.Core
                 GameObject instance = new GameObject(typeName);
                 _instance = instance.AddComponent<T>();
                 
-                Debug.LogWarning($"[AutoPersistentSingleton] 未找到 Resources/{typeName} 预制体，已创建空实例。请确保配置正确！");
+                GameLogger.LogWarning($"[AutoPersistentSingleton] 未找到 Resources/{typeName} 预制体，已创建空实例。请确保配置正确！");
             }
             
             // 跨场景持久化
@@ -135,7 +135,7 @@ namespace LightVsDecay.Core
             // 处理重复实例
             if (_instance != null && _instance != this)
             {
-                Debug.LogWarning($"[AutoPersistentSingleton] {typeof(T).Name} 已存在，销毁重复实例: {gameObject.name}");
+                GameLogger.LogWarning($"[AutoPersistentSingleton] {typeof(T).Name} 已存在，销毁重复实例: {gameObject.name}");
                 Destroy(gameObject);
                 return;
             }

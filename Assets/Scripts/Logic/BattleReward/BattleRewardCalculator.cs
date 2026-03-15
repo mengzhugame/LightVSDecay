@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.BattleReward
 {
@@ -30,7 +31,7 @@ namespace LightVsDecay.Logic.BattleReward
 
             if (config == null || ctx == null)
             {
-                Debug.LogWarning("[BattleRewardCalculator] config 或 ctx 为 null，返回空奖励");
+                GameLogger.LogWarning("[BattleRewardCalculator] config 或 ctx 为 null，返回空奖励");
                 return result;
             }
 

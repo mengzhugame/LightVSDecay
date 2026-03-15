@@ -112,7 +112,7 @@ namespace LightVsDecay.Logic.Enemy
             else
             {
                 maxHealth = 5000f; // 默认值
-                Debug.LogWarning("[BossHealth] BossConfig 未设置，使用默认血量");
+                GameLogger.LogWarning("[BossHealth] BossConfig 未设置，使用默认血量");
             }
             
             currentHealth = maxHealth;
@@ -125,7 +125,7 @@ namespace LightVsDecay.Logic.Enemy
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossHealth] V3.1 初始化 - 血量: {currentHealth}/{maxHealth}, 材质数量: {(bodyMaterials != null ? bodyMaterials.Length : 0)}");
+                GameLogger.Log($"[BossHealth] V3.1 初始化 - 血量: {currentHealth}/{maxHealth}, 材质数量: {(bodyMaterials != null ? bodyMaterials.Length : 0)}");
             }
         }
         
@@ -256,7 +256,7 @@ namespace LightVsDecay.Logic.Enemy
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossHealth] 身体受击 - {baseDamage:F1} x {(1f - armorReduction):P0} = {actualDamage:F1}");
+                GameLogger.Log($"[BossHealth] 身体受击 - {baseDamage:F1} x {(1f - armorReduction):P0} = {actualDamage:F1}");
             }
         }
         
@@ -275,7 +275,7 @@ namespace LightVsDecay.Logic.Enemy
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BossHealth] 眼睛受击 - {baseDamage:F1} x {coreDamageMultiplier:P0} = {actualDamage:F1}");
+                GameLogger.Log($"[BossHealth] 眼睛受击 - {baseDamage:F1} x {coreDamageMultiplier:P0} = {actualDamage:F1}");
             }
         }
         /// <summary>
@@ -295,7 +295,7 @@ namespace LightVsDecay.Logic.Enemy
     
             if (showDebugInfo)
             {
-                Debug.Log($"[BossHealth] 💥 身体真实伤害 - {baseDamage:F1} → {actualDamage:F1} (无视护甲+连体Buff)");
+                GameLogger.Log($"[BossHealth] 💥 身体真实伤害 - {baseDamage:F1} → {actualDamage:F1} (无视护甲+连体Buff)");
             }
         }
 
@@ -317,7 +317,7 @@ namespace LightVsDecay.Logic.Enemy
     
             if (showDebugInfo)
             {
-                Debug.Log($"[BossHealth] 💥 眼睛真实伤害 - {baseDamage:F1} x {coreDamageMultiplier:P0} = {actualDamage:F1} (无视连体Buff)");
+                GameLogger.Log($"[BossHealth] 💥 眼睛真实伤害 - {baseDamage:F1} x {coreDamageMultiplier:P0} = {actualDamage:F1} (无视连体Buff)");
             }
         }
         public void TakeDirectDamage(float damage, Vector3 hitPosition)
@@ -394,7 +394,7 @@ namespace LightVsDecay.Logic.Enemy
             
             if (showDebugInfo)
             {
-                Debug.Log("[BossHealth] Boss 已死亡！");
+                GameLogger.Log("[BossHealth] Boss 已死亡！");
             }
             
             GameEvents.TriggerBossDeath();

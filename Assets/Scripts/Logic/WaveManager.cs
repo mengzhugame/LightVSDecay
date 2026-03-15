@@ -152,7 +152,7 @@ namespace LightVsDecay.Logic
                     
                     if (activeEnemies == 0 && enemiesKilled < totalEnemiesInWave)
                     {
-                        Debug.LogWarning($"[WaveManager] ⚠️ 波次卡死修复！" +
+                        GameLogger.LogWarning($"[WaveManager] ⚠️ 波次卡死修复！" +
                                          $"击杀={enemiesKilled}/{totalEnemiesInWave}, " +
                                          $"已生成={enemiesSpawned}, 强制完成波次");
                         totalEnemiesInWave = enemiesKilled;
@@ -173,22 +173,22 @@ namespace LightVsDecay.Logic
         private void OnGameStart()
         {
             // ★★★ 调试：检查配置传递 ★★★
-            Debug.Log($"[WaveManager] ========== 配置检查 ==========");
-            Debug.Log($"[WaveManager] GameManager.Instance 存在: {GameManager.Instance != null}");
+            GameLogger.Log($"[WaveManager] ========== 配置检查 ==========");
+            GameLogger.Log($"[WaveManager] GameManager.Instance 存在: {GameManager.Instance != null}");
             if (GameManager.Instance != null)
             {
-                Debug.Log($"[WaveManager] 章节索引: {GameManager.Instance.CurrentChapterIndex}");
-                Debug.Log($"[WaveManager] 难度等级: {GameManager.Instance.CurrentDifficulty}");
-                Debug.Log($"[WaveManager] ChapterConfig: {GameManager.Instance.CurrentChapterConfig?.chapterName ?? "NULL"}");
-                Debug.Log($"[WaveManager] GameManager.WaveConfig: {GameManager.Instance.WaveConfig?.name ?? "NULL"}");
+                GameLogger.Log($"[WaveManager] 章节索引: {GameManager.Instance.CurrentChapterIndex}");
+                GameLogger.Log($"[WaveManager] 难度等级: {GameManager.Instance.CurrentDifficulty}");
+                GameLogger.Log($"[WaveManager] ChapterConfig: {GameManager.Instance.CurrentChapterConfig?.chapterName ?? "NULL"}");
+                GameLogger.Log($"[WaveManager] GameManager.WaveConfig: {GameManager.Instance.WaveConfig?.name ?? "NULL"}");
             }
     
-            Debug.Log($"[WaveManager] 当前 waveConfig: {waveConfig?.name ?? "NULL"}");
-            Debug.Log($"[WaveManager] ================================");
+            GameLogger.Log($"[WaveManager] 当前 waveConfig: {waveConfig?.name ?? "NULL"}");
+            GameLogger.Log($"[WaveManager] ================================");
             
             if (showDebugInfo)
             {
-                Debug.Log("[WaveManager] 游戏开始！准备第一波");
+                GameLogger.Log("[WaveManager] 游戏开始！准备第一波");
             }
             // 【新增】从 GameManager 获取当前章节的 WaveConfig
             if (GameManager.Instance != null && GameManager.Instance.WaveConfig != null)
@@ -197,7 +197,7 @@ namespace LightVsDecay.Logic
         
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[WaveManager] 使用章节波次配置: {waveConfig.name}");
+                    GameLogger.Log($"[WaveManager] 使用章节波次配置: {waveConfig.name}");
                 }
             }
             currentWaveNumber = 0;
@@ -215,7 +215,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log($"[WaveManager] 敌人击杀: {enemiesKilled}/{totalEnemiesInWave}");
+                GameLogger.Log($"[WaveManager] 敌人击杀: {enemiesKilled}/{totalEnemiesInWave}");
             }
             
             CheckWaveComplete();
@@ -227,7 +227,7 @@ namespace LightVsDecay.Logic
     
             if (showDebugInfo)
             {
-                Debug.Log("[WaveManager] ★★★ BOSS 已击败！★★★");
+                GameLogger.Log("[WaveManager] ★★★ BOSS 已击败！★★★");
             }
     
             // BOSS 死亡 = 清除所有残余小怪
@@ -249,7 +249,7 @@ namespace LightVsDecay.Logic
         {
             if (showDebugInfo)
             {
-                Debug.Log($"[WaveManager] 状态切换: {currentState} -> {newState}");
+                GameLogger.Log($"[WaveManager] 状态切换: {currentState} -> {newState}");
             }
             
             currentState = newState;
@@ -272,7 +272,7 @@ namespace LightVsDecay.Logic
                 var buff = TacticalDropManager.Instance.ConsumeNextWaveBuff();
                 if (buff.HasBuff && showDebugInfo)
                 {
-                    Debug.Log($"[WaveManager] 应用空投怪物增强: Speed={buff.speedMultiplier:P0}, HP={buff.healthMultiplier:P0}, DMG={buff.damageMultiplier:P0}");
+                    GameLogger.Log($"[WaveManager] 应用空投怪物增强: Speed={buff.speedMultiplier:P0}, HP={buff.healthMultiplier:P0}, DMG={buff.damageMultiplier:P0}");
                 }
             }
             if (currentWaveNumber > TotalWaves)
@@ -288,20 +288,20 @@ namespace LightVsDecay.Logic
             // ★★★ 调试：打印所有 SpawnGroup 的详细信息 ★★★
             if (showDebugInfo && currentWaveData != null)
             {
-                Debug.Log($"[WaveManager] ====== 波次 {currentWaveNumber} SpawnGroups 详情 ======");
-                Debug.Log($"[WaveManager] WaveConfig 资源: {waveConfig.name}");
-                Debug.Log($"[WaveManager] SpawnGroups 数量: {currentWaveData.spawnGroups.Count}");
+                GameLogger.Log($"[WaveManager] ====== 波次 {currentWaveNumber} SpawnGroups 详情 ======");
+                GameLogger.Log($"[WaveManager] WaveConfig 资源: {waveConfig.name}");
+                GameLogger.Log($"[WaveManager] SpawnGroups 数量: {currentWaveData.spawnGroups.Count}");
     
                 for (int i = 0; i < currentWaveData.spawnGroups.Count; i++)
                 {
                     var g = currentWaveData.spawnGroups[i];
-                    Debug.Log($"[WaveManager]   [{i}] {g.enemyType} x{g.count} @ {g.spawnTime}s | Pattern={g.pattern}");
+                    GameLogger.Log($"[WaveManager]   [{i}] {g.enemyType} x{g.count} @ {g.spawnTime}s | Pattern={g.pattern}");
                 }
-                Debug.Log($"[WaveManager] ================================================");
+                GameLogger.Log($"[WaveManager] ================================================");
             }
             if (currentWaveData == null)
             {
-                Debug.LogError($"[WaveManager] 找不到波次 {currentWaveNumber} 的配置！");
+                GameLogger.LogError($"[WaveManager] 找不到波次 {currentWaveNumber} 的配置！");
                 return;
             }
             
@@ -320,11 +320,11 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log($"[WaveManager] ========== 波次 {currentWaveNumber}/{TotalWaves} 开始！ ==========");
-                Debug.Log($"[WaveManager] 名称: {currentWaveData.displayName}");
-                Debug.Log($"[WaveManager] 提示: {currentWaveData.hintText}");
-                Debug.Log($"[WaveManager] 敌人总数: {totalEnemiesInWave}");
-                Debug.Log($"[WaveManager] 难度倍率: x{currentWaveData.difficultyMultiplier}");
+                GameLogger.Log($"[WaveManager] ========== 波次 {currentWaveNumber}/{TotalWaves} 开始！ ==========");
+                GameLogger.Log($"[WaveManager] 名称: {currentWaveData.displayName}");
+                GameLogger.Log($"[WaveManager] 提示: {currentWaveData.hintText}");
+                GameLogger.Log($"[WaveManager] 敌人总数: {totalEnemiesInWave}");
+                GameLogger.Log($"[WaveManager] 难度倍率: x{currentWaveData.difficultyMultiplier}");
             }
             
             ChangeState(WaveState.Spawning);
@@ -357,8 +357,8 @@ namespace LightVsDecay.Logic
         {
             if (showDebugInfo)
             {
-                Debug.Log($"[WaveManager] ========== BOSS 波开始！ ==========");
-                Debug.Log($"[WaveManager] {currentWaveData.hintText}");
+                GameLogger.Log($"[WaveManager] ========== BOSS 波开始！ ==========");
+                GameLogger.Log($"[WaveManager] {currentWaveData.hintText}");
             }
             
             // 清空场上所有小怪
@@ -387,13 +387,13 @@ namespace LightVsDecay.Logic
         {
             if (bossPrefab == null)
             {
-                Debug.LogError("[WaveManager] BOSS 预制体未设置！");
+                GameLogger.LogError("[WaveManager] BOSS 预制体未设置！");
                 return;
             }
             
             if (bossSpawned)
             {
-                Debug.LogWarning("[WaveManager] BOSS 已经生成过了！");
+                GameLogger.LogWarning("[WaveManager] BOSS 已经生成过了！");
                 return;
             }
             
@@ -403,7 +403,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log($"[WaveManager] BOSS 已生成 @ {spawnPos}");
+                GameLogger.Log($"[WaveManager] BOSS 已生成 @ {spawnPos}");
             }
         }
         
@@ -441,7 +441,7 @@ namespace LightVsDecay.Logic
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[WaveManager] 所有敌人已生成！共 {enemiesSpawned} 只");
+                    GameLogger.Log($"[WaveManager] 所有敌人已生成！共 {enemiesSpawned} 只");
                 }
     
                 ChangeState(WaveState.Battle);
@@ -475,7 +475,7 @@ namespace LightVsDecay.Logic
             if (showDebugInfo)
             {
                 string patternStr = interval <= 0 ? "Instant" : $"{group.pattern}({interval}s)";
-                Debug.Log($"[WaveManager] 刷怪组: {group.enemyType} x{group.count} @ {group.spawnTime}s | {patternStr}");
+                GameLogger.Log($"[WaveManager] 刷怪组: {group.enemyType} x{group.count} @ {group.spawnTime}s | {patternStr}");
             }
         }
         
@@ -488,7 +488,7 @@ namespace LightVsDecay.Logic
             {
                 if (EnemyPoolManager.Instance.IsAtGlobalCapacity)
                 {
-                    Debug.LogWarning("[WaveManager] 达到全局敌人上限！");
+                    GameLogger.LogWarning("[WaveManager] 达到全局敌人上限！");
                     break;
                 }
                 
@@ -513,7 +513,7 @@ namespace LightVsDecay.Logic
         
                 if (EnemyPoolManager.Instance.IsAtGlobalCapacity)
                 {
-                    Debug.LogWarning("[WaveManager] 达到全局敌人上限！");
+                    GameLogger.LogWarning("[WaveManager] 达到全局敌人上限！");
                     break;  // ★ 改为 break，确保执行 finally 逻辑
                 }
         
@@ -531,7 +531,7 @@ namespace LightVsDecay.Logic
     
             if (showDebugInfo)
             {
-                Debug.Log($"[WaveManager] 刷怪组完成: {group.enemyType} x{group.count}, 剩余活跃协程: {activeSpawnCoroutineCount}");
+                GameLogger.Log($"[WaveManager] 刷怪组完成: {group.enemyType} x{group.count}, 剩余活跃协程: {activeSpawnCoroutineCount}");
             }
         }
         
@@ -550,7 +550,7 @@ namespace LightVsDecay.Logic
             // ★ 检查对象池（仅对普通敌人）
             if (!EnemyPoolManager.Instance.HasPool(group.enemyType))
             {
-                Debug.LogWarning($"[WaveManager] 敌人类型 {group.enemyType} 没有对象池！");
+                GameLogger.LogWarning($"[WaveManager] 敌人类型 {group.enemyType} 没有对象池！");
                 return;
             }
 
@@ -585,7 +585,7 @@ namespace LightVsDecay.Logic
         {
             if (DrifterSpawnHelper.Instance == null)
             {
-                Debug.LogError("[WaveManager] DrifterSpawnHelper 不存在！使用普通生成");
+                GameLogger.LogError("[WaveManager] DrifterSpawnHelper 不存在！使用普通生成");
                 // 降级：使用普通生成
                 Vector3 position = GetSpawnPosition(group.spawnZone);
                 EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(group.enemyType, position);
@@ -621,7 +621,7 @@ namespace LightVsDecay.Logic
             
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[WaveManager] Drifter 特殊生成完成 @ {drifter.transform.position}");
+                        GameLogger.Log($"[WaveManager] Drifter 特殊生成完成 @ {drifter.transform.position}");
                     }
                 }
             });
@@ -645,7 +645,7 @@ namespace LightVsDecay.Logic
     
             if (prefab == null)
             {
-                Debug.LogError($"[WaveManager] 精英怪预制体未设置: {group.enemyType}，请在 Inspector 中配置！");
+                GameLogger.LogError($"[WaveManager] 精英怪预制体未设置: {group.enemyType}，请在 Inspector 中配置！");
                 return;
             }
     
@@ -668,12 +668,12 @@ namespace LightVsDecay.Logic
         
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[WaveManager] ⭐ 精英怪已生成: {group.enemyType} @ {position}");
+                    GameLogger.Log($"[WaveManager] ⭐ 精英怪已生成: {group.enemyType} @ {position}");
                 }
             }
             else
             {
-                Debug.LogError($"[WaveManager] 精英怪预制体缺少 EnemyBlob 组件: {group.enemyType}");
+                GameLogger.LogError($"[WaveManager] 精英怪预制体缺少 EnemyBlob 组件: {group.enemyType}");
             }
         }
         /// <summary>
@@ -697,7 +697,7 @@ namespace LightVsDecay.Logic
         
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[WaveManager] 章节难度: HP x{chapterHealthMult}, Speed x{chapterSpeedMult}");
+                    GameLogger.Log($"[WaveManager] 章节难度: HP x{chapterHealthMult}, Speed x{chapterSpeedMult}");
                 }
             }
             // 【新增】获取来自空投系统的额外增强
@@ -754,7 +754,7 @@ namespace LightVsDecay.Logic
             int activeEnemies = EnemyPoolManager.Instance != null ? EnemyPoolManager.Instance.TotalActiveEnemies : -1;
             if (enemiesKilled < totalEnemiesInWave && activeEnemies == 0)
             {
-                Debug.LogError($"[DIAG] ⚠️ 波次卡死！击杀={enemiesKilled}/{totalEnemiesInWave}, " +
+                GameLogger.LogError($"[DIAG] ⚠️ 波次卡死！击杀={enemiesKilled}/{totalEnemiesInWave}, " +
                                $"已生成={enemiesSpawned}, 场上存活={activeEnemies}, " +
                                $"丢失={totalEnemiesInWave - enemiesKilled}只敌人未触发死亡事件！");
             }
@@ -775,8 +775,8 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log($"[WaveManager] ========== 波次 {currentWaveNumber}/{TotalWaves} 完成！ ==========");
-                Debug.Log($"[WaveManager] 击杀数: {enemiesKilled}");
+                GameLogger.Log($"[WaveManager] ========== 波次 {currentWaveNumber}/{TotalWaves} 完成！ ==========");
+                GameLogger.Log($"[WaveManager] 击杀数: {enemiesKilled}");
             }
             
             StartWaveInterval();
@@ -788,7 +788,7 @@ namespace LightVsDecay.Logic
         private void StartWaveInterval()
         {
             // ★★★ 诊断日志 ★★★
-            Debug.Log($"[DIAG] StartWaveInterval 调用！Wave={currentWaveNumber}, " +
+            GameLogger.Log($"[DIAG] StartWaveInterval 调用！Wave={currentWaveNumber}, " +
                       $"TacticalDropManager.Instance={TacticalDropManager.Instance != null}, " +
                       $"IsBossWave={IsBossWave}, " +
                       $"OnWaveComplete订阅数={GameEvents.GetWaveCompleteListenerCount()}");
@@ -797,7 +797,7 @@ namespace LightVsDecay.Logic
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[WaveManager] 宝箱系统已激活，等待玩家选择...");
+                    GameLogger.Log("[WaveManager] 宝箱系统已激活，等待玩家选择...");
                 }
         
                 // 修复：启动超时/故障检测协程。如果宝箱没出来，自动跳过。
@@ -829,7 +829,7 @@ namespace LightVsDecay.Logic
             {
                 if (showDebugInfo)
                 {
-                    Debug.LogWarning("[WaveManager] ⚠️ 检测到 Drop 阶段异常（无宝箱），强制进入下一波！");
+                    GameLogger.LogWarning("[WaveManager] ⚠️ 检测到 Drop 阶段异常（无宝箱），强制进入下一波！");
                 }
         
                 // 强制开始下一波，防止卡死
@@ -842,7 +842,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log($"[WaveManager] 波次间隔: {interval}s");
+                GameLogger.Log($"[WaveManager] 波次间隔: {interval}s");
             }
             
             yield return new WaitForSeconds(interval);
@@ -866,7 +866,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log("[WaveManager] 已清除所有敌人");
+                GameLogger.Log("[WaveManager] 已清除所有敌人");
             }
         }
         
@@ -1002,7 +1002,7 @@ namespace LightVsDecay.Logic
         {
             if (bossSpawned)
             {
-                Debug.LogWarning("[WaveManager] BOSS 已经生成过了！");
+                GameLogger.LogWarning("[WaveManager] BOSS 已经生成过了！");
                 return;
             }
             
@@ -1020,7 +1020,7 @@ namespace LightVsDecay.Logic
                 Destroy(currentBossInstance);
                 currentBossInstance = null;
                 bossSpawned = false;
-                Debug.Log("[WaveManager] BOSS 已销毁");
+                GameLogger.Log("[WaveManager] BOSS 已销毁");
             }
         }
         

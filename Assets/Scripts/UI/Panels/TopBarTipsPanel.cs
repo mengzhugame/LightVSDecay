@@ -31,6 +31,7 @@ using UnityEngine.UI;
 using TMPro;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Equipment;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -177,7 +178,7 @@ namespace LightVsDecay.UI.Panels
             RefreshAll();
 
             if (showDebugInfo)
-                Debug.Log($"[TopBarTipsPanel] 打开，模式: {mode}");
+                GameLogger.Log($"[TopBarTipsPanel] 打开，模式: {mode}");
         }
 
         public void Hide()
@@ -186,7 +187,7 @@ namespace LightVsDecay.UI.Panels
             gameObject.SetActive(false);
 
             if (showDebugInfo)
-                Debug.Log("[TopBarTipsPanel] 关闭");
+                GameLogger.Log("[TopBarTipsPanel] 关闭");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -344,7 +345,7 @@ namespace LightVsDecay.UI.Panels
             }
 
             if (showDebugInfo)
-                Debug.Log($"[TopBarTipsPanel] 广告({_currentMode}) 结果: {success}");
+                GameLogger.Log($"[TopBarTipsPanel] 广告({_currentMode}) 结果: {success}");
 
             // ★ 广告成功后关闭面板
             if (success)

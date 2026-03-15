@@ -210,7 +210,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo && buff.HasBuff)
             {
-                Debug.Log($"[TacticalDropManager] 应用下波增强: Speed={buff.speedMultiplier:P0}, HP={buff.healthMultiplier:P0}, DMG={buff.damageMultiplier:P0}");
+                GameLogger.Log($"[TacticalDropManager] 应用下波增强: Speed={buff.speedMultiplier:P0}, HP={buff.healthMultiplier:P0}, DMG={buff.damageMultiplier:P0}");
             }
             
             return buff;
@@ -225,7 +225,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalDropManager] 下一波移速增强: +{percent:P0} → 总计 {nextWaveBuff.speedMultiplier:P0}");
+                GameLogger.Log($"[TacticalDropManager] 下一波移速增强: +{percent:P0} → 总计 {nextWaveBuff.speedMultiplier:P0}");
             }
         }
         
@@ -238,7 +238,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalDropManager] 下一波血量增强: +{percent:P0} → 总计 {nextWaveBuff.healthMultiplier:P0}");
+                GameLogger.Log($"[TacticalDropManager] 下一波血量增强: +{percent:P0} → 总计 {nextWaveBuff.healthMultiplier:P0}");
             }
         }
         
@@ -251,7 +251,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalDropManager] 下一波伤害增强: +{percent:P0} → 总计 {nextWaveBuff.damageMultiplier:P0}");
+                GameLogger.Log($"[TacticalDropManager] 下一波伤害增强: +{percent:P0} → 总计 {nextWaveBuff.damageMultiplier:P0}");
             }
         }
         
@@ -271,7 +271,7 @@ namespace LightVsDecay.Logic.TacticalDrop
 
             if (showDebugInfo)
             {
-                Debug.Log("[TacticalDropManager] 游戏开始，重置状态");
+                GameLogger.Log("[TacticalDropManager] 游戏开始，重置状态");
             }
         }
         // 3. 新增 OnGameOver 方法
@@ -294,7 +294,7 @@ namespace LightVsDecay.Logic.TacticalDrop
     
             if (showDebugInfo)
             {
-                Debug.Log("[TacticalDropManager] 游戏结束，重置空投加成");
+                GameLogger.Log("[TacticalDropManager] 游戏结束，重置空投加成");
             }
         }
         /// <summary>
@@ -307,14 +307,14 @@ namespace LightVsDecay.Logic.TacticalDrop
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[TacticalDropManager] Boss 波，跳过空投");
+                    GameLogger.Log("[TacticalDropManager] Boss 波，跳过空投");
                 }
                 return;
             }
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalDropManager] 波次 {completedWave} 完成，开始空投！");
+                GameLogger.Log($"[TacticalDropManager] 波次 {completedWave} 完成，开始空投！");
             }
             
             StartCoroutine(StartDropPhase());
@@ -346,7 +346,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log("[TacticalDropManager] 所有无人机已落地，等待玩家选择...");
+                GameLogger.Log("[TacticalDropManager] 所有无人机已落地，等待玩家选择...");
             }
         }
         
@@ -400,7 +400,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         {
             if (prefab == null)
             {
-                Debug.LogError($"[TacticalDropManager] 无人机预制体为空: {type}");
+                GameLogger.LogError($"[TacticalDropManager] 无人机预制体为空: {type}");
                 return;
             }
             
@@ -410,7 +410,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             TacticalCrate crate = crateObj.GetComponent<TacticalCrate>();
             if (crate == null)
             {
-                Debug.LogError($"[TacticalDropManager] 预制体缺少 TacticalCrate 组件: {type}");
+                GameLogger.LogError($"[TacticalDropManager] 预制体缺少 TacticalCrate 组件: {type}");
                 Destroy(crateObj);
                 return;
             }
@@ -425,7 +425,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalDropManager] 生成无人机: {type} @ ({xPos}, {spawnStartY}) → Y={landingY}");
+                GameLogger.Log($"[TacticalDropManager] 生成无人机: {type} @ ({xPos}, {spawnStartY}) → Y={landingY}");
             }
         }
         
@@ -442,7 +442,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalDropManager] 宝箱被击破: {destroyedCrate.CrateType}");
+                GameLogger.Log($"[TacticalDropManager] 宝箱被击破: {destroyedCrate.CrateType}");
             }
             
             // 让其他宝箱消失
@@ -492,7 +492,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             RewardEntry reward = rewardConfig.GetRandomSupplyReward(isShieldBroken);
             if (reward == null)
             {
-                Debug.LogWarning("[TacticalDropManager] 补给箱奖励池为空！");
+                GameLogger.LogWarning("[TacticalDropManager] 补给箱奖励池为空！");
                 EndDropPhase();
                 return;
             }
@@ -535,7 +535,7 @@ namespace LightVsDecay.Logic.TacticalDrop
     
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalDropManager] 金箱结果: {resultType}, 保底触发={forceEpic}");
+                GameLogger.Log($"[TacticalDropManager] 金箱结果: {resultType}, 保底触发={forceEpic}");
             }
     
             // 更新保底计数
@@ -631,7 +631,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             DealEntry deal = rewardConfig.GetRandomDeal(isShieldBroken);
             if (deal == null)
             {
-                Debug.LogWarning("[TacticalDropManager] 契约箱交易池为空！");
+                GameLogger.LogWarning("[TacticalDropManager] 契约箱交易池为空！");
                 EndDropPhase();
                 return;
             }
@@ -753,7 +753,7 @@ namespace LightVsDecay.Logic.TacticalDrop
                         
                         if (showDebugInfo)
                         {
-                            Debug.Log($"[TacticalDropManager] 获得金币: +{reward.value}");
+                            GameLogger.Log($"[TacticalDropManager] 获得金币: +{reward.value}");
                         }
                     }
                     break;
@@ -767,7 +767,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         
                         if (showDebugInfo)
                         {
-                            Debug.Log($"[TacticalDropManager] 血量扣除: -{actualLoss}, 剩余: {turretHealth.CurrentHullHP}");
+                            GameLogger.Log($"[TacticalDropManager] 血量扣除: -{actualLoss}, 剩余: {turretHealth.CurrentHullHP}");
                         }
                     }
                     break;
@@ -787,7 +787,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         
                         if (showDebugInfo)
                         {
-                            Debug.Log($"[TacticalDropManager] 护盾扣除: -{loss}, 剩余: {shieldController.CurrentShieldHP}");
+                            GameLogger.Log($"[TacticalDropManager] 护盾扣除: -{loss}, 剩余: {shieldController.CurrentShieldHP}");
                         }
                     }
                     break;
@@ -853,7 +853,7 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TacticalDropManager] 应用奖励: {reward.type} = {reward.value}");
+                GameLogger.Log($"[TacticalDropManager] 应用奖励: {reward.type} = {reward.value}");
             }
         }
 
@@ -875,10 +875,10 @@ namespace LightVsDecay.Logic.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log("[TacticalDropManager] 空投阶段结束，开始下一波");
+                GameLogger.Log("[TacticalDropManager] 空投阶段结束，开始下一波");
                 if (nextWaveBuff.HasBuff)
                 {
-                    Debug.Log($"[TacticalDropManager] 下波增强待生效: Speed={nextWaveBuff.speedMultiplier:P0}, HP={nextWaveBuff.healthMultiplier:P0}, DMG={nextWaveBuff.damageMultiplier:P0}");
+                    GameLogger.Log($"[TacticalDropManager] 下波增强待生效: Speed={nextWaveBuff.speedMultiplier:P0}, HP={nextWaveBuff.healthMultiplier:P0}, DMG={nextWaveBuff.damageMultiplier:P0}");
                 }
             }
             

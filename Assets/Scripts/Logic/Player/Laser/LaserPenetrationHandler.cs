@@ -6,6 +6,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -75,7 +76,7 @@ namespace LightVsDecay.Logic.Player
             if (showDebugInfo)
             {
                 string penetrationInfo = count == -1 ? "无限" : count.ToString();
-                Debug.Log($"[LaserPenetrationHandler] 穿透设置: 数量={penetrationInfo}, 衰减={decay:P0}, Boss真伤={trueDamage}");
+                GameLogger.Log($"[LaserPenetrationHandler] 穿透设置: 数量={penetrationInfo}, 衰减={decay:P0}, Boss真伤={trueDamage}");
             }
         }
         

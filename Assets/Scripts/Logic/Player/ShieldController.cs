@@ -151,7 +151,7 @@ namespace LightVsDecay.Logic.Player
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[ShieldController] 从 GameSettings 加载: maxShieldHP = {maxShieldHP}");
+                    GameLogger.Log($"[ShieldController] 从 GameSettings 加载: maxShieldHP = {maxShieldHP}");
                 }
             }
             else
@@ -160,14 +160,14 @@ namespace LightVsDecay.Logic.Player
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[ShieldController] GameSettings 未设置，使用默认值: maxShieldHP = {maxShieldHP}");
+                    GameLogger.Log($"[ShieldController] GameSettings 未设置，使用默认值: maxShieldHP = {maxShieldHP}");
                 }
             }
             
             // 安全检查：防止异常值
             if (maxShieldHP <= 0 || maxShieldHP > 100000)
             {
-                Debug.LogWarning($"[ShieldController] ⚠️ maxShieldHP 异常值: {maxShieldHP}，重置为 500");
+                GameLogger.LogWarning($"[ShieldController] ⚠️ maxShieldHP 异常值: {maxShieldHP}，重置为 500");
                 maxShieldHP = 500;
             }
         }
@@ -228,7 +228,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[ShieldController] 护盾受伤: -{damage}, 剩余: {currentShieldHP}/{maxShieldHP}, 溢出: {overflow}");
+                GameLogger.Log($"[ShieldController] 护盾受伤: -{damage}, 剩余: {currentShieldHP}/{maxShieldHP}, 溢出: {overflow}");
             }
             
             // 检查护盾是否刚刚破碎
@@ -260,7 +260,7 @@ namespace LightVsDecay.Logic.Player
         {
             if (showDebugInfo)
             {
-                Debug.Log("[ShieldController] 💔 护盾破碎！触发冲击波！");
+                GameLogger.Log("[ShieldController] 💔 护盾破碎！触发冲击波！");
             }
             
             // 触发冲击波
@@ -387,7 +387,7 @@ namespace LightVsDecay.Logic.Player
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[ShieldController] 冲击波击杀小怪: {enemy.name}");
+                        GameLogger.Log($"[ShieldController] 冲击波击杀小怪: {enemy.name}");
                     }
                 }
                 else
@@ -397,7 +397,7 @@ namespace LightVsDecay.Logic.Player
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[ShieldController] 冲击波击退大怪: {enemy.name}");
+                        GameLogger.Log($"[ShieldController] 冲击波击退大怪: {enemy.name}");
                     }
                 }
             }
@@ -507,7 +507,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[ShieldController] 恢复护盾 +{actualRestore}: {currentShieldHP}/{maxShieldHP}");
+                GameLogger.Log($"[ShieldController] 恢复护盾 +{actualRestore}: {currentShieldHP}/{maxShieldHP}");
             }
         }
         

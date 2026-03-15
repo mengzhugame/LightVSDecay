@@ -12,6 +12,7 @@ using LightVsDecay.Data.SO;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Equipment;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI.Equipment
 {
@@ -129,7 +130,7 @@ namespace LightVsDecay.UI.Equipment
             bool isMax = curLv >= maxLv;
             int  nxtLv = Mathf.Min(curLv + 1, maxLv);
 
-            Debug.Log($"[UpgradePanel] GoldCoins={ProgressManager.Instance?.GoldCoins}, Blueprints={EquipmentManager.Instance?.Blueprints}, GoldCost={data.GetLevelUpGoldCost(curLv)}, BpCost={data.GetLevelUpBlueprintCost(curLv)}");
+            GameLogger.Log($"[UpgradePanel] GoldCoins={ProgressManager.Instance?.GoldCoins}, Blueprints={EquipmentManager.Instance?.Blueprints}, GoldCost={data.GetLevelUpGoldCost(curLv)}, BpCost={data.GetLevelUpBlueprintCost(curLv)}");
             
             // ── 图标 / 名称 ──
             if (itemIcon != null && data.icon != null) itemIcon.sprite = data.icon;
@@ -229,7 +230,7 @@ namespace LightVsDecay.UI.Equipment
         {
             if (ProgressManager.Instance == null)
             {
-                Debug.LogWarning("[UpgradePanel] ProgressManager.Instance 为空，无法检查金币！");
+                GameLogger.LogWarning("[UpgradePanel] ProgressManager.Instance 为空，无法检查金币！");
                 return false;
             }
             return ProgressManager.Instance.GoldCoins >= cost;
@@ -239,7 +240,7 @@ namespace LightVsDecay.UI.Equipment
         {
             if (EquipmentManager.Instance == null)
             {
-                Debug.LogWarning("[UpgradePanel] EquipmentManager.Instance 为空，无法检查图纸！");
+                GameLogger.LogWarning("[UpgradePanel] EquipmentManager.Instance 为空，无法检查图纸！");
                 return false;
             }
             return EquipmentManager.Instance.Blueprints >= cost;

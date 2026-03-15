@@ -6,6 +6,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.Runtime
 {
@@ -59,7 +60,7 @@ namespace LightVsDecay.Data.Runtime
             SelectedDifficulty = Mathf.Clamp(difficulty, 1, 5);
             IsConfigured = true;
             
-            Debug.Log($"[GameSessionConfig] 设置会话: 章节={SelectedChapterNumber}, 难度={SelectedDifficulty}");
+            GameLogger.Log($"[GameSessionConfig] 设置会话: 章节={SelectedChapterNumber}, 难度={SelectedDifficulty}");
         }
         
         /// <summary>
@@ -71,7 +72,7 @@ namespace LightVsDecay.Data.Runtime
             SelectedDifficulty = 1;
             IsConfigured = false;
             
-            Debug.Log("[GameSessionConfig] 会话配置已重置");
+            GameLogger.Log("[GameSessionConfig] 会话配置已重置");
         }
         
         /// <summary>
@@ -81,7 +82,7 @@ namespace LightVsDecay.Data.Runtime
         {
             if (!IsConfigured)
             {
-                Debug.LogWarning("[GameSessionConfig] 未配置会话，使用默认值: 章节1, 难度1");
+                GameLogger.LogWarning("[GameSessionConfig] 未配置会话，使用默认值: 章节1, 难度1");
                 Set(0, 1);
             }
         }

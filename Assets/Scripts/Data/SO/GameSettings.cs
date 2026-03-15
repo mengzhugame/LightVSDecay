@@ -6,6 +6,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -146,25 +147,25 @@ namespace LightVsDecay.Data.SO
         [ContextMenu("打印经验表")]
         public void PrintExpTable()
         {
-            Debug.Log("=== 经验表 ===");
+            GameLogger.Log("=== 经验表 ===");
             int cumulative = 0;
             for (int lv = 1; lv < maxLevel; lv++)
             {
                 int need = CalculateExpToNextLevel(lv);
                 cumulative += need;
-                Debug.Log($"Lv.{lv} → {lv + 1}: {need} XP (累计: {cumulative})");
+                GameLogger.Log($"Lv.{lv} → {lv + 1}: {need} XP (累计: {cumulative})");
             }
         }
         
         [ContextMenu("验证数值")]
         public void ValidateSettings()
         {
-            Debug.Log("=== GameSettings 验证 ===");
-            Debug.Log($"DPS: {baseDPS}, Tick: {tickRate}s, 单次伤害: {DamagePerTick}");
-            Debug.Log($"激光: 长度={maxLaserLength}, 宽度={baseLaserWidth}");
-            Debug.Log($"暴击: {baseCritRate:P0} / {critDamageMultiplier:P0}");
-            Debug.Log($"护盾: {maxShieldHP}, 本体: {maxHullHP}");
-            Debug.Log($"Lv1→20 累计经验: {CalculateTotalExpForLevel(maxLevel)}");
+            GameLogger.Log("=== GameSettings 验证 ===");
+            GameLogger.Log($"DPS: {baseDPS}, Tick: {tickRate}s, 单次伤害: {DamagePerTick}");
+            GameLogger.Log($"激光: 长度={maxLaserLength}, 宽度={baseLaserWidth}");
+            GameLogger.Log($"暴击: {baseCritRate:P0} / {critDamageMultiplier:P0}");
+            GameLogger.Log($"护盾: {maxShieldHP}, 本体: {maxHullHP}");
+            GameLogger.Log($"Lv1→20 累计经验: {CalculateTotalExpForLevel(maxLevel)}");
         }
 #endif
     }

@@ -5,6 +5,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -51,7 +52,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserKnockbackHandler] 初始化: 基础击退力={baseForce}");
+                GameLogger.Log($"[LaserKnockbackHandler] 初始化: 基础击退力={baseForce}");
             }
         }
         
@@ -112,7 +113,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserKnockbackHandler] 击退倍率设置: {multiplier:P0}");
+                GameLogger.Log($"[LaserKnockbackHandler] 击退倍率设置: {multiplier:P0}");
             }
         }
         

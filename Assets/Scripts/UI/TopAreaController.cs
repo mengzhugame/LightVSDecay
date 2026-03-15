@@ -33,6 +33,7 @@ using LightVsDecay.Audio;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Equipment;
 using LightVsDecay.UI.Panels;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI
 {
@@ -155,7 +156,7 @@ namespace LightVsDecay.UI
             if (backButton    != null) backButton.gameObject.SetActive(!isMain);
 
             if (showDebugInfo)
-                Debug.Log($"[TopAreaController] NavState={state} " +
+                GameLogger.Log($"[TopAreaController] NavState={state} " +
                           $"Setting={isMain} Back={!isMain}");
         }
 
@@ -170,10 +171,10 @@ namespace LightVsDecay.UI
             if (settingsPanel != null)
                 settingsPanel.Show(false);   // false = 主界面，不显示重启按钮
             else
-                Debug.LogWarning("[TopAreaController] settingsPanel 未绑定！");
+                GameLogger.LogWarning("[TopAreaController] settingsPanel 未绑定！");
 
             if (showDebugInfo)
-                Debug.Log("[TopAreaController] 打开设置面板");
+                GameLogger.Log("[TopAreaController] 打开设置面板");
         }
 
         private void OnBackClicked()
@@ -183,7 +184,7 @@ namespace LightVsDecay.UI
             MainSceneUIManager.Instance?.BackToMain();
 
             if (showDebugInfo)
-                Debug.Log("[TopAreaController] 返回主界面");
+                GameLogger.Log("[TopAreaController] 返回主界面");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -197,7 +198,7 @@ namespace LightVsDecay.UI
             RefreshBlueprints();
 
             if (showDebugInfo)
-                Debug.Log("[TopAreaController] Refresh 完成");
+                GameLogger.Log("[TopAreaController] Refresh 完成");
         }
 
         private void RefreshCurrency()
@@ -245,7 +246,7 @@ namespace LightVsDecay.UI
                 blueprintText.text = newCount.ToString();
 
             if (showDebugInfo)
-                Debug.Log($"[TopAreaController] 图纸更新: {newCount}");
+                GameLogger.Log($"[TopAreaController] 图纸更新: {newCount}");
         }
         /// <summary>局外金币变化时实时刷新（ProgressManager 事件驱动）</summary>
         private void OnGoldCoinsChanged(int newAmount)
@@ -254,7 +255,7 @@ namespace LightVsDecay.UI
                 goldCoinText.text = newAmount.ToString();
 
             if (showDebugInfo)
-                Debug.Log($"[TopAreaController] 金币更新: {newAmount}");
+                GameLogger.Log($"[TopAreaController] 金币更新: {newAmount}");
         }
         private void PlayButtonSound()
         {
@@ -271,7 +272,7 @@ namespace LightVsDecay.UI
             topBarTipsPanel?.Show();
 
             if (showDebugInfo)
-                Debug.Log("[TopAreaController] 打开提示面板");
+                GameLogger.Log("[TopAreaController] 打开提示面板");
         }
         private void OnGoldClicked()
         {

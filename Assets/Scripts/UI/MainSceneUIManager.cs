@@ -16,6 +16,7 @@ using UnityEngine.UI;
 using TMPro;
 using LightVsDecay.Audio;
 using LightVsDecay.Logic;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI
 {
@@ -188,7 +189,7 @@ namespace LightVsDecay.UI
             SetButtonLockVisual(zhuangBeiButton, zhuangBeiButtonText, zhuangBeiButtonIcon, equipUnlocked);
 
             if (showDebugInfo)
-                Debug.Log($"[MainSceneUIManager] 按钮状态刷新: " +
+                GameLogger.Log($"[MainSceneUIManager] 按钮状态刷新: " +
                           $"科技树={techUnlocked}, 装备={equipUnlocked}");
         }
 
@@ -224,14 +225,14 @@ namespace LightVsDecay.UI
             var panel = tipsPanel != null ? tipsPanel : TipsPanelController.Instance;
             if (panel == null)
             {
-                Debug.LogWarning("[MainSceneUIManager] TipsPanelController 未找到，无法显示解锁提示！");
+                GameLogger.LogWarning("[MainSceneUIManager] TipsPanelController 未找到，无法显示解锁提示！");
                 yield break;
             }
 
             panel.ShowTips(messages);
 
             if (showDebugInfo)
-                Debug.Log($"[MainSceneUIManager] 已触发 {messages.Count} 条解锁提示");
+                GameLogger.Log($"[MainSceneUIManager] 已触发 {messages.Count} 条解锁提示");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -249,21 +250,21 @@ namespace LightVsDecay.UI
         {
             PlayButtonSound();
             SwitchToState(MainSceneState.KeJi);
-            if (showDebugInfo) Debug.Log("[MainSceneUIManager] → 科技树界面");
+            if (showDebugInfo) GameLogger.Log("[MainSceneUIManager] → 科技树界面");
         }
 
         private void OnZhuangBeiButtonClicked()
         {
             PlayButtonSound();
             SwitchToState(MainSceneState.ZhuangBei);
-            if (showDebugInfo) Debug.Log("[MainSceneUIManager] → 装备界面");
+            if (showDebugInfo) GameLogger.Log("[MainSceneUIManager] → 装备界面");
         }
 
         private void OnBackButtonClicked()
         {
             PlayButtonSound();
             SwitchToState(MainSceneState.Main);
-            if (showDebugInfo) Debug.Log("[MainSceneUIManager] → 主界面");
+            if (showDebugInfo) GameLogger.Log("[MainSceneUIManager] → 主界面");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -279,7 +280,7 @@ namespace LightVsDecay.UI
                 case MainSceneState.KeJi:       ApplyKeJiState();      break;
                 case MainSceneState.ZhuangBei:  ApplyZhuangBeiState(); break;
             }
-            if (showDebugInfo) Debug.Log($"[MainSceneUIManager] 切换状态: {newState}");
+            if (showDebugInfo) GameLogger.Log($"[MainSceneUIManager] 切换状态: {newState}");
         }
 
         private void ApplyMainState()

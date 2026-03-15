@@ -117,7 +117,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log("[DifficultyManager] 战斗开始，计时器重置（注：时间难度已禁用）");
+                GameLogger.Log("[DifficultyManager] 战斗开始，计时器重置（注：时间难度已禁用）");
             }
         }
         
@@ -166,7 +166,7 @@ namespace LightVsDecay.Logic
             
             if (showDebugInfo)
             {
-                Debug.Log("[DifficultyManager] 计时器已重置");
+                GameLogger.Log("[DifficultyManager] 计时器已重置");
             }
         }
         

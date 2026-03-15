@@ -32,7 +32,7 @@ namespace LightVsDecay.UI.FloatingText
             
             if (showDebugInfo)
             {
-                Debug.Log("[PlayerDamageTextHandler] 事件订阅完成");
+                GameLogger.Log("[PlayerDamageTextHandler] 事件订阅完成");
             }
         }
         
@@ -59,7 +59,7 @@ namespace LightVsDecay.UI.FloatingText
             
             if (showDebugInfo)
             {
-                Debug.Log($"[PlayerDamageTextHandler] 血量受伤飘字: -{damage}");
+                GameLogger.Log($"[PlayerDamageTextHandler] 血量受伤飘字: -{damage}");
             }
         }
         
@@ -74,7 +74,7 @@ namespace LightVsDecay.UI.FloatingText
             
             if (showDebugInfo)
             {
-                Debug.Log($"[PlayerDamageTextHandler] 护盾受伤飘字: -{damage}");
+                GameLogger.Log($"[PlayerDamageTextHandler] 护盾受伤飘字: -{damage}");
             }
         }
         
@@ -89,7 +89,7 @@ namespace LightVsDecay.UI.FloatingText
             
             if (showDebugInfo)
             {
-                Debug.Log($"[PlayerDamageTextHandler] 血量恢复飘字: +{amount}");
+                GameLogger.Log($"[PlayerDamageTextHandler] 血量恢复飘字: +{amount}");
             }
         }
         
@@ -104,7 +104,7 @@ namespace LightVsDecay.UI.FloatingText
             
             if (showDebugInfo)
             {
-                Debug.Log($"[PlayerDamageTextHandler] 护盾恢复飘字: +{amount}");
+                GameLogger.Log($"[PlayerDamageTextHandler] 护盾恢复飘字: +{amount}");
             }
         }
     }

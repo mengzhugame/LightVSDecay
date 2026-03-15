@@ -127,7 +127,7 @@ namespace LightVsDecay.Logic.TechTree
 
             int newLv = _nodeLevels[nodeId];
             if (showDebugInfo)
-                Debug.Log($"[TechTree] {data.displayName} Lv.{newLv}  (-{cost} 金币)");
+                GameLogger.Log($"[TechTree] {data.displayName} Lv.{newLv}  (-{cost} 金币)");
 
             OnNodeUpgraded?.Invoke(nodeId, newLv);
             return TechUpgradeResult.Success;
@@ -266,7 +266,7 @@ namespace LightVsDecay.Logic.TechTree
                 if (!string.IsNullOrEmpty(e.nodeId)) _nodeLevels[e.nodeId] = e.level;
 
             if (showDebugInfo)
-                Debug.Log($"[TechTree] 读档完成，已有节点: {_nodeLevels.Count} 个");
+                GameLogger.Log($"[TechTree] 读档完成，已有节点: {_nodeLevels.Count} 个");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -276,7 +276,7 @@ namespace LightVsDecay.Logic.TechTree
         [ContextMenu("Debug: Print All Bonuses")]
         public void DebugPrintBonuses()
         {
-            Debug.Log(
+            GameLogger.Log(
                 $"[TechTree] ==== 全部加成汇总 ====\n" +
                 $"[火力] ATK flat+{GetAttackBonus()} pct+{GetAttackBonusPercent()}% " +
                 $"CritR+{GetCritRateBonus()}% CritD+{GetCritDamageBonus()}% " +

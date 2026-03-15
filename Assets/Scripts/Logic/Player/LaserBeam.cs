@@ -159,7 +159,7 @@ namespace LightVsDecay.Logic.Player
         {
             if (lineRenderer == null)
             {
-                Debug.LogError("[LaserBeam] LineRenderer 未找到！");
+                GameLogger.LogError("[LaserBeam] LineRenderer 未找到！");
                 return;
             }
             
@@ -187,7 +187,7 @@ namespace LightVsDecay.Logic.Player
             
             if (laserPivot == null)
             {
-                Debug.LogError("[LaserBeam] laserPivot 为空！无法计算激光路径");
+                GameLogger.LogError("[LaserBeam] laserPivot 为空！无法计算激光路径");
                 return;
             }
             
@@ -215,7 +215,7 @@ namespace LightVsDecay.Logic.Player
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[LaserBeam] 击中敌人 - 位置: {enemyHit.point}");
+                    GameLogger.Log($"[LaserBeam] 击中敌人 - 位置: {enemyHit.point}");
                 }
             }
             else
@@ -237,7 +237,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[LaserBeam] 路径计算完成 - 起点: {startPoint}, 终点: {endPoint}");
+                GameLogger.Log($"[LaserBeam] 路径计算完成 - 起点: {startPoint}, 终点: {endPoint}");
             }
         }
 
@@ -410,11 +410,11 @@ namespace LightVsDecay.Logic.Player
             if (pivot != null)
             {
                 if(showDebugInfo)
-                    Debug.Log($"[LaserBeam] LaserPivot 已设置: {pivot.name} (位置: {pivot.position})");
+                    GameLogger.Log($"[LaserBeam] LaserPivot 已设置: {pivot.name} (位置: {pivot.position})");
             }
             else
             {
-                Debug.LogError("[LaserBeam] SetLaserPivot 收到空引用！");
+                GameLogger.LogError("[LaserBeam] SetLaserPivot 收到空引用！");
             }
         }
         /// <summary>

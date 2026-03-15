@@ -10,6 +10,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using LightVsDecay.Audio;
 using LightVsDecay.Logic;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI
 {
@@ -131,7 +132,7 @@ namespace LightVsDecay.UI
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SettingsPanel] OnEnable - 战斗场景: {isInBattleScene}, 显示底部: {showBottomArea}");
+                GameLogger.Log($"[SettingsPanel] OnEnable - 战斗场景: {isInBattleScene}, 显示底部: {showBottomArea}");
             }
         }
         
@@ -204,7 +205,7 @@ namespace LightVsDecay.UI
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SettingsPanel] 音乐开关: {isOn}");
+                GameLogger.Log($"[SettingsPanel] 音乐开关: {isOn}");
             }
         }
         
@@ -222,7 +223,7 @@ namespace LightVsDecay.UI
 
             if (showDebugInfo)
             {
-                Debug.Log($"[SettingsPanel] 音效开关: {isOn}");
+                GameLogger.Log($"[SettingsPanel] 音效开关: {isOn}");
             }
         }
         /// <summary>
@@ -254,7 +255,7 @@ namespace LightVsDecay.UI
             
             if (showDebugInfo)
             {
-                Debug.Log("[SettingsPanel] 点击返回主页");
+                GameLogger.Log("[SettingsPanel] 点击返回主页");
             }
             
             // 隐藏面板
@@ -284,7 +285,7 @@ namespace LightVsDecay.UI
             {
                 if (showDebugInfo)
                 {
-                    Debug.Log("[SettingsPanel] 能量不足，无法重新开始");
+                    GameLogger.Log("[SettingsPanel] 能量不足，无法重新开始");
                 }
                 return;
             }
@@ -293,7 +294,7 @@ namespace LightVsDecay.UI
             
             if (showDebugInfo)
             {
-                Debug.Log("[SettingsPanel] 点击重新开始");
+                GameLogger.Log("[SettingsPanel] 点击重新开始");
             }
             
             // 扣除能量
@@ -344,7 +345,7 @@ namespace LightVsDecay.UI
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SettingsPanel] 重新开始按钮状态: 能量={currentEnergy}, 可用={hasEnergy}");
+                GameLogger.Log($"[SettingsPanel] 重新开始按钮状态: 能量={currentEnergy}, 可用={hasEnergy}");
             }
         }
         
@@ -358,7 +359,7 @@ namespace LightVsDecay.UI
             Hide();
 
             if (showDebugInfo)
-                Debug.Log("[SettingsPanel] 点击关闭");
+                GameLogger.Log("[SettingsPanel] 点击关闭");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -386,7 +387,7 @@ namespace LightVsDecay.UI
             UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(null);
             if (showDebugInfo)
             {
-                Debug.Log($"[SettingsPanel] Show - 显示底部区域: {showBottom}");
+                GameLogger.Log($"[SettingsPanel] Show - 显示底部区域: {showBottom}");
             }
         }
         
@@ -414,7 +415,7 @@ namespace LightVsDecay.UI
             
             if (showDebugInfo)
             {
-                Debug.Log("[SettingsPanel] Hide");
+                GameLogger.Log("[SettingsPanel] Hide");
             }
         }
         

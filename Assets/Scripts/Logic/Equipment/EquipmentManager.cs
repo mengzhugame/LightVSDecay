@@ -87,7 +87,7 @@ namespace LightVsDecay.Logic.Equipment
         {
             if (database == null)
             {
-                Debug.LogError("[EquipmentManager] 缺少 EquipmentDatabase！");
+                GameLogger.LogError("[EquipmentManager] 缺少 EquipmentDatabase！");
                 return;
             }
             EquipmentDatabase.SetInstance(database);
@@ -109,7 +109,7 @@ namespace LightVsDecay.Logic.Equipment
         {
             if (database?.GetById(equipmentId) == null)
             {
-                Debug.LogWarning($"[EquipmentManager] 未知装备ID: {equipmentId}");
+                GameLogger.LogWarning($"[EquipmentManager] 未知装备ID: {equipmentId}");
                 return;
             }
 
@@ -123,7 +123,7 @@ namespace LightVsDecay.Logic.Equipment
             OnInventoryChanged?.Invoke();
 
             if (showDebugInfo)
-                Debug.Log($"[EquipManager] 获得 {equipmentId}({rarity}) ×{count}");
+                GameLogger.Log($"[EquipManager] 获得 {equipmentId}({rarity}) ×{count}");
         }
 
         /// <summary>获取指定种类的堆叠数量</summary>
@@ -169,7 +169,7 @@ namespace LightVsDecay.Logic.Equipment
             OnEquipmentSlotChanged?.Invoke(data.slotType);
 
             if (showDebugInfo)
-                Debug.Log($"[EquipManager] 装备: {equipmentId}({rarity}) → 槽位{data.slotType}");
+                GameLogger.Log($"[EquipManager] 装备: {equipmentId}({rarity}) → 槽位{data.slotType}");
 
             return EquipResult.Success;
         }
@@ -194,7 +194,7 @@ namespace LightVsDecay.Logic.Equipment
             OnEquipmentSlotChanged?.Invoke(slot);
 
             if (showDebugInfo)
-                Debug.Log($"[EquipManager] 卸下槽位: {slot}");
+                GameLogger.Log($"[EquipManager] 卸下槽位: {slot}");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -226,7 +226,7 @@ namespace LightVsDecay.Logic.Equipment
             OnEquipmentSlotChanged?.Invoke(slot);
 
             if (showDebugInfo)
-                Debug.Log($"[EquipManager] {slot} 升级 → Lv.{slotData.upgradeLevel}（消耗 {goldCost}金 {bpCost}图纸）");
+                GameLogger.Log($"[EquipManager] {slot} 升级 → Lv.{slotData.upgradeLevel}（消耗 {goldCost}金 {bpCost}图纸）");
 
             return LevelUpResult.Success;
         }
@@ -257,7 +257,7 @@ namespace LightVsDecay.Logic.Equipment
             OnBlueprintsChanged?.Invoke(_blueprints);
 
             if (showDebugInfo)
-                Debug.Log($"[EquipManager] {slot} 无损重置，退还 {refundGold}金 {refundBp}图纸");
+                GameLogger.Log($"[EquipManager] {slot} 无损重置，退还 {refundGold}金 {refundBp}图纸");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -285,7 +285,7 @@ namespace LightVsDecay.Logic.Equipment
             OnInventoryChanged?.Invoke();
 
             if (showDebugInfo)
-                Debug.Log($"[EquipManager] 合成: 3×{equipmentId}({rarity}) → {resultData.equipmentId}({resultData.rarity})");
+                GameLogger.Log($"[EquipManager] 合成: 3×{equipmentId}({rarity}) → {resultData.equipmentId}({resultData.rarity})");
 
             return true;
         }
@@ -308,7 +308,7 @@ namespace LightVsDecay.Logic.Equipment
                 }
             }
             if (showDebugInfo && total > 0)
-                Debug.Log($"[EquipManager] 一键合成完成，共 {total} 次");
+                GameLogger.Log($"[EquipManager] 一键合成完成，共 {total} 次");
             return total;
         }
 
@@ -355,7 +355,7 @@ namespace LightVsDecay.Logic.Equipment
             OnBlueprintsChanged?.Invoke(_blueprints);
 
             if (showDebugInfo)
-                Debug.Log($"[EquipManager] 分解 {equipmentId}({rarity})，获得 {gain} 图纸");
+                GameLogger.Log($"[EquipManager] 分解 {equipmentId}({rarity})，获得 {gain} 图纸");
 
             return gain;
         }
@@ -403,7 +403,7 @@ namespace LightVsDecay.Logic.Equipment
             OnBlueprintsChanged?.Invoke(_blueprints);
 
             if (showDebugInfo)
-                Debug.Log($"[EquipManager] 获得图纸 ×{count}，当前共 {_blueprints}");
+                GameLogger.Log($"[EquipManager] 获得图纸 ×{count}，当前共 {_blueprints}");
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 辅助
@@ -446,7 +446,7 @@ namespace LightVsDecay.Logic.Equipment
             _blueprints = d.blueprints;
 
             if (showDebugInfo)
-                Debug.Log($"[EquipManager] 读档完成：背包 {_inventory.Count} 格，图纸 {_blueprints}");
+                GameLogger.Log($"[EquipManager] 读档完成：背包 {_inventory.Count} 格，图纸 {_blueprints}");
         }
         /// <summary>
         /// 重置所有装备数据（内存 + PlayerPrefs），供 PlayerDataResetTool 调用
@@ -468,7 +468,7 @@ namespace LightVsDecay.Logic.Equipment
             OnBlueprintsChanged?.Invoke(0);
 
             if (showDebugInfo)
-                Debug.Log("[EquipmentManager] ResetAll: 内存+存档全部清除");
+                GameLogger.Log("[EquipmentManager] ResetAll: 内存+存档全部清除");
         }
 #if UNITY_EDITOR
         private void ParseDebugItems()

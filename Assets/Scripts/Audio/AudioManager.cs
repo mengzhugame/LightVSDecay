@@ -141,7 +141,7 @@ namespace LightVsDecay.Audio
             
             if (showDebugInfo)
             {
-                Debug.Log("[AudioManager] 单例初始化完成");
+                GameLogger.Log("[AudioManager] 单例初始化完成");
             }
         }
         
@@ -190,7 +190,7 @@ namespace LightVsDecay.Audio
         
                 if (showDebugInfo)
                 {
-                    Debug.Log("[AudioManager] 复用预制体上已有的 AudioSource");
+                    GameLogger.Log("[AudioManager] 复用预制体上已有的 AudioSource");
                 }
             }
             else
@@ -203,7 +203,7 @@ namespace LightVsDecay.Audio
         
                 if (showDebugInfo)
                 {
-                    Debug.Log("[AudioManager] 创建新的 AudioSource");
+                    GameLogger.Log("[AudioManager] 创建新的 AudioSource");
                 }
             }
     
@@ -304,7 +304,7 @@ namespace LightVsDecay.Audio
         
                 if (showDebugInfo)
                 {
-                    Debug.Log("[AudioManager] 切换到主菜单，播放主菜单BGM");
+                    GameLogger.Log("[AudioManager] 切换到主菜单，播放主菜单BGM");
                 }
             }
             else if (scene.name == battleSceneName)
@@ -316,13 +316,13 @@ namespace LightVsDecay.Audio
         
                 if (showDebugInfo)
                 {
-                    Debug.Log("[AudioManager] 切换到战斗场景，播放战斗BGM，重新订阅事件");
+                    GameLogger.Log("[AudioManager] 切换到战斗场景，播放战斗BGM，重新订阅事件");
                 }
             }
     
             if (showDebugInfo)
             {
-                Debug.Log($"[AudioManager] 场景加载: {scene.name}");
+                GameLogger.Log($"[AudioManager] 场景加载: {scene.name}");
             }
         }
         /// <summary>
@@ -337,7 +337,7 @@ namespace LightVsDecay.Audio
     
             if (showDebugInfo)
             {
-                Debug.Log("[AudioManager] 游戏事件已重新订阅");
+                GameLogger.Log("[AudioManager] 游戏事件已重新订阅");
             }
         }
         /// <summary>
@@ -347,7 +347,7 @@ namespace LightVsDecay.Audio
         {
             if (config == null)
             {
-                Debug.LogWarning("[AudioManager] AudioConfig 未配置！");
+                GameLogger.LogWarning("[AudioManager] AudioConfig 未配置！");
                 return;
             }
             
@@ -355,15 +355,15 @@ namespace LightVsDecay.Audio
             // 【新增】调试日志 - 检查音频文件
             if (showDebugInfo || config.mainMenuBGM == null || config.battleBGM == null)
             {
-                Debug.Log($"[AudioManager] AudioConfig 检查:");
-                Debug.Log($"  - mainMenuBGM: {(config.mainMenuBGM != null ? config.mainMenuBGM.name : "❌ 未配置")}");
-                Debug.Log($"  - battleBGM: {(config.battleBGM != null ? config.battleBGM.name : "❌ 未配置")}");
+                GameLogger.Log($"[AudioManager] AudioConfig 检查:");
+                GameLogger.Log($"  - mainMenuBGM: {(config.mainMenuBGM != null ? config.mainMenuBGM.name : "❌ 未配置")}");
+                GameLogger.Log($"  - battleBGM: {(config.battleBGM != null ? config.battleBGM.name : "❌ 未配置")}");
             }
             if (currentSceneName == mainMenuSceneName)
             {
                 if (config.mainMenuBGM == null)
                 {
-                    Debug.LogError("[AudioManager] ❌ mainMenuBGM 为空！请在 AudioConfig 中配置主界面BGM");
+                    GameLogger.LogError("[AudioManager] ❌ mainMenuBGM 为空！请在 AudioConfig 中配置主界面BGM");
                     return;
                 }
                 PlayBGM(config.mainMenuBGM);
@@ -372,7 +372,7 @@ namespace LightVsDecay.Audio
             {
                 if (config.battleBGM == null)
                 {
-                    Debug.LogError("[AudioManager] ❌ battleBGM 为空！请在 AudioConfig 中配置战斗BGM");
+                    GameLogger.LogError("[AudioManager] ❌ battleBGM 为空！请在 AudioConfig 中配置战斗BGM");
                     return;
                 }
                 PlayBGM(config.battleBGM);
@@ -380,7 +380,7 @@ namespace LightVsDecay.Audio
             
             if (showDebugInfo)
             {
-                Debug.Log($"[AudioManager] Start - 当前场景: {currentSceneName}, 播放对应BGM");
+                GameLogger.Log($"[AudioManager] Start - 当前场景: {currentSceneName}, 播放对应BGM");
             }
         }
         
@@ -397,7 +397,7 @@ namespace LightVsDecay.Audio
             {
                 if (showDebugInfo)
                 {
-                    Debug.LogWarning("[AudioManager] 尝试播放空的BGM片段");
+                    GameLogger.LogWarning("[AudioManager] 尝试播放空的BGM片段");
                 }
                 return;
             }
@@ -456,7 +456,7 @@ namespace LightVsDecay.Audio
             
             if (showDebugInfo)
             {
-                Debug.Log($"[AudioManager] BGM 切换完成: {newClip.name}");
+                GameLogger.Log($"[AudioManager] BGM 切换完成: {newClip.name}");
             }
         }
         
@@ -491,7 +491,7 @@ namespace LightVsDecay.Audio
             
             if (showDebugInfo)
             {
-                Debug.Log($"[AudioManager] 播放音效: {clip.name}");
+                GameLogger.Log($"[AudioManager] 播放音效: {clip.name}");
             }
         }
         
@@ -532,17 +532,17 @@ namespace LightVsDecay.Audio
         public void StartLaserLoop()
         {
             if(showDebugInfo)
-                Debug.Log($"[AudioManager] StartLaserLoop 被调用");
+                GameLogger.Log($"[AudioManager] StartLaserLoop 被调用");
     
             if (config == null)
             {
-                Debug.LogError("[AudioManager] ❌ config 为空！");
+                GameLogger.LogError("[AudioManager] ❌ config 为空！");
                 return;
             }
     
             if (config.laserIdle == null)
             {
-                Debug.LogError("[AudioManager] ❌ laserIdle 音效未配置！");
+                GameLogger.LogError("[AudioManager] ❌ laserIdle 音效未配置！");
                 return;
             }
             
@@ -554,7 +554,7 @@ namespace LightVsDecay.Audio
             
             if (showDebugInfo)
             {
-                Debug.Log("[AudioManager] 激光循环开始（空射）");
+                GameLogger.Log("[AudioManager] 激光循环开始（空射）");
             }
         }
         
@@ -574,7 +574,7 @@ namespace LightVsDecay.Audio
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log("[AudioManager] 激光循环停止");
+                    GameLogger.Log("[AudioManager] 激光循环停止");
                 }
             }
         }
@@ -613,7 +613,7 @@ namespace LightVsDecay.Audio
             
             if (showDebugInfo)
             {
-                Debug.Log($"[AudioManager] 激光音效切换: {hitType}");
+                GameLogger.Log($"[AudioManager] 激光音效切换: {hitType}");
             }
         }
         
@@ -635,7 +635,7 @@ namespace LightVsDecay.Audio
             
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[AudioManager] 重新播放相同音效: {clip.name}");
+                        GameLogger.Log($"[AudioManager] 重新播放相同音效: {clip.name}");
                     }
                 }
                 return;
@@ -958,7 +958,7 @@ namespace LightVsDecay.Audio
     
             if (showDebugInfo)
             {
-                Debug.Log("[AudioManager] 游戏恢复，重启激光音效");
+                GameLogger.Log("[AudioManager] 游戏恢复，重启激光音效");
             }
         }
 
@@ -972,7 +972,7 @@ namespace LightVsDecay.Audio
     
             if (showDebugInfo)
             {
-                Debug.Log("[AudioManager] 升级选择完成，重启激光音效");
+                GameLogger.Log("[AudioManager] 升级选择完成，重启激光音效");
             }
         }
         /// <summary>
@@ -1024,7 +1024,7 @@ namespace LightVsDecay.Audio
         
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[AudioManager] BGM Pitch 设置为: {pitch:F2}");
+                    GameLogger.Log($"[AudioManager] BGM Pitch 设置为: {pitch:F2}");
                 }
             }
         }

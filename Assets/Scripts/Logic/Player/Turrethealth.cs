@@ -154,7 +154,7 @@ namespace LightVsDecay.Logic.Player
                     // 护盾完全吸收
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[TurretHealth] 护盾完全吸收伤害: {damage}");
+                        GameLogger.Log($"[TurretHealth] 护盾完全吸收伤害: {damage}");
                     }
                     return true;
                 }
@@ -190,7 +190,7 @@ namespace LightVsDecay.Logic.Player
                 {
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[TurretHealth] 护盾完全吸收BOSS伤害: {damage}");
+                        GameLogger.Log($"[TurretHealth] 护盾完全吸收BOSS伤害: {damage}");
                     }
                     return;
                 }
@@ -230,7 +230,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TurretHealth] 本体受伤: -{actualDamage}, 剩余: {currentHullHP}/{maxHullHP}");
+                GameLogger.Log($"[TurretHealth] 本体受伤: -{actualDamage}, 剩余: {currentHullHP}/{maxHullHP}");
             }
             
             // 更新视觉
@@ -258,7 +258,7 @@ namespace LightVsDecay.Logic.Player
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log("[TurretHealth] ⚠️ 进入低血量状态！");
+                    GameLogger.Log("[TurretHealth] ⚠️ 进入低血量状态！");
                 }
             }
             else if (!newLowHealthState && isLowHealth)
@@ -269,7 +269,7 @@ namespace LightVsDecay.Logic.Player
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log("[TurretHealth] ✓ 脱离低血量状态");
+                    GameLogger.Log("[TurretHealth] ✓ 脱离低血量状态");
                 }
             }
         }
@@ -282,7 +282,7 @@ namespace LightVsDecay.Logic.Player
         {
             if (showDebugInfo)
             {
-                Debug.Log("[TurretHealth] 💀 塔被摧毁！游戏结束！");
+                GameLogger.Log("[TurretHealth] 💀 塔被摧毁！游戏结束！");
             }
             
             // 触发游戏失败事件
@@ -417,7 +417,7 @@ namespace LightVsDecay.Logic.Player
             
             if (showDebugInfo)
             {
-                Debug.Log($"[TurretHealth] 恢复生命 +{actualRestore}: {currentHullHP}/{maxHullHP}");
+                GameLogger.Log($"[TurretHealth] 恢复生命 +{actualRestore}: {currentHullHP}/{maxHullHP}");
             }
         }
         /// <summary>
@@ -449,7 +449,7 @@ namespace LightVsDecay.Logic.Player
     
             if (showDebugInfo)
             {
-                Debug.Log($"[TurretHealth] 直接扣血: -{actualDamage}, 剩余: {currentHullHP}/{maxHullHP}");
+                GameLogger.Log($"[TurretHealth] 直接扣血: -{actualDamage}, 剩余: {currentHullHP}/{maxHullHP}");
             }
     
             // 更新视觉
@@ -533,7 +533,7 @@ namespace LightVsDecay.Logic.Player
     
             if (showDebugInfo)
             {
-                Debug.Log($"[TurretHealth] 直接扣血: -{actualLoss}, 剩余: {currentHullHP}/{maxHullHP}");
+                GameLogger.Log($"[TurretHealth] 直接扣血: -{actualLoss}, 剩余: {currentHullHP}/{maxHullHP}");
             }
     
             // 检查死亡（理论上保底1血不会触发）

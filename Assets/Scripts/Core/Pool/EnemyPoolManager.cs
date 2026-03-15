@@ -115,7 +115,7 @@ namespace LightVsDecay.Core.Pool
             {
                 if (config.prefab == null)
                 {
-                    Debug.LogError($"[EnemyPoolManager] {config.type} 的预制体未设置！");
+                    GameLogger.LogError($"[EnemyPoolManager] {config.type} 的预制体未设置！");
                     continue;
                 }
                 
@@ -138,7 +138,7 @@ namespace LightVsDecay.Core.Pool
                 pools[config.type] = pool;
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[EnemyPoolManager] {config.type} 池初始化完成: 预热{config.prewarmCount}, 上限{maxForType}");
+                    GameLogger.Log($"[EnemyPoolManager] {config.type} 池初始化完成: 预热{config.prewarmCount}, 上限{maxForType}");
                 }
             }
         }
@@ -159,14 +159,14 @@ namespace LightVsDecay.Core.Pool
             // 全局上限检查
             if (totalActiveEnemies >= globalMaxEnemies)
             {
-                Debug.LogWarning($"[EnemyPoolManager] 已达全局上限 {globalMaxEnemies}！");
+                GameLogger.LogWarning($"[EnemyPoolManager] 已达全局上限 {globalMaxEnemies}！");
                 return null;
             }
             
             // 检查池是否存在
             if (!pools.TryGetValue(type, out var pool))
             {
-                Debug.LogError($"[EnemyPoolManager] 未找到 {type} 类型的对象池！");
+                GameLogger.LogError($"[EnemyPoolManager] 未找到 {type} 类型的对象池！");
                 return null;
             }
             
@@ -181,7 +181,7 @@ namespace LightVsDecay.Core.Pool
                 totalActiveEnemies++;
                 
                 if (showDebugInfo)
-                    Debug.Log($"[EnemyPoolManager] 生成 {type} @ {position}, 当前总数: {totalActiveEnemies}");
+                    GameLogger.Log($"[EnemyPoolManager] 生成 {type} @ {position}, 当前总数: {totalActiveEnemies}");
             }
             
             return enemy;
@@ -211,20 +211,20 @@ namespace LightVsDecay.Core.Pool
                     totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
             
                     if (showDebugInfo)
-                        Debug.Log($"[EnemyPoolManager] 回收 {type}, 剩余总数: {totalActiveEnemies}");
+                        GameLogger.Log($"[EnemyPoolManager] 回收 {type}, 剩余总数: {totalActiveEnemies}");
                 }
                 else
                 {
                     // 【修复】找到类型但没有对应池（如精英怪），直接销毁
                     if (showDebugInfo)
-                        Debug.Log($"[EnemyPoolManager] {type} 无对象池，直接销毁");
+                        GameLogger.Log($"[EnemyPoolManager] {type} 无对象池，直接销毁");
             
                     Destroy(enemy.gameObject);
                 }
             }
             else
             {
-                Debug.LogWarning($"[EnemyPoolManager] 无法解析敌人类型: {enemy.PoolKey}");
+                GameLogger.LogWarning($"[EnemyPoolManager] 无法解析敌人类型: {enemy.PoolKey}");
                 // 降级处理：直接销毁
                 Destroy(enemy.gameObject);
                 totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
@@ -242,7 +242,7 @@ namespace LightVsDecay.Core.Pool
             }
             totalActiveEnemies = 0;
             if (showDebugInfo)
-                Debug.Log("[EnemyPoolManager] 所有敌人已回收");
+                GameLogger.Log("[EnemyPoolManager] 所有敌人已回收");
         }
         
         /// <summary>
@@ -259,7 +259,7 @@ namespace LightVsDecay.Core.Pool
             pools.Clear();
             totalActiveEnemies = 0;
             if (showDebugInfo)
-                Debug.Log("[EnemyPoolManager] 所有对象池已清空");
+                GameLogger.Log("[EnemyPoolManager] 所有对象池已清空");
         }
         
         /// <summary>
@@ -319,7 +319,7 @@ namespace LightVsDecay.Core.Pool
                 Spawn(testSpawnType, spawnPos);
             }
             if (showDebugInfo)
-                Debug.Log($"[EnemyPoolManager] 测试生成 {testSpawnCount} 个 {testSpawnType}");
+                GameLogger.Log($"[EnemyPoolManager] 测试生成 {testSpawnCount} 个 {testSpawnType}");
         }
         
         /// <summary>

@@ -127,7 +127,7 @@ namespace LightVsDecay.Logic.Player
                             lastInputPosition = touch.position;
                             
                             if (showDebugInfo)
-                                Debug.Log($"[TurretController] 触摸开始 ID:{activeTouchId}");
+                                GameLogger.Log($"[TurretController] 触摸开始 ID:{activeTouchId}");
                         }
                         break;
                         
@@ -148,7 +148,7 @@ namespace LightVsDecay.Logic.Player
                             activeTouchId = -1;
                             
                             if (showDebugInfo)
-                                Debug.Log("[TurretController] 触摸结束");
+                                GameLogger.Log("[TurretController] 触摸结束");
                         }
                         break;
                 }
@@ -166,7 +166,7 @@ namespace LightVsDecay.Logic.Player
                 lastInputPosition = Input.mousePosition;
                 
                 if (showDebugInfo)
-                    Debug.Log("[TurretController] 鼠标按下");
+                    GameLogger.Log("[TurretController] 鼠标按下");
             }
             else if (Input.GetMouseButton(0) && isDragging)
             {
@@ -177,7 +177,7 @@ namespace LightVsDecay.Logic.Player
                 isDragging = false;
                 
                 if (showDebugInfo)
-                    Debug.Log("[TurretController] 鼠标释放");
+                    GameLogger.Log("[TurretController] 鼠标释放");
             }
         }
         
@@ -204,7 +204,7 @@ namespace LightVsDecay.Logic.Player
             targetAngle = Mathf.Clamp(targetAngle, minAngle, maxAngle);
             
             if (showDebugInfo)
-                Debug.Log($"[TurretController] DeltaX:{deltaX:F3} AngleDelta:{angleDelta:F2} Target:{targetAngle:F1}");
+                GameLogger.Log($"[TurretController] DeltaX:{deltaX:F3} AngleDelta:{angleDelta:F2} Target:{targetAngle:F1}");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

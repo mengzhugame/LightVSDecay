@@ -157,7 +157,7 @@ namespace LightVsDecay.Logic
 
             if (showDebugInfo)
             {
-                Debug.Log($"[ProgressManager] 加载局外进度: Gems={meta.gems}, Gold={meta.goldCoins}, " +
+                GameLogger.Log($"[ProgressManager] 加载局外进度: Gems={meta.gems}, Gold={meta.goldCoins}, " +
                           $"Energy={meta.energy}, Chapters={meta.TotalChapters}");
                 meta.PrintChapterProgress();
             }
@@ -221,7 +221,7 @@ namespace LightVsDecay.Logic
                 OnEnergyChanged?.Invoke(meta.energy, settings.maxEnergy);
 
                 if (showDebugInfo)
-                    Debug.Log($"[ProgressManager] ⚡ 自然恢复 +1 体力，当前: {meta.energy}/{settings.maxEnergy}");
+                    GameLogger.Log($"[ProgressManager] ⚡ 自然恢复 +1 体力，当前: {meta.energy}/{settings.maxEnergy}");
             }
         }
 
@@ -260,7 +260,7 @@ namespace LightVsDecay.Logic
                     OnEnergyChanged?.Invoke(meta.energy, settings.maxEnergy);
 
                     if (showDebugInfo)
-                        Debug.Log($"[ProgressManager] ⚡ 离线恢复 +{recovered} 体力，" +
+                        GameLogger.Log($"[ProgressManager] ⚡ 离线恢复 +{recovered} 体力，" +
                                   $"当前: {meta.energy}/{settings.maxEnergy}，" +
                                   $"计时器余量: {energyRecoveryTimer:F0}s");
                 }
@@ -272,7 +272,7 @@ namespace LightVsDecay.Logic
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[ProgressManager] 离线恢复计算失败: {e.Message}");
+                GameLogger.LogWarning($"[ProgressManager] 离线恢复计算失败: {e.Message}");
             }
         }
 
@@ -295,7 +295,7 @@ namespace LightVsDecay.Logic
                 meta.Save();
 
                 if (showDebugInfo)
-                    Debug.Log($"[ProgressManager] 所有广告次数已重置（新的一天：{today}）");
+                    GameLogger.Log($"[ProgressManager] 所有广告次数已重置（新的一天：{today}）");
             }
         }
 
@@ -309,7 +309,7 @@ namespace LightVsDecay.Logic
             if (!CanWatchAdForEnergy)
             {
                 if (showDebugInfo)
-                    Debug.Log("[ProgressManager] 今日广告次数已达上限");
+                    GameLogger.Log("[ProgressManager] 今日广告次数已达上限");
                 return false;
             }
 
@@ -334,7 +334,7 @@ namespace LightVsDecay.Logic
             OnEnergyChanged?.Invoke(meta.energy, settings.maxEnergy);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] 📺 广告奖励 +{reward} 体力，" +
+                GameLogger.Log($"[ProgressManager] 📺 广告奖励 +{reward} 体力，" +
                           $"当前: {meta.energy}/{settings.maxEnergy}，" +
                           $"今日次数: {meta.adWatchCountToday}/{settings.maxDailyAdWatches}");
         }
@@ -359,7 +359,7 @@ namespace LightVsDecay.Logic
         {
             if (!CanWatchAdForGold)
             {
-                if (showDebugInfo) Debug.Log("[ProgressManager] 今日金币广告次数已达上限");
+                if (showDebugInfo) GameLogger.Log("[ProgressManager] 今日金币广告次数已达上限");
                 return false;
             }
             GrantAdGoldReward();
@@ -373,7 +373,7 @@ namespace LightVsDecay.Logic
             AddGoldCoins(settings.adGoldReward);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] 📺 广告金币 +{settings.adGoldReward}，" +
+                GameLogger.Log($"[ProgressManager] 📺 广告金币 +{settings.adGoldReward}，" +
                           $"今日次数: {meta.adGoldWatchCountToday}/{MaxDailyAdWatches}");
         }
 
@@ -398,7 +398,7 @@ namespace LightVsDecay.Logic
         {
             if (!CanWatchAdForBlueprint)
             {
-                if (showDebugInfo) Debug.Log("[ProgressManager] 今日图纸广告次数已达上限");
+                if (showDebugInfo) GameLogger.Log("[ProgressManager] 今日图纸广告次数已达上限");
                 return false;
             }
             GrantAdBlueprintReward();
@@ -412,7 +412,7 @@ namespace LightVsDecay.Logic
             Equipment.EquipmentManager.Instance?.AddBlueprints(settings.adBlueprintReward);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] 📺 广告图纸 +{settings.adBlueprintReward}，" +
+                GameLogger.Log($"[ProgressManager] 📺 广告图纸 +{settings.adBlueprintReward}，" +
                           $"今日次数: {meta.adBlueprintWatchCountToday}/{MaxDailyAdWatches}");
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -437,7 +437,7 @@ namespace LightVsDecay.Logic
             OnGoldCoinsChanged?.Invoke(meta.goldCoins);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] +{amount} 局外金币, 总计: {meta.goldCoins}");
+                GameLogger.Log($"[ProgressManager] +{amount} 局外金币, 总计: {meta.goldCoins}");
         }
 
         public bool ConsumeGoldCoins(int amount)
@@ -448,7 +448,7 @@ namespace LightVsDecay.Logic
             OnGoldCoinsChanged?.Invoke(meta.goldCoins);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] -{amount} 局外金币, 剩余: {meta.goldCoins}");
+                GameLogger.Log($"[ProgressManager] -{amount} 局外金币, 剩余: {meta.goldCoins}");
             return true;
         }
 
@@ -497,7 +497,7 @@ namespace LightVsDecay.Logic
             meta.Save();
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] 章节 {chapterIndex + 1} 难度 {difficulty} 完成" +
+                GameLogger.Log($"[ProgressManager] 章节 {chapterIndex + 1} 难度 {difficulty} 完成" +
                           (unlockedNew ? $"，解锁章节{chapterIndex + 2}！" : ""));
 
             return unlockedNew;
@@ -509,7 +509,7 @@ namespace LightVsDecay.Logic
             meta.Save();
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] 解锁章节 {chapterIndex + 1}");
+                GameLogger.Log($"[ProgressManager] 解锁章节 {chapterIndex + 1}");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -522,7 +522,7 @@ namespace LightVsDecay.Logic
             BroadcastAllStatus();
 
             if (showDebugInfo)
-                Debug.Log("[ProgressManager] 局内进度已重置");
+                GameLogger.Log("[ProgressManager] 局内进度已重置");
         }
 
         public void AddExp(int amount)
@@ -537,7 +537,7 @@ namespace LightVsDecay.Logic
             GameEvents.TriggerExpChanged(session.exp, session.expToNextLevel);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] +{amount} XP, 当前: {session.exp}/{session.expToNextLevel}");
+                GameLogger.Log($"[ProgressManager] +{amount} XP, 当前: {session.exp}/{session.expToNextLevel}");
         }
 
         private void LevelUp()
@@ -548,7 +548,7 @@ namespace LightVsDecay.Logic
             GameEvents.TriggerLevelUp(session.level);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] 升级! Lv.{session.level}");
+                GameLogger.Log($"[ProgressManager] 升级! Lv.{session.level}");
         }
 
         public void ApplySkill(Data.SO.SkillType type)
@@ -557,7 +557,7 @@ namespace LightVsDecay.Logic
             session.SetSkillLevel(type, newLevel);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] 技能 {type} 升至 Lv.{newLevel}");
+                GameLogger.Log($"[ProgressManager] 技能 {type} 升至 Lv.{newLevel}");
 
             GameEvents.TriggerSkillApplied(type, newLevel);
         }
@@ -582,7 +582,7 @@ namespace LightVsDecay.Logic
             GameEvents.TriggerCoinChanged(session.coins);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] +{amount} 金币, 总计: {session.coins}");
+                GameLogger.Log($"[ProgressManager] +{amount} 金币, 总计: {session.coins}");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -662,7 +662,7 @@ namespace LightVsDecay.Logic
             SubscribeToGameEvents();
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] 场景 '{scene.name}' 加载，重新订阅事件");
+                GameLogger.Log($"[ProgressManager] 场景 '{scene.name}' 加载，重新订阅事件");
         }
 
         private void SubscribeToGameEvents()
@@ -673,7 +673,7 @@ namespace LightVsDecay.Logic
             GameEvents.OnXPOrbCollected += OnXPOrbCollected;
 
             if (showDebugInfo)
-                Debug.Log("[ProgressManager] 事件订阅完成");
+                GameLogger.Log("[ProgressManager] 事件订阅完成");
         }
 
         private void UnsubscribeFromGameEvents()
@@ -695,7 +695,7 @@ namespace LightVsDecay.Logic
             if (coin > 0) AddCoins(coin);
 
             if (showDebugInfo)
-                Debug.Log($"[ProgressManager] 敌人死亡: {type}, XP:{xp}, Coin:{coin}");
+                GameLogger.Log($"[ProgressManager] 敌人死亡: {type}, XP:{xp}, Coin:{coin}");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -709,7 +709,7 @@ namespace LightVsDecay.Logic
             ResetSession();
 
             if (showDebugInfo)
-                Debug.Log("[ProgressManager] 所有进度已重置");
+                GameLogger.Log("[ProgressManager] 所有进度已重置");
         }
 
         public void ResetChapterProgress()
@@ -718,7 +718,7 @@ namespace LightVsDecay.Logic
             meta.ResetChapterProgress(chapterCount);
 
             if (showDebugInfo)
-                Debug.Log("[ProgressManager] 章节进度已重置");
+                GameLogger.Log("[ProgressManager] 章节进度已重置");
         }
 
         private void BroadcastAllStatus()
@@ -733,11 +733,11 @@ namespace LightVsDecay.Logic
         {
             if (settings == null)
             {
-                Debug.LogError("[ProgressManager] GameSettings 未设置！");
+                GameLogger.LogError("[ProgressManager] GameSettings 未设置！");
                 settings = ScriptableObject.CreateInstance<GameSettings>();
             }
             if (chapterDatabase == null)
-                Debug.LogWarning("[ProgressManager] ChapterDatabase 未设置！章节功能受限");
+                GameLogger.LogWarning("[ProgressManager] ChapterDatabase 未设置！章节功能受限");
         }
     }
 }

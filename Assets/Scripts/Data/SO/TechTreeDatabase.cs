@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -80,7 +81,7 @@ namespace LightVsDecay.Data.SO
                 if (n == null || string.IsNullOrEmpty(n.nodeId)) continue;
                 if (_cache.ContainsKey(n.nodeId))
                 {
-                    Debug.LogWarning($"[TechTreeDatabase] 重复节点 ID: {n.nodeId}");
+                    GameLogger.LogWarning($"[TechTreeDatabase] 重复节点 ID: {n.nodeId}");
                     continue;
                 }
                 _cache[n.nodeId] = n;

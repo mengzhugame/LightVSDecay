@@ -7,6 +7,7 @@
 
 using System.Collections.Generic;
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -97,7 +98,7 @@ namespace LightVsDecay.Data.SO
             {
                 return data;
             }
-            Debug.LogWarning($"[SkillDatabase] 未找到 {type} 类型的技能配置！");
+            GameLogger.LogWarning($"[SkillDatabase] 未找到 {type} 类型的技能配置！");
             return null;
         }
         
@@ -135,8 +136,8 @@ namespace LightVsDecay.Data.SO
             
             if (showDebugInfo)
             {
-                Debug.Log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-                Debug.Log("[SkillDatabase] 开始生成三选一...");
+                GameLogger.Log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                GameLogger.Log("[SkillDatabase] 开始生成三选一...");
             }
             
             // ========== Step 1: 构建主技能池（未满级的主动+被动） ==========
@@ -144,12 +145,12 @@ namespace LightVsDecay.Data.SO
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillDatabase] 主技能池数量: {mainPool.Count}");
+                GameLogger.Log($"[SkillDatabase] 主技能池数量: {mainPool.Count}");
                 foreach (var skill in mainPool)
                 {
                     int lv = currentSkillLevels.GetValueOrDefault(skill.type, 0);
                     int weight = CalculateWeight(skill, lv);
-                    Debug.Log($"  - {skill.displayName} (Lv.{lv}/{skill.maxLevel}) 权重:{weight}");
+                    GameLogger.Log($"  - {skill.displayName} (Lv.{lv}/{skill.maxLevel}) 权重:{weight}");
                 }
             }
             
@@ -166,7 +167,7 @@ namespace LightVsDecay.Data.SO
                     
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[SkillDatabase] ✓ 抽中主技能: {selected.displayName}");
+                        GameLogger.Log($"[SkillDatabase] ✓ 抽中主技能: {selected.displayName}");
                     }
                 }
                 else
@@ -182,7 +183,7 @@ namespace LightVsDecay.Data.SO
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[SkillDatabase] 主技能不足，需要填充 {needFill} 个消耗品");
+                    GameLogger.Log($"[SkillDatabase] 主技能不足，需要填充 {needFill} 个消耗品");
                 }
                 
                 List<SkillData> consumablePool = new List<SkillData>(consumables);
@@ -199,7 +200,7 @@ namespace LightVsDecay.Data.SO
                         
                         if (showDebugInfo)
                         {
-                            Debug.Log($"[SkillDatabase] ✓ 填充消耗品: {selected.displayName}");
+                            GameLogger.Log($"[SkillDatabase] ✓ 填充消耗品: {selected.displayName}");
                         }
                     }
                     else
@@ -211,8 +212,8 @@ namespace LightVsDecay.Data.SO
             
             if (showDebugInfo)
             {
-                Debug.Log($"[SkillDatabase] 最终选项数量: {choices.Count}");
-                Debug.Log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                GameLogger.Log($"[SkillDatabase] 最终选项数量: {choices.Count}");
+                GameLogger.Log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             }
             
             return choices;
@@ -237,7 +238,7 @@ namespace LightVsDecay.Data.SO
                 {
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[SkillDatabase] 剔除满级技能: {skill.displayName} (Lv.{currentLevel}/{skill.maxLevel})");
+                        GameLogger.Log($"[SkillDatabase] 剔除满级技能: {skill.displayName} (Lv.{currentLevel}/{skill.maxLevel})");
                     }
                     continue;
                 }
@@ -249,7 +250,7 @@ namespace LightVsDecay.Data.SO
                     {
                         if (showDebugInfo)
                         {
-                            Debug.Log($"[SkillDatabase] 前置未满足，跳过: {skill.displayName} (需要 {skill.prerequisiteSkill} Lv≥1)");
+                            GameLogger.Log($"[SkillDatabase] 前置未满足，跳过: {skill.displayName} (需要 {skill.prerequisiteSkill} Lv≥1)");
                         }
                         continue;
                     }
@@ -269,7 +270,7 @@ namespace LightVsDecay.Data.SO
                 {
                     if (showDebugInfo)
                     {
-                        Debug.Log($"[SkillDatabase] 剔除满级技能: {skill.displayName} (Lv.{currentLevel}/{skill.maxLevel})");
+                        GameLogger.Log($"[SkillDatabase] 剔除满级技能: {skill.displayName} (Lv.{currentLevel}/{skill.maxLevel})");
                     }
                     continue;
                 }
@@ -282,7 +283,7 @@ namespace LightVsDecay.Data.SO
                     {
                         if (showDebugInfo)
                         {
-                            Debug.Log($"[SkillDatabase] 前置未满足，跳过: {skill.displayName} (需要 {skill.prerequisiteSkill} Lv≥1)");
+                            GameLogger.Log($"[SkillDatabase] 前置未满足，跳过: {skill.displayName} (需要 {skill.prerequisiteSkill} Lv≥1)");
                         }
                         continue;
                     }
@@ -320,7 +321,7 @@ namespace LightVsDecay.Data.SO
             // 如果总权重为0，返回null
             if (totalWeight <= 0)
             {
-                Debug.LogWarning("[SkillDatabase] 总权重为0，无法选择！");
+                GameLogger.LogWarning("[SkillDatabase] 总权重为0，无法选择！");
                 return null;
             }
             
@@ -388,7 +389,7 @@ namespace LightVsDecay.Data.SO
                     if (skill == null) continue;
                     if (_cache.ContainsKey(skill.type))
                     {
-                        Debug.LogWarning($"[SkillDatabase] 重复的技能类型: {skill.type}");
+                        GameLogger.LogWarning($"[SkillDatabase] 重复的技能类型: {skill.type}");
                         continue;
                     }
                     _cache[skill.type] = skill;
@@ -413,13 +414,13 @@ namespace LightVsDecay.Data.SO
         [ContextMenu("验证数据")]
         public void ValidateData()
         {
-            Debug.Log("=== 技能数据库验证 ===");
+            GameLogger.Log("=== 技能数据库验证 ===");
             
             int totalCount = activeSkills.Count + passiveSkills.Count + consumables.Count;
-            Debug.Log($"主动技能: {activeSkills.Count}");
-            Debug.Log($"被动技能: {passiveSkills.Count}");
-            Debug.Log($"消耗品: {consumables.Count}");
-            Debug.Log($"总计: {totalCount}");
+            GameLogger.Log($"主动技能: {activeSkills.Count}");
+            GameLogger.Log($"被动技能: {passiveSkills.Count}");
+            GameLogger.Log($"消耗品: {consumables.Count}");
+            GameLogger.Log($"总计: {totalCount}");
             
             // 检查重复
             HashSet<SkillType> types = new HashSet<SkillType>();
@@ -431,33 +432,33 @@ namespace LightVsDecay.Data.SO
                 {
                     if (skill == null)
                     {
-                        Debug.LogError($"[{category}] 存在空引用！");
+                        GameLogger.LogError($"[{category}] 存在空引用！");
                         continue;
                     }
                     
                     if (types.Contains(skill.type))
                     {
-                        Debug.LogWarning($"[{category}] 重复类型: {skill.type}");
+                        GameLogger.LogWarning($"[{category}] 重复类型: {skill.type}");
                         duplicates++;
                     }
                     else
                     {
                         types.Add(skill.type);
-                        Debug.Log($"  - {skill.type}: {skill.displayName} (权重:{skill.baseWeight}, 等级加成:{skill.weightPerLevel})");
+                        GameLogger.Log($"  - {skill.type}: {skill.displayName} (权重:{skill.baseWeight}, 等级加成:{skill.weightPerLevel})");
                     }
                 }
             }
             
-            Debug.Log("\n--- 主动技能 ---");
+            GameLogger.Log("\n--- 主动技能 ---");
             CheckDuplicates(activeSkills, "主动技能");
             
-            Debug.Log("\n--- 被动技能 ---");
+            GameLogger.Log("\n--- 被动技能 ---");
             CheckDuplicates(passiveSkills, "被动技能");
             
-            Debug.Log("\n--- 消耗品 ---");
+            GameLogger.Log("\n--- 消耗品 ---");
             CheckDuplicates(consumables, "消耗品");
             
-            Debug.Log($"\n=== 验证完成: {duplicates} 个重复 ===");
+            GameLogger.Log($"\n=== 验证完成: {duplicates} 个重复 ===");
         }
         
         [ContextMenu("测试抽取（空状态）")]
@@ -465,10 +466,10 @@ namespace LightVsDecay.Data.SO
         {
             showDebugInfo = true;
             var choices = GenerateChoices(new Dictionary<SkillType, int>());
-            Debug.Log($"[测试] 抽取结果: {choices.Count} 个技能");
+            GameLogger.Log($"[测试] 抽取结果: {choices.Count} 个技能");
             foreach (var skill in choices)
             {
-                Debug.Log($"  - {skill.displayName}");
+                GameLogger.Log($"  - {skill.displayName}");
             }
             showDebugInfo = false;
         }
@@ -490,10 +491,10 @@ namespace LightVsDecay.Data.SO
             };
             
             var choices = GenerateChoices(mockLevels);
-            Debug.Log($"[测试-满级场景] 抽取结果: {choices.Count} 个技能");
+            GameLogger.Log($"[测试-满级场景] 抽取结果: {choices.Count} 个技能");
             foreach (var skill in choices)
             {
-                Debug.Log($"  - {skill.displayName}");
+                GameLogger.Log($"  - {skill.displayName}");
             }
             showDebugInfo = false;
         }

@@ -112,7 +112,7 @@ namespace LightVsDecay.Logic.XP
             
             if (showDebugInfo)
             {
-                Debug.Log($"[XPOrbSpawner] 对象池初始化完成: 预热 {prewarmCount}");
+                GameLogger.Log($"[XPOrbSpawner] 对象池初始化完成: 预热 {prewarmCount}");
             }
         }
         
@@ -120,7 +120,7 @@ namespace LightVsDecay.Logic.XP
         {
             if (orbPrefab == null)
             {
-                Debug.LogError("[XPOrbSpawner] orbPrefab 未设置！");
+                GameLogger.LogError("[XPOrbSpawner] orbPrefab 未设置！");
                 return null;
             }
             
@@ -149,7 +149,7 @@ namespace LightVsDecay.Logic.XP
     
             if (showDebugInfo)
             {
-                Debug.Log($"[XPOrbSpawner] 经验球生成: {(enabled ? "启用" : "禁用")}");
+                GameLogger.Log($"[XPOrbSpawner] 经验球生成: {(enabled ? "启用" : "禁用")}");
             }
         }
         
@@ -174,7 +174,7 @@ namespace LightVsDecay.Logic.XP
                 {
                     if (showDebugInfo)
                     {
-                        Debug.LogWarning("[XPOrbSpawner] 对象池已满，无法生成更多光点");
+                        GameLogger.LogWarning("[XPOrbSpawner] 对象池已满，无法生成更多光点");
                     }
                     break;
                 }
@@ -190,7 +190,7 @@ namespace LightVsDecay.Logic.XP
             
             if (showDebugInfo)
             {
-                Debug.Log($"[XPOrbSpawner] 生成 {count} 个光点 @ {position}, 总XP: {xpValue}");
+                GameLogger.Log($"[XPOrbSpawner] 生成 {count} 个光点 @ {position}, 总XP: {xpValue}");
             }
         }
         
@@ -240,7 +240,7 @@ namespace LightVsDecay.Logic.XP
     
             if (showDebugInfo)
             {
-                Debug.Log("[XPOrbSpawner] 目标位置获取器已设置");
+                GameLogger.Log("[XPOrbSpawner] 目标位置获取器已设置");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -261,7 +261,7 @@ namespace LightVsDecay.Logic.XP
             
             if (showDebugInfo)
             {
-                Debug.Log($"[XPOrbSpawner] 敌人 {type} 死亡，生成 {orbCount} 个光点");
+                GameLogger.Log($"[XPOrbSpawner] 敌人 {type} 死亡，生成 {orbCount} 个光点");
             }
         }
         

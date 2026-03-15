@@ -1,6 +1,7 @@
 using UnityEngine;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Logic;
+using LightVsDecay.Core;
 
 namespace LightVsDecay
 {
@@ -86,7 +87,7 @@ namespace LightVsDecay
         {
             if (gameCamera == null)
             {
-                Debug.LogError("[EnemySpawnTester] 未找到相机！");
+                GameLogger.LogError("[EnemySpawnTester] 未找到相机！");
                 return;
             }
             
@@ -146,7 +147,7 @@ namespace LightVsDecay
                     break;
             }
             
-            Debug.Log($"[EnemySpawnTester] 屏幕范围: {screenBounds}, 生成区域: {spawnArea}");
+            GameLogger.Log($"[EnemySpawnTester] 屏幕范围: {screenBounds}, 生成区域: {spawnArea}");
         }
         
         /// <summary>
@@ -213,7 +214,7 @@ namespace LightVsDecay
             SpawnEnemies(EnemyType.Tank, 10);
             SpawnEnemies(EnemyType.Rusher, 10);
             
-            Debug.Log($"[EnemySpawnTester] 已生成50个混合敌人");
+            GameLogger.Log($"[EnemySpawnTester] 已生成50个混合敌人");
         }
         
         [ContextMenu("Test: Spawn Slimes")]
@@ -222,7 +223,7 @@ namespace LightVsDecay
             if (!ValidatePoolManager()) return;
             
             SpawnEnemies(EnemyType.Slime, slimeCount);
-            Debug.Log($"[EnemySpawnTester] 已生成 {slimeCount} 个 Slime");
+            GameLogger.Log($"[EnemySpawnTester] 已生成 {slimeCount} 个 Slime");
         }
         
         [ContextMenu("Test: Spawn Tanks")]
@@ -231,7 +232,7 @@ namespace LightVsDecay
             if (!ValidatePoolManager()) return;
             
             SpawnEnemies(EnemyType.Tank, tankCount);
-            Debug.Log($"[EnemySpawnTester] 已生成 {tankCount} 个 Tank");
+            GameLogger.Log($"[EnemySpawnTester] 已生成 {tankCount} 个 Tank");
         }
         
         [ContextMenu("Test: Spawn Rushers")]
@@ -240,7 +241,7 @@ namespace LightVsDecay
             if (!ValidatePoolManager()) return;
             
             SpawnEnemies(EnemyType.Rusher, rusherCount);
-            Debug.Log($"[EnemySpawnTester] 已生成 {rusherCount} 个 Rusher");
+            GameLogger.Log($"[EnemySpawnTester] 已生成 {rusherCount} 个 Rusher");
         }
         
         [ContextMenu("Test: Despawn All")]
@@ -249,7 +250,7 @@ namespace LightVsDecay
             if (!ValidatePoolManager()) return;
             
             EnemyPoolManager.Instance.DespawnAll();
-            Debug.Log("[EnemySpawnTester] 已回收所有敌人");
+            GameLogger.Log("[EnemySpawnTester] 已回收所有敌人");
         }
         
         [ContextMenu("Test: Stress Test (200 enemies)")]
@@ -258,7 +259,7 @@ namespace LightVsDecay
             if (!ValidatePoolManager()) return;
             
             SpawnEnemies(EnemyType.Slime, 200);
-            Debug.Log("[EnemySpawnTester] 压力测试：尝试生成200个Slime");
+            GameLogger.Log("[EnemySpawnTester] 压力测试：尝试生成200个Slime");
         }
         
         [ContextMenu("Recalculate Spawn Area")]
@@ -284,7 +285,7 @@ namespace LightVsDecay
         {
             if (EnemyPoolManager.Instance == null)
             {
-                Debug.LogError("[EnemySpawnTester] EnemyPoolManager 未初始化！");
+                GameLogger.LogError("[EnemySpawnTester] EnemyPoolManager 未初始化！");
                 return false;
             }
             return true;
@@ -413,12 +414,12 @@ namespace LightVsDecay
         {
             if (WaveManager.Instance == null)
             {
-                Debug.LogError("[EnemySpawnTester] WaveManager 未初始化！");
+                GameLogger.LogError("[EnemySpawnTester] WaveManager 未初始化！");
                 return;
             }
     
             WaveManager.Instance.TestSpawnBoss();
-            Debug.Log("[EnemySpawnTester] 已请求生成 BOSS");
+            GameLogger.Log("[EnemySpawnTester] 已请求生成 BOSS");
         }
 
         [ContextMenu("Test: Destroy Boss")]
@@ -426,12 +427,12 @@ namespace LightVsDecay
         {
             if (WaveManager.Instance == null)
             {
-                Debug.LogError("[EnemySpawnTester] WaveManager 未初始化！");
+                GameLogger.LogError("[EnemySpawnTester] WaveManager 未初始化！");
                 return;
             }
     
             WaveManager.Instance.TestDestroyBoss();
-            Debug.Log("[EnemySpawnTester] 已请求销毁 BOSS");
+            GameLogger.Log("[EnemySpawnTester] 已请求销毁 BOSS");
         }
     }
 }

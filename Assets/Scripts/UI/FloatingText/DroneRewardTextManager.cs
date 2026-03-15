@@ -74,7 +74,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             
             if (config == null)
             {
-                Debug.LogError("[DroneRewardTextManager] 配置未设置！");
+                GameLogger.LogError("[DroneRewardTextManager] 配置未设置！");
                 return;
             }
             
@@ -89,7 +89,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             }
             if (targetCanvas == null)
             {
-                Debug.LogError("[DroneRewardTextManager] 找不到 Canvas！");
+                GameLogger.LogError("[DroneRewardTextManager] 找不到 Canvas！");
                 return;
             }
             
@@ -97,7 +97,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log("[DroneRewardTextManager] 初始化完成（简化版）");
+                GameLogger.Log("[DroneRewardTextManager] 初始化完成（简化版）");
             }
         }
         
@@ -128,7 +128,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[DroneRewardTextManager] 补给飘字: {displayText}");
+                GameLogger.Log($"[DroneRewardTextManager] 补给飘字: {displayText}");
             }
         }
         
@@ -154,7 +154,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[DroneRewardTextManager] 问号飘字: {displayText}, Epic={isEpic}");
+                GameLogger.Log($"[DroneRewardTextManager] 问号飘字: {displayText}, Epic={isEpic}");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -195,7 +195,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             
             if (showDebugInfo)
             {
-                Debug.Log($"[DroneRewardTextManager] 契约飘字: {costText} → {gainText}");
+                GameLogger.Log($"[DroneRewardTextManager] 契约飘字: {costText} → {gainText}");
             }
         }
         
@@ -220,7 +220,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             GameObject prefab = GetPrefab(type);
             if (prefab == null)
             {
-                Debug.LogError($"[DroneRewardTextManager] 找不到 {type} 类型的 Prefab！");
+                GameLogger.LogError($"[DroneRewardTextManager] 找不到 {type} 类型的 Prefab！");
                 return null;
             }
             
@@ -229,7 +229,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             
             if (text == null)
             {
-                Debug.LogError($"[DroneRewardTextManager] Prefab 缺少 DroneRewardText 组件！");
+                GameLogger.LogError($"[DroneRewardTextManager] Prefab 缺少 DroneRewardText 组件！");
                 Destroy(go);
                 return null;
             }
@@ -264,7 +264,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             GameObject prefab = config.coinTextPrefab != null ? config.coinTextPrefab : config.gachaTextPrefab;
             if (prefab == null)
             {
-                Debug.LogError("[DroneRewardTextManager] 金币/问号飘字 Prefab 未设置！");
+                GameLogger.LogError("[DroneRewardTextManager] 金币/问号飘字 Prefab 未设置！");
                 return;
             }
     
@@ -283,7 +283,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
     
             if (showDebugInfo)
             {
-                Debug.Log($"[DroneRewardTextManager] 金币飘字: {displayText}");
+                GameLogger.Log($"[DroneRewardTextManager] 金币飘字: {displayText}");
             }
         }
         /// <summary>
@@ -297,7 +297,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             GameObject prefab = config.monsterBuffTextPrefab != null ? config.monsterBuffTextPrefab : config.gachaTextPrefab;
             if (prefab == null)
             {
-                Debug.LogError("[DroneRewardTextManager] 怪物增强/问号飘字 Prefab 未设置！");
+                GameLogger.LogError("[DroneRewardTextManager] 怪物增强/问号飘字 Prefab 未设置！");
                 return;
             }
     
@@ -316,7 +316,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
     
             if (showDebugInfo)
             {
-                Debug.Log($"[DroneRewardTextManager] 怪物增强飘字: {displayText}");
+                GameLogger.Log($"[DroneRewardTextManager] 怪物增强飘字: {displayText}");
             }
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

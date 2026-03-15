@@ -26,6 +26,7 @@
 
 using UnityEngine;
 using LightVsDecay.Logic.TechTree;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI.TechTree
 {
@@ -67,7 +68,7 @@ namespace LightVsDecay.UI.TechTree
                 node.Initialize(OnNodeClicked);
 
             if (showDebugInfo)
-                Debug.Log($"[TechTreePanel] Awake: 找到 {_allNodeUIs.Length} 个节点, {_allLineUIs.Length} 条线段");
+                GameLogger.Log($"[TechTreePanel] Awake: 找到 {_allNodeUIs.Length} 个节点, {_allLineUIs.Length} 条线段");
         }
 
         private void OnEnable()
@@ -105,14 +106,14 @@ namespace LightVsDecay.UI.TechTree
         {
             if (detailPanel == null)
             {
-                Debug.LogWarning("[TechTreePanel] detailPanel 未设置，无法弹出升级窗口！");
+                GameLogger.LogWarning("[TechTreePanel] detailPanel 未设置，无法弹出升级窗口！");
                 return;
             }
 
             detailPanel.Show(data, this);
 
             if (showDebugInfo)
-                Debug.Log($"[TechTreePanel] 点击节点: {data.displayName}");
+                GameLogger.Log($"[TechTreePanel] 点击节点: {data.displayName}");
         }
 
         private void OnNodeUpgraded(string nodeId, int newLevel)
@@ -121,7 +122,7 @@ namespace LightVsDecay.UI.TechTree
             RefreshAll();
 
             if (showDebugInfo)
-                Debug.Log($"[TechTreePanel] 节点升级: {nodeId} → Lv.{newLevel}");
+                GameLogger.Log($"[TechTreePanel] 节点升级: {nodeId} → Lv.{newLevel}");
         }
 
         /// <summary>DetailPanel 关闭后回调</summary>

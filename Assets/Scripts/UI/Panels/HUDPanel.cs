@@ -7,6 +7,7 @@ using LightVsDecay.Logic;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Player;
 using LightVsDecay.Logic.XP;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -298,7 +299,7 @@ namespace LightVsDecay.UI.Panels
         
         private void OnExpChanged(int current, int required)
         {
-            Debug.Log($"[HUDPanel] ★ OnExpChanged 收到! {current}/{required}, expBar={expBar != null}");
+            GameLogger.Log($"[HUDPanel] ★ OnExpChanged 收到! {current}/{required}, expBar={expBar != null}");
             UpdateExpDisplay(current, required);
         }
         
@@ -826,7 +827,7 @@ namespace LightVsDecay.UI.Panels
         
         private void OnPauseButtonClicked()
         {
-            Debug.Log("[HUDPanel] 点击暂停按钮");
+            GameLogger.Log("[HUDPanel] 点击暂停按钮");
     
             // 播放按钮音效
             if (AudioManager.Instance != null)
@@ -841,7 +842,7 @@ namespace LightVsDecay.UI.Panels
             }
             else
             {
-                Debug.LogWarning("[HUDPanel] settingsPanel 未设置！");
+                GameLogger.LogWarning("[HUDPanel] settingsPanel 未设置！");
             }
         }
 

@@ -250,7 +250,7 @@ namespace LightVsDecay.Logic.Statistics
             _lastKnownTotalCoins = 0; // 新游戏从 0 开始
             if (showDebugInfo)
             {
-                Debug.Log("[BattleStatistics] 🎮 开始采集数据 V4.0");
+                GameLogger.Log("[BattleStatistics] 🎮 开始采集数据 V4.0");
             }
         }
         
@@ -296,7 +296,7 @@ namespace LightVsDecay.Logic.Statistics
             
             if (showDebugInfo)
             {
-                Debug.Log($"[BattleStatistics] 技能选择: {type} → Lv.{newLevel}");
+                GameLogger.Log($"[BattleStatistics] 技能选择: {type} → Lv.{newLevel}");
             }
         }
         
@@ -638,7 +638,7 @@ namespace LightVsDecay.Logic.Statistics
         {
             if (!CanRecord()) return;
             _waveOverloadCount++;
-            if (showDebugInfo) Debug.Log("[BattleStatistics] ⚡ 记录大招释放！");
+            if (showDebugInfo) GameLogger.Log("[BattleStatistics] ⚡ 记录大招释放！");
         }
         /// <summary>
         /// 获取整局战斗的总伤害（所有波次 dmgDealtTotal 之和）
@@ -831,7 +831,7 @@ namespace LightVsDecay.Logic.Statistics
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"[BattleStatistics] ✅ 无人机选择: {crateType} | {rewardType} ({rewardValue})");
+                    GameLogger.Log($"[BattleStatistics] ✅ 无人机选择: {crateType} | {rewardType} ({rewardValue})");
                 }
             }
         }
@@ -936,17 +936,17 @@ namespace LightVsDecay.Logic.Statistics
             try
             {
                 File.WriteAllText(filePath, csv.ToString());
-                Debug.Log($"[BattleStatistics] ✅ CSV V4.0 已保存: {filePath}");
-                Debug.Log($"[BattleStatistics] 📊 共记录 {_allWaveStats.Count} 波数据，{CSV_FIELD_COUNT} 个字段");
+                GameLogger.Log($"[BattleStatistics] ✅ CSV V4.0 已保存: {filePath}");
+                GameLogger.Log($"[BattleStatistics] 📊 共记录 {_allWaveStats.Count} 波数据，{CSV_FIELD_COUNT} 个字段");
             }
             catch (Exception e)
             {
-                Debug.LogError($"[BattleStatistics] ❌ CSV 保存失败: {e.Message}");
+                GameLogger.LogError($"[BattleStatistics] ❌ CSV 保存失败: {e.Message}");
             }
             
             if (logToConsole)
             {
-                Debug.Log("=== BATTLE LOG CSV V4.0 ===\n" + csv.ToString());
+                GameLogger.Log("=== BATTLE LOG CSV V4.0 ===\n" + csv.ToString());
             }
         }
         
@@ -1099,14 +1099,14 @@ namespace LightVsDecay.Logic.Statistics
         }
         private void PrintWaveStats(WaveStatData data)
         {
-            Debug.Log($"[BattleStatistics] ═══ Wave {data.wave} 统计 ═══");
-            Debug.Log($"  流派:{data.buildType} | Lv.{data.playerLevel} | 结果:{data.result} | 耗时:{data.timeToClear:F1}s");
-            Debug.Log($"  击杀: S{data.killSlime} R{data.killRusher} T{data.killTank} D{data.killDrifter} E{data.killElite} = {data.killTotal}");
-            Debug.Log($"  HP: {data.hpStartHull}+{data.hpStartShield} → {data.hpEndHull}+{data.hpEndShield} (损失:{data.playerHPLost})");
-            Debug.Log($"  伤害: 主{data.dmgMainLaser:F0} 副{data.dmgSubLaser:F0} 爆{data.dmgExplosion:F0} = {data.dmgDealtTotal:F0}");
-            Debug.Log($"  暴击: {data.critHitCount}次 共{data.critDamageTotal:F0}伤害");
-            Debug.Log($"  技能路径: {data.skillPath}");
-            Debug.Log($"  V4.2: DPS_eff:{data.effectiveDPS:F1} | 受击:{data.playerHitCount}次 | XP:{data.expGained} Gold:{data.goldGained} | 濒死:{data.timeInDanger:F1}s");
+            GameLogger.Log($"[BattleStatistics] ═══ Wave {data.wave} 统计 ═══");
+            GameLogger.Log($"  流派:{data.buildType} | Lv.{data.playerLevel} | 结果:{data.result} | 耗时:{data.timeToClear:F1}s");
+            GameLogger.Log($"  击杀: S{data.killSlime} R{data.killRusher} T{data.killTank} D{data.killDrifter} E{data.killElite} = {data.killTotal}");
+            GameLogger.Log($"  HP: {data.hpStartHull}+{data.hpStartShield} → {data.hpEndHull}+{data.hpEndShield} (损失:{data.playerHPLost})");
+            GameLogger.Log($"  伤害: 主{data.dmgMainLaser:F0} 副{data.dmgSubLaser:F0} 爆{data.dmgExplosion:F0} = {data.dmgDealtTotal:F0}");
+            GameLogger.Log($"  暴击: {data.critHitCount}次 共{data.critDamageTotal:F0}伤害");
+            GameLogger.Log($"  技能路径: {data.skillPath}");
+            GameLogger.Log($"  V4.2: DPS_eff:{data.effectiveDPS:F1} | 受击:{data.playerHitCount}次 | XP:{data.expGained} Gold:{data.goldGained} | 濒死:{data.timeInDanger:F1}s");
         }
 #endif
     }

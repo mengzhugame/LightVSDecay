@@ -43,7 +43,7 @@ namespace LightVsDecay.Core.Pool
             
             if (particleSystems.Length == 0)
             {
-                Debug.LogWarning($"[PoolableVFX] {gameObject.name} 没有找到任何ParticleSystem！");
+                GameLogger.LogWarning($"[PoolableVFX] {gameObject.name} 没有找到任何ParticleSystem！");
             }
             
             // 计算持续时间
@@ -75,7 +75,7 @@ namespace LightVsDecay.Core.Pool
                 // 跳过循环粒子系统的时长计算（它们会一直播放）
                 if (main.loop)
                 {
-                    Debug.LogWarning($"[PoolableVFX] {ps.name} 是循环粒子系统，可能导致无法正确回收");
+                    GameLogger.LogWarning($"[PoolableVFX] {ps.name} 是循环粒子系统，可能导致无法正确回收");
                     continue;
                 }
                 

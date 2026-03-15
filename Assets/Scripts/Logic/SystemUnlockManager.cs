@@ -107,7 +107,7 @@ namespace LightVsDecay.Logic
                 PlayerPrefs.SetInt(KEY_PENDING_TECH_NOTIFY, 1);
 
                 if (showDebugInfo)
-                    Debug.Log("[SystemUnlockManager] ✅ 科技树已解锁！（第一章第1波完成）");
+                    GameLogger.Log("[SystemUnlockManager] ✅ 科技树已解锁！（第一章第1波完成）");
             }
 
             // ── 装备系统：第二章打完第1波即解锁（不要求胜利）──────
@@ -121,13 +121,13 @@ namespace LightVsDecay.Logic
                 PlayerPrefs.SetInt(KEY_PENDING_EQUIP_NOTIFY, 1);
 
                 if (showDebugInfo)
-                    Debug.Log("[SystemUnlockManager] ✅ 装备系统已解锁！（第二章第1波完成）");
+                    GameLogger.Log("[SystemUnlockManager] ✅ 装备系统已解锁！（第二章第1波完成）");
             }
 
             Save();
 
             if (showDebugInfo)
-                Debug.Log($"[SystemUnlockManager] 结算处理: " +
+                GameLogger.Log($"[SystemUnlockManager] 结算处理: " +
                           $"Chapter={chapterIndex + 1}, Diff={difficulty}, " +
                           $"Victory={isVictory}, WavesCleared={wavesCleared}, " +
                           $"TotalBattles={_totalBattlesPlayed}");
@@ -168,7 +168,7 @@ namespace LightVsDecay.Logic
                 PlayerPrefs.Save();
 
                 if (showDebugInfo)
-                    Debug.Log($"[SystemUnlockManager] 消费 {messages.Count} 条待通知：" +
+                    GameLogger.Log($"[SystemUnlockManager] 消费 {messages.Count} 条待通知：" +
                               string.Join(", ", messages));
             }
 
@@ -187,7 +187,7 @@ namespace LightVsDecay.Logic
             OnEquipmentSystemUnlocked?.Invoke();
 
             if (showDebugInfo)
-                Debug.Log("[SystemUnlockManager] 强制解锁：装备系统");
+                GameLogger.Log("[SystemUnlockManager] 强制解锁：装备系统");
         }
 
         public void ForceUnlockTechTree()
@@ -198,7 +198,7 @@ namespace LightVsDecay.Logic
             OnTechTreeUnlocked?.Invoke();
 
             if (showDebugInfo)
-                Debug.Log("[SystemUnlockManager] 强制解锁：科技树");
+                GameLogger.Log("[SystemUnlockManager] 强制解锁：科技树");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -222,7 +222,7 @@ namespace LightVsDecay.Logic
             PlayerPrefs.Save();
 
             if (showDebugInfo)
-                Debug.Log("[SystemUnlockManager] 所有解锁状态已重置");
+                GameLogger.Log("[SystemUnlockManager] 所有解锁状态已重置");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -244,7 +244,7 @@ namespace LightVsDecay.Logic
             _totalBattlesPlayed  = PlayerPrefs.GetInt(KEY_TOTAL_BATTLES_PLAYED, 0);
 
             if (showDebugInfo)
-                Debug.Log($"[SystemUnlockManager] 读档: " +
+                GameLogger.Log($"[SystemUnlockManager] 读档: " +
                           $"Equipment={_isEquipmentUnlocked}, " +
                           $"TechTree={_isTechTreeUnlocked}, " +
                           $"Battles={_totalBattlesPlayed}");
@@ -268,7 +268,7 @@ namespace LightVsDecay.Logic
         [ContextMenu("Debug: Print State")]
         private void DebugPrint()
         {
-            Debug.Log($"[SystemUnlockManager] Equipment={_isEquipmentUnlocked}, " +
+            GameLogger.Log($"[SystemUnlockManager] Equipment={_isEquipmentUnlocked}, " +
                       $"TechTree={_isTechTreeUnlocked}, Battles={_totalBattlesPlayed}\n" +
                       $"PendingTech={PlayerPrefs.GetInt(KEY_PENDING_TECH_NOTIFY, 0)}, " +
                       $"PendingEquip={PlayerPrefs.GetInt(KEY_PENDING_EQUIP_NOTIFY, 0)}");

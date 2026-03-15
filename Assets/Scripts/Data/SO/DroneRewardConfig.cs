@@ -8,6 +8,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -367,7 +368,7 @@ namespace LightVsDecay.Data.SO
     
             if (filteredPool.Count == 0)
             {
-                Debug.LogWarning("[DroneRewardConfig] 补给箱过滤后奖励池为空！");
+                GameLogger.LogWarning("[DroneRewardConfig] 补给箱过滤后奖励池为空！");
                 return null;
             }
     
@@ -451,7 +452,7 @@ namespace LightVsDecay.Data.SO
     
             if (filteredPool.Count == 0)
             {
-                Debug.LogWarning("[DroneRewardConfig] 契约箱过滤后交易池为空！");
+                GameLogger.LogWarning("[DroneRewardConfig] 契约箱过滤后交易池为空！");
                 return null;
             }
     
@@ -465,7 +466,7 @@ namespace LightVsDecay.Data.SO
             int cumulative = 0;
     
             // 调试日志
-            Debug.Log($"[DroneRewardConfig] 契约抽取: 池大小={filteredPool.Count}, 总权重={totalWeight}, 随机值={roll}, 护盾破碎={isShieldBroken}");
+            GameLogger.Log($"[DroneRewardConfig] 契约抽取: 池大小={filteredPool.Count}, 总权重={totalWeight}, 随机值={roll}, 护盾破碎={isShieldBroken}");
     
             int index = 0;
             foreach (var entry in filteredPool)
@@ -473,7 +474,7 @@ namespace LightVsDecay.Data.SO
                 cumulative += entry.weight;
                 if (roll < cumulative)
                 {
-                    Debug.Log($"[DroneRewardConfig] 抽中第 {index} 个: {entry.dealName}, 代价={entry.cost?.displayText}, 收益={entry.gain?.displayText}");
+                    GameLogger.Log($"[DroneRewardConfig] 抽中第 {index} 个: {entry.dealName}, 代价={entry.cost?.displayText}, 收益={entry.gain?.displayText}");
                     return entry;
                 }
                 index++;

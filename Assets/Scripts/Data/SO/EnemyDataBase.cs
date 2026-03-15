@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -57,7 +58,7 @@ namespace LightVsDecay.Data.SO
                 return data;
             }
             
-            Debug.LogWarning($"[EnemyDatabase] 未找到 {type} 类型的配置！");
+            GameLogger.LogWarning($"[EnemyDatabase] 未找到 {type} 类型的配置！");
             return null;
         }
         
@@ -98,7 +99,7 @@ namespace LightVsDecay.Data.SO
                 
                 if (_cache.ContainsKey(enemy.type))
                 {
-                    Debug.LogWarning($"[EnemyDatabase] 重复的敌人类型: {enemy.type}，将使用第一个配置");
+                    GameLogger.LogWarning($"[EnemyDatabase] 重复的敌人类型: {enemy.type}，将使用第一个配置");
                     continue;
                 }
                 
@@ -123,7 +124,7 @@ namespace LightVsDecay.Data.SO
         [ContextMenu("验证数据")]
         public void ValidateData()
         {
-            Debug.Log("=== 敌人数据库验证 ===");
+            GameLogger.Log("=== 敌人数据库验证 ===");
             
             HashSet<EnemyType> types = new HashSet<EnemyType>();
             int errorCount = 0;
@@ -134,14 +135,14 @@ namespace LightVsDecay.Data.SO
                 
                 if (enemy == null)
                 {
-                    Debug.LogError($"[{i}] 空引用！");
+                    GameLogger.LogError($"[{i}] 空引用！");
                     errorCount++;
                     continue;
                 }
                 
                 if (types.Contains(enemy.type))
                 {
-                    Debug.LogWarning($"[{i}] {enemy.name}: 类型 {enemy.type} 重复！");
+                    GameLogger.LogWarning($"[{i}] {enemy.name}: 类型 {enemy.type} 重复！");
                     errorCount++;
                 }
                 else
@@ -152,20 +153,20 @@ namespace LightVsDecay.Data.SO
                 // 验证数值合理性
                 if (enemy.maxHealth <= 0)
                 {
-                    Debug.LogError($"[{i}] {enemy.name}: 生命值必须大于0！");
+                    GameLogger.LogError($"[{i}] {enemy.name}: 生命值必须大于0！");
                     errorCount++;
                 }
                 
                 if (enemy.moveSpeed <= 0)
                 {
-                    Debug.LogError($"[{i}] {enemy.name}: 移动速度必须大于0！");
+                    GameLogger.LogError($"[{i}] {enemy.name}: 移动速度必须大于0！");
                     errorCount++;
                 }
                 
-                Debug.Log($"[{i}] {enemy.type}: HP={enemy.maxHealth}, Speed={enemy.moveSpeed}, Mass={enemy.mass}");
+                GameLogger.Log($"[{i}] {enemy.type}: HP={enemy.maxHealth}, Speed={enemy.moveSpeed}, Mass={enemy.mass}");
             }
             
-            Debug.Log($"=== 验证完成: {enemies.Count} 条记录, {errorCount} 个错误 ===");
+            GameLogger.Log($"=== 验证完成: {enemies.Count} 条记录, {errorCount} 个错误 ===");
         }
 #endif
     }

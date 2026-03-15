@@ -6,6 +6,7 @@
 
 using UnityEngine;
 using LightVsDecay.Audio;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -46,7 +47,7 @@ namespace LightVsDecay.Logic.Player
         public void StartLaserAudio()
         {
             if (showDebugInfo)
-                Debug.Log($"[LaserAudioHandler] StartLaserAudio 调用, AudioManager={AudioManager.Instance != null}, isStarted={isLaserAudioStarted}");
+                GameLogger.Log($"[LaserAudioHandler] StartLaserAudio 调用, AudioManager={AudioManager.Instance != null}, isStarted={isLaserAudioStarted}");
             
             if (AudioManager.Instance != null && !isLaserAudioStarted)
             {
@@ -54,7 +55,7 @@ namespace LightVsDecay.Logic.Player
                 isLaserAudioStarted = true;
                 
                 if (showDebugInfo)
-                    Debug.Log("[LaserAudioHandler] 激光音效已启动");
+                    GameLogger.Log("[LaserAudioHandler] 激光音效已启动");
             }
         }
         

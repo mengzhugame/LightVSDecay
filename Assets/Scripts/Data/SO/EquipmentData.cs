@@ -5,6 +5,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Core;
 
 namespace LightVsDecay.Data.SO
 {
@@ -213,7 +214,7 @@ namespace LightVsDecay.Data.SO
 
 #if UNITY_EDITOR
             if (rarity == ItemRarity.Common)
-                Debug.LogWarning($"[EquipmentData] {name}: 品质不应设为 Common，" +
+                GameLogger.LogWarning($"[EquipmentData] {name}: 品质不应设为 Common，" +
                                  "Common 仅用于无装备时的默认塔外观，请改为 Uncommon 或以上。");
 #endif
         }
