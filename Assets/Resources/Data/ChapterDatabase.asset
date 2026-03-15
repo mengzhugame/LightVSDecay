@@ -16,6 +16,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 67c47ba54fcb6de469ea05b6f557162f, type: 2}
   - {fileID: 11400000, guid: d1b46a29fa6933a4bb61c05b7d8b4cce, type: 2}
   - {fileID: 11400000, guid: d9e471d2106468046b04eeca9b516452, type: 2}
-  lockIcon: {fileID: 21300000, guid: 8404f6e7fb07e824ab77ac3f63b77506, type: 3}
+  lockIcon: {fileID: 21300000, guid: bc7239e46eb2b804f88f7df98faaaab8, type: 3}
   difficultyIconActive: {fileID: 21300000, guid: 2dec9ebf2d029ec4fb2b8ecf0c232e30, type: 3}
   difficultyIconInactive: {fileID: 21300000, guid: c42dafc75324c6f41b0e4ee6f7a7758a, type: 3}

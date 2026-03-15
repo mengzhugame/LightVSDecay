@@ -151,6 +151,8 @@ namespace LightVsDecay.Data.SO
         [Tooltip("章节主题色（用于UI高亮等）")]
         public Color themeColor = new Color(0f, 1f, 1f, 1f); // 默认青色
         
+        [Tooltip("流体怪物底色（MetaballsThreshold shader 的 _Color）")]
+        public Color enemyBlobColor = new Color(0.1f, 0f, 0.2f, 1f); // 默认深紫/黑（第1章
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 音频资源
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

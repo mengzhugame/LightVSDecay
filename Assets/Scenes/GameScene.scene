@@ -694,6 +694,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_virtualGeometry: 0
+  m_virtualGeometryShadow: 0
   m_ShadingRate: 0
   m_ForceDisableGRD: 0
   m_RenderingLayerMask: 1
@@ -5001,6 +5003,8 @@ ParticleSystemRenderer:
   m_ReflectionProbeUsage: 0
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_virtualGeometry: 0
+  m_virtualGeometryShadow: 0
   m_ShadingRate: 0
   m_ForceDisableGRD: 0
   m_RenderingLayerMask: 1
@@ -15796,6 +15800,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_virtualGeometry: 0
+  m_virtualGeometryShadow: 0
   m_ShadingRate: 0
   m_ForceDisableGRD: 0
   m_RenderingLayerMask: 1
@@ -19037,7 +19043,7 @@ GameObject:
   - component: {fileID: 2020637454}
   m_Layer: 0
   m_HasEditorInfo: 1
-  m_Name: Backaground
+  m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19060,6 +19066,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_virtualGeometry: 0
+  m_virtualGeometryShadow: 0
   m_ShadingRate: 0
   m_ForceDisableGRD: 0
   m_RenderingLayerMask: 1
@@ -19223,6 +19231,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_virtualGeometry: 0
+  m_virtualGeometryShadow: 0
   m_ShadingRate: 0
   m_ForceDisableGRD: 0
   m_RenderingLayerMask: 1
@@ -19334,6 +19344,8 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_virtualGeometry: 0
+  m_virtualGeometryShadow: 0
   m_ShadingRate: 0
   m_ForceDisableGRD: 0
   m_RenderingLayerMask: 1
@@ -19973,6 +19985,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_virtualGeometry: 0
+  m_virtualGeometryShadow: 0
   m_ShadingRate: 0
   m_ForceDisableGRD: 0
   m_RenderingLayerMask: 1
@@ -20077,6 +20091,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_virtualGeometry: 0
+  m_virtualGeometryShadow: 0
   m_ShadingRate: 0
   m_ForceDisableGRD: 0
   m_RenderingLayerMask: 1

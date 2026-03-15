@@ -1,3 +1,6 @@
+// ── MetaballsManager.cs 完整替换 ──
+// 文件位置: Assets/Scripts/Logic/Enemy/MetaballsManager.cs
+
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,21 +13,27 @@ namespace LightVsDecay.Logic.Enemy
     public class MetaballsManager : MonoBehaviour
     {
         [Header("RT Configuration")]
-        [SerializeField] private Vector2Int rtResolutionScale = new Vector2Int(2, 2); // 屏幕分辨率除以此值
+        [SerializeField] private Vector2Int rtResolutionScale = new Vector2Int(2, 2);
         [SerializeField] private RenderTextureFormat rtFormat = RenderTextureFormat.ARGB32;
         
         [Header("Camera Settings")]
-        [SerializeField] private LayerMask enemyBodyLayer; // 只渲染 EnemyBody Layer
-        [SerializeField] private Color cameraBackground = Color.black; // 纯黑背景
-        [SerializeField] private float cameraSize = 10f; // Orthographic Size
+        [SerializeField] private LayerMask enemyBodyLayer;
+        [SerializeField] private Color cameraBackground = Color.black; // 必须保持黑色
+        [SerializeField] private float cameraSize = 10f;
         
         [Header("UI Display")]
-        [SerializeField] private GameObject displayBodyRTObj; // 承载body的RT的物体
+        [SerializeField] private GameObject displayBodyRTObj;
+        
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
+        
         // 内部引用
         private RenderTexture metaballsRT;
         private Camera metaballsCamera;
+        private Material thresholdMaterial; // 【新增】缓存阈值材质引用
+        
+        // 【新增】Shader属性ID缓存
+        private static readonly int BlobColorID = Shader.PropertyToID("_Color");
         
         private void Awake()
         {
@@ -49,7 +58,7 @@ namespace LightVsDecay.Logic.Enemy
             metaballsRT = new RenderTexture(width, height, 0, rtFormat)
             {
                 name = "MetaballsRT",
-                filterMode = FilterMode.Bilinear, // 模糊效果更好
+                filterMode = FilterMode.Bilinear,
                 wrapMode = TextureWrapMode.Clamp
             };
             
@@ -65,21 +74,19 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         private void SetupCamera()
         {
-            // 创建新的GameObject挂载Camera
             GameObject cameraObj = new GameObject("MetaballsCamera");
             cameraObj.transform.SetParent(transform);
-            cameraObj.transform.position = new Vector3(0, 0, -10); // Z轴负值
+            cameraObj.transform.position = new Vector3(0, 0, -10);
             
             metaballsCamera = cameraObj.AddComponent<Camera>();
             
-            // Camera配置
             metaballsCamera.orthographic = true;
             metaballsCamera.orthographicSize = cameraSize;
             metaballsCamera.clearFlags = CameraClearFlags.SolidColor;
             metaballsCamera.backgroundColor = cameraBackground;
-            metaballsCamera.cullingMask = enemyBodyLayer; // 只渲染EnemyBody
+            metaballsCamera.cullingMask = enemyBodyLayer;
             metaballsCamera.targetTexture = metaballsRT;
-            metaballsCamera.depth = -100; // 渲染优先级最低
+            metaballsCamera.depth = -100;
             if (showDebugInfo)
             {
                 Debug.Log(
@@ -98,8 +105,9 @@ namespace LightVsDecay.Logic.Enemy
                 return;
             }
 
-            Material mat = displayBodyRTObj.GetComponent<MeshRenderer>().material;
-            mat.SetTexture("_MainTex",metaballsRT);
+            // 【修改】缓存材质引用，后续 SetBlobColor 复用
+            thresholdMaterial = displayBodyRTObj.GetComponent<MeshRenderer>().material;
+            thresholdMaterial.SetTexture("_MainTex", metaballsRT);
         }
         
         /// <summary>
@@ -126,6 +134,31 @@ namespace LightVsDecay.Logic.Enemy
             if (metaballsCamera != null)
             {
                 metaballsCamera.orthographicSize = newSize;
+            }
+        }
+        
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 【新增】章节流体颜色
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        /// <summary>
+        /// 设置流体怪物底色（由 GameManager 在章节初始化时调用）
+        /// 修改的是 MetaballsThreshold shader 的 _Color 属性
+        /// </summary>
+        public void SetBlobColor(Color color)
+        {
+            if (thresholdMaterial != null)
+            {
+                thresholdMaterial.SetColor(BlobColorID, color);
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[MetaballsManager] Blob颜色已设置: {color}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[MetaballsManager] thresholdMaterial 未初始化，无法设置颜色！");
             }
         }
     }

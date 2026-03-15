@@ -12,6 +12,7 @@ using LightVsDecay.Core;
 using LightVsDecay.Data;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Logic.Enemy;
 
 namespace LightVsDecay.Logic
 {
@@ -316,7 +317,8 @@ namespace LightVsDecay.Logic
             
             // 应用战斗 BGM
             ApplyBattleBGM();
-            
+            // 【新增】应用流体怪物底色
+            ApplyEnemyBlobColor();
             if (showDebugInfo)
             {
                 Debug.Log($"[GameManager] 章节配置已应用: {currentChapterConfig.chapterName}");
@@ -371,7 +373,28 @@ namespace LightVsDecay.Logic
             }
             // 否则使用 AudioManager 的默认战斗 BGM（在 OnSceneLoaded 中已处理）
         }
-        
+        /// <summary>
+        /// 应用流体怪物底色（章节特色颜色）
+        /// </summary>
+        private void ApplyEnemyBlobColor()
+        {
+            // 查找场景中的 MetaballsManager
+            var metaballsManager = FindObjectOfType<MetaballsManager>();
+            
+            if (metaballsManager != null)
+            {
+                metaballsManager.SetBlobColor(currentChapterConfig.enemyBlobColor);
+                
+                if (showDebugInfo)
+                {
+                    Debug.Log($"[GameManager] 流体底色已设置: {currentChapterConfig.enemyBlobColor}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[GameManager] 未找到 MetaballsManager，无法设置流体颜色！");
+            }
+        }
         /// <summary>
         /// 设置战斗背景引用（供场景中的脚本调用）
         /// </summary>

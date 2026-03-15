@@ -16,14 +16,15 @@ MonoBehaviour:
   chapterNumber: 3
   chapterName: "\u6781\u5BD2\u865A\u7A7A"
   chapterDescription: "\u7B2C\u4E09\u7AE0\uFF1A\u6781\u5BD2\u865A\u7A7A"
-  chapterCardImage: {fileID: 21300000, guid: 57ce1661d3b0ef1439784f94c06b61ce, type: 3}
+  chapterCardImage: {fileID: 21300000, guid: aecf6ed1cfaeb914892e81bef8fd14bc, type: 3}
   battleBackgroundImage: {fileID: 21300000, guid: 77857ab770629004bb0512bc0e9b2a17, type: 3}
   themeColor: {r: 0, g: 0.61710167, b: 1, a: 1}
+  enemyBlobColor: {r: 0, g: 0.43911216, b: 0.7132075, a: 1}
   battleBGM: {fileID: 0}
   bossBGM: {fileID: 0}
-  waveConfig: {fileID: 11400000, guid: 9967bbae06fefc1438e76fc06f774805, type: 2}
+  waveConfig: {fileID: 11400000, guid: 6cdd38226c8199e4eb9bea5549f81ae0, type: 2}
   bossPrefab: {fileID: 7651956220622171640, guid: 5b037580938be1f40998b30cf4c7c9e2, type: 3}
-  mechanicType: 0
+  mechanicType: 2
   difficulties:
   - difficultyLevel: 1
     displayName: "\u666E\u901A"
