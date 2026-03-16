@@ -202,29 +202,29 @@ namespace LightVsDecay.Logic
         }
         
         /// <summary>
-        /// 加载主菜单场景
+        /// 加载主菜单场景（安全异步，适配微信小游戏WebGL）
         /// </summary>
         public void LoadMainMenu()
         {
             // 清除事件订阅，防止内存泄漏
             GameEvents.ClearAllEvents();
-            
+
             // 恢复时间缩放
             Time.timeScale = 1f;
-            
+
             ChangeState(GameState.Menu);
-            SceneManager.LoadScene(mainMenuSceneName);
+            StartCoroutine(SafeSceneLoader.LoadSceneSafe(mainMenuSceneName));
         }
-        
+
         /// <summary>
-        /// 加载游戏场景
+        /// 加载游戏场景（安全异步，适配微信小游戏WebGL）
         /// </summary>
         public void LoadGameScene()
         {
             // 清除事件订阅
             GameEvents.ClearAllEvents();
-            
-            SceneManager.LoadScene(gameSceneName);
+
+            StartCoroutine(SafeSceneLoader.LoadSceneSafe(gameSceneName));
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

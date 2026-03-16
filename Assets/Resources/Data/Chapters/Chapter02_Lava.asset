@@ -19,7 +19,7 @@ MonoBehaviour:
   chapterCardImage: {fileID: 21300000, guid: 4b95a11f671a5b0499cb2edb884d697b, type: 3}
   battleBackgroundImage: {fileID: 21300000, guid: b61762994dec6c24a800b72fb517829a, type: 3}
   themeColor: {r: 1, g: 0.28308588, b: 0, a: 1}
-  enemyBlobColor: {r: 0.6745098, g: 0.22745098, b: 0.039215688, a: 1}
+  enemyBlobColor: {r: 0.827451, g: 0.26666668, b: 0.019607844, a: 1}
   battleBGM: {fileID: 0}
   bossBGM: {fileID: 0}
   waveConfig: {fileID: 11400000, guid: cf7c4f3afef448c41b767912560c3767, type: 2}
