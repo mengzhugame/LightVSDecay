@@ -26,6 +26,7 @@ namespace LightVsDecay.Data.SO
         Wide,       // 广域透镜 - +激光宽度
         Crit,       // 致命暴击 - +暴击率
         Shatter,    // 数据破碎 - 对受损敌人额外伤害
+        Reflex,     // 反射透镜 - 激光碰墙反射（第三章冰墙专属）
     }
     
     /// <summary>
@@ -130,7 +131,20 @@ namespace LightVsDecay.Data.SO
         [Tooltip("伤害衰减率（每跳衰减，0.2 = 20%）")]
         [Range(0f, 0.5f)]
         public float chainDamageDecay = 0.2f;
-        
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 反射透镜相关（Reflex）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("反射透镜相关（Reflex）")]
+        [Tooltip("反射段伤害倍率（0.5 = 50%，相对于主激光伤害）")]
+        [Range(0f, 1f)]
+        public float reflexDamageMultiplier = 0f;
+
+        [Tooltip("激光总长度加成（0.1 = +10%）")]
+        [Range(0f, 1f)]
+        public float reflexLengthBonus = 0f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 暴击相关（致命暴击）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -344,9 +358,10 @@ namespace LightVsDecay.Data.SO
                 case SkillType.Prism:   // 分裂棱镜
                 case SkillType.Focus:   // 聚能透镜
                 case SkillType.Impact:  // 冲击模块
-                case SkillType.Chain:  // 反射透镜
+                case SkillType.Chain:  // 连锁反应
                 case SkillType.Frost:   // 极寒光束
                 case SkillType.FrostSpread:
+                case SkillType.Reflex:  // 反射透镜
                     cardType = SkillCardType.Attack;
                     break;
                     

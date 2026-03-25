@@ -5,7 +5,23 @@
       "Bash(where python3:*)",
       "Bash(where python:*)",
       "Bash(\"/c/Users/WangYongCheng/AppData/Local/Programs/Python/Python310/python.exe\" -c \"print\\('ok'\\)\")",
-      "Bash(\"/c/Users/WangYongCheng/AppData/Local/Programs/Python/Python310/python.exe\" \"D:/Project/LightVSDecay/migrate_logger.py\")"
+      "Bash(\"/c/Users/WangYongCheng/AppData/Local/Programs/Python/Python310/python.exe\" \"D:/Project/LightVSDecay/migrate_logger.py\")",
+      "Skill(update-config)",
+      "Bash(powershell*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -ExecutionPolicy Bypass -NoProfile -File \"C:/Users/WangYongCheng/.claude/save-conversation.ps1\"",
+            "timeout": 30,
+            "statusMessage": "保存对话记录..."
+          }
+        ]
+      }
     ]
   }
 }

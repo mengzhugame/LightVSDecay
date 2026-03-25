@@ -115,6 +115,11 @@ namespace LightVsDecay.Logic.Player
         private float baseLaserWidth = 1.0f;
         private float tickRate = 0.1f;
 
+        // 反射段伤害倍率（Reflex 技能控制，反射段伤害 = 主激光伤害 × 此值）
+        private float reflexSegmentDamageMultiplier = 1f;
+        // 反射是否已启用（用于 CreateSubLaser 时继承状态）
+        private bool reflexEnabled = false;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -355,15 +360,17 @@ namespace LightVsDecay.Logic.Player
         private void DetectAndDamageEnemiesSegmented(LaserBeam beam, float baseDamage, float knockbackMultiplier, bool isMainLaser)
         {
             if (beam == null) return;
-    
+
             var segments = beam.GetLaserSegments();
             if (segments == null || segments.Count == 0) return;
-    
+
             float width = beam.GetLaserWidth();
-    
+
             foreach (var segment in segments)
             {
-                DetectAndDamageInSegment(segment, width, baseDamage, knockbackMultiplier, isMainLaser);
+                // 反射段伤害降低（由 reflexSegmentDamageMultiplier 控制）
+                float damage = segment.isReflected ? baseDamage * reflexSegmentDamageMultiplier : baseDamage;
+                DetectAndDamageInSegment(segment, width, damage, knockbackMultiplier, isMainLaser);
             }
         }
         
@@ -873,11 +880,17 @@ namespace LightVsDecay.Logic.Player
             }
     
             beam.SetLaserPivot(subLaserObj.transform);
-    
+
             float subLength = maxLaserLength * lengthMultiplier;
             beam.SetMaxLength(subLength);
             beam.SetLaserWidth(CurrentSubLaserWidth);
-            
+
+            // 继承当前反射状态
+            if (reflexEnabled)
+            {
+                beam.SetReflectionEnabled(true);
+            }
+
             if (hasCustomColor)
             {
                 beam.SetColor(mainLaserColor);
@@ -1155,6 +1168,38 @@ namespace LightVsDecay.Logic.Player
         public void SetCritLevelFromConfig(int level, float critRateBonus, float critDamageBonus, bool enableKnockback)
         {
             critSystem.SetCritLevelFromConfig(level, critRateBonus, critDamageBonus, enableKnockback);
+        }
+
+        /// <summary>
+        /// 配置反射透镜（Reflex）
+        /// </summary>
+        /// <param name="level">技能等级（0 = 禁用）</param>
+        /// <param name="damageMultiplier">反射段伤害倍率</param>
+        /// <param name="lengthBonus">激光长度加成（0.1 = +10%）</param>
+        public void SetReflexFromConfig(int level, float damageMultiplier, float lengthBonus)
+        {
+            reflexEnabled = level > 0;
+            reflexSegmentDamageMultiplier = reflexEnabled ? damageMultiplier : 1f;
+
+            // 主激光启用反射
+            mainLaserBeam?.SetReflectionEnabled(reflexEnabled);
+
+            // 同步所有已存在的副激光
+            foreach (var subLaser in subLasers)
+            {
+                subLaser.beam?.SetReflectionEnabled(reflexEnabled);
+            }
+
+            // 调整激光总长度（使用 AddLengthPercent 与其他技能叠加）
+            if (reflexEnabled && lengthBonus > 0f)
+            {
+                AddLengthPercent(lengthBonus);
+            }
+
+            if (showDebugInfo)
+            {
+                GameLogger.Log($"[LaserController] Reflex Lv.{level} - 反射:{reflexEnabled}, 段伤害:{damageMultiplier:P0}, 长度+{lengthBonus:P0}");
+            }
         }
 
         public void SetVFXColor(Color color)

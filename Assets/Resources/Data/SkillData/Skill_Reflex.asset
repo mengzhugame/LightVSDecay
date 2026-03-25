@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4e18ec0e0bd528438a29401d6451dfa, type: 3}
-  m_Name: Skill_Chain
+  m_Name: Skill_Reflex
   m_EditorClassIdentifier: 
-  type: 3
+  type: 10
   category: 0
   cardType: 0
-  displayName: "\u8FDE\u9501\u53CD\u5E94"
-  icon: {fileID: 21300000, guid: 64b882ec7953f724aad0b6278d0aa1fc, type: 3}
-  description: "\u6FC0\u5149\u53EF\u4EE5\u4F20\u5BFC"
+  displayName: "\u53CD\u5C04\u900F\u955C"
+  icon: {fileID: 21300000, guid: 2e254cd969975a14486229dcc870f4d7, type: 3}
+  description: "\u6FC0\u5149\u78B0\u5230\u5199\u5899\u65F6\u4F1A\u53CD\u5C04\u4E00\u6B21\uFF0C\u53EF\u7E95\u8FC7\u51B0\u5899\u51FB\u6740\u8FDC\u5904\u655E\u4EBA"
   changeColor: 0
   skillColor: {r: 1, g: 1, b: 1, a: 1}
   maxLevel: 5
   isRepeatable: 0
   levelData:
-  - description: "\u7535\u6D41\u4F20\u5BFC1\u6B21\uFF0C\u4F24\u5BB3\u8870\u51CF<color=#00FF00>20%</color>"
+  - description: "\u53CD\u5C04\u6BB5\u4F24\u5BB3<color=#00FF00>50%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 1
@@ -38,7 +38,7 @@ MonoBehaviour:
     chainBounces: 1
     chainRange: 3
     chainDamageDecay: 0.2
-    reflexDamageMultiplier: 0
+    reflexDamageMultiplier: 0.5
     reflexLengthBonus: 0
     critRateBonus: 0
     critDamageBonus: 0
@@ -54,7 +54,7 @@ MonoBehaviour:
     frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u7535\u6D41\u4F20\u5BFC2\u6B21\uFF0C\u4F24\u5BB3\u8870\u51CF<color=#00FF00>15%</color>"
+  - description: "\u53CD\u5C04\u6BB5\u4F24\u5BB3<color=#00FF00>60%</color>\n\u6FC0\u5149\u603B\u957F\u5EA6<color=#00FF00>+10%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 1
@@ -66,11 +66,11 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 1
-    chainBounces: 2
+    chainBounces: 1
     chainRange: 3
-    chainDamageDecay: 0.15
-    reflexDamageMultiplier: 0
-    reflexLengthBonus: 0
+    chainDamageDecay: 0.2
+    reflexDamageMultiplier: 0.6
+    reflexLengthBonus: 0.1
     critRateBonus: 0
     critDamageBonus: 0
     critKnockback: 0
@@ -85,7 +85,7 @@ MonoBehaviour:
     frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u7535\u6D41\u4F20\u5BFC3\u6B21\uFF0C\u4F24\u5BB3\u8870\u51CF<color=#00FF00>10%</color>"
+  - description: "\u53CD\u5C04\u6BB5\u4F24\u5BB3<color=#00FF00>70%</color>\n\u6FC0\u5149\u603B\u957F\u5EA6<color=#00FF00>+20%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 1
@@ -97,11 +97,11 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 1
-    chainBounces: 3
+    chainBounces: 1
     chainRange: 3
-    chainDamageDecay: 0.1
-    reflexDamageMultiplier: 0
-    reflexLengthBonus: 0
+    chainDamageDecay: 0.2
+    reflexDamageMultiplier: 0.7
+    reflexLengthBonus: 0.2
     critRateBonus: 0
     critDamageBonus: 0
     critKnockback: 0
@@ -116,7 +116,7 @@ MonoBehaviour:
     frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u7535\u6D41\u4F20\u5BFC4\u6B21\uFF0C\u4F24\u5BB3\u8870\u51CF<color=#00FF00>5%</color>"
+  - description: "\u53CD\u5C04\u6BB5\u4F24\u5BB3<color=#00FF00>80%</color>\n\u6FC0\u5149\u603B\u957F\u5EA6<color=#00FF00>+40%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 1
@@ -128,11 +128,11 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 1
-    chainBounces: 4
+    chainBounces: 1
     chainRange: 3
-    chainDamageDecay: 0.05
-    reflexDamageMultiplier: 0
-    reflexLengthBonus: 0
+    chainDamageDecay: 0.2
+    reflexDamageMultiplier: 0.8
+    reflexLengthBonus: 0.4
     critRateBonus: 0
     critDamageBonus: 0
     critKnockback: 0
@@ -147,7 +147,7 @@ MonoBehaviour:
     frostSpreadFreezeRate: 0
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u7535\u6D41\u4F20\u5BFC5\u6B21\uFF0C\u4F24\u5BB3\u4E0D\u8870\u51CF"
+  - description: "\u53CD\u5C04\u6BB5\u4F24\u5BB3<color=#00FF00>100%</color>\n\u6FC0\u5149\u603B\u957F\u5EA6<color=#00FF00>+60%</color>"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 1
@@ -159,11 +159,11 @@ MonoBehaviour:
     splitDamageMultiplier: 0.3
     splitLength: 3
     widthMultiplier: 1
-    chainBounces: 5
+    chainBounces: 1
     chainRange: 3
-    chainDamageDecay: 0
-    reflexDamageMultiplier: 0
-    reflexLengthBonus: 0
+    chainDamageDecay: 0.2
+    reflexDamageMultiplier: 1
+    reflexLengthBonus: 0.6
     critRateBonus: 0
     critDamageBonus: 0
     critKnockback: 0

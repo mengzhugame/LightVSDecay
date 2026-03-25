@@ -86,6 +86,7 @@ namespace LightVsDecay.Logic.Player
         private int critLevel = 0;
         private int shatterLevel = 0;  // 【新增】数据破碎等级
         private int chainLevel = 0;  // 连锁反应等级
+        private int reflexLevel = 0; // 反射透镜等级
         private int frostSpreadLevel = 0; // 已在上面合并，只需确保不重复
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 累计加成
@@ -284,7 +285,11 @@ namespace LightVsDecay.Logic.Player
                 case SkillType.Chain:
                     ApplyChainEffect(newLevel, skillData);
                     break;
-                    
+
+                case SkillType.Reflex:
+                    ApplyReflexEffect(newLevel, skillData);
+                    break;
+
                 // ========== 被动技能 ==========
                 case SkillType.Power:
                     ApplyPowerEffect(newLevel, skillData);
@@ -518,10 +523,43 @@ namespace LightVsDecay.Logic.Player
             }
         }
         
+        /// <summary>
+        /// 应用 Reflex（反射透镜）效果
+        /// 固定1次反射，等级影响反射段伤害和激光总长度
+        /// </summary>
+        private void ApplyReflexEffect(int level, SkillData skillData)
+        {
+            reflexLevel = level;
+
+            var levelData = GetLevelData(skillData, level);
+            if (levelData == null)
+            {
+                GameLogger.LogError($"[SkillEffectManager] ❌ Reflex Lv.{level} 配置缺失！请检查 SkillDatabase");
+                return;
+            }
+
+            if (laserController != null)
+            {
+                laserController.SetReflexFromConfig(
+                    level,
+                    levelData.reflexDamageMultiplier,
+                    levelData.reflexLengthBonus);
+            }
+
+            if (showDebugInfo)
+            {
+                GameLogger.Log($"[SkillEffectManager] ✓ Reflex Lv.{level} - " +
+                          $"反射伤害:{levelData.reflexDamageMultiplier:P0}, 长度+{levelData.reflexLengthBonus:P0}");
+            }
+        }
+
+        /// <summary>获取当前 Reflex 等级</summary>
+        public int GetReflexLevel() => reflexLevel;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 被动技能效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         /// <summary>
         /// 应用 Power（功率超频）效果
         /// </summary>

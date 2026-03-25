@@ -45,6 +45,8 @@ namespace LightVsDecay.Core
         public const string WALL_TAG = "Wall";
         /// <summary>Raycast检测间隔（秒）- 性能优化</summary>
         public const float RAYCAST_INTERVAL = 0.1f;
+        /// <summary>反射点偏移量（避免反射光线在墙壁处重复检测）</summary>
+        public const float REFLEX_POINT_OFFSET = 0.01f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 高压水枪效果

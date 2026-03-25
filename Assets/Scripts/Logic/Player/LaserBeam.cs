@@ -18,6 +18,7 @@ namespace LightVsDecay.Logic.Player
         public Vector3 startPoint;
         public Vector3 endPoint;
         public float length;
+        public bool isReflected;  // 是否是反射段（供 LaserController 降低伤害）
 
         public Vector3 Direction => (endPoint - startPoint).normalized;
     }
@@ -55,6 +56,10 @@ namespace LightVsDecay.Logic.Player
         
         [Tooltip("激光宽度")]
         [SerializeField] private float laserWidth = GameConstants.LASER_DEFAULT_WIDTH;
+
+        [Header("反射设置")]
+        [Tooltip("是否启用墙壁反射（由 Reflex 技能控制）")]
+        [SerializeField] private bool reflectionEnabled = false;
 
         [Tooltip("墙壁检测层")]
         [SerializeField] private LayerMask wallLayer;
@@ -96,6 +101,10 @@ namespace LightVsDecay.Logic.Player
         private bool hitEnemy = false;
         private Vector3 hitPoint;
         private RaycastHit2D currentHit;
+
+        // 反射状态
+        private bool hasReflection = false;
+        private Vector3 reflectionPoint;
         
         // ========== 材质颜色控制 ==========
         private MaterialPropertyBlock laserPropertyBlock;
@@ -184,60 +193,102 @@ namespace LightVsDecay.Logic.Player
             laserPoints.Clear();
             laserSegments.Clear();
             hitEnemy = false;
-            
+            hasReflection = false;
+
             if (laserPivot == null)
             {
                 GameLogger.LogError("[LaserBeam] laserPivot 为空！无法计算激光路径");
                 return;
             }
-            
+
             // 起点（本地 0,0,0 转换为世界坐标）
             Vector3 startPoint = laserPivot.TransformPoint(Vector3.zero);
             laserPoints.Add(startPoint);
-            
+
             // 计算激光方向（本地 Y 轴在世界空间中的方向）
             Vector3 localEndPoint = new Vector3(0, maxLength, 0);
             Vector3 worldEndPoint = laserPivot.TransformPoint(localEndPoint);
             Vector3 direction = (worldEndPoint - startPoint).normalized;
-            
-            // 只检测敌人（不检测墙壁）
-            RaycastHit2D enemyHit = Physics2D.Raycast(startPoint, direction, maxLength, enemyLayer);
-            
-            Vector3 endPoint;
-            
-            if (enemyHit.collider != null)
+
+            Vector3 currentOrigin = startPoint;
+            Vector3 currentDir = direction;
+            float remainingLength = maxLength;
+            bool isFirstSegment = true;
+
+            // 最多处理2段（主激光 + 1次反射）
+            int maxIterations = reflectionEnabled ? 2 : 1;
+
+            for (int i = 0; i < maxIterations && remainingLength > 0.1f; i++)
             {
-                // 击中敌人
-                hitEnemy = true;
-                hitPoint = enemyHit.point;
-                currentHit = enemyHit;
-                endPoint = enemyHit.point;
-                
-                if (showDebugInfo)
+                RaycastHit2D enemyHit = Physics2D.Raycast(currentOrigin, currentDir, remainingLength, enemyLayer);
+                RaycastHit2D wallHit  = reflectionEnabled && isFirstSegment
+                    ? Physics2D.Raycast(currentOrigin, currentDir, remainingLength, wallLayer)
+                    : default;
+
+                bool hasEnemyHit = enemyHit.collider != null;
+                bool hasWallHit  = wallHit.collider != null;
+
+                // 优先敌人，敌人和墙都有时取距离更近的
+                bool hitWallFirst = hasWallHit && (!hasEnemyHit || wallHit.distance < enemyHit.distance);
+
+                if (hasEnemyHit && !hitWallFirst)
                 {
-                    GameLogger.Log($"[LaserBeam] 击中敌人 - 位置: {enemyHit.point}");
+                    // 击中敌人，停止
+                    Vector3 endPoint = enemyHit.point;
+                    laserPoints.Add(endPoint);
+                    laserSegments.Add(new LaserSegment
+                    {
+                        startPoint = currentOrigin,
+                        endPoint   = endPoint,
+                        length     = enemyHit.distance,
+                        isReflected = !isFirstSegment
+                    });
+                    hitEnemy = true;
+                    hitPoint = endPoint;
+                    currentHit = enemyHit;
+                    break;
+                }
+                else if (hitWallFirst && isFirstSegment)
+                {
+                    // 击中墙壁，执行反射
+                    Vector3 wallPoint = wallHit.point;
+                    laserPoints.Add(wallPoint);
+                    laserSegments.Add(new LaserSegment
+                    {
+                        startPoint = currentOrigin,
+                        endPoint   = wallPoint,
+                        length     = wallHit.distance,
+                        isReflected = false
+                    });
+                    hasReflection = true;
+                    reflectionPoint = wallPoint;
+                    remainingLength -= wallHit.distance;
+
+                    // 计算反射方向，偏移一点避免重复检测同一墙壁
+                    currentDir    = Vector3.Reflect(currentDir, wallHit.normal);
+                    currentOrigin = wallPoint + currentDir * GameConstants.REFLEX_POINT_OFFSET;
+                    isFirstSegment = false;
+                }
+                else
+                {
+                    // 未击中任何东西，延伸到最大剩余长度
+                    Vector3 endPoint = currentOrigin + currentDir * remainingLength;
+                    laserPoints.Add(endPoint);
+                    laserSegments.Add(new LaserSegment
+                    {
+                        startPoint = currentOrigin,
+                        endPoint   = endPoint,
+                        length     = remainingLength,
+                        isReflected = !isFirstSegment
+                    });
+                    currentHit = default;
+                    break;
                 }
             }
-            else
-            {
-                // 没有击中任何东西，延伸到最大长度
-                endPoint = startPoint + direction * maxLength;
-                currentHit = default;
-            }
-            
-            laserPoints.Add(endPoint);
-            
-            // 记录激光段
-            laserSegments.Add(new LaserSegment
-            {
-                startPoint = startPoint,
-                endPoint = endPoint,
-                length = Vector3.Distance(startPoint, endPoint)
-            });
-            
+
             if (showDebugInfo)
             {
-                GameLogger.Log($"[LaserBeam] 路径计算完成 - 起点: {startPoint}, 终点: {endPoint}");
+                GameLogger.Log($"[LaserBeam] 路径计算完成 - 段数: {laserSegments.Count}, 反射: {hasReflection}");
             }
         }
 
@@ -342,6 +393,24 @@ namespace LightVsDecay.Logic.Player
         {
             maxLength = Mathf.Max(0.1f, length);
         }
+
+        /// <summary>
+        /// 启用/禁用墙壁反射（由 Reflex 技能调用）
+        /// </summary>
+        public void SetReflectionEnabled(bool enabled)
+        {
+            reflectionEnabled = enabled;
+        }
+
+        /// <summary>
+        /// 是否发生了反射
+        /// </summary>
+        public bool HasReflection() => hasReflection;
+
+        /// <summary>
+        /// 获取反射点位置
+        /// </summary>
+        public Vector3 GetReflectionPoint() => reflectionPoint;
 
         /// <summary>
         /// 设置激光颜色（通过 MaterialPropertyBlock 设置 Shader 的 _BaseColor）
