@@ -11,28 +11,28 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64aa65cebc317f545ac1491badeaae0a, type: 3}
   m_Name: Chapter01_01
-  m_EditorClassIdentifier: 
-  totalWaves: 8
+  m_EditorClassIdentifier:
+  totalWaves: 10
   waveInterval: 10
-  globalEnemyLimit: 200
+  globalEnemyLimit: 350
   waves:
   - waveNumber: 1
     displayName: "\u7B2C\u4E00\u6CE2"
-    description: 
+    description: "\u7C98\u6DB2\u602A\u5165\u4FB5\uFF01"
     spawnGroups:
     - spawnTime: 0
       enemyType: 0
-      count: 8
-      pattern: 0
+      count: 10
+      pattern: 1
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 20
+    - spawnTime: 15
       enemyType: 0
-      count: 12
+      count: 10
       pattern: 1
       customInterval: -1
       spawnZone: 2
-    - spawnTime: 40
+    - spawnTime: 30
       enemyType: 0
       count: 10
       pattern: 1
@@ -43,167 +43,100 @@ MonoBehaviour:
     hintText: "\u51C0\u5316\u4E4B\u5149\uFF0C\u542F\u52A8\uFF01"
   - waveNumber: 2
     displayName: "\u7B2C\u4E8C\u6CE2"
-    description: 
+    description: "\u5766\u514B\u602A\u51FA\u73B0\u4E86\uFF01"
     spawnGroups:
     - spawnTime: 0
       enemyType: 0
-      count: 15
+      count: 8
       pattern: 1
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 10
-      enemyType: 3
-      count: 10
-      pattern: 0
-      customInterval: -1
-      spawnZone: 3
-    - spawnTime: 25
-      enemyType: 0
-      count: 15
-      pattern: 1
-      customInterval: -1
-      spawnZone: 0
-    - spawnTime: 30
-      enemyType: 3
-      count: 10
-      pattern: 3
-      customInterval: -1
-      spawnZone: 3
-    difficultyMultiplier: 1
-    isBossWave: 0
-    hintText: "\u6F02\u6D41\u8005\u51FA\u73B0\u4E86..."
-  - waveNumber: 3
-    displayName: "\u7B2C\u4E09\u6CE2"
-    description: 
-    spawnGroups:
-    - spawnTime: 0
-      enemyType: 0
-      count: 20
-      pattern: 1
-      customInterval: -1
-      spawnZone: 1
-    - spawnTime: 10
-      enemyType: 3
-      count: 10
-      pattern: 1
-      customInterval: -1
-      spawnZone: 3
-    - spawnTime: 20
-      enemyType: 2
-      count: 15
-      pattern: 2
-      customInterval: -1
-      spawnZone: 2
-    - spawnTime: 35
-      enemyType: 0
-      count: 20
-      pattern: 3
-      customInterval: -1
-      spawnZone: 0
-    - spawnTime: 45
-      enemyType: 2
-      count: 10
-      pattern: 2
-      customInterval: -1
-      spawnZone: 4
-    difficultyMultiplier: 1.1
-    isBossWave: 0
-    hintText: "\u51B2\u950B\u8005\u6765\u88AD\uFF01"
-  - waveNumber: 4
-    displayName: "\u7B2C\u56DB\u6CE2"
-    description: 
-    spawnGroups:
-    - spawnTime: 0
-      enemyType: 0
-      count: 20
-      pattern: 1
-      customInterval: -1
-      spawnZone: 1
-    - spawnTime: 10
-      enemyType: 3
-      count: 10
-      pattern: 1
-      customInterval: -1
-      spawnZone: 3
-    - spawnTime: 15
-      enemyType: 1
-      count: 3
-      pattern: 0
-      customInterval: -1
-      spawnZone: 1
-    - spawnTime: 25
-      enemyType: 2
-      count: 12
-      pattern: 2
-      customInterval: -1
-      spawnZone: 3
-    - spawnTime: 40
-      enemyType: 0
-      count: 20
-      pattern: 3
-      customInterval: -1
-      spawnZone: 0
-    - spawnTime: 40
+    - spawnTime: 5
       enemyType: 1
       count: 2
       pattern: 0
+      customInterval: -1
+      spawnZone: 1
+    - spawnTime: 15
+      enemyType: 0
+      count: 7
+      pattern: 1
+      customInterval: -1
+      spawnZone: 2
+    - spawnTime: 20
+      enemyType: 1
+      count: 2
+      pattern: 0
+      customInterval: -1
+      spawnZone: 2
+    difficultyMultiplier: 1.1
+    isBossWave: 0
+    hintText: "\u5766\u514B\u602A\u8840\u91CF\u5F88\u9AD8\uFF0C\u6301\u7EED\u7167\u5C04\uFF01"
+  - waveNumber: 3
+    displayName: "\u7B2C\u4E09\u6CE2"
+    description: "\u98DE\u901F\u602A\u6765\u88AD\uFF01"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 2
+      count: 25
+      pattern: 3
+      customInterval: -1
+      spawnZone: 1
+    - spawnTime: 8
+      enemyType: 0
+      count: 20
+      pattern: 2
+      customInterval: -1
+      spawnZone: 2
+    - spawnTime: 20
+      enemyType: 2
+      count: 25
+      pattern: 3
+      customInterval: -1
+      spawnZone: 0
+    - spawnTime: 30
+      enemyType: 0
+      count: 20
+      pattern: 2
       customInterval: -1
       spawnZone: 2
     difficultyMultiplier: 1.2
     isBossWave: 0
-    hintText: "\u91CD\u7532\u6C61\u67D3\u4F53\u51FA\u73B0\uFF01"
-  - waveNumber: 5
-    displayName: "\u7B2C\u4E94\u6CE2"
-    description: 
+    hintText: "\u5C0F\u5FC3\u98DE\u901F\u602A\u7684\u51B2\u950B\uFF01"
+  - waveNumber: 4
+    displayName: "\u7B2C\u56DB\u6CE2"
+    description: "\u6F02\u6D41\u8005\u5F39\u5C04\u5165\u573A\uFF01"
     spawnGroups:
     - spawnTime: 0
       enemyType: 0
-      count: 25
-      pattern: 3
+      count: 20
+      pattern: 1
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 10
+    - spawnTime: 5
       enemyType: 3
       count: 10
       pattern: 1
       customInterval: -1
       spawnZone: 3
     - spawnTime: 20
-      enemyType: 2
-      count: 12
-      pattern: 2
-      customInterval: -1
-      spawnZone: 4
-    - spawnTime: 25
-      enemyType: 5
-      count: 0
-      pattern: 5
-      customInterval: -1
-      spawnZone: 1
-    - spawnTime: 30
       enemyType: 0
-      count: 25
-      pattern: 4
-      customInterval: -1
-      spawnZone: 0
-    - spawnTime: 45
-      enemyType: 1
-      count: 2
-      pattern: 0
+      count: 20
+      pattern: 1
       customInterval: -1
       spawnZone: 2
-    - spawnTime: 50
-      enemyType: 2
-      count: 8
-      pattern: 2
+    - spawnTime: 25
+      enemyType: 3
+      count: 10
+      pattern: 1
       customInterval: -1
       spawnZone: 3
     difficultyMultiplier: 1.3
     isBossWave: 0
-    hintText: "\u7CBE\u82F1\u6C61\u67D3\u4F53\u964D\u4E34\uFF01"
-  - waveNumber: 6
-    displayName: "\u7B2C\u516D\u6CE2"
-    description: 
+    hintText: "\u6F02\u6D41\u8005\u8F68\u8FF9\u8BC1\u8C72\uFF0C\u5C0F\u5FC3\uFF01"
+  - waveNumber: 5
+    displayName: "\u7B2C\u4E94\u6CE2"
+    description: "\u7C98\u6DB2\u6D6A\u6F6E\uFF01"
     spawnGroups:
     - spawnTime: 0
       enemyType: 0
@@ -211,118 +144,187 @@ MonoBehaviour:
       pattern: 4
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 8
-      enemyType: 3
-      count: 15
-      pattern: 3
-      customInterval: -1
-      spawnZone: 3
-    - spawnTime: 15
-      enemyType: 2
-      count: 18
-      pattern: 2
-      customInterval: -1
-      spawnZone: 4
-    - spawnTime: 25
-      enemyType: 1
-      count: 3
-      pattern: 1
-      customInterval: -1
-      spawnZone: 2
-    - spawnTime: 35
+    - spawnTime: 10
       enemyType: 0
       count: 35
       pattern: 4
       customInterval: -1
       spawnZone: 0
-    - spawnTime: 45
-      enemyType: 3
-      count: 10
-      pattern: 3
-      customInterval: -1
-      spawnZone: 3
-    - spawnTime: 50
-      enemyType: 2
-      count: 12
-      pattern: 2
+    - spawnTime: 20
+      enemyType: 0
+      count: 30
+      pattern: 4
       customInterval: -1
       spawnZone: 2
-    - spawnTime: 45
-      enemyType: 1
-      count: 2
-      pattern: 0
-      customInterval: -1
-      spawnZone: 1
-    difficultyMultiplier: 1.4
+    difficultyMultiplier: 1.5
     isBossWave: 0
-    hintText: "\u6C61\u67D3\u6D6A\u6F6E\u6765\u88AD\uFF01"
-  - waveNumber: 7
-    displayName: "\u7B2C\u4E03\u6CE2"
-    description: 
+    hintText: "\u5168\u529B\u5F00\u706B\uFF0C\u5272\u8349\u65F6\u523B\uFF01"
+  - waveNumber: 6
+    displayName: "\u7B2C\u516D\u6CE2"
+    description: "\u7CBE\u82F1\u5766\u514B\u964D\u4E34\uFF01"
     spawnGroups:
     - spawnTime: 0
       enemyType: 0
-      count: 50
-      pattern: 4
-      customInterval: -1
-      spawnZone: 1
-    - spawnTime: 8
-      enemyType: 3
-      count: 20
+      count: 25
       pattern: 3
       customInterval: -1
-      spawnZone: 3
-    - spawnTime: 15
-      enemyType: 2
-      count: 25
-      pattern: 2
+      spawnZone: 1
+    - spawnTime: 5
+      enemyType: 5
+      count: 1
+      pattern: 0
       customInterval: -1
-      spawnZone: 4
-    - spawnTime: 25
+      spawnZone: 1
+    - spawnTime: 10
       enemyType: 1
-      count: 3
+      count: 5
       pattern: 1
+      customInterval: -1
+      spawnZone: 2
+    - spawnTime: 20
+      enemyType: 0
+      count: 25
+      pattern: 3
+      customInterval: -1
+      spawnZone: 0
+    - spawnTime: 25
+      enemyType: 5
+      count: 1
+      pattern: 0
       customInterval: -1
       spawnZone: 2
     - spawnTime: 30
-      enemyType: 6
-      count: 0
-      pattern: 5
+      enemyType: 1
+      count: 5
+      pattern: 1
       customInterval: -1
-      spawnZone: 3
-    - spawnTime: 35
-      enemyType: 0
-      count: 50
-      pattern: 4
-      customInterval: -1
-      spawnZone: 0
-    - spawnTime: 45
-      enemyType: 3
-      count: 12
+      spawnZone: 1
+    difficultyMultiplier: 1.8
+    isBossWave: 0
+    hintText: "\u7CBE\u82F1\u602A\u767B\u573A\uFF0C\u96C6\u4E2D\u706B\u529B\uFF01"
+  - waveNumber: 7
+    displayName: "\u7B2C\u4E03\u6CE2"
+    description: "\u6F02\u6D41\u8005\u4E0E\u98DE\u901F\u602A\u7FA4\u6D8C\uFF01"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 2
+      count: 40
       pattern: 3
       customInterval: -1
+      spawnZone: 1
+    - spawnTime: 5
+      enemyType: 3
+      count: 30
+      pattern: 1
+      customInterval: -1
       spawnZone: 3
-    - spawnTime: 50
+    - spawnTime: 18
       enemyType: 2
-      count: 15
-      pattern: 2
+      count: 40
+      pattern: 3
+      customInterval: -1
+      spawnZone: 0
+    - spawnTime: 25
+      enemyType: 3
+      count: 30
+      pattern: 1
+      customInterval: -1
+      spawnZone: 3
+    difficultyMultiplier: 2.2
+    isBossWave: 0
+    hintText: "\u5272\u8349\u65F6\u523B\uFF01\u5269\u4E0B\u5927\u62DB\u7B49\u7740\u4F60\uFF01"
+  - waveNumber: 8
+    displayName: "\u7B2C\u516B\u6CE2"
+    description: "\u7CBE\u82F1\u6F02\u6D41\u8005\u51FA\u73B0\uFF01"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 1
+      count: 10
+      pattern: 1
+      customInterval: -1
+      spawnZone: 1
+    - spawnTime: 5
+      enemyType: 6
+      count: 1
+      pattern: 0
       customInterval: -1
       spawnZone: 2
-    - spawnTime: 45
+    - spawnTime: 10
+      enemyType: 3
+      count: 20
+      pattern: 1
+      customInterval: -1
+      spawnZone: 3
+    - spawnTime: 20
       enemyType: 1
-      count: 2
+      count: 10
+      pattern: 1
+      customInterval: -1
+      spawnZone: 2
+    - spawnTime: 25
+      enemyType: 6
+      count: 1
       pattern: 0
       customInterval: -1
       spawnZone: 1
-    difficultyMultiplier: 1.5
+    - spawnTime: 30
+      enemyType: 3
+      count: 20
+      pattern: 1
+      customInterval: -1
+      spawnZone: 3
+    difficultyMultiplier: 2.7
     isBossWave: 0
-    hintText: "\u98CE\u66B4\u524D\u7684\u5B81\u9759..."
-  - waveNumber: 8
-    displayName: "\u7B2C\u516B\u6CE2"
+    hintText: "\u7CBE\u82F1\u6F02\u6D41\u8005\u8F68\u8FF9\u8BC1\u8C72\uFF0C\u7528\u5927\u62DB\uFF01"
+  - waveNumber: 9
+    displayName: "\u7B2C\u4E5D\u6CE2"
+    description: "\u51B3\u6218\u524D\u5915\uFF0C\u6781\u9650\u5C38\u6F6E\uFF01"
+    spawnGroups:
+    - spawnTime: 0
+      enemyType: 0
+      count: 70
+      pattern: 4
+      customInterval: -1
+      spawnZone: 1
+    - spawnTime: 5
+      enemyType: 2
+      count: 50
+      pattern: 3
+      customInterval: -1
+      spawnZone: 0
+    - spawnTime: 10
+      enemyType: 1
+      count: 5
+      pattern: 1
+      customInterval: -1
+      spawnZone: 2
+    - spawnTime: 18
+      enemyType: 0
+      count: 80
+      pattern: 4
+      customInterval: -1
+      spawnZone: 0
+    - spawnTime: 25
+      enemyType: 2
+      count: 50
+      pattern: 3
+      customInterval: -1
+      spawnZone: 1
+    - spawnTime: 30
+      enemyType: 1
+      count: 5
+      pattern: 1
+      customInterval: -1
+      spawnZone: 2
+    difficultyMultiplier: 3.3
+    isBossWave: 0
+    hintText: "\u6EE1\u5C4F\u654C\u4EBA\uFF01\u606D\u559C\u8FDB\u5165\u6700\u7EC8\u51B3\u6218\uFF01"
+  - waveNumber: 10
+    displayName: "\u7B2C\u5341\u6CE2"
     description: "\u6C61\u67D3\u4E4B\u6838 The Corruptor \u964D\u4E34\uFF01"
     spawnGroups: []
-    difficultyMultiplier: 1.5
+    difficultyMultiplier: 4
     isBossWave: 1
-    hintText: "\u6C61\u67D3\u4E4B\u6838 The Corruptor \u964D\u4E34\uFF01"
-  bossHealth: 500000
+    hintText: "\u6C61\u67D3\u4E4B\u6838\u964D\u4E34\uFF01\u706B\u529B\u5168\u5F00\uFF01"
+  bossHealth: 300000
   bossMoveSpeed: 0.2

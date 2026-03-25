@@ -17,9 +17,9 @@ MonoBehaviour:
   chapterName: "\u6781\u5BD2\u865A\u7A7A"
   chapterDescription: "\u7B2C\u4E09\u7AE0\uFF1A\u6781\u5BD2\u865A\u7A7A"
   chapterCardImage: {fileID: 21300000, guid: aecf6ed1cfaeb914892e81bef8fd14bc, type: 3}
-  battleBackgroundImage: {fileID: 21300000, guid: 77857ab770629004bb0512bc0e9b2a17, type: 3}
+  battleBackgroundImage: {fileID: 21300000, guid: 89f83d8bb16c86b46a61b4dd09174b00, type: 3}
   themeColor: {r: 0, g: 0.6156864, b: 1, a: 1}
-  enemyBlobColor: {r: 0, g: 0.5550072, b: 0.90188676, a: 1}
+  enemyBlobColor: {r: 0.15294118, g: 0.49803922, b: 0.76862746, a: 1}
   battleBGM: {fileID: 0}
   bossBGM: {fileID: 0}
   waveConfig: {fileID: 11400000, guid: 6cdd38226c8199e4eb9bea5549f81ae0, type: 2}

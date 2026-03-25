@@ -3652,7 +3652,7 @@ MonoBehaviour:
   startButton: {fileID: 1191881780}
   startButtonContainer: {fileID: 1191881778}
   settingsPanel: {fileID: 3023401201741793212}
-  topBarTipsPanel: {fileID: 0}
+  topBarTipsPanel: {fileID: 5649986608479659573}
   arrowNormalColor: {r: 1, g: 1, b: 1, a: 1}
   arrowDisabledColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
   chapterLockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.7}
@@ -4607,7 +4607,7 @@ MonoBehaviour:
   blueprintCostText: {fileID: 1106808201}
   goldIconImage: {fileID: 168689491}
   blueprintIconImage: {fileID: 1242840742}
-  upgradeLabelText: {fileID: 0}
+  upgradeLabelText: {fileID: 963466351}
   closeButton: {fileID: 978261353}
   buttonNormalColor: {r: 0.2, g: 0.7, b: 1, a: 1}
   buttonDisabledColor: {r: 0.35, g: 0.35, b: 0.35, a: 1}
@@ -10221,8 +10221,8 @@ MonoBehaviour:
   descText: {fileID: 1964829053}
   upgradeButton: {fileID: 189967669}
   upgradeButtonText: {fileID: 416209717}
-  upgradeLabelText: {fileID: 0}
-  goldIconImage: {fileID: 0}
+  upgradeLabelText: {fileID: 1697375720}
+  goldIconImage: {fileID: 724496420}
   buttonNormalColor: {r: 0.2, g: 0.7, b: 1, a: 1}
   buttonDisabledColor: {r: 0.35, g: 0.35, b: 0.35, a: 1}
   costNormalColor: {r: 1, g: 1, b: 1, a: 1}
