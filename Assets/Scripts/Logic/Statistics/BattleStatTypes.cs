@@ -46,6 +46,40 @@ namespace LightVsDecay.Logic.Statistics
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
     /// <summary>
+    /// 生成计数器（按敌人类型）
+    /// </summary>
+    [Serializable]
+    public class SpawnCounter
+    {
+        public int slime = 0;
+        public int rusher = 0;
+        public int tank = 0;
+        public int drifter = 0;
+        public int elite = 0;
+
+        public int Total => slime + rusher + tank + drifter + elite;
+
+        public void Reset()
+        {
+            slime = rusher = tank = drifter = elite = 0;
+        }
+
+        public void Add(EnemyType type)
+        {
+            switch (type)
+            {
+                case EnemyType.Slime: slime++; break;
+                case EnemyType.Rusher: rusher++; break;
+                case EnemyType.Tank: tank++; break;
+                case EnemyType.Drifter: drifter++; break;
+                case EnemyType.EliteTank:
+                case EnemyType.EliteDrifter:
+                    elite++; break;
+            }
+        }
+    }
+
+    /// <summary>
     /// 击杀计数器（按敌人类型）
     /// </summary>
     [Serializable]
@@ -212,5 +246,17 @@ namespace LightVsDecay.Logic.Statistics
         public int expGained;            // 本波获得经验值
         public int goldGained;           // 本波获得金币
         public float timeInDanger;       // 濒死时长（血量<30%的持续秒数）
+
+        // ═══ V4.5 新增：生成统计 + 配置标识 ═══
+        public int spawnSlime;
+        public int spawnRusher;
+        public int spawnTank;
+        public int spawnDrifter;
+        public int spawnElite;
+        public int spawnTotal;
+        public string waveConfigId;      // 本局使用的波次配置资源名（区分测试/正式配置）
+
+        // ═══ V4.6 新增：护盾伤害追踪 ═══
+        public float shieldDmgFromMobs;  // 小怪对护盾造成的伤害（护盾吸收量）
     }
 }

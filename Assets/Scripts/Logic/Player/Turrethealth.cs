@@ -16,6 +16,7 @@ using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Data;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Logic.Statistics;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -148,17 +149,20 @@ namespace LightVsDecay.Logic.Player
             if (shieldController != null && shieldController.CurrentShieldHP > 0)
             {
                 int overflow = shieldController.TakeDamage(damage);
-                
+
                 if (overflow <= 0)
                 {
                     // 护盾完全吸收
+                    BattleStatistics.Instance?.RecordShieldDamageFromMobs(damage);
                     if (showDebugInfo)
                     {
                         GameLogger.Log($"[TurretHealth] 护盾完全吸收伤害: {damage}");
                     }
                     return true;
                 }
-                
+
+                // 护盾部分吸收，记录已吸收量
+                BattleStatistics.Instance?.RecordShieldDamageFromMobs(damage - overflow);
                 // 溢出伤害扣本体
                 damage = overflow;
             }

@@ -86,6 +86,7 @@ namespace LightVsDecay.Logic.Statistics
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private KillCounter _waveKills = new KillCounter();
+        private SpawnCounter _waveSpawns = new SpawnCounter();
         private float _waveMainLaserDamage = 0f;
         private float _waveSubLaserDamage = 0f;
         private float _waveExplosionDamage = 0f;
@@ -104,6 +105,7 @@ namespace LightVsDecay.Logic.Statistics
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private float _waveDmgFromMobs = 0f;
+        private float _waveDmgShieldFromMobs = 0f;
         private float _waveDmgFromBoss = 0f;
         private int _waveStartHullHP = 0;
         private int _waveStartShieldHP = 0;
@@ -168,6 +170,7 @@ namespace LightVsDecay.Logic.Statistics
         private List<WaveStatData> _allWaveStats = new List<WaveStatData>();
         private bool _isTracking = false;
         private string _sessionStartTime;
+        private string _sessionConfigId = "Unknown";
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -248,6 +251,7 @@ namespace LightVsDecay.Logic.Statistics
             _isTracking = true;
             _sessionStartTime = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             _lastKnownTotalCoins = 0; // 新游戏从 0 开始
+            _sessionConfigId = WaveManager.Instance != null ? WaveManager.Instance.ConfigName : "Unknown";
             if (showDebugInfo)
             {
                 GameLogger.Log("[BattleStatistics] 🎮 开始采集数据 V4.0");
@@ -344,11 +348,13 @@ namespace LightVsDecay.Logic.Statistics
             _waveTotalDamage = 0f;
             _waveOverkillDamage = 0f;
             
-            // 重置击杀统计
+            // 重置击杀/生成统计
             _waveKills.Reset();
+            _waveSpawns.Reset();
             
             // 重置玩家受伤
             _waveDmgFromMobs = 0f;
+            _waveDmgShieldFromMobs = 0f;
             _waveDmgFromBoss = 0f;
             
             _wavePlayerHitCount = 0;
@@ -444,6 +450,7 @@ namespace LightVsDecay.Logic.Statistics
                 hpEndHull = endHullHP,
                 hpEndShield = endShieldHP,
                 dmgFromMobs = _waveDmgFromMobs,
+                shieldDmgFromMobs = _waveDmgShieldFromMobs,
                 dmgFromBoss = _waveDmgFromBoss,
                 playerHPLost = hpLost,
                 tankAbsorbedRatio = tankRatio,
@@ -507,6 +514,15 @@ namespace LightVsDecay.Logic.Statistics
                 expGained = _waveExpGained,
                 goldGained = _waveGoldGained,
                 timeInDanger = _waveDangerTime,
+
+                // V4.5 生成统计 + 配置标识
+                spawnSlime = _waveSpawns.slime,
+                spawnRusher = _waveSpawns.rusher,
+                spawnTank = _waveSpawns.tank,
+                spawnDrifter = _waveSpawns.drifter,
+                spawnElite = _waveSpawns.elite,
+                spawnTotal = _waveSpawns.Total,
+                waveConfigId = _sessionConfigId,
             };
             
             _allWaveStats.Add(data);
@@ -655,7 +671,17 @@ namespace LightVsDecay.Logic.Statistics
             return total;
         }
         /// <summary>
-        /// 上报敌人总血量（生成时调用）
+        /// 上报敌人生成（含类型）— V4.5 推荐接口
+        /// </summary>
+        public void RecordEnemySpawn(EnemyType type, float hp)
+        {
+            if (!CanRecord()) return;
+            _waveTotalEnemyHP += hp;
+            _waveSpawns.Add(type);
+        }
+
+        /// <summary>
+        /// 上报敌人总血量（生成时调用）— 兼容接口，推荐改用 RecordEnemySpawn
         /// </summary>
         public void RecordEnemyHP(float hp)
         {
@@ -691,6 +717,15 @@ namespace LightVsDecay.Logic.Statistics
             }
         }
         
+        /// <summary>
+        /// 上报护盾从小怪吸收的伤害量（V4.6）
+        /// </summary>
+        public void RecordShieldDamageFromMobs(float shieldAbsorbed)
+        {
+            if (!CanRecord()) return;
+            _waveDmgShieldFromMobs += shieldAbsorbed;
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Frost效果上报
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -951,7 +986,7 @@ namespace LightVsDecay.Logic.Statistics
         }
         
         // CSV字段总数
-        private const int CSV_FIELD_COUNT = 63;
+        private const int CSV_FIELD_COUNT = 73;
         
         /// <summary>
         /// 构建CSV表头
@@ -965,7 +1000,7 @@ namespace LightVsDecay.Logic.Statistics
                 "Kill_Slime,Kill_Rusher,Kill_Tank,Kill_Drifter,Kill_Elite,Kill_Total," +
                 // 玩家状态 (8)
                 "HP_Start_Hull,HP_Start_Shield,HP_End_Hull,HP_End_Shield," +
-                "Dmg_From_Mobs,Dmg_From_Boss,Player_HP_Lost,Tank_Absorbed_Ratio," +
+                "Dmg_From_Mobs,Shield_Dmg_From_Mobs,Dmg_From_Boss,Player_HP_Lost,Tank_Absorbed_Ratio," +
                 // 伤害输出 (8)
                 "Dmg_Main_Laser,Dmg_Sub_Laser,Dmg_Explosion,Dmg_Chain," +
                 "Crit_Damage_Total,Crit_Hit_Count,Normal_Hit_Count,Overkill_Ratio,Dmg_Dealt_Total," +
@@ -985,7 +1020,9 @@ namespace LightVsDecay.Logic.Statistics
                 "Skill_Path,Skill_Levels,Overload_Count," +
                 // 其他 (2)
                 "DPS_Peak,Enemy_Total_HP,"+
-                "Effective_DPS,Player_Hit_Count,Exp_Gained,Gold_Gained,Time_In_Danger";
+                "Effective_DPS,Player_Hit_Count,Exp_Gained,Gold_Gained,Time_In_Danger," +
+                // V4.5 生成统计 + 配置标识 (7)
+                "Spawn_Slime,Spawn_Rusher,Spawn_Tank,Spawn_Drifter,Spawn_Elite,Spawn_Total,Wave_Config_Id";
         }
         
         /// <summary>
@@ -1004,24 +1041,26 @@ namespace LightVsDecay.Logic.Statistics
                 "{0},{1},{2},{3},{4:F1}," +
                 // 2. 击杀统计 (5-10)
                 "{5},{6},{7},{8},{9},{10}," +
-                // 3. 玩家状态 (11-18)
-                "{11},{12},{13},{14},{15:F0},{16:F0},{17:F0},{18:F2}," +
-                // 4. 伤害输出 (19-27)
-                "{19:F0},{20:F0},{21:F0},{22:F0},{23:F0},{24},{25},{26:F2},{27:F0}," +
-                // 5. Frost统计 (28-30)
-                "{28},{29},{30:F1}," +
-                // 6. 面板快照 (31-33)
-                "{31:F0},{32:F2},{33:F2}," +
-                // 7. 无人机数据 (34-45)
-                "{34},{35},{36},{37:F0},{38:F0},{39:F1},{40:F1},{41:F1},{42:F1},{43},{44},{45}," +
-                // 8. Boss战数据 (46-54)
-                "{46:F0},{47:F0},{48:F1},{49},{50:F2},{51},{52},{53},{54}," +
-                // 9. 技能与大招 (55-57)
-                "{55},{56},{57}," +
-                // 10. 其他 (58-59)
-                "{58:F0},{59:F0}," +
-                // 11. V4.2 新增 (60-64)
-                "{60:F1},{61},{62},{63},{64:F2}",
+                // 3. 玩家状态 (11-19)
+                "{11},{12},{13},{14},{15:F0},{16:F0},{17:F0},{18:F0},{19:F2}," +
+                // 4. 伤害输出 (20-28)
+                "{20:F0},{21:F0},{22:F0},{23:F0},{24:F0},{25},{26},{27:F2},{28:F0}," +
+                // 5. Frost统计 (29-31)
+                "{29},{30},{31:F1}," +
+                // 6. 面板快照 (32-34)
+                "{32:F0},{33:F2},{34:F2}," +
+                // 7. 无人机数据 (35-46)
+                "{35},{36},{37},{38:F0},{39:F0},{40:F1},{41:F1},{42:F1},{43:F1},{44},{45},{46}," +
+                // 8. Boss战数据 (47-55)
+                "{47:F0},{48:F0},{49:F1},{50},{51:F2},{52},{53},{54},{55}," +
+                // 9. 技能与大招 (56-58)
+                "{56},{57},{58}," +
+                // 10. 其他 (59-60)
+                "{59:F0},{60:F0}," +
+                // 11. V4.2 新增 (61-65)
+                "{61:F1},{62},{63},{64},{65:F2}," +
+                // 12. V4.5 生成统计 (66-72)
+                "{66},{67},{68},{69},{70},{71},{72}",
 
                 // ================= 参数列表 =================
                 
@@ -1033,18 +1072,18 @@ namespace LightVsDecay.Logic.Statistics
                 
                 // 3. 玩家状态
                 d.hpStartHull, d.hpStartShield, d.hpEndHull, d.hpEndShield,
-                d.dmgFromMobs, d.dmgFromBoss, d.playerHPLost, d.tankAbsorbedRatio,
+                d.dmgFromMobs, d.shieldDmgFromMobs, d.dmgFromBoss, d.playerHPLost, d.tankAbsorbedRatio,
                 
                 // 4. 伤害输出
-                d.dmgMainLaser,     // 19
-                d.dmgSubLaser,      // 20
-                d.dmgExplosion,     // 21
-                d.dmgChain,         // 22
-                d.critDamageTotal,  // 23
-                d.critHitCount,     // 24
-                d.normalHitCount,   // 25
-                d.overkillRatio,    // 26
-                d.dmgDealtTotal,    // 27
+                d.dmgMainLaser,     // 20
+                d.dmgSubLaser,      // 21
+                d.dmgExplosion,     // 22
+                d.dmgChain,         // 23
+                d.critDamageTotal,  // 24
+                d.critHitCount,     // 25
+                d.normalHitCount,   // 26
+                d.overkillRatio,    // 27
+                d.dmgDealtTotal,    // 28
                 
                 // 5. Frost统计
                 d.frostSlowCount, d.frostFreezeCount, d.frostSlowDuration,
@@ -1063,20 +1102,29 @@ namespace LightVsDecay.Logic.Statistics
                 d.bossPhase, d.bossHPRemaining, d.bossChargeCount, d.bossPressCount, d.bossSummonCount, d.bossStunCount,
                 
                 // 9. 技能与大招
-                escapedPath,         // 55
-                escapedLevels,       // 56
-                d.overloadCount,     // 57
-                
+                escapedPath,         // 56
+                escapedLevels,       // 57
+                d.overloadCount,     // 58
+
                 // 10. 其他
-                d.dpsPeak,           // 58
-                d.enemyTotalHP,      // 59
-                
+                d.dpsPeak,           // 59
+                d.enemyTotalHP,      // 60
+
                 // 11. V4.2 新增
-                d.effectiveDPS,      // 60
-                d.playerHitCount,    // 61
-                d.expGained,         // 62
-                d.goldGained,        // 63
-                d.timeInDanger       // 64
+                d.effectiveDPS,      // 61
+                d.playerHitCount,    // 62
+                d.expGained,         // 63
+                d.goldGained,        // 64
+                d.timeInDanger,      // 65
+
+                // 12. V4.5 生成统计
+                d.spawnSlime,        // 66
+                d.spawnRusher,       // 67
+                d.spawnTank,         // 68
+                d.spawnDrifter,      // 69
+                d.spawnElite,        // 70
+                d.spawnTotal,        // 71
+                d.waveConfigId       // 72
             );
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

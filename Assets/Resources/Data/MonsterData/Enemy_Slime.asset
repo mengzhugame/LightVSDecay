@@ -43,7 +43,7 @@ MonoBehaviour:
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 6
+  xpReward: 20
   coinReward: 5
   dropCoinOnHit: 0
   coinPerHit: 1
