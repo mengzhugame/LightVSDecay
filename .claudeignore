@@ -1,0 +1,42 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+[Uu]ser[Ss]ettings/
+
+# Art and Audio assets
+Assets/Art/
+Assets/Audio/
+Assets/Models/
+Assets/Textures/
+Assets/Materials/
+Assets/Animations/
+Assets/Fonts/
+Assets/Plugins/
+
+# Other binary or large files
+*.psd
+*.tga
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tif
+*.tiff
+*.mp3
+*.wav
+*.ogg
+*.fbx
+*.obj
+*.max
+*.blend
+*.mp4
+*.mov
+*.unity
+*.prefab
+*.asset
