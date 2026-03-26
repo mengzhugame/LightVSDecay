@@ -107,6 +107,8 @@ namespace LightVsDecay.Logic.Statistics
         private float _waveDmgFromMobs = 0f;
         private float _waveDmgShieldFromMobs = 0f;
         private float _waveDmgFromBoss = 0f;
+        private float _waveBossDmgDealt = 0f;   // V4.7
+        private float _waveDiffMult = 1f;        // V4.7
         private int _waveStartHullHP = 0;
         private int _waveStartShieldHP = 0;
         
@@ -356,6 +358,8 @@ namespace LightVsDecay.Logic.Statistics
             _waveDmgFromMobs = 0f;
             _waveDmgShieldFromMobs = 0f;
             _waveDmgFromBoss = 0f;
+            _waveBossDmgDealt = 0f;
+            _waveDiffMult = 1f;
             
             _wavePlayerHitCount = 0;
             _waveExpGained = 0;
@@ -523,6 +527,10 @@ namespace LightVsDecay.Logic.Statistics
                 spawnElite = _waveSpawns.elite,
                 spawnTotal = _waveSpawns.Total,
                 waveConfigId = _sessionConfigId,
+
+                // V4.7
+                bossDmgDealt = _waveBossDmgDealt,
+                waveDiffMult = _waveDiffMult,
             };
             
             _allWaveStats.Add(data);
@@ -823,6 +831,24 @@ namespace LightVsDecay.Logic.Statistics
             if (!CanRecord()) return;
             _bossStats.hpRemaining = hpPercent;
         }
+
+        /// <summary>
+        /// 上报玩家对Boss造成的伤害（V4.7）
+        /// </summary>
+        public void RecordBossDamageTaken(float damage)
+        {
+            if (!CanRecord()) return;
+            _waveBossDmgDealt += damage;
+        }
+
+        /// <summary>
+        /// 设置当前波次的难度系数快照（V4.7，由WaveManager在波次开始时调用）
+        /// </summary>
+        public void SetWaveDifficultyMult(float mult)
+        {
+            if (!CanRecord()) return;
+            _waveDiffMult = mult;
+        }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 无人机选择上报
@@ -986,7 +1012,7 @@ namespace LightVsDecay.Logic.Statistics
         }
         
         // CSV字段总数
-        private const int CSV_FIELD_COUNT = 73;
+        private const int CSV_FIELD_COUNT = 75;
         
         /// <summary>
         /// 构建CSV表头
@@ -1022,7 +1048,9 @@ namespace LightVsDecay.Logic.Statistics
                 "DPS_Peak,Enemy_Total_HP,"+
                 "Effective_DPS,Player_Hit_Count,Exp_Gained,Gold_Gained,Time_In_Danger," +
                 // V4.5 生成统计 + 配置标识 (7)
-                "Spawn_Slime,Spawn_Rusher,Spawn_Tank,Spawn_Drifter,Spawn_Elite,Spawn_Total,Wave_Config_Id";
+                "Spawn_Slime,Spawn_Rusher,Spawn_Tank,Spawn_Drifter,Spawn_Elite,Spawn_Total,Wave_Config_Id," +
+                // V4.7 Boss伤害输出 + 波次难度系数 (2)
+                "Boss_Dmg_Dealt,Wave_Diff_Mult";
         }
         
         /// <summary>
@@ -1060,7 +1088,9 @@ namespace LightVsDecay.Logic.Statistics
                 // 11. V4.2 新增 (61-65)
                 "{61:F1},{62},{63},{64},{65:F2}," +
                 // 12. V4.5 生成统计 (66-72)
-                "{66},{67},{68},{69},{70},{71},{72}",
+                "{66},{67},{68},{69},{70},{71},{72}," +
+                // 13. V4.7 Boss伤害 + 波次难度 (73-74)
+                "{73:F0},{74:F2}",
 
                 // ================= 参数列表 =================
                 
@@ -1124,7 +1154,11 @@ namespace LightVsDecay.Logic.Statistics
                 d.spawnDrifter,      // 69
                 d.spawnElite,        // 70
                 d.spawnTotal,        // 71
-                d.waveConfigId       // 72
+                d.waveConfigId,      // 72
+
+                // 13. V4.7
+                d.bossDmgDealt,      // 73
+                d.waveDiffMult       // 74
             );
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

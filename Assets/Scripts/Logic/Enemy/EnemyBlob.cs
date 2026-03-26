@@ -1181,8 +1181,11 @@ namespace LightVsDecay.Logic.Enemy
             {
                 BattleStatistics.Instance.RecordPlayerDamage(damageAmount, PlayerDamageSource.MobCollision);
             }
-            // 对护盾造成伤害
-            shieldController.TakeDamage(damageAmount);
+            // 对护盾造成伤害，并记录护盾吸收量（V4.7）
+            int shieldOverflow = shieldController.TakeDamage(damageAmount);
+            float shieldAbsorbed = damageAmount - Mathf.Max(0, shieldOverflow);
+            if (shieldAbsorbed > 0)
+                BattleStatistics.Instance?.RecordShieldDamageFromMobs(shieldAbsorbed);
             if (IsSmallEnemy())
             {
                 Explode();

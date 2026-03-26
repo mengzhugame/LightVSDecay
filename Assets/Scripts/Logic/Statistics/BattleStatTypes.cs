@@ -258,5 +258,9 @@ namespace LightVsDecay.Logic.Statistics
 
         // ═══ V4.6 新增：护盾伤害追踪 ═══
         public float shieldDmgFromMobs;  // 小怪对护盾造成的伤害（护盾吸收量）
+
+        // ═══ V4.7 新增：Boss伤害输出 + 波次难度系数 ═══
+        public float bossDmgDealt;       // 玩家对Boss造成的总伤害
+        public float waveDiffMult;       // 波次难度系数快照
     }
 }

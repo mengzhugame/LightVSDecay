@@ -335,6 +335,8 @@ namespace LightVsDecay.Logic.Enemy
             GameEvents.TriggerBossHealthChanged(HealthPercent);
             // 【新增】上报Boss血量到统计系统
             BattleStatistics.Instance?.RecordBossHP(HealthPercent);
+            // 【V4.7】上报对Boss造成的伤害
+            BattleStatistics.Instance?.RecordBossDamageTaken(damage);
             if (currentHealth <= 0)
             {
                 currentHealth = 0;

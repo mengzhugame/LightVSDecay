@@ -106,6 +106,7 @@ namespace LightVsDecay.Logic
         public string CurrentWaveName => currentWaveData?.displayName ?? "";
         public string CurrentWaveHint => currentWaveData?.hintText ?? "";
         public bool IsBossWave => currentWaveData?.isBossWave ?? false;
+        public string ConfigName => waveConfig != null ? waveConfig.name : "Unknown";
         public float WaveProgress => totalEnemiesInWave > 0 ? (float)enemiesKilled / totalEnemiesInWave : 0f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -304,7 +305,10 @@ namespace LightVsDecay.Logic
                 GameLogger.LogError($"[WaveManager] 找不到波次 {currentWaveNumber} 的配置！");
                 return;
             }
-            
+
+            // 【V4.7】记录波次难度系数快照
+            BattleStatistics.Instance?.SetWaveDifficultyMult(currentWaveData.difficultyMultiplier);
+
             // 检查是否为 BOSS 波
             if (currentWaveData.isBossWave)
             {
@@ -568,12 +572,9 @@ namespace LightVsDecay.Logic
             if (enemy != null)
             {
                 ApplyDifficultyModifiers(enemy, group);
-                // ═══════════════════════════════════════════════════════════
-                // 【新增】上报敌人血量到 BattleStatistics
-                // ═══════════════════════════════════════════════════════════
                 if (BattleStatistics.Instance != null)
                 {
-                    BattleStatistics.Instance.RecordEnemyHP(enemy.MaxHealth);
+                    BattleStatistics.Instance.RecordEnemySpawn(group.enemyType, enemy.MaxHealth);
                 }
                 enemiesSpawned++;
             }
@@ -592,30 +593,24 @@ namespace LightVsDecay.Logic
                 if (enemy != null)
                 {
                     ApplyDifficultyModifiers(enemy, group);
-                    // ═══════════════════════════════════════════════════════════
-                    // 【新增】上报敌人血量到 BattleStatistics
-                    // ═══════════════════════════════════════════════════════════
                     if (BattleStatistics.Instance != null)
                     {
-                        BattleStatistics.Instance.RecordEnemyHP(enemy.MaxHealth);
+                        BattleStatistics.Instance.RecordEnemySpawn(group.enemyType, enemy.MaxHealth);
                     }
                     enemiesSpawned++;
                 }
                 return;
             }
-    
+
             // 使用 DrifterSpawnHelper 生成
             DrifterSpawnHelper.Instance.SpawnDrifter((drifter) =>
             {
                 if (drifter != null)
                 {
                     ApplyDifficultyModifiers(drifter, group);
-                    // ═══════════════════════════════════════════════════════════
-                    // 【新增】上报敌人血量到 BattleStatistics
-                    // ═══════════════════════════════════════════════════════════
                     if (BattleStatistics.Instance != null)
                     {
-                        BattleStatistics.Instance.RecordEnemyHP(drifter.MaxHealth);
+                        BattleStatistics.Instance.RecordEnemySpawn(group.enemyType, drifter.MaxHealth);
                     }
                     enemiesSpawned++;
             
@@ -657,15 +652,12 @@ namespace LightVsDecay.Logic
             {
                 // 应用难度倍率
                 ApplyDifficultyModifiers(enemy, group);
-                // ═══════════════════════════════════════════════════════════
-                // 【新增】上报敌人血量到 BattleStatistics
-                // ═══════════════════════════════════════════════════════════
                 if (BattleStatistics.Instance != null)
                 {
-                    BattleStatistics.Instance.RecordEnemyHP(enemy.MaxHealth);
+                    BattleStatistics.Instance.RecordEnemySpawn(group.enemyType, enemy.MaxHealth);
                 }
                 enemiesSpawned++;
-        
+
                 if (showDebugInfo)
                 {
                     GameLogger.Log($"[WaveManager] ⭐ 精英怪已生成: {group.enemyType} @ {position}");
