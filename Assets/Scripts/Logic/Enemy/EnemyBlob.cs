@@ -110,6 +110,7 @@ namespace LightVsDecay.Logic.Enemy
         private bool splitOnDeath = false;
         private EnemyType splitEnemyType = EnemyType.Slime;
         private int splitCount = 2;
+        private float splitImpulseSpeed = 4f;
         private bool spawnPuddleOnDeath = false;
         private EnemyType puddleEnemyType = EnemyType.LavaPuddle;
         private bool disableHitFlash = false;
@@ -358,6 +359,7 @@ namespace LightVsDecay.Logic.Enemy
                 splitOnDeath = data.splitOnDeath;
                 splitEnemyType = data.splitEnemyType;
                 splitCount = data.splitCount;
+                splitImpulseSpeed = data.splitImpulseSpeed;
                 spawnPuddleOnDeath = data.spawnPuddleOnDeath;
                 puddleEnemyType = data.puddleEnemyType;
                 disableHitFlash = data.disableHitFlash;
@@ -1097,14 +1099,26 @@ namespace LightVsDecay.Logic.Enemy
             // ── Ch2 死亡特殊行为 ──
             if (EnemyPoolManager.Instance != null)
             {
-                // 分裂者：死亡时从当前位置生成若干小单位
+                // 分裂者：均匀角度 + 随机抖动，子体继承难度缩放并向外爆开
                 if (splitOnDeath)
                 {
+                    float baseAngleStep = splitCount > 0 ? 360f / splitCount : 0f;
                     for (int i = 0; i < splitCount; i++)
                     {
-                        float angle = (360f / splitCount) * i;
-                        Vector2 offset = Quaternion.Euler(0, 0, angle) * Vector2.up * 0.4f;
-                        EnemyPoolManager.Instance.Spawn(splitEnemyType, transform.position + (Vector3)offset);
+                        float jitter = Random.Range(-15f, 15f);
+                        float angle = baseAngleStep * i + jitter;
+                        Vector2 dir = Quaternion.Euler(0, 0, angle) * Vector2.up;
+                        Vector3 spawnPos = transform.position + (Vector3)(dir * 0.5f);
+
+                        var child = EnemyPoolManager.Instance.Spawn(splitEnemyType, spawnPos);
+                        if (child != null)
+                        {
+                            // 继承父体波次难度
+                            child.SetWaveModifiers(waveModifiers);
+                            // 向外冲量（爆开感）
+                            if (splitImpulseSpeed > 0f)
+                                child.ApplyInitialImpulse(dir * splitImpulseSpeed);
+                        }
                     }
                 }
 
@@ -1330,6 +1344,16 @@ namespace LightVsDecay.Logic.Enemy
         public void SetHitColor(Color color)
         {
             currentHitColor = color;
+        }
+
+        /// <summary>
+        /// 施加初始速度（分裂者爆开冲量）
+        /// 生成后立即调用，覆盖 OnSpawn 中归零的 velocity
+        /// </summary>
+        public void ApplyInitialImpulse(Vector2 velocity)
+        {
+            if (rb != null)
+                rb.velocity = velocity;
         }
         /// <summary>
         /// 设置已完全进入屏幕（由 DrifterSpawnHelper 调用）

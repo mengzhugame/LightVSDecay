@@ -192,6 +192,10 @@ namespace LightVsDecay.Data.SO
         [Min(1)]
         public int splitCount = 2;
 
+        [Tooltip("分裂子体的向外冲量速度（越大爆开感越强）")]
+        [Min(0f)]
+        public float splitImpulseSpeed = 4f;
+
         [Header("死亡留坑（爆炸者专用）")]
         [Tooltip("死亡时是否在原地生成熔岩水坑")]
         public bool spawnPuddleOnDeath = false;
