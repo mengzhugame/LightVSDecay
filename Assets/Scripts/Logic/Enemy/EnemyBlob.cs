@@ -1375,6 +1375,19 @@ namespace LightVsDecay.Logic.Enemy
             if (rb != null)
                 rb.velocity = velocity;
         }
+
+        /// <summary>
+        /// 被 Boss 汲取融合吸收——无奖励静默死亡，不给经验/金币
+        /// </summary>
+        public void AbsorbedByBoss()
+        {
+            if (isDead) return;
+            isDead = true;
+            rb.velocity = Vector2.zero;
+            if (circleCollider != null) circleCollider.enabled = false;
+            // 不触发 GameEvents.TriggerEnemyDied，不给奖励
+            ReturnToPool();
+        }
         /// <summary>
         /// 设置已完全进入屏幕（由 DrifterSpawnHelper 调用）
         /// </summary>

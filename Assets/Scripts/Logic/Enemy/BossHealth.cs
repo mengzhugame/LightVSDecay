@@ -328,6 +328,16 @@ namespace LightVsDecay.Logic.Enemy
             ShowCoreDamagePopup(damage, hitPosition, false);
         }
         
+        /// <summary>
+        /// 治疗 Boss（汲取融合吸收小怪时调用）
+        /// </summary>
+        public void HealHP(float amount)
+        {
+            if (isDead || amount <= 0f) return;
+            currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+            GameEvents.TriggerBossHealthChanged(HealthPercent);
+        }
+
         private void ApplyDamage(float damage)
         {
             currentHealth -= damage;
