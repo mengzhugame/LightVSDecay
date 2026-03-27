@@ -109,6 +109,29 @@ namespace LightVsDecay.Logic.Enemy
 // Ch2 AI 组件（炮手）
         private LavaGunnerAI gunnerAI;
 
+// Ch3 AI 组件（霜冻施法者）
+        private FrostcasterAI frostcasterAI;
+
+// Ch3 冰盾
+        private IceShieldController iceShield;
+
+// Ch3 催化者
+        private bool isCatalyst = false;
+        private float catalystBurstRadius = 5f;
+        private float catalystBurstDuration = 5f;
+        private float catalystSpeedMultiplier = 2f;
+        private float catalystDamageTakenMultiplier = 1.5f;
+
+// Ch3 暴走状态
+        private bool isBerserking = false;
+        private float berserkSpeedMultiplier = 1f;
+        private float berserkDamageTakenMultiplier = 1f;
+        private Coroutine berserkCoroutine;
+
+// Ch3 静止自动消失
+        private float autoDestroyTime = 0f;
+        private float stationaryTimer = 0f;
+
 // Ch2 死亡特殊行为
         private bool splitOnDeath = false;
         private EnemyType splitEnemyType = EnemyType.Slime;
@@ -210,6 +233,9 @@ namespace LightVsDecay.Logic.Enemy
             {
                 frostDebuff = gameObject.AddComponent<FrostDebuff>();
             }
+            // Ch3 组件缓存
+            frostcasterAI = GetComponent<FrostcasterAI>();
+            iceShield = GetComponentInChildren<IceShieldController>(true);
             rb = GetComponent<Rigidbody2D>();
             circleCollider = GetComponent<CircleCollider2D>();
             originalScale = transform.localScale;
@@ -290,6 +316,17 @@ namespace LightVsDecay.Logic.Enemy
                     return;
                 }
             }
+            // Ch3：Stationary 单位自动消失计时
+            if (behaviorType == EnemyBehaviorType.Stationary && autoDestroyTime > 0f)
+            {
+                stationaryTimer += Time.fixedDeltaTime;
+                if (stationaryTimer >= autoDestroyTime)
+                {
+                    Die();
+                    return;
+                }
+            }
+
             MoveTowardsTower();
         }
 
@@ -379,6 +416,15 @@ namespace LightVsDecay.Logic.Enemy
                 // disableKnockback 覆盖 canBeKnockedBack（静止障碍不可被推动）
                 if (data.disableKnockback)
                     canBeKnockedBack = false;
+
+// Ch3 催化者
+                isCatalyst = data.isCatalyst;
+                catalystBurstRadius = data.catalystBurstRadius;
+                catalystBurstDuration = data.catalystBurstDuration;
+                catalystSpeedMultiplier = data.catalystSpeedMultiplier;
+                catalystDamageTakenMultiplier = data.catalystDamageTakenMultiplier;
+// Ch3 静止自动消失
+                autoDestroyTime = data.autoDestroyTime;
             }
             // 否则使用默认值（已在字段声明时初始化）
         }
@@ -488,6 +534,33 @@ namespace LightVsDecay.Logic.Enemy
             {
                 gunnerAI.OnBlobSpawned();
             }
+
+            // Ch3：重置暴走状态
+            if (berserkCoroutine != null)
+            {
+                StopCoroutine(berserkCoroutine);
+                berserkCoroutine = null;
+            }
+            isBerserking = false;
+            berserkSpeedMultiplier = 1f;
+            berserkDamageTakenMultiplier = 1f;
+            stationaryTimer = 0f;
+
+            // Ch3：霜冻施法者 AI 激活
+            if (behaviorType == EnemyBehaviorType.FrostCaster && frostcasterAI != null)
+            {
+                frostcasterAI.OnBlobSpawned();
+            }
+
+            // Ch3：冰盾初始化
+            if (iceShield != null && data != null && data.hasIceShield)
+            {
+                iceShield.Initialize(data.iceShieldMaxHP);
+            }
+            else if (iceShield != null)
+            {
+                iceShield.Deactivate();
+            }
         }
         /// <summary>
         /// 应用难度系数（生成时调用）
@@ -544,6 +617,20 @@ namespace LightVsDecay.Logic.Enemy
             // 炮手 AI 停止
             if (gunnerAI != null)
                 gunnerAI.OnBlobDeactivated();
+
+            // Ch3：霜冻施法者 AI 停止
+            if (frostcasterAI != null)
+                frostcasterAI.OnBlobDeactivated();
+
+            // Ch3：停止暴走协程
+            if (berserkCoroutine != null)
+            {
+                StopCoroutine(berserkCoroutine);
+                berserkCoroutine = null;
+            }
+            isBerserking = false;
+            berserkSpeedMultiplier = 1f;
+            berserkDamageTakenMultiplier = 1f;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -636,6 +723,10 @@ namespace LightVsDecay.Logic.Enemy
             {
                 // LavaGunnerAI 全权控制 Rigidbody，此处不干涉
             }
+            else if (behaviorType == EnemyBehaviorType.FrostCaster)
+            {
+                // FrostcasterAI 全权控制 Rigidbody，此处不干涉
+            }
             else
             {
                 MoveChase();
@@ -650,7 +741,7 @@ namespace LightVsDecay.Logic.Enemy
 
             Vector2 direction = (targetTower.position - transform.position).normalized;
 
-            float currentMoveSpeed = baseMoveSpeed * speedMultiplier * frostSpeedMultiplier;
+            float currentMoveSpeed = baseMoveSpeed * speedMultiplier * frostSpeedMultiplier * berserkSpeedMultiplier;
             float moveForce = currentMoveSpeed * 10f;
 
             float timeSinceHit = Time.time - lastHitTime;
@@ -733,11 +824,23 @@ namespace LightVsDecay.Logic.Enemy
         /// <param name="damage">伤害值</param>
         /// <param name="knockbackForce">击退力</param>
         /// <param name="isCrit">是否暴击</param>
-        public void TakeDamage(float damage, Vector2 knockbackForce, bool isCrit = false, 
+        public void TakeDamage(float damage, Vector2 knockbackForce, bool isCrit = false,
             bool fromExplosion = false, DamageSource damageSource = DamageSource.MainLaser,
             bool isShatter = false)
         {
             if (isDead) return;
+
+            // Ch3：冰盾存在时，激光伤害完全重定向到冰盾（不伤害本体）
+            if (iceShield != null && iceShield.IsActive)
+            {
+                iceShield.TakeDamage(damage);
+                return;
+            }
+
+            // Ch3：暴走状态下受到伤害增加
+            if (isBerserking)
+                damage *= berserkDamageTakenMultiplier;
+
             // 【新增】计算有效伤害和溢出伤害
             float effectiveDamage = Mathf.Min(currentHealth, damage);
             float overkillDamage = damage - effectiveDamage;
@@ -1149,6 +1252,12 @@ namespace LightVsDecay.Logic.Enemy
                 }
             }
 
+            // Ch3：催化者死亡时触发范围暴走
+            if (isCatalyst)
+            {
+                TriggerCatalystBurst();
+            }
+
             deathCoroutine = StartCoroutine(DeathFadeCoroutine());
         }
         
@@ -1387,6 +1496,73 @@ namespace LightVsDecay.Logic.Enemy
             if (circleCollider != null) circleCollider.enabled = false;
             // 不触发 GameEvents.TriggerEnemyDied，不给奖励
             ReturnToPool();
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Ch3：催化暴走系统
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 由催化者死亡爆发触发，对该怪物施加暴走状态。
+        /// 体型缩小、移速大幅提升、受到伤害增加，持续 duration 秒后恢复。
+        /// </summary>
+        public void ApplyBerserk(float duration, float speedMult, float damageTakenMult)
+        {
+            if (isDead) return;
+            if (berserkCoroutine != null) StopCoroutine(berserkCoroutine);
+            berserkCoroutine = StartCoroutine(BerserkCoroutine(duration, speedMult, damageTakenMult));
+        }
+
+        private IEnumerator BerserkCoroutine(float duration, float speedMult, float damageTakenMult)
+        {
+            isBerserking = true;
+            berserkSpeedMultiplier = speedMult;
+            berserkDamageTakenMultiplier = damageTakenMult;
+
+            // 暴走视觉：体型缩小至 70%（激活冲刺感）
+            if (!isDead)
+                transform.localScale = originalScale * 0.7f;
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                if (isDead) yield break;
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            // 暴走结束，恢复
+            isBerserking = false;
+            berserkSpeedMultiplier = 1f;
+            berserkDamageTakenMultiplier = 1f;
+            if (!isDead)
+            {
+                // 根据当前血量重新计算缩放（不超过原始大小）
+                float healthRatio = currentHealth / maxHealth;
+                float scaleRatio = Mathf.Lerp(minScale, 1f, healthRatio);
+                transform.localScale = originalScale * scaleRatio;
+            }
+            berserkCoroutine = null;
+        }
+
+        /// <summary>
+        /// 催化者死亡时调用：对周围怪物施加暴走状态。
+        /// </summary>
+        private void TriggerCatalystBurst()
+        {
+            LayerMask enemyMask = LayerMask.GetMask("Enemy", "BouncingEnemy");
+            Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, catalystBurstRadius, enemyMask);
+            foreach (var col in nearby)
+            {
+                if (col == null) continue;
+                var blob = col.GetComponent<EnemyBlob>();
+                if (blob != null && blob != this && !blob.IsDead)
+                {
+                    blob.ApplyBerserk(catalystBurstDuration, catalystSpeedMultiplier, catalystDamageTakenMultiplier);
+                }
+            }
+            if (showDebugInfo)
+                GameLogger.Log($"[FrostCatalyst] 催化爆发！范围 {catalystBurstRadius}，命中 {nearby.Length} 个目标");
         }
         /// <summary>
         /// 设置已完全进入屏幕（由 DrifterSpawnHelper 调用）

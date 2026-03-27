@@ -243,6 +243,74 @@ namespace LightVsDecay.Data.SO
         public float gunnerProjectileLifetime = 8f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 第三章：静止单位自动消失（IceWall 通用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("静止单位自动消失（IceWall / Stationary）")]
+        [Tooltip("大于0时，Stationary 单位在存活N秒后自动消失（0=永不自动消失）")]
+        [Min(0f)]
+        public float autoDestroyTime = 0f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 第三章：极寒催化者（FrostCatalyst 专用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("催化暴走（FrostCatalyst 专用）")]
+        [Tooltip("是否为催化者（死亡时触发范围暴走效果）")]
+        public bool isCatalyst = false;
+
+        [Tooltip("催化爆发半径（世界单位）")]
+        [Min(0f)]
+        public float catalystBurstRadius = 5f;
+
+        [Tooltip("暴走状态持续时间（秒）")]
+        [Min(0f)]
+        public float catalystBurstDuration = 5f;
+
+        [Tooltip("暴走速度加成倍率（1=无加成，2=速度翻倍）")]
+        [Min(1f)]
+        public float catalystSpeedMultiplier = 2f;
+
+        [Tooltip("暴走期间受到伤害增加倍率（1=无加成，1.5=多受50%伤害）")]
+        [Min(1f)]
+        public float catalystDamageTakenMultiplier = 1.5f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 第三章：霜冻施法者（FrostCaster 专用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("霜冻施法者设置（FrostCaster 专用）")]
+        [Tooltip("停驻位置：从屏幕顶部往下的比例（0=顶部，1=底部）")]
+        [Range(0.1f, 0.9f)]
+        public float frostcasterStopYPercent = 0.7f;
+
+        [Tooltip("施法间隔（秒）")]
+        [Min(1f)]
+        public float frostcasterCastInterval = 10f;
+
+        [Tooltip("每次施法召唤的冰墙数量（精英版可配置为随机上限，运行时取 1~此值）")]
+        [Min(1)]
+        public int frostcasterIceWallCount = 1;
+
+        [Tooltip("是否随机冰墙数量（精英版：在 1~frostcasterIceWallCount 之间随机）")]
+        public bool frostcasterRandomWallCount = false;
+
+        [Tooltip("召唤的冰墙敌人类型")]
+        public EnemyType frostcasterIceWallType = EnemyType.IceWall;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 第三章：冰甲卫士前置冰盾（EliteIceShieldGuard 专用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("前置冰盾设置（EliteIceShieldGuard 专用）")]
+        [Tooltip("是否拥有前置冰盾（激光伤害在冰盾存在时完全重定向到冰盾）")]
+        public bool hasIceShield = false;
+
+        [Tooltip("冰盾最大 HP")]
+        [Min(1f)]
+        public float iceShieldMaxHP = 15000f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 碰撞行为
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
@@ -285,6 +353,11 @@ namespace LightVsDecay.Data.SO
         /// 是否为远程炮手
         /// </summary>
         public bool IsRangedGunner => behaviorType == EnemyBehaviorType.RangedGunner;
+
+        /// <summary>
+        /// 是否为霜冻施法者
+        /// </summary>
+        public bool IsFrostCaster => behaviorType == EnemyBehaviorType.FrostCaster;
     }
     
     /// <summary>
@@ -321,5 +394,8 @@ namespace LightVsDecay.Data.SO
 
         /// <summary>远程炮手 - 进入屏幕后停留在上方，定时射击</summary>
         RangedGunner,
+
+        /// <summary>霜冻施法者 - 进入屏幕后停驻，定时召唤冰墙</summary>
+        FrostCaster,
     }
 }

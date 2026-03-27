@@ -40,8 +40,13 @@ namespace LightVsDecay.Logic.Player
         
         private float currentAngle = 0f;      // 当前角度（0度 = 朝上）
         private float targetAngle = 0f;       // 目标角度（用于平滑插值）
-        private bool isUltActive = false;     // 大招是否激活
-        private bool isDragging = false;      // 是否正在拖拽
+        private bool isUltActive = false;      // 大招是否激活
+        private bool isDragging = false;       // 是否正在拖拽
+        private bool isFrozenByBoss = false;   // 是否被Boss冻结（禁止旋转和射击）
+        private Coroutine freezeCoroutine;
+
+        /// <summary>是否当前处于冻结状态（供 LaserController 查询以停止射击）</summary>
+        public bool IsFrozen => isFrozenByBoss;
         
         // 触摸/鼠标输入状态
         private Vector2 lastInputPosition;
@@ -77,13 +82,17 @@ namespace LightVsDecay.Logic.Player
         
         private void Update()
         {
+            // 冻结期间禁用所有输入（Boss冰封技能）
+            if (isFrozenByBoss)
+                return;
+
             // 大招期间禁用手动控制
             if (isUltActive && disableInputDuringUlt)
                 return;
-            
+
             // 处理输入
             ProcessInput();
-            
+
             // 平滑旋转
             ApplySmoothRotation();
         }
@@ -230,6 +239,27 @@ namespace LightVsDecay.Logic.Player
         // 公共接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 冻结光棱塔旋转和射击 N 秒（Boss 冰封技能调用）。
+        /// </summary>
+        public void Freeze(float duration)
+        {
+            if (freezeCoroutine != null) StopCoroutine(freezeCoroutine);
+            freezeCoroutine = StartCoroutine(FreezeCoroutine(duration));
+        }
+
+        private System.Collections.IEnumerator FreezeCoroutine(float duration)
+        {
+            isFrozenByBoss = true;
+            isDragging = false;
+            activeTouchId = -1;
+
+            yield return new WaitForSeconds(duration);
+
+            isFrozenByBoss = false;
+            freezeCoroutine = null;
+        }
+
         /// <summary>
         /// 设置大招状态（由 LaserController 调用）
         /// </summary>

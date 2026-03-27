@@ -27,6 +27,15 @@ namespace LightVsDecay.Core.Pool
         EliteLavaSplitter,  // 精英熔岩分裂者
         EliteLavaExploder,  // 精英熔岩爆炸者
         LavaPuddle,         // 熔岩水坑   - 静止地形障碍，阻挡激光
+
+        // ── 第三章：极寒怪 ──
+        FrostSlime,             // 冰霜粘液怪 - 基础炮灰
+        FrostTank,              // 极寒坦克   - 高血量，极高击退抗性
+        FrostCatalyst,          // 极寒催化者 - 死亡时触发范围暴走
+        Frostcaster,            // 霜冻施法者 - 停驻后定时召唤冰墙
+        EliteIceShieldGuard,    // 精英冰甲卫士 - 前置冰盾，阻断激光
+        EliteFrostcaster,       // 精英霜冻施法者 - 一次召唤3~5面冰墙
+        IceWall,                // 冰墙 - 静止地形障碍，5秒后自动消失
     }
     
     /// <summary>
