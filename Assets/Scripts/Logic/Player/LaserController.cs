@@ -429,7 +429,7 @@ namespace LightVsDecay.Logic.Player
                 
                 int colliderLayer = collider.gameObject.layer;
                 
-                // BossPollutionBall 层处理（污秽球 + 熔岩炮弹，不参与穿透）
+                // BossPollutionBall 层处理（污秽球 + 熔岩炮弹 + 陨石，不参与穿透）
                 if (colliderLayer == bossPollutionBallLayerIndex)
                 {
                     BossPollutionProjectile ball = collider.GetComponent<BossPollutionProjectile>();
@@ -445,6 +445,13 @@ namespace LightVsDecay.Logic.Player
                     if (lavaProj != null && !lavaProj.IsDestroyed)
                     {
                         lavaProj.TakeDamage(baseDamage);
+                        continue;
+                    }
+                    // 陨石（VolcanoBoss 喷发，可被击落）
+                    VolcanoMeteor meteor = collider.GetComponent<VolcanoMeteor>();
+                    if (meteor != null && !meteor.IsDestroyed)
+                    {
+                        meteor.TakeDamage(baseDamage);
                     }
                     continue;
                 }
@@ -535,7 +542,7 @@ namespace LightVsDecay.Logic.Player
                 
                 int colliderLayer = collider.gameObject.layer;
                 
-                // BossPollutionBall 层检测（污秽球 + 熔岩炮弹）
+                // BossPollutionBall 层检测（污秽球 + 熔岩炮弹 + 陨石）
                 if (colliderLayer == bossPollutionBallLayerIndex)
                 {
                     BossPollutionProjectile ball = collider.GetComponent<BossPollutionProjectile>();
@@ -550,6 +557,12 @@ namespace LightVsDecay.Logic.Player
                     if (lavaProj != null && !lavaProj.IsDestroyed)
                     {
                         lavaProj.TakeDamage(damage);
+                        continue;
+                    }
+                    VolcanoMeteor meteor = collider.GetComponent<VolcanoMeteor>();
+                    if (meteor != null && !meteor.IsDestroyed)
+                    {
+                        meteor.TakeDamage(damage);
                     }
                     continue;
                 }

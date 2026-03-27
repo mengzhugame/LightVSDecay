@@ -218,6 +218,12 @@ namespace LightVsDecay.Logic.Boss
         /// <summary>Update 的额外逻辑钩子</summary>
         protected virtual void OnExtraUpdate() { }
 
+        /// <summary>Charge 冲撞落地后的钩子（可用于在路径上生成遗留物）</summary>
+        protected virtual void OnChargeDashComplete(Vector3 startPos, Vector3 endPos) { }
+
+        /// <summary>Press 角力每帧逐帧回调（可用于喷射副弹等持续行为）</summary>
+        protected virtual void OnPressTick(float deltaTime) { }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -798,6 +804,7 @@ namespace LightVsDecay.Logic.Boss
             float baseDashDuration = config != null ? config.chargeDashDuration : 0.3f;
             float dashDuration = baseDashDuration / speedMult;
             float targetY = config != null ? config.chargeTargetY : -10f;
+            Vector3 chargeStartPos = transform.position;
             Vector3 dashTarget = new Vector3(transform.position.x, targetY, transform.position.z);
 
 #if DOTWEEN
@@ -810,6 +817,7 @@ namespace LightVsDecay.Logic.Boss
             while (de < dashDuration) { de += Time.deltaTime; float t = de / dashDuration; transform.position = Vector3.Lerp(ds, dashTarget, t * t); yield return null; }
             transform.position = dashTarget;
 #endif
+            OnChargeDashComplete(chargeStartPos, dashTarget);
             OnChargeHitPlayer();
         }
 
@@ -919,6 +927,8 @@ namespace LightVsDecay.Logic.Boss
                 if (transform.position.y >= safeLineY) { OnPressCountered(); yield break; }
                 if (transform.position.y <= hitLineY) { OnPressHitPlayer(); yield break; }
                 if (clashTimer >= maxClashTime) { OnPressExhausted(); yield break; }
+
+                OnPressTick(Time.deltaTime);
 
                 yield return null;
             }

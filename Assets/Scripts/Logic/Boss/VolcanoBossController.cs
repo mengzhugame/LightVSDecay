@@ -36,14 +36,11 @@ namespace LightVsDecay.Logic.Boss
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         [Header("汲取融合 · 配置")]
-        [Tooltip("阶段一召唤数量")]
+        [Tooltip("阶段一召唤数量（全部为自爆怪）")]
         [SerializeField] private int summonCountPhase1 = 6;
 
-        [Tooltip("阶段二召唤数量（含爆炸者）")]
+        [Tooltip("阶段二召唤数量（全部为自爆怪，数量增加）")]
         [SerializeField] private int summonCountPhase2 = 8;
-
-        [Tooltip("阶段二中爆炸者数量（从 summonCountPhase2 中抽取）")]
-        [SerializeField] private int exploderCountPhase2 = 2;
 
         [Tooltip("吸收半径（小怪进入此范围被吸收）")]
         [SerializeField] private float absorptionRadius = 1.2f;
@@ -51,14 +48,14 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("每次吸收回复的 HP")]
         [SerializeField] private float absorptionHealPerSlime = 2000f;
 
-        [Tooltip("每次吸收增加的攻击力（叠乘）")]
-        [SerializeField] private float absorptionATKPerStack = 0.05f;
+        [Tooltip("每次吸收增加的攻击力（叠乘，每层 10%）")]
+        [SerializeField] private float absorptionATKPerStack = 0.10f;
 
         [Tooltip("吸收层数上限")]
         [SerializeField] private int absorptionMaxStacks = 6;
 
         [Header("陨石喷发 · 配置")]
-        [Tooltip("陨石预制体（需挂 VolcanoMeteor 组件）")]
+        [Tooltip("陨石预制体（需挂 VolcanoMeteor 组件，Layer = BossPollutionBall）")]
         [SerializeField] private GameObject meteorPrefab;
 
         [Tooltip("每次喷发陨石数量")]
@@ -70,12 +67,28 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("陨石落点散布半径（以玩家塔为中心）")]
         [SerializeField] private float meteorSpreadRadius = 3f;
 
+        [Header("火山冲撞 · 岩浆隔离带")]
+        [Tooltip("冲撞路径岩浆水坑间距（越小越密集，建议 1.5）")]
+        [SerializeField] private float chargeTrailSpacing = 1.5f;
+
         [Header("绝境碾压 · 配置")]
         [Tooltip("触发阈值（HP 百分比）")]
         [SerializeField] private float desperatePressThreshold = 0.3f;
 
         [Tooltip("绝境碾压次数（对应激光角力轮次）")]
         [SerializeField] private int desperatePressRounds = 3;
+
+        [Tooltip("角力期间每次喷射火球的间隔（秒）")]
+        [SerializeField] private float pressFireballInterval = 2f;
+
+        [Tooltip("角力火球预制体（需挂 LavaProjectile，Layer = BossPollutionBall）")]
+        [SerializeField] private GameObject pressFireballPrefab;
+
+        [Tooltip("角力火球单发伤害")]
+        [SerializeField] private int pressFireballDamage = 25;
+
+        [Tooltip("角力火球飞行速度")]
+        [SerializeField] private float pressFireballSpeed = 6f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
@@ -96,6 +109,9 @@ namespace LightVsDecay.Logic.Boss
         // 绝境碾压轮次
         private int desperatePressRoundsDone = 0;
 
+        // 绝境碾压火球计时
+        private float pressFireballTimer = 0f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // BaseBossController 钩子实现
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -107,6 +123,7 @@ namespace LightVsDecay.Logic.Boss
             absorptionStacks = 0;
             desperatePressRoundsDone = 0;
             meteorTimer = 0f;
+            pressFireballTimer = 0f;
             summonedSlimes.Clear();
         }
 
@@ -225,9 +242,8 @@ namespace LightVsDecay.Logic.Boss
         {
             summonedSlimes.RemoveAll(e => e == null || e.IsDead);
 
-            int totalCount  = (currentPhase >= 2) ? summonCountPhase2 : summonCountPhase1;
-            int exploderCnt = (currentPhase >= 2) ? exploderCountPhase2 : 0;
-            int splitterCnt = totalCount - exploderCnt;
+            // 汲取融合全部召唤自爆岩浆怪（LavaExploder）
+            int totalCount = (currentPhase >= 2) ? summonCountPhase2 : summonCountPhase1;
 
             if (EnemyPoolManager.Instance == null)
             {
@@ -238,23 +254,10 @@ namespace LightVsDecay.Logic.Boss
             // 围绕 Boss 生成，均匀角度分布
             float angleStep = totalCount > 0 ? 360f / totalCount : 0f;
             float spawnRadius = 4f;
-            int index = 0;
 
-            // 先生成分裂者
-            for (int i = 0; i < splitterCnt; i++, index++)
+            for (int i = 0; i < totalCount; i++)
             {
-                float angle = angleStep * index;
-                Vector2 offset = Quaternion.Euler(0, 0, angle) * Vector2.up * spawnRadius;
-                var enemy = EnemyPoolManager.Instance.Spawn(
-                    EnemyType.LavaSplitter, transform.position + (Vector3)offset);
-                if (enemy != null)
-                    summonedSlimes.Add(enemy);
-            }
-
-            // 再生成爆炸者（仅阶段二）
-            for (int i = 0; i < exploderCnt; i++, index++)
-            {
-                float angle = angleStep * index;
+                float angle = angleStep * i;
                 Vector2 offset = Quaternion.Euler(0, 0, angle) * Vector2.up * spawnRadius;
                 var enemy = EnemyPoolManager.Instance.Spawn(
                     EnemyType.LavaExploder, transform.position + (Vector3)offset);
@@ -263,7 +266,7 @@ namespace LightVsDecay.Logic.Boss
             }
 
             if (showDebugInfo)
-                GameLogger.Log($"[VolcanoBoss] 汲取融合：召唤 {summonedSlimes.Count} 只（分裂者 {splitterCnt}，爆炸者 {exploderCnt}）");
+                GameLogger.Log($"[VolcanoBoss] 汲取融合：召唤 {totalCount} 只自爆岩浆怪");
 
             yield break;
         }
@@ -320,11 +323,61 @@ namespace LightVsDecay.Logic.Boss
             return Mathf.Max(0.1f, 1f - absorptionStacks * reductionPerStack);
         }
 
+        // ── 火山冲撞：冲撞路径生成岩浆隔离带 ───────────────────
+
+        protected override void OnChargeDashComplete(Vector3 startPos, Vector3 endPos)
+        {
+            if (EnemyPoolManager.Instance == null) return;
+
+            float pathLength = Vector3.Distance(startPos, endPos);
+            int puddleCount = Mathf.Max(1, Mathf.RoundToInt(pathLength / chargeTrailSpacing));
+
+            for (int i = 0; i <= puddleCount; i++)
+            {
+                float t = puddleCount > 0 ? (float)i / puddleCount : 0f;
+                Vector3 pos = Vector3.Lerp(startPos, endPos, t);
+                EnemyPoolManager.Instance.Spawn(EnemyType.LavaPuddle, pos);
+            }
+
+            if (showDebugInfo)
+                GameLogger.Log($"[VolcanoBoss] 火山冲撞：路径生成 {puddleCount + 1} 个岩浆水坑");
+        }
+
         // ── 熔岩冲撞：冲撞速度随阶段提升 ───────────────────────
 
         protected override float GetChargeSpeedMultiplier()
         {
             return currentPhase >= 2 ? 1.2f : 1f;
+        }
+
+        // ── 绝境碾压：角力期间每2秒向两侧喷射2发火球 ──────────
+
+        protected override void OnPressTick(float deltaTime)
+        {
+            pressFireballTimer += deltaTime;
+            if (pressFireballTimer < pressFireballInterval) return;
+            pressFireballTimer = 0f;
+
+            if (pressFireballPrefab == null)
+            {
+                if (showDebugInfo) GameLogger.LogWarning("[VolcanoBoss] pressFireballPrefab 未设置！");
+                return;
+            }
+
+            FirePressBall(Vector2.left);
+            FirePressBall(Vector2.right);
+
+            if (showDebugInfo)
+                GameLogger.Log("[VolcanoBoss] 绝境碾压：喷射2发裂缝火球");
+        }
+
+        private void FirePressBall(Vector2 direction)
+        {
+            GameObject go = Instantiate(pressFireballPrefab, transform.position, Quaternion.identity);
+            var proj = go.GetComponent<LightVsDecay.Logic.Enemy.LavaProjectile>();
+            if (proj != null)
+                proj.Initialize(direction, pressFireballSpeed, pressFireballDamage,
+                                hp: 999f, lifetime: 5f); // 火球不被击落，5秒后消失
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

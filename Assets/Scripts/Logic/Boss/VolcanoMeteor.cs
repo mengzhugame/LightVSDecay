@@ -46,6 +46,10 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("着陆后是否生成熔岩水坑")]
         [SerializeField] private bool spawnPuddleOnLand = true;
 
+        [Header("激光拦截")]
+        [Tooltip("陨石生命值（激光击落所需总伤害）")]
+        [SerializeField] private float meteorHP = 15f;
+
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
 
@@ -56,6 +60,10 @@ namespace LightVsDecay.Logic.Boss
         private Vector3 targetPosition;
         private bool isFalling = false;
         private bool hasLanded = false;
+        private float currentHP;
+        private bool isDestroyed = false;
+
+        public bool IsDestroyed => isDestroyed;
 
         // 检测层缓存
         private LayerMask shieldLayer;
@@ -89,6 +97,8 @@ namespace LightVsDecay.Logic.Boss
 
             isFalling = true;
             hasLanded = false;
+            isDestroyed = false;
+            currentHP = meteorHP;
 
             if (showDebugInfo)
                 GameLogger.Log($"[VolcanoMeteor] 陨石启动，目标 {targetPos}");
@@ -97,6 +107,23 @@ namespace LightVsDecay.Logic.Boss
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 下落更新
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 被激光击中时调用。HP归零则陨石被击落（不落地，不造成伤害，不生成水坑）。
+        /// </summary>
+        public void TakeDamage(float amount)
+        {
+            if (isDestroyed || hasLanded) return;
+            currentHP -= amount;
+            if (currentHP <= 0f)
+            {
+                isDestroyed = true;
+                isFalling   = false;
+                if (warningCircle != null) warningCircle.gameObject.SetActive(false);
+                if (showDebugInfo) GameLogger.Log("[VolcanoMeteor] 陨石被激光击落！");
+                Destroy(gameObject, 0.1f);
+            }
+        }
 
         private void Update()
         {
