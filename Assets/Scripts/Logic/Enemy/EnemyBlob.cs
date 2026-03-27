@@ -106,6 +106,9 @@ namespace LightVsDecay.Logic.Enemy
         private int lowLevelBonusXP = 0;
         private int lowLevelThreshold = 12;
 
+// Ch2 AI 组件（炮手）
+        private LavaGunnerAI gunnerAI;
+
 // Ch2 死亡特殊行为
         private bool splitOnDeath = false;
         private EnemyType splitEnemyType = EnemyType.Slime;
@@ -181,6 +184,12 @@ namespace LightVsDecay.Logic.Enemy
         /// 获取敌人类型的属性访问器 (修复 CS1061 错误)
         /// </summary>
         public EnemyType Type => enemyType;
+
+        /// <summary>当前 EnemyData 配置（供 LavaGunnerAI 读取）</summary>
+        public EnemyData Data => data;
+
+        /// <summary>当前追击目标塔（供 LavaGunnerAI 瞄准）</summary>
+        public Transform TargetTower => targetTower;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Layer 切换（弹跳怪入境签证）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -237,6 +246,9 @@ namespace LightVsDecay.Logic.Enemy
             
             enemyLayerIndex = LayerMask.NameToLayer(GameConstants.ENEMY_LAYER);
             bouncingEnemyLayerIndex = LayerMask.NameToLayer(GameConstants.BOUNCING_ENEMY_LAYER);
+
+            // 缓存可选 AI 组件（炮手专用）
+            gunnerAI = GetComponent<LavaGunnerAI>();
         }
         
         private void Start()
@@ -470,6 +482,12 @@ namespace LightVsDecay.Logic.Enemy
             {
                 gameObject.layer = enemyLayerIndex;
             }
+
+            // 炮手 AI 激活
+            if (behaviorType == EnemyBehaviorType.RangedGunner && gunnerAI != null)
+            {
+                gunnerAI.OnBlobSpawned();
+            }
         }
         /// <summary>
         /// 应用难度系数（生成时调用）
@@ -522,8 +540,12 @@ namespace LightVsDecay.Logic.Enemy
             
             isDead = true;
             ResetVisuals();
+
+            // 炮手 AI 停止
+            if (gunnerAI != null)
+                gunnerAI.OnBlobDeactivated();
         }
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 初始化
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -607,8 +629,12 @@ namespace LightVsDecay.Logic.Enemy
             }
             else if (behaviorType == EnemyBehaviorType.Stationary)
             {
-                // 静止障碍：强制速度为零
+                // 静止障碍：强制速度为零（Kinematic 时此处为冗余保护）
                 rb.velocity = Vector2.zero;
+            }
+            else if (behaviorType == EnemyBehaviorType.RangedGunner)
+            {
+                // LavaGunnerAI 全权控制 Rigidbody，此处不干涉
             }
             else
             {

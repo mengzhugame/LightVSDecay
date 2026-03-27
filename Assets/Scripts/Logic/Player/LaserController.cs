@@ -429,7 +429,7 @@ namespace LightVsDecay.Logic.Player
                 
                 int colliderLayer = collider.gameObject.layer;
                 
-                // 污秽球处理（不参与穿透）
+                // BossPollutionBall 层处理（污秽球 + 熔岩炮弹，不参与穿透）
                 if (colliderLayer == bossPollutionBallLayerIndex)
                 {
                     BossPollutionProjectile ball = collider.GetComponent<BossPollutionProjectile>();
@@ -438,10 +438,17 @@ namespace LightVsDecay.Logic.Player
                         Vector2 pushDir = segmentDir;
                         float pushMagnitude = CurrentKnockbackForce * 2f;
                         ball.TakeDamage(baseDamage, pushDir * pushMagnitude);
+                        continue;
+                    }
+                    // 熔岩炮弹（LavaGunner 射出）
+                    LavaProjectile lavaProj = collider.GetComponent<LavaProjectile>();
+                    if (lavaProj != null && !lavaProj.IsDestroyed)
+                    {
+                        lavaProj.TakeDamage(baseDamage);
                     }
                     continue;
                 }
-                
+
                 // 宝箱处理（不参与穿透）
                 TacticalCrate crate = collider.GetComponent<TacticalCrate>();
                 if (crate != null)
@@ -528,7 +535,7 @@ namespace LightVsDecay.Logic.Player
                 
                 int colliderLayer = collider.gameObject.layer;
                 
-                // 污秽球检测
+                // BossPollutionBall 层检测（污秽球 + 熔岩炮弹）
                 if (colliderLayer == bossPollutionBallLayerIndex)
                 {
                     BossPollutionProjectile ball = collider.GetComponent<BossPollutionProjectile>();
@@ -537,10 +544,16 @@ namespace LightVsDecay.Logic.Player
                         Vector2 pushDir = segmentDir;
                         float pushMagnitude = CurrentKnockbackForce * 2f;
                         ball.TakeDamage(damage, pushDir * pushMagnitude);
+                        continue;
+                    }
+                    LavaProjectile lavaProj = collider.GetComponent<LavaProjectile>();
+                    if (lavaProj != null && !lavaProj.IsDestroyed)
+                    {
+                        lavaProj.TakeDamage(damage);
                     }
                     continue;
                 }
-                
+
                 // Boss眼睛检测
                 if (colliderLayer == bossEyesLayerIndex)
                 {

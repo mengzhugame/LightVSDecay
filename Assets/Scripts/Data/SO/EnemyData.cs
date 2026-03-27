@@ -210,6 +210,38 @@ namespace LightVsDecay.Data.SO
         [Tooltip("是否禁用击退（静止物体）")]
         public bool disableKnockback = false;
 
+        [Header("远程炮手设置（RangedGunner 专用）")]
+        [Tooltip("停驻位置：从屏幕顶部往下的比例（0=顶部，1=底部）")]
+        [Range(0.1f, 0.9f)]
+        public float gunnerStopYPercent = 0.6f;
+
+        [Tooltip("射击间隔（秒）")]
+        [Min(1f)]
+        public float gunnerShootInterval = 8f;
+
+        [Tooltip("换位时的横向移动范围（单位：米）")]
+        [Min(0f)]
+        public float gunnerRepositionRange = 2f;
+
+        [Tooltip("弹道预制体（需挂 LavaProjectile 组件，放在 BossPollutionBall 层）")]
+        public GameObject gunnerProjectilePrefab;
+
+        [Tooltip("弹道飞行速度")]
+        [Min(1f)]
+        public float gunnerProjectileSpeed = 5f;
+
+        [Tooltip("弹道命中伤害")]
+        [Min(0)]
+        public int gunnerProjectileDamage = 40;
+
+        [Tooltip("弹道生命值（激光打爆所需伤害）")]
+        [Min(1f)]
+        public float gunnerProjectileHP = 20f;
+
+        [Tooltip("弹道最大生命周期（秒）")]
+        [Min(1f)]
+        public float gunnerProjectileLifetime = 8f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 碰撞行为
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
