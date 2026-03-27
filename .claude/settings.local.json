@@ -8,7 +8,6 @@
       "Bash(\"/c/Users/WangYongCheng/AppData/Local/Programs/Python/Python310/python.exe\" \"D:/Project/LightVSDecay/migrate_logger.py\")",
       "Skill(update-config)",
       "Bash(powershell*)",
-      "Bash(\"D:\\\\Project\\\\GamePlanningDoc\\\\20_项目\\\\02_光与朽项目\\\\04_AI对话记录\\\\Claude对话记录.md\":*)",
       "Bash(find D:/Project/LightVSDecay/Assets/Resources -name GameSettings* -o -name SkillData*)",
       "Bash(for f:*)",
       "Bash(do echo:*)",
@@ -17,21 +16,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(find D:ProjectLightVSDecayLibrary -name *.log -newer D:ProjectLightVSDecayAssetsScriptsLogicPlayerTurretHealth.cs)"
-    ]
-  },
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -ExecutionPolicy Bypass -NoProfile -File \"C:/Users/WangYongCheng/.claude/save-conversation.ps1\"",
-            "timeout": 30,
-            "statusMessage": "保存对话记录..."
-          }
-        ]
-      }
+      "Bash(find D:ProjectLightVSDecayLibrary -name *.log -newer D:ProjectLightVSDecayAssetsScriptsLogicPlayerTurretHealth.cs)",
+      "Bash(ls:*)"
     ]
   }
 }

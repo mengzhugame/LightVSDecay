@@ -10,32 +10,32 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Enemy_Slime
+  m_Name: Frozen_Drifter
   m_EditorClassIdentifier: 
-  type: 0
-  displayName: "\u7C98\u6DB2"
-  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u6570\u91CF\u591A\uFF0C\u8BA9\u73A9\u5BB6\u4F53\u9A8C\u5272\u8349"
-  maxHealth: 1000
-  moveSpeed: 0.8
+  type: 3
+  displayName: "\u6F02\u6D41\u8005"
+  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u88AB\u6FC0\u5149\u51FB\u6253\uFF0C\u4F1A\u5411\u540E\u5F39\u98DE"
+  maxHealth: 2500
+  moveSpeed: 0.7
   mass: 1
-  contactDamage: 30
+  contactDamage: 150
   attackInterval: 1
   isSuicide: 0
-  knockbackResistance: 1
+  knockbackResistance: 0
   behaviorType: 0
   waveAmplitude: 1
   waveFrequency: 1.5
   outOfBoundsLifetime: 1
-  canBeKnockedBack: 0
-  knockbackMultiplier: 1.5
-  knockbackDrag: 2
-  knockbackStunDuration: 0.3
-  knockbackStunMoveMultiplier: 0.3
+  canBeKnockedBack: 1
+  knockbackMultiplier: 1
+  knockbackDrag: 1
+  knockbackStunDuration: 0
+  knockbackStunMoveMultiplier: 0
   drifterDeflectionAngle: 45
-  drifterKnockbackMultiplier: 2
-  knockbackMinDuration: 0.5
-  drifterMaxSpeed: 15
-  knockbackSpeedThreshold: 2
+  drifterKnockbackMultiplier: 1
+  knockbackMinDuration: 0.3
+  drifterMaxSpeed: 12
+  knockbackSpeedThreshold: 4
   minScale: 0.3
   deathFadeDuration: 1
   normalFlowSpeed: 0.3
@@ -43,14 +43,14 @@ MonoBehaviour:
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 20
-  coinReward: 5
+  xpReward: 40
+  coinReward: 10
   dropCoinOnHit: 0
   coinPerHit: 1
   deathCoinBurst: 0
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
-  collisionBehavior: 0
-  isBouncing: 0
-  bounceForce: 300
+  collisionBehavior: 1
+  isBouncing: 1
+  bounceForce: 200
   bounceStunDuration: 1

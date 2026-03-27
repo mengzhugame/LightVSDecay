@@ -10,25 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Enemy_EliteTank
+  m_Name: Frozen_Slime
   m_EditorClassIdentifier: 
-  type: 5
-  displayName: "\u7CBE\u82F1\u5766\u514B"
-  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8089\u76FE\u602A\uFF0C\u8840\u9AD8\uFF0C\u8D28\u91CF\u5927\uFF0C\u6FC0\u5149\u63A8\u4E0D\u52A8"
-  maxHealth: 20000
-  moveSpeed: 1.3
-  mass: 10
-  contactDamage: 160
+  type: 0
+  displayName: "\u7C98\u6DB2"
+  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u6570\u91CF\u591A\uFF0C\u8BA9\u73A9\u5BB6\u4F53\u9A8C\u5272\u8349"
+  maxHealth: 1000
+  moveSpeed: 0.8
+  mass: 1
+  contactDamage: 30
   attackInterval: 1
   isSuicide: 0
-  knockbackResistance: 0.15
+  knockbackResistance: 1
   behaviorType: 0
   waveAmplitude: 1
   waveFrequency: 1.5
   outOfBoundsLifetime: 1
-  canBeKnockedBack: 1
-  knockbackMultiplier: 0.3
-  knockbackDrag: 3
+  canBeKnockedBack: 0
+  knockbackMultiplier: 1.5
+  knockbackDrag: 2
   knockbackStunDuration: 0.3
   knockbackStunMoveMultiplier: 0.3
   drifterDeflectionAngle: 45
@@ -38,13 +38,13 @@ MonoBehaviour:
   knockbackSpeedThreshold: 2
   minScale: 0.3
   deathFadeDuration: 1
-  normalFlowSpeed: 0.1
-  normalNoiseScale: 0.5
+  normalFlowSpeed: 0.3
+  normalNoiseScale: 0.2
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 400
-  coinReward: 25
+  xpReward: 20
+  coinReward: 5
   dropCoinOnHit: 0
   coinPerHit: 1
   deathCoinBurst: 0
