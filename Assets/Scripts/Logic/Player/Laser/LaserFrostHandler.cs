@@ -130,7 +130,7 @@ namespace LightVsDecay.Logic.Player
         /// 对 Boss 应用 Frost 减速效果
         /// 【保留】Boss VFX 不受 FrostSpread 管理，独立播放
         /// </summary>
-        public void ApplyBossFrostEffect(BossController bossController, float slowPercent, float duration, 
+        public void ApplyBossFrostEffect(BaseBossController bossController, float slowPercent, float duration,
             float tickRate, bool enableFreeze)
         {
             if (bossController == null || slowPercent <= 0f) return;
@@ -288,7 +288,7 @@ namespace LightVsDecay.Logic.Player
         /// 播放 Boss Frost 粒子特效（带间隔限制）
         /// 【保留】Boss 不受 FrostSpread 管理，独立播放
         /// </summary>
-        private void PlayBossFrostVFX(BossController bossController)
+        private void PlayBossFrostVFX(BaseBossController bossController)
         {
             if (VFXPoolManager.Instance == null) return;
             if (bossController == null) return;

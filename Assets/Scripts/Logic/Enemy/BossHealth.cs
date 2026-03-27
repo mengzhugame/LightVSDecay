@@ -7,7 +7,6 @@
 using UnityEngine;
 using System.Collections;
 using LightVsDecay.Core;
-using LightVsDecay.Core.Pool;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Statistics;
@@ -50,7 +49,7 @@ namespace LightVsDecay.Logic.Enemy
         private float currentHealth;
         private bool isDead = false;
         
-        private BossController bossController;
+        private BaseBossController bossController;
         private BossConfig config;
         
         // 材质缓存（从 BossController.BodyRenderers 获取）
@@ -79,7 +78,7 @@ namespace LightVsDecay.Logic.Enemy
         
         private void Awake()
         {
-            bossController = GetComponent<BossController>();
+            bossController = GetComponent<BaseBossController>();
             
             // 查找身体碰撞器
             if (bodyCollider == null)
@@ -348,21 +347,10 @@ namespace LightVsDecay.Logic.Enemy
         // 连体Buff
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        public int GetLinkedBuffStacks()
-        {
-            if (EnemyPoolManager.Instance == null) return 0;
-            
-            int rusherCount = EnemyPoolManager.Instance.GetActiveCount(EnemyType.Rusher);
-            int maxStacks = config != null ? config.linkedBuffMaxStacks : 5;
-            
-            return Mathf.Min(rusherCount, maxStacks);
-        }
-        
         public float GetLinkedBuffDamageMultiplier()
         {
-            int stacks = GetLinkedBuffStacks();
-            float reductionPerStack = config != null ? config.linkedBuffDamageReductionPerStack : 0.1f;
-            return 1f - (stacks * reductionPerStack);
+            // 委托给 BaseBossController 虚方法（Ch1重写基于Rusher数量，其他章节返回1f）
+            return bossController != null ? bossController.GetLinkedBuffDamageMultiplier() : 1f;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

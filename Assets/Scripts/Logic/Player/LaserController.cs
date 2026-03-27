@@ -348,7 +348,7 @@ namespace LightVsDecay.Logic.Player
             {
                 if (bossHealth != null)
                 {
-                    BossController bossController = bossHealth.GetComponent<BossController>();
+                    BaseBossController bossController = bossHealth.GetComponent<BaseBossController>();
                     if (bossController != null && bossController.IsPressing)
                     {
                         bossController.FinalizePushForceThisTick();
@@ -493,7 +493,7 @@ namespace LightVsDecay.Logic.Player
                 // Boss身体检测
                 if (colliderLayer == enemyLayerIndex)
                 {
-                    BossController bossController = collider.GetComponentInParent<BossController>();
+                    BaseBossController bossController = collider.GetComponentInParent<BaseBossController>();
                     if (bossController != null)
                     {
                         ProcessBossBodyHit(collider, bossController, segment, currentDamage, ref penetratedCount);
@@ -567,7 +567,7 @@ namespace LightVsDecay.Logic.Player
                 // Boss身体检测
                 if (colliderLayer == enemyLayerIndex)
                 {
-                    BossController bossController = collider.GetComponentInParent<BossController>();
+                    BaseBossController bossController = collider.GetComponentInParent<BaseBossController>();
                     if (bossController != null)
                     {
                         int temp = 0;
@@ -620,7 +620,7 @@ namespace LightVsDecay.Logic.Player
             }
             
             // Boss推力处理
-            BossController bossController = bossHealth.GetComponent<BossController>();
+            BaseBossController bossController = bossHealth.GetComponent<BaseBossController>();
             if (bossController != null && bossController.IsPressing)
             {
                 int impactLevel = SkillEffectManager.Instance != null ? SkillEffectManager.Instance.GetImpactLevel() : 0;
@@ -639,7 +639,7 @@ namespace LightVsDecay.Logic.Player
             penetratedCount++;
         }
         
-        private void ProcessBossBodyHit(Collider2D collider, BossController bossController, LaserSegment segment, float damage, ref int penetratedCount)
+        private void ProcessBossBodyHit(Collider2D collider, BaseBossController bossController, LaserSegment segment, float damage, ref int penetratedCount)
         {
             BossHealth bossHealth = bossController.GetComponent<BossHealth>();
             BossEyeController eyeController = bossController.GetComponentInChildren<BossEyeController>();
@@ -775,7 +775,7 @@ namespace LightVsDecay.Logic.Player
             frostHandler.ApplyFrostEffect(enemy, slowPercent, duration, tickRate, freezeThreshold, freezeDuration);
         }
         
-        private void ApplyBossFrostEffect(BossController bossController)
+        private void ApplyBossFrostEffect(BaseBossController bossController)
         {
             if (SkillEffectManager.Instance == null || bossController == null) return;
             
