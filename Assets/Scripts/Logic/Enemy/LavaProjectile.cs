@@ -136,7 +136,7 @@ namespace LightVsDecay.Logic.Enemy
 
             if (layerName == "Tower")
             {
-                var turret = target.GetComponent<Turrethealth>();
+                var turret = target.GetComponent<TurretHealth>();
                 if (turret != null)
                 {
                     if (BattleStatistics.Instance != null)

@@ -398,7 +398,7 @@ namespace LightVsDecay.Logic.Enemy
             GUILayout.BeginArea(new Rect(10, 300, 250, 150));
             GUILayout.Label("=== Boss Health V3.1 ===");
             GUILayout.Label($"HP: {currentHealth:F0} / {maxHealth:F0} ({HealthPercent:P1})");
-            GUILayout.Label($"连体Buff: {GetLinkedBuffStacks()}层 → {GetLinkedBuffDamageMultiplier():P0}");
+            GUILayout.Label($"连体Buff减伤: {GetLinkedBuffDamageMultiplier():P0}");
             GUILayout.Label($"材质数量: {(bodyMaterials != null ? bodyMaterials.Length : 0)}");
             GUILayout.EndArea();
         }
