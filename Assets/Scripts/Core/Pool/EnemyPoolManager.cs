@@ -10,13 +10,23 @@ namespace LightVsDecay.Core.Pool
     /// </summary>
     public enum EnemyType
     {
+        // ── 第一章：黑油怪 ──
         Slime,      // A - 粘液 - 基础单位
         Tank,       // B - 硬壳 - 高血量
         Rusher,     // C - 速攻虫 - 快速小型
-        Drifter,     // D - 漂流者 - 被击退时随机左后/右后漂移
-        Treasure,    // T - 宝箱怪 - 横穿屏幕，高奖励
+        Drifter,    // D - 漂流者 - 被击退时随机左后/右后漂移
+        Treasure,   // T - 宝箱怪 - 横穿屏幕，高奖励
         EliteTank,      // 精英坦克 - 独立预制体，不走对象池
-        EliteDrifter    // 精英漂流者 - 独立预制体，不走对象池
+        EliteDrifter,   // 精英漂流者 - 独立预制体，不走对象池
+
+        // ── 第二章：熔岩怪 ──
+        LavaSplitter,       // 熔岩分裂者 - 死亡时分裂为多个小熔岩
+        LavaTank,           // 熔岩坦克   - 高血量，缓慢推进
+        LavaExploder,       // 熔岩爆炸者 - 死亡时留下熔岩水坑
+        LavaGunner,         // 熔岩炮手   - 远程射击，停在屏幕上方
+        EliteLavaSplitter,  // 精英熔岩分裂者
+        EliteLavaExploder,  // 精英熔岩爆炸者
+        LavaPuddle,         // 熔岩水坑   - 静止地形障碍，阻挡激光
     }
     
     /// <summary>

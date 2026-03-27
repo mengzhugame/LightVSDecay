@@ -178,6 +178,35 @@ namespace LightVsDecay.Data.SO
         public int lowLevelThreshold = 12;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 死亡特殊行为（Ch2 熔岩怪）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("死亡分裂（分裂者专用）")]
+        [Tooltip("死亡时是否分裂为小单位")]
+        public bool splitOnDeath = false;
+
+        [Tooltip("分裂后生成的敌人类型")]
+        public EnemyType splitEnemyType = EnemyType.Slime;
+
+        [Tooltip("分裂数量")]
+        [Min(1)]
+        public int splitCount = 2;
+
+        [Header("死亡留坑（爆炸者专用）")]
+        [Tooltip("死亡时是否在原地生成熔岩水坑")]
+        public bool spawnPuddleOnDeath = false;
+
+        [Tooltip("生成的水坑敌人类型")]
+        public EnemyType puddleEnemyType = EnemyType.LavaPuddle;
+
+        [Header("静止障碍设置（水坑专用）")]
+        [Tooltip("是否禁用受击闪烁（水坑不应有受击反馈）")]
+        public bool disableHitFlash = false;
+
+        [Tooltip("是否禁用击退（静止物体）")]
+        public bool disableKnockback = false;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 碰撞行为
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
@@ -210,6 +239,16 @@ namespace LightVsDecay.Data.SO
         /// 是否为横穿屏幕类型
         /// </summary>
         public bool IsCrossScreen => behaviorType == EnemyBehaviorType.CrossScreen;
+
+        /// <summary>
+        /// 是否为静止地形障碍
+        /// </summary>
+        public bool IsStationary => behaviorType == EnemyBehaviorType.Stationary;
+
+        /// <summary>
+        /// 是否为远程炮手
+        /// </summary>
+        public bool IsRangedGunner => behaviorType == EnemyBehaviorType.RangedGunner;
     }
     
     /// <summary>
@@ -237,8 +276,14 @@ namespace LightVsDecay.Data.SO
     {
         /// <summary>追击 - 向玩家移动（默认）</summary>
         Chase,
-        
+
         /// <summary>横穿屏幕 - 从一侧到另一侧（宝箱怪）</summary>
-        CrossScreen
+        CrossScreen,
+
+        /// <summary>静止 - 不移动，作为地形障碍（熔岩水坑）</summary>
+        Stationary,
+
+        /// <summary>远程炮手 - 进入屏幕后停留在上方，定时射击</summary>
+        RangedGunner,
     }
 }

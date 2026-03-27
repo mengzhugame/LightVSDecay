@@ -105,6 +105,14 @@ namespace LightVsDecay.Logic.Enemy
         private int deathCoinBurst = 0;
         private int lowLevelBonusXP = 0;
         private int lowLevelThreshold = 12;
+
+// Ch2 死亡特殊行为
+        private bool splitOnDeath = false;
+        private EnemyType splitEnemyType = EnemyType.Slime;
+        private int splitCount = 2;
+        private bool spawnPuddleOnDeath = false;
+        private EnemyType puddleEnemyType = EnemyType.LavaPuddle;
+        private bool disableHitFlash = false;
         
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Drifter 弹飞状态
@@ -346,6 +354,13 @@ namespace LightVsDecay.Logic.Enemy
                 lowLevelBonusXP = data.lowLevelBonusXP;
                 lowLevelThreshold = data.lowLevelThreshold;
 
+// Ch2 死亡特殊行为
+                splitOnDeath = data.splitOnDeath;
+                splitEnemyType = data.splitEnemyType;
+                splitCount = data.splitCount;
+                spawnPuddleOnDeath = data.spawnPuddleOnDeath;
+                puddleEnemyType = data.puddleEnemyType;
+                disableHitFlash = data.disableHitFlash;
             }
             // 否则使用默认值（已在字段声明时初始化）
         }
@@ -571,6 +586,11 @@ namespace LightVsDecay.Logic.Enemy
             if (behaviorType == EnemyBehaviorType.CrossScreen)
             {
                 MoveCrossScreen();
+            }
+            else if (behaviorType == EnemyBehaviorType.Stationary)
+            {
+                // 静止障碍：强制速度为零
+                rb.velocity = Vector2.zero;
             }
             else
             {
@@ -902,12 +922,15 @@ namespace LightVsDecay.Logic.Enemy
             isBeingHit = true;
             lastHitTime = Time.time;
     
-            // 闪烁效果
-            if (hitFlashCoroutine != null)
+            // 闪烁效果（静止障碍禁用）
+            if (!disableHitFlash)
             {
-                StopCoroutine(hitFlashCoroutine);
+                if (hitFlashCoroutine != null)
+                {
+                    StopCoroutine(hitFlashCoroutine);
+                }
+                hitFlashCoroutine = StartCoroutine(HitFlashCoroutine());
             }
-            hitFlashCoroutine = StartCoroutine(HitFlashCoroutine());
         }
         /// <summary>
         /// 受击闪烁协程（线性衰减）
@@ -1071,6 +1094,27 @@ namespace LightVsDecay.Logic.Enemy
                 }
             }
             
+            // ── Ch2 死亡特殊行为 ──
+            if (EnemyPoolManager.Instance != null)
+            {
+                // 分裂者：死亡时从当前位置生成若干小单位
+                if (splitOnDeath)
+                {
+                    for (int i = 0; i < splitCount; i++)
+                    {
+                        float angle = (360f / splitCount) * i;
+                        Vector2 offset = Quaternion.Euler(0, 0, angle) * Vector2.up * 0.4f;
+                        EnemyPoolManager.Instance.Spawn(splitEnemyType, transform.position + (Vector3)offset);
+                    }
+                }
+
+                // 爆炸者：死亡时在原位生成熔岩水坑
+                if (spawnPuddleOnDeath)
+                {
+                    EnemyPoolManager.Instance.Spawn(puddleEnemyType, transform.position);
+                }
+            }
+
             deathCoroutine = StartCoroutine(DeathFadeCoroutine());
         }
         
