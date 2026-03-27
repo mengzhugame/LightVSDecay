@@ -363,6 +363,10 @@ namespace LightVsDecay.Logic.Enemy
                 spawnPuddleOnDeath = data.spawnPuddleOnDeath;
                 puddleEnemyType = data.puddleEnemyType;
                 disableHitFlash = data.disableHitFlash;
+
+                // disableKnockback 覆盖 canBeKnockedBack（静止障碍不可被推动）
+                if (data.disableKnockback)
+                    canBeKnockedBack = false;
             }
             // 否则使用默认值（已在字段声明时初始化）
         }
@@ -371,22 +375,30 @@ namespace LightVsDecay.Logic.Enemy
         {
             rb.gravityScale = 0;
             rb.mass = mass;
-            rb.drag = knockbackDrag;
             rb.angularDrag = 0.5f;
             rb.interpolation = RigidbodyInterpolation2D.Interpolate;
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-            rb.bodyType = RigidbodyType2D.Dynamic;
             rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-            // 【新增】Drifter 特殊配置：低阻力，保持动量
-            if (enemyType == EnemyType.Drifter)
+
+            // 静止障碍（水坑）：设为 Kinematic，物理系统无法推动
+            if (behaviorType == EnemyBehaviorType.Stationary)
             {
-                rb.drag = 0f;                    // 线性阻力 = 0
-                rb.angularDrag = 0f;             // 角阻力 = 0
-                rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous; // 防止高速穿墙
+                rb.bodyType = RigidbodyType2D.Kinematic;
+                rb.drag = 0f;
+                rb.angularDrag = 0f;
+            }
+            // Drifter 特殊配置：低阻力，保持动量
+            else if (behaviorType == EnemyBehaviorType.Chase && enemyType == EnemyType.Drifter)
+            {
+                rb.bodyType = RigidbodyType2D.Dynamic;
+                rb.drag = 0f;
+                rb.angularDrag = 0f;
+                rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             }
             else
             {
-                rb.drag = knockbackDrag;         // 普通怪使用配置的阻力
+                rb.bodyType = RigidbodyType2D.Dynamic;
+                rb.drag = knockbackDrag;
                 rb.angularDrag = 0.5f;
             }
         }
@@ -423,11 +435,15 @@ namespace LightVsDecay.Logic.Enemy
             
             if (rb != null)
             {
+                // 静止障碍恢复 Kinematic（对象池复用时重置）
+                rb.bodyType = (behaviorType == EnemyBehaviorType.Stationary)
+                    ? RigidbodyType2D.Kinematic
+                    : RigidbodyType2D.Dynamic;
                 rb.velocity = Vector2.zero;
                 rb.angularVelocity = 0f;
                 rb.simulated = true;
             }
-            
+
             ResetShaderState();
             ResetVisuals();
             FindTower();
@@ -1047,52 +1063,30 @@ namespace LightVsDecay.Logic.Enemy
                 SkillEffectManager.Instance.TriggerShatterExplosion(transform.position);
             }
             
-            // 【修改】根据死亡原因播放不同特效
-            if (VFXPoolManager.Instance != null)
+            // 静止障碍（水坑）：跳过所有死亡 VFX，直接进入淡出
+            if (behaviorType == EnemyBehaviorType.Stationary)
+            {
+                // 水坑消失：跳过蒸汽特效
+            }
+            // 普通敌人死亡 VFX
+            else if (VFXPoolManager.Instance != null)
             {
                 if (killedByExplosion)
                 {
+                    // 被爆炸杀死：爆炸特效已在伤害来源处播放，直接回收
                     ReturnToPool();
                     return;
                 }
 
                 // 检查是否会触发 Focus Lv5 爆炸
-                bool willTriggerFocusExplosion = SkillEffectManager.Instance != null && 
+                bool willTriggerFocusExplosion = SkillEffectManager.Instance != null &&
                                                  SkillEffectManager.Instance.IsFocusExplosionEnabled &&
                                                  !killedByExecution;
 
-                // 【修改】如果触发了漏洞扩散或Focus爆炸，跳过冒烟特效
+                // 普通死亡：无 Focus 爆炸 且 无漏洞扩散时播放蒸汽
                 if (!willTriggerFocusExplosion && !willTriggerShatterExplosion)
                 {
-                    if (VFXPoolManager.Instance != null)
-                    {
-                        VFXPoolManager.Instance.PlayEnemySteam(transform.position);
-                    }
-                }
-            }
-            // 【修改】根据死亡原因播放不同特效
-            if (VFXPoolManager.Instance != null)
-            {
-                // 【修改】根据死亡原因播放不同特效
-                if (killedByExplosion)
-                {
-                    // 被爆炸杀死：爆炸特效已在伤害来源处播放（Focus Lv5 或撞击护盾），直接回收
-                    ReturnToPool();
-                    return;
-                }
-
-                // 检查是否会触发 Focus Lv5 爆炸（如果会，则跳过冒烟特效，因为 Focus 会在此位置播放爆炸特效）
-                bool willTriggerFocusExplosion = SkillEffectManager.Instance != null && 
-                                                 SkillEffectManager.Instance.IsFocusExplosionEnabled &&
-                                                 !killedByExecution;  // 【新增】处决击杀排除
-
-                if (!willTriggerFocusExplosion)
-                {
-                    // 普通死亡（无 Focus 爆炸）：播放冒烟特效
-                    if (VFXPoolManager.Instance != null)
-                    {
-                        VFXPoolManager.Instance.PlayEnemySteam(transform.position);
-                    }
+                    VFXPoolManager.Instance.PlayEnemySteam(transform.position);
                 }
             }
             
