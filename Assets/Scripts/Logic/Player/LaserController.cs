@@ -159,6 +159,10 @@ namespace LightVsDecay.Logic.Player
         // 连锁反应追踪
         private Dictionary<int, EnemyBlob> lastFrameHitEnemies = new Dictionary<int, EnemyBlob>();
         private Dictionary<int, EnemyBlob> currentFrameHitEnemies = new Dictionary<int, EnemyBlob>();
+
+        // Boss 冻结状态
+        private TurretController turretController;
+        private bool wasLaserFrozen = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 常量
@@ -206,11 +210,24 @@ namespace LightVsDecay.Logic.Player
                 audioHandler.ResetToIdle();
                 return;
             }
-            
+
+            // Boss 冻结：隐藏激光并跳过伤害判定
+            bool isFrozen = turretController != null && turretController.IsFrozen;
+            if (isFrozen != wasLaserFrozen)
+            {
+                wasLaserFrozen = isFrozen;
+                SetLasersActive(!isFrozen);
+            }
+            if (isFrozen)
+            {
+                audioHandler.ResetToIdle();
+                return;
+            }
+
             audioHandler.EnsureAudioStarted();
 
             tickTimer += Time.deltaTime;
-    
+
             if (tickTimer >= tickRate)
             {
                 tickTimer = 0f;
@@ -298,6 +315,8 @@ namespace LightVsDecay.Logic.Player
             {
                 vfxColorSync = mainLaserBeam.GetComponent<LaserVFXColorSync>();
             }
+
+            turretController = GetComponentInParent<TurretController>();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -342,6 +361,21 @@ namespace LightVsDecay.Logic.Player
             ProcessChainLaserTracking();
         }
         
+        /// <summary>
+        /// 切换主激光和所有副激光的激活状态（用于 Boss 冻结效果）。
+        /// </summary>
+        private void SetLasersActive(bool active)
+        {
+            if (mainLaserBeam != null)
+                mainLaserBeam.gameObject.SetActive(active);
+
+            foreach (var subLaser in subLasers)
+            {
+                if (subLaser.beam != null)
+                    subLaser.beam.gameObject.SetActive(active);
+            }
+        }
+
         private void FinalizeBossPushForce()
         {
             foreach (var bossHealth in hitBosses)
