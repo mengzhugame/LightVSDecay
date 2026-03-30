@@ -412,9 +412,10 @@ GameObject:
   m_Component:
   - component: {fileID: 5550749820493603901}
   - component: {fileID: 8495396267299744055}
-  - component: {fileID: 1034768783215084803}
-  - component: {fileID: 909737010331829583}
   - component: {fileID: 4939496034449773110}
+  - component: {fileID: 4831663526427198995}
+  - component: {fileID: 563252777675413611}
+  - component: {fileID: 3474505726193664826}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Lava_Splitter
@@ -470,7 +471,85 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 0
---- !u!58 &1034768783215084803
+--- !u!114 &4939496034449773110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7231890156505126122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 071bfaa9d74fd2446a87ead3d1507fe7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slowTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  frozenTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  tintBlendRatio: 1
+  colorFadeSpeed: 5
+  frostSprite: {fileID: 21300000, guid: 03fcf73004bf0844980e26d2bbdc1a62, type: 3}
+  frostOverlayColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
+  overlayFadeDuration: 0.2
+  breathScaleMin: 0.95
+  breathScaleMax: 1.05
+  breathCycleDuration: 1.5
+--- !u!60 &4831663526427198995
+PolygonCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7231890156505126122}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: 1.1966707, y: 1.7684419}
+      - {x: 0.8099285, y: 2.2586958}
+      - {x: -0.0087647885, y: 2.419897}
+      - {x: -0.6497297, y: 2.3543532}
+      - {x: -1.2466152, y: 1.9185194}
+      - {x: -2.4908721, y: -0.66000485}
+      - {x: -1.9284868, y: -2.1364443}
+      - {x: 0.0869164, y: -2.4417524}
+      - {x: 1.915213, y: -2.136444}
+      - {x: 2.3599765, y: -1.3797027}
+      - {x: 2.4510493, y: -0.5405368}
+  m_UseDelaunayMesh: 0
+--- !u!58 &563252777675413611
 CircleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -504,8 +583,8 @@ CircleCollider2D:
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
-  m_Radius: 0.6
---- !u!114 &909737010331829583
+  m_Radius: 0.5
+--- !u!114 &3474505726193664826
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -518,7 +597,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
-  enemyType: 0
+  enemyType: 7
   bodySprite: {fileID: 249065750041172713}
   eyesController: {fileID: 3896098288412375306}
   decorations:
@@ -530,28 +609,6 @@ MonoBehaviour:
   hitSpeedBoostMultiplier: 3
   defaultHitColor: {r: 1, g: 1, b: 1, a: 1}
   showDebugInfo: 0
---- !u!114 &4939496034449773110
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7231890156505126122}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 071bfaa9d74fd2446a87ead3d1507fe7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  slowTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
-  frozenTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
-  tintBlendRatio: 1
-  colorFadeSpeed: 5
-  frostSprite: {fileID: 21300000, guid: 03fcf73004bf0844980e26d2bbdc1a62, type: 3}
-  frostOverlayColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
-  overlayFadeDuration: 0.2
-  breathScaleMin: 0.95
-  breathScaleMax: 1.05
-  breathCycleDuration: 1.5
 --- !u!1 &9094985636073883722
 GameObject:
   m_ObjectHideFlags: 0

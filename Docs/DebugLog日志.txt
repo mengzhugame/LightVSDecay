@@ -1,0 +1,9 @@
+[BG_DIAG] ApplyBattleBackground 开始 | chapterIndex=1 | battleBackground=NULL
+[BG_DIAG] GameObject.Find("BattleBackground") = NULL
+[WAVE_DIAG] ✅ OnWaveComplete 触发 wave=1/10 | kills=64/16
+[DROP_DIAG] OnWaveComplete 触发 wave=1/10 | IsBossWave=False | isDropPhase=False
+[DROP_DIAG] 启动 StartDropPhase 协程...
+[DROP_DIAG] StartDropPhase 开始 | supplyCratePrefab=OK | gachaCratePrefab=OK | dealCratePrefab=OK
+[DROP_DIAG] 生成无人机 enterDuration=0.6 staggerDelay=0.1
+[DROP_DIAG] ✅ 所有无人机已落地，等待玩家选择...
+[DIAG] StartWaveInterval 调用！Wave=1, TacticalDropManager.Instance=True, IsBossWave=False, OnWaveComplete订阅数=3

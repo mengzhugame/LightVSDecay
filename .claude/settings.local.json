@@ -17,7 +17,11 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(find D:ProjectLightVSDecayLibrary -name *.log -newer D:ProjectLightVSDecayAssetsScriptsLogicPlayerTurretHealth.cs)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(grep -r EnemyPoolManager D:ProjectLightVSDecayAssets --include=*.prefab --include=*.scene -l)",
+      "Bash(xargs grep:*)",
+      "Bash(find D:/Project/LightVSDecay/Assets/Art_Resource -name *background* -o -name *Background* -o -name *bg* -o -name *BG*)",
+      "Bash(find D:/Project/LightVSDecay -maxdepth 4 -name *.unity)"
     ]
   }
 }

@@ -10,25 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Lava_Tank
+  m_Name: Lava_Puddle
   m_EditorClassIdentifier: 
-  type: 8
-  displayName: "\u7194\u5CA9\u5766\u514B"
-  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8089\u76FE\u602A\uFF0C\u8840\u9AD8\uFF0C\u8D28\u91CF\u5927\uFF0C\u6FC0\u5149\u63A8\u4E0D\u52A8"
-  maxHealth: 4000
-  moveSpeed: 1.2
-  mass: 8
-  contactDamage: 40
+  type: 13
+  displayName: "\u7194\u6D46\u6DB2"
+  description: "\u4E00\u6EE9\u7194\u6D46\u6DB2\uFF0C\u9759\u6B62\u5730\u5F62\uFF0C\u963B\u6321\u6FC0\u5149 "
+  maxHealth: 30000
+  moveSpeed: 0.1
+  mass: 100
+  contactDamage: 0
   attackInterval: 1
   isSuicide: 0
-  knockbackResistance: 0.6
-  behaviorType: 0
+  knockbackResistance: 1
+  behaviorType: 2
   waveAmplitude: 1
   waveFrequency: 1.5
   outOfBoundsLifetime: 1
-  canBeKnockedBack: 1
-  knockbackMultiplier: 0.3
-  knockbackDrag: 3
+  canBeKnockedBack: 0
+  knockbackMultiplier: 1.5
+  knockbackDrag: 2
   knockbackStunDuration: 0.3
   knockbackStunMoveMultiplier: 0.3
   drifterDeflectionAngle: 45
@@ -38,13 +38,13 @@ MonoBehaviour:
   knockbackSpeedThreshold: 2
   minScale: 0.3
   deathFadeDuration: 1
-  normalFlowSpeed: 0.1
-  normalNoiseScale: 0.5
+  normalFlowSpeed: 0.3
+  normalNoiseScale: 0.2
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 80
-  coinReward: 25
+  xpReward: 20
+  coinReward: 5
   dropCoinOnHit: 0
   coinPerHit: 1
   deathCoinBurst: 0
@@ -52,12 +52,12 @@ MonoBehaviour:
   lowLevelThreshold: 12
   splitOnDeath: 0
   splitEnemyType: 0
-  splitCount: 2
+  splitCount: 3
   splitImpulseSpeed: 4
   spawnPuddleOnDeath: 0
   puddleEnemyType: 13
-  disableHitFlash: 0
-  disableKnockback: 0
+  disableHitFlash: 1
+  disableKnockback: 1
   gunnerStopYPercent: 0.6
   gunnerShootInterval: 8
   gunnerRepositionRange: 2
@@ -66,7 +66,7 @@ MonoBehaviour:
   gunnerProjectileDamage: 40
   gunnerProjectileHP: 20
   gunnerProjectileLifetime: 8
-  autoDestroyTime: 0
+  autoDestroyTime: 3
   isCatalyst: 0
   catalystBurstRadius: 5
   catalystBurstDuration: 5

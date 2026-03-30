@@ -388,9 +388,9 @@ CircleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: -0.4}
   serializedVersion: 2
-  m_Radius: 0.6
+  m_Radius: 2.1
 --- !u!114 &2034783748989038824
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -404,7 +404,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
-  enemyType: 0
+  enemyType: 9
   bodySprite: {fileID: 2851710205238315500}
   eyesController: {fileID: 6188200960970289074}
   decorations:

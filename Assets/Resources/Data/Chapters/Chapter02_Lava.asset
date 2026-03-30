@@ -23,7 +23,7 @@ MonoBehaviour:
   battleBGM: {fileID: 0}
   bossBGM: {fileID: 0}
   waveConfig: {fileID: 11400000, guid: cf7c4f3afef448c41b767912560c3767, type: 2}
-  bossPrefab: {fileID: 7651956220622171640, guid: 5b037580938be1f40998b30cf4c7c9e2, type: 3}
+  bossPrefab: {fileID: 2504899276320726031, guid: e2c93a87767b94e4ebbf1c364cd716a2, type: 3}
   mechanicType: 1
   difficulties:
   - difficultyLevel: 1

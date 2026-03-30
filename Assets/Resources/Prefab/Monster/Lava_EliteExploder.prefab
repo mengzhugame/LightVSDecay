@@ -100,9 +100,9 @@ CircleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: -0.06, y: -0.5}
   serializedVersion: 2
-  m_Radius: 0.6
+  m_Radius: 2
 --- !u!114 &7627567768446990778
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -116,11 +116,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
-  enemyType: 0
+  enemyType: 12
   bodySprite: {fileID: 5711266985827518147}
   eyesController: {fileID: 5646425625729873227}
   decorations:
   - {fileID: 6639158586126556823}
+  - {fileID: 535458911280438716}
+  - {fileID: 4233047922813633971}
   - {fileID: 8589671115778293438}
   hitFlashDuration: 0.15
   hitSpeedBoostMultiplier: 3

@@ -856,17 +856,15 @@ namespace LightVsDecay.Logic.Enemy
             {
                 killedByExplosion = true;
             }
-            // 【新增】显示伤害飘字
-            if (FloatingTextManager.Instance != null)
+            // 【新增】显示伤害飘字（disableHitFlash 时同时屏蔽飘字，用于 LavaPuddle 等地形障碍）
+            if (!disableHitFlash && FloatingTextManager.Instance != null)
             {
                 if (isShatter)
                 {
-                    // 碎冰伤害飘字（碎冰+暴击 或 纯碎冰）
                     FloatingTextManager.Instance.ShowShatterDamage(transform.position, damage, isCrit);
                 }
                 else
                 {
-                    // 普通伤害飘字
                     FloatingTextManager.Instance.ShowDamage(transform.position, damage, isCrit);
                 }
             }
@@ -881,7 +879,7 @@ namespace LightVsDecay.Logic.Enemy
             
             TriggerHitEffect();
 
-            if (eyesController != null)
+            if (!disableHitFlash && eyesController != null)
             {
                 eyesController.TriggerSquint();
             }

@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Lava_Rusher
+  m_Name: Lava_Exploder
   m_EditorClassIdentifier: 
-  type: 2
-  displayName: "\u98DE\u901F\u602A"
-  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8840\u5C11\uFF0C\u901F\u5EA6\u5FEB"
-  maxHealth: 400
-  moveSpeed: 1.5
-  mass: 0.5
-  contactDamage: 20
+  type: 9
+  displayName: "\u7194\u5CA9\u81EA\u7206\u602A"
+  description: "\u81EA\u7206\u6B7B\u4EA1\u540E\u7559\u4E0B\u4E00\u6EE9\u7194\u5CA9\u6DB2\uFF0C\u963B\u6321\u6FC0\u5149"
+  maxHealth: 550
+  moveSpeed: 1
+  mass: 1
+  contactDamage: 40
   attackInterval: 1
   isSuicide: 1
   knockbackResistance: 1
@@ -50,6 +50,35 @@ MonoBehaviour:
   deathCoinBurst: 0
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
+  splitOnDeath: 0
+  splitEnemyType: 0
+  splitCount: 2
+  splitImpulseSpeed: 4
+  spawnPuddleOnDeath: 1
+  puddleEnemyType: 13
+  disableHitFlash: 0
+  disableKnockback: 0
+  gunnerStopYPercent: 0.6
+  gunnerShootInterval: 8
+  gunnerRepositionRange: 2
+  gunnerProjectilePrefab: {fileID: 0}
+  gunnerProjectileSpeed: 5
+  gunnerProjectileDamage: 40
+  gunnerProjectileHP: 20
+  gunnerProjectileLifetime: 8
+  autoDestroyTime: 0
+  isCatalyst: 0
+  catalystBurstRadius: 5
+  catalystBurstDuration: 5
+  catalystSpeedMultiplier: 2
+  catalystDamageTakenMultiplier: 1.5
+  frostcasterStopYPercent: 0.7
+  frostcasterCastInterval: 10
+  frostcasterIceWallCount: 1
+  frostcasterRandomWallCount: 0
+  frostcasterIceWallType: 20
+  hasIceShield: 0
+  iceShieldMaxHP: 15000
   collisionBehavior: 0
   isBouncing: 0
   bounceForce: 300

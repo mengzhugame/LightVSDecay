@@ -96,6 +96,8 @@ namespace LightVsDecay.Logic
         // ★ 波次卡死检测计时器
         private float stuckCheckTimer = 0f;
         private const float STUCK_CHECK_INTERVAL = 3f;
+        // ★ 清场等待标志（防止重复启动协程）
+        private bool pendingWaveComplete = false;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公共属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -184,23 +186,19 @@ namespace LightVsDecay.Logic
                 GameLogger.Log($"[WaveManager] GameManager.WaveConfig: {GameManager.Instance.WaveConfig?.name ?? "NULL"}");
             }
     
+            // 从 GameManager 获取当前章节的 WaveConfig 和 BossPrefab
+            if (GameManager.Instance != null)
+            {
+                if (GameManager.Instance.WaveConfig != null)
+                    waveConfig = GameManager.Instance.WaveConfig;
+
+                var chapterCfg = GameManager.Instance.CurrentChapterConfig;
+                if (chapterCfg != null && chapterCfg.bossPrefab != null)
+                    bossPrefab = chapterCfg.bossPrefab;
+            }
+
             GameLogger.Log($"[WaveManager] 当前 waveConfig: {waveConfig?.name ?? "NULL"}");
             GameLogger.Log($"[WaveManager] ================================");
-            
-            if (showDebugInfo)
-            {
-                GameLogger.Log("[WaveManager] 游戏开始！准备第一波");
-            }
-            // 【新增】从 GameManager 获取当前章节的 WaveConfig
-            if (GameManager.Instance != null && GameManager.Instance.WaveConfig != null)
-            {
-                waveConfig = GameManager.Instance.WaveConfig;
-        
-                if (showDebugInfo)
-                {
-                    GameLogger.Log($"[WaveManager] 使用章节波次配置: {waveConfig.name}");
-                }
-            }
             currentWaveNumber = 0;
             bossSpawned = false;
             StartNextWave();
@@ -211,14 +209,12 @@ namespace LightVsDecay.Logic
             // 只在刷怪或战斗状态计数
             if (currentState != WaveState.Spawning && currentState != WaveState.Battle)
                 return;
-            
+
             enemiesKilled++;
-            
-            if (showDebugInfo)
-            {
-                GameLogger.Log($"[WaveManager] 敌人击杀: {enemiesKilled}/{totalEnemiesInWave}");
-            }
-            
+
+            int active = EnemyPoolManager.Instance != null ? EnemyPoolManager.Instance.TotalActiveEnemies : -1;
+            GameLogger.Log($"[WAVE_DIAG] 击杀 {type} | kills={enemiesKilled}/{totalEnemiesInWave} | active={active} | state={currentState}");
+
             CheckWaveComplete();
         }
         
@@ -342,7 +338,8 @@ namespace LightVsDecay.Logic
             waveTimer = 0f;
             enemiesSpawned = 0;
             enemiesKilled = 0;
-            
+            pendingWaveComplete = false;
+
             totalEnemiesInWave = currentWaveData.TotalEnemyCount;
             
             // 重置所有刷怪组状态
@@ -741,7 +738,11 @@ namespace LightVsDecay.Logic
         /// </summary>
         private void CheckWaveComplete()
         {
-            if (currentState != WaveState.Battle) return;
+            if (currentState != WaveState.Battle)
+            {
+                GameLogger.Log($"[WAVE_DIAG] CheckWaveComplete 跳过，state={currentState}（非Battle）");
+                return;
+            }
             // ★★★ 诊断日志 ★★★
             int activeEnemies = EnemyPoolManager.Instance != null ? EnemyPoolManager.Instance.TotalActiveEnemies : -1;
             if (enemiesKilled < totalEnemiesInWave && activeEnemies == 0)
@@ -752,7 +753,49 @@ namespace LightVsDecay.Logic
             }
             if (enemiesKilled >= totalEnemiesInWave)
             {
-                OnWaveComplete();
+                // 启动清场等待协程：等待所有分裂子体和死亡淡出动画完成后再结束本波
+                if (!pendingWaveComplete)
+                {
+                    pendingWaveComplete = true;
+                    StartCoroutine(WaitForClearThenCompleteWave());
+                }
+            }
+        }
+
+        /// <summary>
+        /// 逐帧轮询，直到场上无存活敌人后触发波次完成
+        /// 解决：TriggerEnemyDied 在 ReturnToPool 之前触发导致 TotalActiveEnemies 计数不准确的问题
+        /// </summary>
+        private IEnumerator WaitForClearThenCompleteWave()
+        {
+            GameLogger.Log($"[WAVE_DIAG] WaitForClearThenCompleteWave 开始等待 | wave={currentWaveNumber} | kills={enemiesKilled}/{totalEnemiesInWave}");
+            float waitLog = 0f;
+            while (true)
+            {
+                yield return null;
+
+                // 波次状态已被外部改变（如BOSS战触发），直接退出
+                if (currentState != WaveState.Battle)
+                {
+                    pendingWaveComplete = false;
+                    GameLogger.Log($"[WAVE_DIAG] WaitForClear 提前退出，当前状态={currentState}");
+                    yield break;
+                }
+
+                int active = EnemyPoolManager.Instance != null ? EnemyPoolManager.Instance.TotalActiveEnemies : 0;
+                waitLog += Time.deltaTime;
+                if (waitLog >= 1f)
+                {
+                    waitLog = 0f;
+                    GameLogger.Log($"[WAVE_DIAG] 等待清场中... active={active} | kills={enemiesKilled}/{totalEnemiesInWave}");
+                }
+                if (active == 0)
+                {
+                    pendingWaveComplete = false;
+                    GameLogger.Log($"[WAVE_DIAG] 场上清空，触发 OnWaveComplete | wave={currentWaveNumber}");
+                    OnWaveComplete();
+                    yield break;
+                }
             }
         }
         
@@ -761,8 +804,9 @@ namespace LightVsDecay.Logic
         /// </summary>
         private void OnWaveComplete()
         {
+            GameLogger.Log($"[WAVE_DIAG] ✅ OnWaveComplete 触发 wave={currentWaveNumber}/{TotalWaves} | kills={enemiesKilled}/{totalEnemiesInWave}");
             ChangeState(WaveState.Complete);
-            
+
             GameEvents.TriggerWaveComplete(currentWaveNumber, TotalWaves);
             
             if (showDebugInfo)

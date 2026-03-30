@@ -97,8 +97,8 @@ namespace LightVsDecay.Logic.Enemy
                 float interval = Random.Range(blinkIntervalMin, blinkIntervalMax);
                 yield return new WaitForSeconds(interval);
                 
-                // 执行眨眼（如果没有在眯眼）
-                if (!isSquinting)
+                // 执行眨眼（没有眯眼，且 GameObject 仍处于激活状态）
+                if (!isSquinting && gameObject.activeInHierarchy)
                 {
                     yield return StartCoroutine(BlinkAnimation());
                 }
@@ -124,7 +124,7 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         public void TriggerSquint()
         {
-            if (!isSquinting)
+            if (!isSquinting && gameObject.activeInHierarchy)
             {
                 StartCoroutine(SquintAnimation());
             }

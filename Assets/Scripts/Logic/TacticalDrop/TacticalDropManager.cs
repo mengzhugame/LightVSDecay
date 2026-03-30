@@ -302,21 +302,17 @@ namespace LightVsDecay.Logic.TacticalDrop
         /// </summary>
         private void OnWaveComplete(int completedWave, int totalWaves)
         {
+            bool isBoss = WaveManager.Instance != null && WaveManager.Instance.IsBossWave;
+            GameLogger.Log($"[DROP_DIAG] OnWaveComplete 触发 wave={completedWave}/{totalWaves} | IsBossWave={isBoss} | isDropPhase={isDropPhase}");
+
             // Boss 波不触发空投（如果需要的话可以在这里加条件）
-            if (WaveManager.Instance != null && WaveManager.Instance.IsBossWave)
+            if (isBoss)
             {
-                if (showDebugInfo)
-                {
-                    GameLogger.Log("[TacticalDropManager] Boss 波，跳过空投");
-                }
+                GameLogger.Log("[DROP_DIAG] Boss 波，跳过空投");
                 return;
             }
-            
-            if (showDebugInfo)
-            {
-                GameLogger.Log($"[TacticalDropManager] 波次 {completedWave} 完成，开始空投！");
-            }
-            
+
+            GameLogger.Log($"[DROP_DIAG] 启动 StartDropPhase 协程...");
             StartCoroutine(StartDropPhase());
         }
         
@@ -329,25 +325,24 @@ namespace LightVsDecay.Logic.TacticalDrop
         /// </summary>
         private IEnumerator StartDropPhase()
         {
+            GameLogger.Log($"[DROP_DIAG] StartDropPhase 开始 | supplyCratePrefab={(supplyCratePrefab==null?"NULL":"OK")} | gachaCratePrefab={(gachaCratePrefab==null?"NULL":"OK")} | dealCratePrefab={(dealCratePrefab==null?"NULL":"OK")}");
             isDropPhase = true;
-            
+
             // 清理旧的宝箱（以防万一）
             ClearAllCrates();
-            
+
             // 获取配置参数
             float enterDuration = rewardConfig != null ? rewardConfig.enterDuration : 0.45f;
             float staggerDelay = rewardConfig != null ? rewardConfig.staggerDelay : 0.1f;
-            
+
+            GameLogger.Log($"[DROP_DIAG] 生成无人机 enterDuration={enterDuration} staggerDelay={staggerDelay}");
             // 错帧生成3个无人机
             yield return StartCoroutine(SpawnCratesStaggered(enterDuration, staggerDelay));
-            
+
             // 统一启用所有无人机的伤害
             EnableAllCratesDamage();
-            
-            if (showDebugInfo)
-            {
-                GameLogger.Log("[TacticalDropManager] 所有无人机已落地，等待玩家选择...");
-            }
+
+            GameLogger.Log("[DROP_DIAG] ✅ 所有无人机已落地，等待玩家选择...");
         }
         
         /// <summary>

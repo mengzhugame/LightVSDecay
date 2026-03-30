@@ -36,6 +36,9 @@ namespace LightVsDecay.Core.Pool
         EliteIceShieldGuard,    // 精英冰甲卫士 - 前置冰盾，阻断激光
         EliteFrostcaster,       // 精英霜冻施法者 - 一次召唤3~5面冰墙
         IceWall,                // 冰墙 - 静止地形障碍，5秒后自动消失
+
+        // ── 第二章补充 ──
+        LavaSlime = 21,         // 熔岩粘液 - 分裂者死亡时的分裂产物，仅视觉与第一章不同
     }
     
     /// <summary>
@@ -47,9 +50,12 @@ namespace LightVsDecay.Core.Pool
         public EnemyType type;
         public EnemyBlob prefab;
         public int prewarmCount;
-        
+
         [Tooltip("该类型的最大数量（0=使用全局上限）")]
         public int maxCount;
+
+        [Tooltip("所属章节索引（0=Ch1, 1=Ch2, 2=Ch3，-1=全章节通用）")]
+        public int chapterIndex = -1;
     }
     
     /// <summary>
@@ -103,9 +109,9 @@ namespace LightVsDecay.Core.Pool
         {
             // 创建容器
             CreatePoolContainer();
-            
-            // 初始化对象池
-            InitializePools();
+
+            // 对象池由 GameManager.ApplyChapterConfig() 按章节按需初始化
+            pools = new Dictionary<EnemyType, ObjectPool<EnemyBlob>>();
         }
         
         protected override void OnSingletonDestroy()
@@ -126,25 +132,42 @@ namespace LightVsDecay.Core.Pool
             poolContainer = containerGO.transform;
         }
         
-        private void InitializePools()
+        /// <summary>
+        /// 按章节初始化对象池（由 GameManager.ApplyChapterConfig 调用）
+        /// chapterIndex=-1 的配置属于全章节通用类型，始终加载
+        /// </summary>
+        public void InitializeForChapter(int chapterIndex)
         {
+            // 清除上一章节的池（销毁所有实例）
+            ClearAllPools();
+
+            // 销毁旧的子容器节点，保持层级整洁
+            for (int i = poolContainer.childCount - 1; i >= 0; i--)
+            {
+                Object.Destroy(poolContainer.GetChild(i).gameObject);
+            }
+
             pools = new Dictionary<EnemyType, ObjectPool<EnemyBlob>>();
-            
+
             foreach (var config in enemyConfigs)
             {
+                // 跳过不属于当前章节的配置（-1 表示全章节通用）
+                if (config.chapterIndex != -1 && config.chapterIndex != chapterIndex)
+                    continue;
+
                 if (config.prefab == null)
                 {
                     GameLogger.LogError($"[EnemyPoolManager] {config.type} 的预制体未设置！");
                     continue;
                 }
-                
+
                 // 为每种类型创建子容器
                 GameObject typeContainer = new GameObject($"Pool_{config.type}");
                 typeContainer.transform.SetParent(poolContainer);
-                
+
                 // 确定该类型的最大数量
                 int maxForType = config.maxCount > 0 ? config.maxCount : globalMaxEnemies;
-                
+
                 // 创建对象池
                 var pool = new ObjectPool<EnemyBlob>(
                     config.prefab,
@@ -153,13 +176,15 @@ namespace LightVsDecay.Core.Pool
                     maxForType,
                     allowDynamicExpand
                 );
-                
+
                 pools[config.type] = pool;
                 if (showDebugInfo)
                 {
                     GameLogger.Log($"[EnemyPoolManager] {config.type} 池初始化完成: 预热{config.prewarmCount}, 上限{maxForType}");
                 }
             }
+
+            GameLogger.Log($"[EnemyPoolManager] 章节 {chapterIndex + 1} 对象池初始化完成，共 {pools.Count} 种类型");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
+using LightVsDecay.Core.Pool;
 using LightVsDecay.Data;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
@@ -311,10 +312,19 @@ namespace LightVsDecay.Logic
                 }
                 return;
             }
-            
+
+            // 按章节初始化敌人对象池（只加载当前章节的怪物预制体）
+            if (EnemyPoolManager.Instance != null)
+            {
+                EnemyPoolManager.Instance.InitializeForChapter(currentChapterIndex);
+            }
+
             // 应用战斗背景
             ApplyBattleBackground();
-            
+
+            // 更新 HUD 关卡名称
+            ApplyStageName();
+
             // 应用战斗 BGM
             ApplyBattleBGM();
             // 【新增】应用流体怪物底色
@@ -330,30 +340,51 @@ namespace LightVsDecay.Logic
         /// </summary>
         private void ApplyBattleBackground()
         {
+            GameLogger.Log($"[BG_DIAG] ApplyBattleBackground 开始 | chapterIndex={currentChapterIndex} | battleBackground={(battleBackground == null ? "NULL" : battleBackground.gameObject.name)}");
+
             // 如果没有在 Inspector 中设置，尝试查找
             if (battleBackground == null)
             {
-                // 修改：先尝试 Find，不用 FindWithTag（避免 Tag 未定义报错）
-                GameObject bgObj = GameObject.Find("BattleBackground");
-        
+                // 场景中背景节点名为 "Background"
+                GameObject bgObj = GameObject.Find("BattleLevelBackground");
+                GameLogger.Log($"[BG_DIAG] GameObject.Find(\"Background\") = {(bgObj == null ? "NULL" : bgObj.name)}");
+
                 if (bgObj != null)
                 {
                     battleBackground = bgObj.GetComponent<SpriteRenderer>();
+                    GameLogger.Log($"[BG_DIAG] 通过Find获取SpriteRenderer = {(battleBackground == null ? "NULL" : "OK")}");
                 }
             }
-    
+
             // 应用背景图
-            if (battleBackground != null && currentChapterConfig?.battleBackgroundImage != null)
+            if (battleBackground == null)
             {
-                battleBackground.sprite = currentChapterConfig.battleBackgroundImage;
-        
-                if (showDebugInfo)
-                {
-                    GameLogger.Log($"[GameManager] 战斗背景已设置: {currentChapterConfig.battleBackgroundImage.name}");
-                }
+                GameLogger.LogWarning("[GameManager] 战斗背景 SpriteRenderer 未找到！请确认场景中有挂载 BattleBackgroundRegister 的物体。");
+                return;
             }
+            if (currentChapterConfig?.battleBackgroundImage == null)
+            {
+                GameLogger.LogWarning($"[GameManager] 章节 {currentChapterIndex + 1} 的 battleBackgroundImage 未配置！请在 Chapter0{currentChapterIndex + 1} 的 ChapterConfig 中设置背景图。");
+                return;
+            }
+            GameLogger.Log($"[BG_DIAG] 即将设置背景: sprite={currentChapterConfig.battleBackgroundImage.name}, 当前sprite={(battleBackground.sprite == null ? "NULL" : battleBackground.sprite.name)}");
+            battleBackground.sprite = currentChapterConfig.battleBackgroundImage;
+            GameLogger.Log($"[BG_DIAG] ✅ 背景设置完成: {battleBackground.sprite?.name}, 物体激活={battleBackground.gameObject.activeInHierarchy}");
         }
         
+        /// <summary>
+        /// 更新 HUD 关卡名称
+        /// </summary>
+        private void ApplyStageName()
+        {
+            var hud = FindObjectOfType<LightVsDecay.UI.Panels.HUDPanel>();
+            if (hud == null) return;
+            int chNum = currentChapterConfig.chapterNumber;
+            string stageName = $"LEVEL {chNum}-{currentDifficulty}";
+            hud.SetStageName(stageName);
+            GameLogger.Log($"[GameManager] 关卡名称已更新: {stageName}");
+        }
+
         /// <summary>
         /// 应用战斗 BGM
         /// </summary>
@@ -401,6 +432,11 @@ namespace LightVsDecay.Logic
         public void SetBattleBackground(SpriteRenderer bg)
         {
             battleBackground = bg;
+            // 若章节配置已就绪（InitializeChapterConfig 先于 BattleBackgroundRegister.Start 执行时），立即应用
+            if (currentChapterConfig != null)
+            {
+                ApplyBattleBackground();
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

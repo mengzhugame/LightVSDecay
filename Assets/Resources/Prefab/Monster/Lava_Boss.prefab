@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1280841793229192237}
   - component: {fileID: 1845067574763422391}
-  - component: {fileID: 2742441489636854777}
   - component: {fileID: 8769891325397206025}
   - component: {fileID: 5739131008349696496}
-  - component: {fileID: 7979084656563356202}
+  - component: {fileID: 1548325383058834214}
+  - component: {fileID: 479435283563098905}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Lava_Boss
@@ -67,9 +67,85 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 1
-  m_Constraints: 0
---- !u!58 &2742441489636854777
-CircleCollider2D:
+  m_Constraints: 4
+--- !u!114 &8769891325397206025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2504899276320726031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 071bfaa9d74fd2446a87ead3d1507fe7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slowTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  frozenTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  tintBlendRatio: 1
+  colorFadeSpeed: 5
+  frostSprite: {fileID: 21300000, guid: 03fcf73004bf0844980e26d2bbdc1a62, type: 3}
+  frostOverlayColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
+  overlayFadeDuration: 0.2
+  breathScaleMin: 0.95
+  breathScaleMax: 1.05
+  breathCycleDuration: 1.5
+--- !u!114 &5739131008349696496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2504899276320726031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58b616f6f1c8d0a4e843e871bc09a97e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  coreDamageMultiplier: 2
+  bodyCollider: {fileID: 479435283563098905}
+  hitFlashDuration: 0.15
+  hitFlowSpeedMultiplier: 10
+  showDebugInfo: 0
+--- !u!114 &1548325383058834214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2504899276320726031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c45bf5fe0d23d5147912bcb3c21f0460, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: 564fc5f98f507894599d4e4289f69722, type: 2}
+  eyeController: {fileID: 8294939347503322784}
+  bodyTransform: {fileID: 6728805659930097484}
+  bodyRenderers:
+  - {fileID: 585836121024178123}
+  - {fileID: 6730769645221563474}
+  redBodyEffect: {fileID: 8795364587520136327}
+  showDebugInfo: 0
+  summonCountPhase1: 6
+  summonCountPhase2: 8
+  absorptionRadius: 1.2
+  absorptionHealPerSlime: 2000
+  absorptionATKPerStack: 0.1
+  absorptionMaxStacks: 6
+  meteorPrefab: {fileID: 4483929947745537524, guid: 9f54224b940586746bb641fbd8ebc457, type: 3}
+  meteorCount: 3
+  meteorInterval: 12
+  meteorSpreadRadius: 3
+  chargeTrailSpacing: 1.5
+  desperatePressThreshold: 0.3
+  desperatePressRounds: 3
+  pressFireballInterval: 2
+  pressFireballPrefab: {fileID: 5892527745419892909, guid: 0a51f5ce870b26049962341424ff56e9, type: 3}
+  pressFireballDamage: 25
+  pressFireballSpeed: 6
+--- !u!60 &479435283563098905
+PolygonCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -101,67 +177,27 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
-  serializedVersion: 2
-  m_Radius: 2.15
---- !u!114 &8769891325397206025
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2504899276320726031}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 071bfaa9d74fd2446a87ead3d1507fe7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  slowTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
-  frozenTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
-  tintBlendRatio: 1
-  colorFadeSpeed: 5
-  frostSprite: {fileID: 21300000, guid: 03fcf73004bf0844980e26d2bbdc1a62, type: 3}
-  frostOverlayColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
-  overlayFadeDuration: 0.2
-  breathScaleMin: 0.95
-  breathScaleMax: 1.05
-  breathCycleDuration: 1.5
---- !u!114 &5739131008349696496
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2504899276320726031}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 58b616f6f1c8d0a4e843e871bc09a97e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  coreDamageMultiplier: 2
-  bodyCollider: {fileID: 2742441489636854777}
-  hitFlashDuration: 0.15
-  hitFlowSpeedMultiplier: 10
-  showDebugInfo: 0
---- !u!114 &7979084656563356202
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2504899276320726031}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 17d8803025536e9489aa84bffb9da209, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: a7575bca66b9d0648b544d425b82bca3, type: 2}
-  eyeController: {fileID: 8294939347503322784}
-  bodyTransform: {fileID: 1280841793229192237}
-  bodyRenderers:
-  - {fileID: 585836121024178123}
-  - {fileID: 6679031545724767308}
-  redBodyEffect: {fileID: 8795364587520136327}
-  showDebugInfo: 1
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: -0.9124452, y: 1.8453532}
+      - {x: -1.7209864, y: 0.6358349}
+      - {x: -2.359979, y: -0.5229182}
+      - {x: -1.2318641, y: -1.8824819}
+      - {x: 0.17181778, y: -2.191103}
+      - {x: 2.0398965, y: -1.3915077}
+      - {x: 2.494563, y: -0.6288171}
+      - {x: 0.98423576, y: 1.9099345}
+      - {x: -0.028480113, y: 2.2546725}
+  m_UseDelaunayMesh: 0
 --- !u!1 &4544775231488044445
 GameObject:
   m_ObjectHideFlags: 0
@@ -371,7 +407,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8146655579723222936}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 864fca0977edead4b939023bcf1cd733, type: 3}
   m_Name: 

@@ -151,6 +151,14 @@ namespace LightVsDecay.UI.Panels
                 
                 // 恢复上次查看的章节
                 currentViewIndex = ProgressManager.Instance.CurrentViewChapterIndex;
+
+                // 自动跳到最高已解锁章节（新解锁时直接呈现最新内容）
+                int unlockedIndex = ProgressManager.Instance.UnlockedChapterIndex;
+                if (unlockedIndex > currentViewIndex)
+                {
+                    currentViewIndex = unlockedIndex;
+                    ProgressManager.Instance.CurrentViewChapterIndex = currentViewIndex;
+                }
             }
             else
             {
@@ -158,7 +166,7 @@ namespace LightVsDecay.UI.Panels
                 totalChapters = 3;
                 currentViewIndex = 0;
             }
-            
+
             // 确保索引有效
             currentViewIndex = Mathf.Clamp(currentViewIndex, 0, totalChapters - 1);
             

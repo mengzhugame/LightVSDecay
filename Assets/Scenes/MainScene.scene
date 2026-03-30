@@ -27467,11 +27467,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 292b06d2fe53f2543852e082a82cc6a4, type: 2}
-  waveConfig: {fileID: 11400000, guid: 9967bbae06fefc1438e76fc06f774805, type: 2}
+  waveConfig: {fileID: 11400000, guid: e572b7ce705e23b498f9dd93af1299f7, type: 2}
   chapterDatabase: {fileID: 11400000, guid: 0a37e3ccc35aee84fae4acd3540d5507, type: 2}
   mainMenuSceneName: MainScene
   gameSceneName: GameScene
-  showDebugInfo: 0
+  showDebugInfo: 1
 --- !u!114 &5028065218822930191
 MonoBehaviour:
   m_ObjectHideFlags: 0
