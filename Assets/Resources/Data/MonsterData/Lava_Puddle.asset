@@ -15,7 +15,7 @@ MonoBehaviour:
   type: 13
   displayName: "\u7194\u6D46\u6DB2"
   description: "\u4E00\u6EE9\u7194\u6D46\u6DB2\uFF0C\u9759\u6B62\u5730\u5F62\uFF0C\u963B\u6321\u6FC0\u5149 "
-  maxHealth: 30000
+  maxHealth: 60000
   moveSpeed: 0.1
   mass: 100
   contactDamage: 0
@@ -43,8 +43,8 @@ MonoBehaviour:
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 20
-  coinReward: 5
+  xpReward: 0
+  coinReward: 0
   dropCoinOnHit: 0
   coinPerHit: 1
   deathCoinBurst: 0
@@ -66,7 +66,7 @@ MonoBehaviour:
   gunnerProjectileDamage: 40
   gunnerProjectileHP: 20
   gunnerProjectileLifetime: 8
-  autoDestroyTime: 3
+  autoDestroyTime: 180
   isCatalyst: 0
   catalystBurstRadius: 5
   catalystBurstDuration: 5

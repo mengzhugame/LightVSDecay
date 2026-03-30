@@ -489,8 +489,22 @@ namespace LightVsDecay.Logic.Enemy
             if (circleCollider != null)
             {
                 circleCollider.enabled = true;
+                // 允许普通怪物穿过静止障碍（熔浆液等），避免物理碰撞阻挡通路
+                bool thisIsStationary = behaviorType == EnemyBehaviorType.Stationary;
+                var allBlobs = FindObjectsOfType<EnemyBlob>(false);
+                foreach (var other in allBlobs)
+                {
+                    if (other == this) continue;
+                    var otherCol = other.GetComponent<CircleCollider2D>();
+                    if (otherCol == null || !otherCol.enabled) continue;
+                    bool otherIsStationary = other.Data != null && other.Data.IsStationary;
+                    if (thisIsStationary != otherIsStationary)
+                    {
+                        Physics2D.IgnoreCollision(circleCollider, otherCol, true);
+                    }
+                }
             }
-            
+
             if (rb != null)
             {
                 // 静止障碍恢复 Kinematic（对象池复用时重置）
@@ -829,6 +843,8 @@ namespace LightVsDecay.Logic.Enemy
             bool isShatter = false)
         {
             if (isDead) return;
+            // 静止地形障碍（如熔浆液）完全免疫所有伤害
+            if (behaviorType == EnemyBehaviorType.Stationary) return;
 
             // Ch3：冰盾存在时，激光伤害完全重定向到冰盾（不伤害本体）
             if (iceShield != null && iceShield.IsActive)

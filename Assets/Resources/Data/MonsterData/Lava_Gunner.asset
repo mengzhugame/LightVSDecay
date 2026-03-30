@@ -15,7 +15,7 @@ MonoBehaviour:
   type: 10
   displayName: "\u7194\u5CA9\u70AE\u624B"
   description: "\u7194\u5CA9\u8FDC\u7A0B\u602A\u7269\uFF0C\u53D1\u5C04\u706B\u7403"
-  maxHealth: 800
+  maxHealth: 1100
   moveSpeed: 1
   mass: 1
   contactDamage: 40
@@ -43,7 +43,7 @@ MonoBehaviour:
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 40
+  xpReward: 25
   coinReward: 10
   dropCoinOnHit: 0
   coinPerHit: 1
@@ -59,11 +59,11 @@ MonoBehaviour:
   disableHitFlash: 0
   disableKnockback: 0
   gunnerStopYPercent: 0.6
-  gunnerShootInterval: 8
+  gunnerShootInterval: 6
   gunnerRepositionRange: 2
   gunnerProjectilePrefab: {fileID: 1227954545292335531, guid: cb87b1bc8326ff4469a9fa0381d58661, type: 3}
   gunnerProjectileSpeed: 5
-  gunnerProjectileDamage: 40
+  gunnerProjectileDamage: 65
   gunnerProjectileHP: 20
   gunnerProjectileLifetime: 8
   autoDestroyTime: 0

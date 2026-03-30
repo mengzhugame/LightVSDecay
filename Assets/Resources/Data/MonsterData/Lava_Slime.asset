@@ -15,8 +15,8 @@ MonoBehaviour:
   type: 21
   displayName: "\u7194\u5CA9\u7C98\u6DB2"
   description: "\u5206\u88C2\u602A\u6B7B\u4EA1\u540E\u4EA7\u751F\u7684\u57FA\u7840\u602A\u7269\uFF0C\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u6570\u91CF\u591A\uFF0C\u8BA9\u73A9\u5BB6\u4F53\u9A8C\u5272\u8349"
-  maxHealth: 1200
-  moveSpeed: 0.8
+  maxHealth: 1500
+  moveSpeed: 0.9
   mass: 1
   contactDamage: 30
   attackInterval: 1
@@ -43,7 +43,7 @@ MonoBehaviour:
   hitFlowSpeed: 10
   hitNoiseScale: 5
   wobbleReturnSpeed: 5
-  xpReward: 20
+  xpReward: 11
   coinReward: 5
   dropCoinOnHit: 0
   coinPerHit: 1
