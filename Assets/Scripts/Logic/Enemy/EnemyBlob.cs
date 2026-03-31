@@ -1594,6 +1594,7 @@ namespace LightVsDecay.Logic.Enemy
         /// <summary>累加 Frost 照射时间</summary>
         public void AddFrostExposureTime(float deltaTime)
         {
+            if (behaviorType == EnemyBehaviorType.Stationary) return;
             frostExposureTime += deltaTime;
             frostExposureResetTimer = FROST_EXPOSURE_RESET_DELAY;
         }
@@ -1642,6 +1643,7 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         public void ApplyFrostSlow(float slowPercent, float duration)
         {
+            if (behaviorType == EnemyBehaviorType.Stationary) return;
             if (frostDebuff != null)
             {
                 frostDebuff.ApplySlow(slowPercent, duration);
@@ -1653,6 +1655,7 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         public void ApplyFrostFreeze(float duration)
         {
+            if (behaviorType == EnemyBehaviorType.Stationary) return;
             if (!isFrozen && AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayEnemyFreeze();
