@@ -488,21 +488,9 @@ namespace LightVsDecay.Logic.Enemy
             
             if (circleCollider != null)
             {
+                // Stationary 障碍物（熔浆液、冰墙）使用 Trigger：怪物可穿越，但 Raycast 仍能检测到（queriesHitTriggers=true）
+                circleCollider.isTrigger = (behaviorType == EnemyBehaviorType.Stationary);
                 circleCollider.enabled = true;
-                // 允许普通怪物穿过静止障碍（熔浆液等），避免物理碰撞阻挡通路
-                bool thisIsStationary = behaviorType == EnemyBehaviorType.Stationary;
-                var allBlobs = FindObjectsOfType<EnemyBlob>(false);
-                foreach (var other in allBlobs)
-                {
-                    if (other == this) continue;
-                    var otherCol = other.GetComponent<CircleCollider2D>();
-                    if (otherCol == null || !otherCol.enabled) continue;
-                    bool otherIsStationary = other.Data != null && other.Data.IsStationary;
-                    if (thisIsStationary != otherIsStationary)
-                    {
-                        Physics2D.IgnoreCollision(circleCollider, otherCol, true);
-                    }
-                }
             }
 
             if (rb != null)
@@ -624,7 +612,12 @@ namespace LightVsDecay.Logic.Enemy
                 rb.angularVelocity = 0f;
                 rb.simulated = false;
             }
-            
+
+            if (circleCollider != null)
+            {
+                circleCollider.isTrigger = false;
+            }
+
             isDead = true;
             ResetVisuals();
 
