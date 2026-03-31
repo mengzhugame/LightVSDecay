@@ -222,8 +222,10 @@ namespace LightVsDecay.Core.Pool
             
             if (enemy != null)
             {
-                totalActiveEnemies++;
-                
+                // Stationary 障碍物（熔浆液、冰墙）不计入战斗敌人数，不影响波次清场和全局上限
+                if (enemy.Data == null || !enemy.Data.IsStationary)
+                    totalActiveEnemies++;
+
                 if (showDebugInfo)
                     GameLogger.Log($"[EnemyPoolManager] 生成 {type} @ {position}, 当前总数: {totalActiveEnemies}");
             }
@@ -247,13 +249,16 @@ namespace LightVsDecay.Core.Pool
             if (enemy == null) return;
     
             // 通过 PoolKey 找到对应的池
+            bool isStationary = enemy.Data != null && enemy.Data.IsStationary;
+
             if (System.Enum.TryParse<EnemyType>(enemy.PoolKey, out var type))
             {
                 if (pools.TryGetValue(type, out var pool))
                 {
                     pool.Return(enemy);
-                    totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
-            
+                    if (!isStationary)
+                        totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
+
                     if (showDebugInfo)
                         GameLogger.Log($"[EnemyPoolManager] 回收 {type}, 剩余总数: {totalActiveEnemies}");
                 }
@@ -262,7 +267,7 @@ namespace LightVsDecay.Core.Pool
                     // 【修复】找到类型但没有对应池（如精英怪），直接销毁
                     if (showDebugInfo)
                         GameLogger.Log($"[EnemyPoolManager] {type} 无对象池，直接销毁");
-            
+
                     Destroy(enemy.gameObject);
                 }
             }
@@ -271,7 +276,8 @@ namespace LightVsDecay.Core.Pool
                 GameLogger.LogWarning($"[EnemyPoolManager] 无法解析敌人类型: {enemy.PoolKey}");
                 // 降级处理：直接销毁
                 Destroy(enemy.gameObject);
-                totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
+                if (!isStationary)
+                    totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
             }
         }
         
