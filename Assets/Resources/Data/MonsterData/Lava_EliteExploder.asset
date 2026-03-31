@@ -56,6 +56,9 @@ MonoBehaviour:
   splitImpulseSpeed: 4
   spawnPuddleOnDeath: 1
   puddleEnemyType: 13
+  puddleSizeMultiplier: 2.5
+  explosionAoeDamage: 250
+  explosionAoeRadius: 3.5
   disableHitFlash: 0
   disableKnockback: 0
   gunnerStopYPercent: 0.6

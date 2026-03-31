@@ -203,6 +203,19 @@ namespace LightVsDecay.Data.SO
         [Tooltip("生成的水坑敌人类型")]
         public EnemyType puddleEnemyType = EnemyType.LavaPuddle;
 
+        [Tooltip("留坑大小倍率（1=正常；精英爆炸者填2.5）")]
+        [Min(0.1f)]
+        public float puddleSizeMultiplier = 1f;
+
+        [Header("自爆范围伤害（爆炸者专用）")]
+        [Tooltip("死亡/碰撞自爆时对周围的无差别伤害（0=无AoE）")]
+        [Min(0)]
+        public int explosionAoeDamage = 0;
+
+        [Tooltip("自爆AoE半径（世界单位）")]
+        [Min(0f)]
+        public float explosionAoeRadius = 3f;
+
         [Header("静止障碍设置（水坑专用）")]
         [Tooltip("是否禁用受击闪烁（水坑不应有受击反馈）")]
         public bool disableHitFlash = false;

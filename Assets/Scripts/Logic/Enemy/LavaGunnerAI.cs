@@ -1,12 +1,11 @@
 // ============================================================
-// LavaGunnerAI.cs
+// LavaGunnerAI.cs  (v2.0)
 // 文件位置: Assets/Scripts/Logic/Enemy/LavaGunnerAI.cs
-// 用途：熔岩炮手 AI 状态机
 // 行为流程：
-//   Entering → 从屏幕顶部入场，到达目标 Y 后停驻
-//   Idle     → 等待 shootInterval 秒
-//   Shooting → 朝玩家塔发射熔岩弹，0.3s 后转换
-//   Repositioning → 横向移动至新位置，到达后回 Idle
+//   Entering      → 从屏幕顶部入场，到达停驻 Y
+//   Charging      → 蓄力阶段：Effect 图层从暗渐亮，计时结束触发发射
+//   Shooting      → Y 轴弹压（压缩→弹起）→ 嘴部发射火球 → 换位
+//   Repositioning → 横向移动到新 X，到达后回 Charging
 // ============================================================
 
 using System.Collections;
@@ -16,12 +15,6 @@ using LightVsDecay.Data.SO;
 
 namespace LightVsDecay.Logic.Enemy
 {
-    /// <summary>
-    /// 熔岩炮手 AI 控制器。
-    /// 挂载在与 EnemyBlob 相同的 GameObject 上，
-    /// EnemyBlob.MoveTowardsTower 在 RangedGunner 模式下不执行，
-    /// 此组件全权负责 Rigidbody2D 速度控制。
-    /// </summary>
     [RequireComponent(typeof(EnemyBlob))]
     [RequireComponent(typeof(Rigidbody2D))]
     public class LavaGunnerAI : MonoBehaviour
@@ -30,13 +23,50 @@ namespace LightVsDecay.Logic.Enemy
         // 状态枚举
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private enum GunnerState { Entering, Idle, Shooting, Repositioning }
+        private enum GunnerState { Entering, Charging, Shooting, Repositioning }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 引用
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("炮口位置")]
+        [Tooltip("嘴巴处的子节点 Transform；未设置时自动查找名为 FirePoint 的子节点")]
+        [SerializeField] private Transform firePoint;
+
+        [Header("蓄力特效")]
+        [Tooltip("蓄力期间发光的 Effect SpriteRenderer")]
+        [SerializeField] private SpriteRenderer effectSprite;
+
+        [Tooltip("蓄力开始时 Effect 的暗淡颜色")]
+        [SerializeField] private Color effectDimColor  = new Color(1f, 0.35f, 0f, 0.15f);
+
+        [Tooltip("蓄力结束时 Effect 的最亮颜色")]
+        [SerializeField] private Color effectGlowColor = new Color(1f, 0.85f, 0.1f, 1f);
+
+        [Header("入场首发延迟")]
+        [Tooltip("入场停稳后多久开始第一次蓄力（秒）；之后每次使用 gunnerShootInterval")]
+        [SerializeField] private float firstShotDelay = 1.2f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 弹压动画常量
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        // 压缩阶段：X 变宽 + Y 变矮（蓄力压缩感）
+        private const float COMPRESS_X = 1.28f;
+        private const float COMPRESS_Y = 0.60f;
+        private const float COMPRESS_DURATION = 0.14f;
+
+        // 弹起阶段：X 变窄 + Y 变高（出球瞬间拉伸感）
+        private const float BOUNCE_X = 0.80f;
+        private const float BOUNCE_Y = 1.30f;
+        private const float BOUNCE_DURATION = 0.10f;
+
+        // 回弹到正常：平滑复原
+        private const float RESTORE_DURATION = 0.18f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时引用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-        [SerializeField] private Transform firePoint; // 炮口位置（在 Inspector 中指定子节点）；未设置则回退到 transform.position
 
         private EnemyBlob blob;
         private Rigidbody2D rb;
@@ -45,13 +75,13 @@ namespace LightVsDecay.Logic.Enemy
         // 配置（从 EnemyData 读取）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private float stopYPercent = 0.6f;          // 0=顶部 1=底部，停驻位置（从顶部算）
-        private float shootInterval = 8f;
+        private float stopYPercent    = 0.35f;
+        private float shootInterval   = 5f;
         private float repositionRange = 2f;
         private GameObject projectilePrefab;
-        private float projectileSpeed = 5f;
-        private int projectileDamage = 40;
-        private float projectileHP = 20f;
+        private float projectileSpeed    = 5f;
+        private int   projectileDamage   = 65;
+        private float projectileHP       = 20f;
         private float projectileLifetime = 8f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -61,14 +91,14 @@ namespace LightVsDecay.Logic.Enemy
         private GunnerState state = GunnerState.Entering;
         private float targetWorldY;
         private float targetWorldX;
-        private float idleTimer;
-        private bool isActive = false;
+        private float chargeTimer    = 0f;
+        private float chargeDuration = 5f;
+        private bool  isActive       = false;
+        private bool  isFirstShot    = true;
 
-        // 速度常量
-        private const float ENTRY_SPEED = 3f;
+        private const float ENTRY_SPEED      = 3f;
         private const float REPOSITION_SPEED = 2f;
-        private const float SNAP_DIST = 0.08f;
-        private const float SHOOT_PAUSE = 0.35f;
+        private const float SNAP_DIST        = 0.08f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -78,6 +108,27 @@ namespace LightVsDecay.Logic.Enemy
         {
             blob = GetComponent<EnemyBlob>();
             rb   = GetComponent<Rigidbody2D>();
+
+            // 自动查找炮口节点
+            if (firePoint == null)
+            {
+                firePoint = transform.Find("FirePoint")
+                         ?? transform.Find("Mouth")
+                         ?? transform.Find("MouthPoint");
+
+                if (firePoint == null)
+                    GameLogger.LogWarning("[LavaGunnerAI] FirePoint 未设置！子弹将从怪物根节点发射。" +
+                                         "请在 Prefab 中添加名为 'FirePoint' 的子节点并拖入此字段。");
+            }
+        }
+
+        private void Update()
+        {
+            if (!isActive || blob == null || blob.IsDead) return;
+
+            // 蓄力发光效果（逐帧插值）
+            if (state == GunnerState.Charging)
+                UpdateChargeGlow();
         }
 
         private void FixedUpdate()
@@ -89,26 +140,20 @@ namespace LightVsDecay.Logic.Enemy
                 case GunnerState.Entering:
                     UpdateEntering();
                     break;
-                case GunnerState.Idle:
-                    UpdateIdle();
-                    break;
                 case GunnerState.Repositioning:
                     UpdateRepositioning();
                     break;
-                // Shooting 由协程全权处理，FixedUpdate 期间速度为零
-                case GunnerState.Shooting:
+                // Charging / Shooting 阶段物理静止
+                default:
                     rb.velocity = Vector2.zero;
                     break;
             }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 对象池事件（由 EnemyBlob 调用）
+        // 对象池事件
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        /// <summary>
-        /// EnemyBlob.OnSpawn() 时调用，重新读取配置并开始入场。
-        /// </summary>
         public void OnBlobSpawned()
         {
             StopAllCoroutines();
@@ -116,7 +161,6 @@ namespace LightVsDecay.Logic.Enemy
             var data = blob.Data;
             if (data == null) return;
 
-            // 读取配置
             stopYPercent      = data.gunnerStopYPercent;
             shootInterval     = data.gunnerShootInterval;
             repositionRange   = data.gunnerRepositionRange;
@@ -126,7 +170,6 @@ namespace LightVsDecay.Logic.Enemy
             projectileHP      = data.gunnerProjectileHP;
             projectileLifetime = data.gunnerProjectileLifetime;
 
-            // 计算停驻 Y（世界坐标）
             Camera cam = Camera.main;
             if (cam != null && cam.orthographic)
             {
@@ -136,24 +179,23 @@ namespace LightVsDecay.Logic.Enemy
             }
             else
             {
-                targetWorldY = 3f; // fallback
+                targetWorldY = 3f;
             }
 
-            // 初始 X 位置
             targetWorldX = transform.position.x;
-            idleTimer    = shootInterval;
             state        = GunnerState.Entering;
             isActive     = true;
+            isFirstShot  = true;
+
+            ResetEffectGlow();
         }
 
-        /// <summary>
-        /// EnemyBlob.OnReturnToPool() 时调用，停止所有协程。
-        /// </summary>
         public void OnBlobDeactivated()
         {
             isActive = false;
             StopAllCoroutines();
             if (rb != null) rb.velocity = Vector2.zero;
+            ResetEffectGlow();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -174,47 +216,95 @@ namespace LightVsDecay.Logic.Enemy
                 pos.y = targetWorldY;
                 transform.position = pos;
                 targetWorldX = pos.x;
-                EnterIdle();
+
+                // 首次入场使用更短的首发延迟，让玩家有时间反应但不要等太久
+                EnterCharging(isFirstShot ? firstShotDelay : shootInterval);
             }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 待机
+        // 蓄力（替代原 Idle）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private void EnterIdle()
+        private void EnterCharging(float duration)
         {
-            state     = GunnerState.Idle;
-            idleTimer = shootInterval;
-            rb.velocity = Vector2.zero;
+            state         = GunnerState.Charging;
+            chargeTimer   = 0f;
+            chargeDuration = duration;
+            rb.velocity   = Vector2.zero;
+            ResetEffectGlow();
         }
 
-        private void UpdateIdle()
+        private void UpdateChargeGlow()
         {
-            rb.velocity = Vector2.zero;
-            idleTimer -= Time.fixedDeltaTime;
-            if (idleTimer <= 0f)
+            chargeTimer += Time.deltaTime;
+
+            float t = Mathf.Clamp01(chargeTimer / chargeDuration);
+            if (effectSprite != null)
+                effectSprite.color = Color.Lerp(effectDimColor, effectGlowColor, t);
+
+            if (chargeTimer >= chargeDuration)
             {
+                // 防止重复触发：先切换状态再启动协程
+                state = GunnerState.Shooting;
+                isFirstShot = false;
                 StartCoroutine(ShootRoutine());
             }
         }
 
+        private void ResetEffectGlow()
+        {
+            if (effectSprite != null)
+                effectSprite.color = effectDimColor;
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 射击
+        // 发射（弹压动画 + 出球 + 换位）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private IEnumerator ShootRoutine()
         {
-            state = GunnerState.Shooting;
             rb.velocity = Vector2.zero;
 
+            // 记录发射前的实际 scale（EnemyBlob 会随血量缩小，以此为基准）
+            Vector3 baseScale = transform.localScale;
+
+            // 1. 压缩（蓄力弹压感）
+            Vector3 compressScale = new Vector3(
+                baseScale.x * COMPRESS_X,
+                baseScale.y * COMPRESS_Y,
+                baseScale.z);
+            yield return StartCoroutine(LerpScale(baseScale, compressScale, COMPRESS_DURATION));
+
+            // 2. 在压缩峰值发射火球
             FireProjectile();
+            ResetEffectGlow();
 
-            yield return new WaitForSeconds(SHOOT_PAUSE);
+            // 3. 弹起（出球瞬间拉伸感）
+            Vector3 bounceScale = new Vector3(
+                baseScale.x * BOUNCE_X,
+                baseScale.y * BOUNCE_Y,
+                baseScale.z);
+            yield return StartCoroutine(LerpScale(compressScale, bounceScale, BOUNCE_DURATION));
 
-            // 射击后随机换位
+            // 4. 平滑复原
+            yield return StartCoroutine(LerpScale(bounceScale, baseScale, RESTORE_DURATION));
+
+            // 5. 换位
             ChooseNewTargetX();
             state = GunnerState.Repositioning;
+        }
+
+        private IEnumerator LerpScale(Vector3 from, Vector3 to, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                transform.localScale = Vector3.Lerp(from, to, Mathf.Clamp01(elapsed / duration));
+                yield return null;
+            }
+            transform.localScale = to;
         }
 
         private void FireProjectile()
@@ -225,19 +315,16 @@ namespace LightVsDecay.Logic.Enemy
                 return;
             }
 
-            // 目标：玩家塔
             Transform target = blob.TargetTower;
             if (target == null) return;
 
             Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
-            Vector2 dir = (target.position - spawnPos).normalized;
+            Vector2 dir = ((Vector2)(target.position - spawnPos)).normalized;
 
             GameObject go = Instantiate(projectilePrefab, spawnPos, Quaternion.identity);
             var proj = go.GetComponent<LavaProjectile>();
             if (proj != null)
-            {
                 proj.Initialize(dir, projectileSpeed, projectileDamage, projectileHP, projectileLifetime);
-            }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -273,7 +360,8 @@ namespace LightVsDecay.Logic.Enemy
                 Vector3 pos = transform.position;
                 pos.x = targetWorldX;
                 transform.position = pos;
-                EnterIdle();
+                // 换位后进入正常蓄力间隔
+                EnterCharging(shootInterval);
             }
         }
     }

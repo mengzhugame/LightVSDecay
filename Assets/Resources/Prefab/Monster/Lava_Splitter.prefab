@@ -600,6 +600,9 @@ MonoBehaviour:
   enemyType: 7
   bodySprite: {fileID: 249065750041172713}
   eyesController: {fileID: 3896098288412375306}
+  extraEyes:
+  - {fileID: 697968597297899238}
+  - {fileID: 9070060953175990546}
   decorations:
   - {fileID: 7549257497765259921}
   - {fileID: 2278802853076189633}

@@ -1217,71 +1217,121 @@ MonoBehaviour:
     prewarmCount: 10
     maxCount: 50
     chapterIndex: 0
+    usePool: 1
   - type: 1
     prefab: {fileID: 5494020074196298760, guid: 4f812e1c055a281489ce4cfa3e55f5ea, type: 3}
     prewarmCount: 5
     maxCount: 20
     chapterIndex: 0
+    usePool: 1
   - type: 2
     prefab: {fileID: 5752198614278549089, guid: 9ad5de7bb598ca0408f4a397c57429d3, type: 3}
     prewarmCount: 10
     maxCount: 50
     chapterIndex: 0
+    usePool: 1
   - type: 3
     prefab: {fileID: 277119885811001129, guid: ce10f2511ca53854faafac2cde6066ee, type: 3}
     prewarmCount: 10
     maxCount: 30
     chapterIndex: 0
+    usePool: 1
   - type: 7
     prefab: {fileID: 3474505726193664826, guid: e7b1a899f45930841a6c0527e1a57e96, type: 3}
     prewarmCount: 10
     maxCount: 30
     chapterIndex: 1
+    usePool: 1
   - type: 21
     prefab: {fileID: 2336771263006096076, guid: 4a43fcd5f420b88438f10ab64e78b180, type: 3}
     prewarmCount: 15
     maxCount: 60
     chapterIndex: 1
+    usePool: 1
   - type: 8
     prefab: {fileID: 6677106828853799865, guid: 38a1c43f2b5f50a418a176cda77e8b6b, type: 3}
     prewarmCount: 5
     maxCount: 30
     chapterIndex: 1
+    usePool: 1
   - type: 9
     prefab: {fileID: 2034783748989038824, guid: 267b93145a8cd2540b7ec93a6de0cd18, type: 3}
     prewarmCount: 10
     maxCount: 30
     chapterIndex: 1
+    usePool: 1
   - type: 10
     prefab: {fileID: 6521664800173973991, guid: d4204c97b57c9a94d9dd3b782c7fde87, type: 3}
     prewarmCount: 10
     maxCount: 30
     chapterIndex: 1
+    usePool: 1
   - type: 13
     prefab: {fileID: 349953605136580428, guid: d1c8bbf7b1cc7c9429c21ab34c7659f3, type: 3}
     prewarmCount: 10
     maxCount: 30
     chapterIndex: 1
+    usePool: 1
   - type: 14
     prefab: {fileID: 6466215615461531474, guid: faa38aa0a1d215b439d8abdfd7639072, type: 3}
     prewarmCount: 10
     maxCount: 50
     chapterIndex: 2
+    usePool: 1
   - type: 15
     prefab: {fileID: 1938901262160730929, guid: b9e446413fb4a0c4bb02e9bafe4ad0ad, type: 3}
     prewarmCount: 5
     maxCount: 20
     chapterIndex: 2
+    usePool: 1
   - type: 16
     prefab: {fileID: 5186059643794218232, guid: 5f7d7c797cdddd540affb3c22034da55, type: 3}
     prewarmCount: 10
     maxCount: 30
     chapterIndex: 2
+    usePool: 1
   - type: 17
     prefab: {fileID: 7337693297560147520, guid: a17a806a883b75e40bc6331eba89e05c, type: 3}
     prewarmCount: 10
     maxCount: 30
     chapterIndex: 1
+    usePool: 1
+  - type: 5
+    prefab: {fileID: 5494020074196298760, guid: bc8ffc78722db7043ada0f88f923ac8c, type: 3}
+    prewarmCount: 0
+    maxCount: 2
+    chapterIndex: 0
+    usePool: 0
+  - type: 6
+    prefab: {fileID: 3810688627782495589, guid: c569fce9dc16d314a85667fe27f16cc2, type: 3}
+    prewarmCount: 10
+    maxCount: 2
+    chapterIndex: 0
+    usePool: 0
+  - type: 11
+    prefab: {fileID: 1113710622203786408, guid: 53dc9634e0dbfda4b94a8b05b7f9111e, type: 3}
+    prewarmCount: 0
+    maxCount: 2
+    chapterIndex: 1
+    usePool: 0
+  - type: 12
+    prefab: {fileID: 7627567768446990778, guid: 1127b4422014a2f458f7215396bd5fef, type: 3}
+    prewarmCount: 0
+    maxCount: 2
+    chapterIndex: 1
+    usePool: 0
+  - type: 18
+    prefab: {fileID: 1356508273910128844, guid: ef8721531a8a97041b75c60a5eafa967, type: 3}
+    prewarmCount: 0
+    maxCount: 2
+    chapterIndex: 2
+    usePool: 0
+  - type: 19
+    prefab: {fileID: 1506144082942902046, guid: 0a2c24e153efd134dad94392f7f06c83, type: 3}
+    prewarmCount: 0
+    maxCount: 2
+    chapterIndex: 2
+    usePool: 0
   globalMaxEnemies: 200
   allowDynamicExpand: 1
   showDebugInfo: 0
@@ -2485,11 +2535,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   waveConfig: {fileID: 11400000, guid: 9967bbae06fefc1438e76fc06f774805, type: 2}
-  bossPrefab: {fileID: 7651956220622171640, guid: 5b037580938be1f40998b30cf4c7c9e2, type: 3}
   bossSpawnPoint: {fileID: 1331392165}
   spawnOffset: 1.5
-  eliteTankPrefab: {fileID: 7283361689419196302, guid: bc8ffc78722db7043ada0f88f923ac8c, type: 3}
-  eliteDrifterPrefab: {fileID: 6171739888601257571, guid: c569fce9dc16d314a85667fe27f16cc2, type: 3}
   showDebugInfo: 1
   showSpawnArea: 0
 --- !u!1 &307729488

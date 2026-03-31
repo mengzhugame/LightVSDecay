@@ -178,4 +178,253 @@
   请进入 Unity 编辑器，找到炮手 Prefab，在 LavaGunnerAI 组件的 Fire Point 字段中指定炮口位置的子节点（或新建一个空
   GameObject 调到嘴巴处），然后进入游戏测试。
 ------------------------------------------------------------------------------------------------------------------------
+
 需要解决多个眼睛的怪物，眨眼动画问题。我第二章的分裂怪有3只眼睛，精英分裂怪有7只眼睛，但是EnemyBlob脚本的EyesController只有1个眼睛图层的控制，再不影响原来一双眼睛眨眼动画的功能，如果扩展让怪物的眨眼动画支持多只眼睛。
+
+代码修改完毕。Unity Inspector 中的操作步骤：
+
+  在分裂怪和精英分裂怪的 Prefab 上，找到 EnemyBlob 组件：
+
+  ┌──────────────────────────┬───────────────────────────────┐
+  │           字段           │             填入              │
+  ├──────────────────────────┼───────────────────────────────┤
+  │ Eyes Controller          │ 第 1 只眼睛（原有，不动）     │
+  ├──────────────────────────┼───────────────────────────────┤
+  │ Extra Eyes → Size        │ 2（分裂怪）/ 6（精英分裂怪）  │
+  ├──────────────────────────┼───────────────────────────────┤
+  │ Extra Eyes → Element 0~N │ 其余每只眼睛的 EnemyEyes 组件 │
+  └──────────────────────────┴───────────────────────────────┘
+
+  效果：
+  - 每只眼睛的 EnemyEyes 组件各自独立运行眨眼计时（随机间隔不同步，更自然）
+  - StopBlink、TriggerSquint（受击眯眼）、死亡淡出，三件事会同时作用于所有眼睛
+  - 现有单眼怪的 Prefab 无需修改，extraEyes 留空即可
+
+------------------------------------------------------------------------------------------------------------------------
+为什么我在第二章的战斗中没有看到刷出来精英怪？波次配置里是有精英怪的。是因为我没有把精英怪加入到EnemyPoolManager这里吗？但是第一章的精英怪也没有加入到这里，战斗中从哪里调用的精英怪的预制体？
+
+● 找到原因了。让我解释整个机制：
+
+  两套精英怪生成逻辑
+
+  第一章精英怪（EliteTank、EliteDrifter）— WaveManager.cs:545 有特殊处理：
+  if (group.enemyType == EnemyType.EliteTank || group.enemyType == EnemyType.EliteDrifter)
+  {
+      SpawnEliteEnemy(group);  // 直接 Instantiate，不走对象池
+      return;
+  }
+  WaveManager 自己有 eliteTankPrefab / eliteDrifterPrefab 字段，用 Instantiate 生成。
+
+  第二章精英怪（EliteLavaSplitter=11、EliteLavaExploder=12）— 没有这个特殊分支，会直接走进普通的
+  EnemyPoolManager.Spawn() 路径。所以它们必须在 EnemyPoolManager Inspector 里注册预制体。
+
+  你现在缺的东西
+
+  在 Unity Inspector 里，找到场景中的 EnemyPoolManager 组件，在 Enemy Configs 列表里添加两条：
+
+  ┌───────────────┬───────────────────┬───────────────────┐
+  │     字段      │ EliteLavaSplitter │ EliteLavaExploder │
+  ├───────────────┼───────────────────┼───────────────────┤
+  │ Type          │ EliteLavaSplitter │ EliteLavaExploder │
+  ├───────────────┼───────────────────┼───────────────────┤
+  │ Prefab        │ 精英分裂怪 Prefab │ 精英爆炸怪 Prefab │
+  ├───────────────┼───────────────────┼───────────────────┤
+  │ Prewarm Count │ 2                 │ 3                 │
+  ├───────────────┼───────────────────┼───────────────────┤
+  │ Max Count     │ 5                 │ 5                 │
+  ├───────────────┼───────────────────┼───────────────────┤
+  │ Chapter Index │ 1（第二章）       │ 1（第二章）       │
+  └───────────────┴───────────────────┴───────────────────┘
+
+  chapterIndex = 1 表示只有进入第二章时才会建立这两个池，第一章不会加载它们。
+
+  添加后，波次配置里的 enemyType: 11 和 enemyType: 12 就能正常生成精英怪了。
+
+------------------------------------------------------------------------------------------------------------------------
+
+所以现在需要重构或优化一下这个刷怪逻辑，首先先删掉waveManager里的BOSS相关，精英怪预制体这些。统一走一套刷怪流程。当时建立EnemyPoolManager是因为普通怪会存在很多，需要对象池优化，但是精英怪和BOSS只有1只，不需要对象池的功能（担心1个怪物走对象池，会增加性能消耗）。所以你先给一个关于战斗刷怪功能的优化或重构方案，普通怪物（数量多），精英怪和BOSS（只有1-2只）。然后我们确定好方案后，再开始代码优化。
+
+现在整体情况已经清楚了。给你一个正式的分析方案，不急着改代码。
+
+  ---
+  现状诊断
+
+  WaveManager
+    ├── bossPrefab + bossSpawnPoint      → Instantiate
+    ├── eliteTankPrefab                  → Instantiate (SpawnEliteEnemy)
+    ├── eliteDrifterPrefab               → Instantiate (SpawnEliteEnemy)
+    └── 普通怪 → EnemyPoolManager.Spawn()
+
+  EnemyPoolManager
+    └── 普通怪 Pool（池）
+    └── Ch2精英怪 ← ❌ 没有注册，波次配置调用时报错消失
+
+  问题根源： 每次新增章节/精英怪，都要同时改 WaveManager（加 prefab 字段）和
+  EnemyPoolManager（加池配置），两处维护，容易漏。
+
+  ---
+  两种重构方案
+
+  方案一：全部走 EnemyPoolManager（最简洁）
+
+  所有怪物，包括精英和 Boss，都注册在 EnemyPoolManager，prewarmCount = 0, maxCount = 1。
+
+  WaveManager 中删掉所有 prefab 字段，SpawnSingleEnemy 统一调用 EnemyPoolManager.Spawn(type, pos)。
+
+  关于"池开销"的实际评估：
+  ▎ prewarmCount = 0 时，池不预创建任何对象。第一次 Spawn() 时才 Instantiate（和现在完全一样）。Despawn() 时保留 1 个
+  disabled 实例而不是 Destroy。
+  ▎ 一个 disabled 的 GameObject 没有任何 Update 调用，内存开销约等于零，性能影响可以忽略。
+
+  优点：改动最小，代码最干净，Inspector 统一管所有类型
+  缺点：Boss 在 EnemyPoolManager 里配置略显奇怪（"Boss 的对象池" 语义不直觉）
+
+  ---
+  方案二：双轨制（推荐）
+
+  将"怪物的管理策略"作为配置项，WaveManager 只认一个统一接口，内部自动路由。
+
+  核心改动：
+  1. EnemyPoolManager 的每条 config 增加一个 bool usePool 字段
+    - usePool = true：走现有对象池逻辑（普通怪）
+    - usePool = false：每次 Spawn → Instantiate，每次 Despawn → Destroy，没有池开销
+  2. WaveManager 删掉所有散落的 prefab 字段，不再感知"怎么生成"
+  3. Inspector 统一在 EnemyPoolManager 一处配置所有类型
+
+  普通怪 (Slime / Exploder / ...):  usePool = true,  prewarm = 10, max = 50
+  精英怪 (EliteLavaSplitter / ...): usePool = false, prefab → Instantiate/Destroy
+  Boss:                              usePool = false, prefab → Instantiate/Destroy
+
+  代码结构：
+  EnemyPoolManager.Spawn(type, pos)
+    ├── if config.usePool  → pool.Get()
+    └── if !config.usePool → Instantiate(config.prefab)
+
+  EnemyPoolManager.Despawn(enemy)
+    ├── if config.usePool  → pool.Return()
+    └── if !config.usePool → Destroy(enemy.gameObject)
+
+  WaveManager：
+  - 删除 bossPrefab, bossSpawnPoint, eliteTankPrefab, eliteDrifterPrefab
+  - 删除 SpawnEliteEnemy()
+  - SpawnSingleEnemy() 全部统一 → EnemyPoolManager.Instance.Spawn(type, pos)
+  - Boss 波次仍然用 isBossWave 标记，位置用现有 bossSpawnPoint（这个可以保留，它是场景内的位置节点，不是预制体引用）
+
+  优点：精英/Boss 真正零池开销，语义清晰，扩展性最好
+  缺点：EnemyPoolManager 改动稍多（需要加 usePool 路由逻辑）
+
+  ---
+  我的建议
+
+  选方案二，理由：
+
+  1. 你对"精英不走对象池"的直觉是对的，架构上也更清晰
+  2. 代价很小：EnemyPoolManager 加 bool usePool + 一个分支路由
+  3. 未来加新章节：只需在 Inspector 的 EnemyPoolManager 里加一条 config，WaveManager 完全不用动
+  4. Boss 的特殊战斗逻辑（血条、状态机切换）仍在 WaveManager 保留，只是生成调用统一走 EnemyPoolManager
+
+  ---
+  确认方案后我立即开始修改。 需要我补充任何细节吗，还是直接按方案二开始？
+------------------------------------------------------------------------------------------------------------------------
+
+确认方案二，开始修改相关代码。
+
+旧字段和方法已全部清除。修改完成，以下是 Inspector 操作清单：
+
+  ---
+  需要在 Unity Inspector 中做的事
+
+  EnemyPoolManager — Enemy Configs 列表
+
+  对每个已有的普通怪条目：Use Pool 保持 ✅ true（默认值，不用改）
+
+  需要新增以下条目（Use Pool = ❌ false）：
+
+  ┌───────────────────┬───────────────────┬─────────┬───────────┬───────────────┬──────────┐
+  │       Type        │      Prefab       │ Prewarm │ Max Count │ Chapter Index │ Use Pool │
+  ├───────────────────┼───────────────────┼─────────┼───────────┼───────────────┼──────────┤
+  │ EliteTank         │ 精英坦克 Prefab   │ 0       │ 2         │ 0（Ch1）      │ ❌ false │
+  ├───────────────────┼───────────────────┼─────────┼───────────┼───────────────┼──────────┤
+  │ EliteDrifter      │ 精英漂流者 Prefab │ 0       │ 2         │ 0（Ch1）      │ ❌ false │
+  ├───────────────────┼───────────────────┼─────────┼───────────┼───────────────┼──────────┤
+  │ EliteLavaSplitter │ 精英分裂怪 Prefab │ 0       │ 2         │ 1（Ch2）      │ ❌ false │
+  ├───────────────────┼───────────────────┼─────────┼───────────┼───────────────┼──────────┤
+  │ EliteLavaExploder │ 精英爆炸怪 Prefab │ 0       │ 3         │ 1（Ch2）      │ ❌ false │
+  └───────────────────┴───────────────────┴─────────┴───────────┴───────────────┴──────────┘
+
+  WaveManager — Inspector 清理
+
+  WaveManager 组件上会有已失效的旧字段引用（Boss Prefab、Elite Tank Prefab、Elite Drifter Prefab），Unity 编辑器中它们已被自动移除，保留 Boss
+   Spawn Point（场景节点引用，仍有用）即可。
+
+  ---
+  完成后：普通怪走池，精英怪 Instantiate/Destroy，WaveManager 完全不感知区别，以后新章节只在 EnemyPoolManager 加一条配置即可。
+------------------------------------------------------------------------------------------------------------------------
+
+炮手发射的子弹依旧没有从嘴巴的位置发射，而是下方几米的距离子弹出来，这是为什么？是因为我的子弹是粒子原因吗？炮手发射子弹太慢了，感觉出场，
+停下来就需要发射子弹（而且发射子弹需要一个怪物的Y周缩放动画表现。如果是准备发射子弹，例如CD蓄力，那就让炮手的Effect特效图发光，越来越亮，最
+后来一个怪物整体来一个Y轴缩放，类似弹力，然后火球从嘴巴发射出来的表现效果。） 现在感觉炮手入场停下来后，停好久才发射，表现效果也整体不对。
+
+代码修改完成。Unity Inspector 中需要做的事：
+
+  1. 解决子弹位置问题（必做）
+
+  在炮手 Prefab 上：
+  1. 右键根节点 → Create Empty，命名为 FirePoint
+  2. 把这个空节点拖到嘴巴的世界位置
+  3. 把它拖入 LavaGunnerAI 组件的 Fire Point 字段
+
+  ▎ 代码会自动按名字查找 FirePoint 子节点，所以只要命名正确，不拖字段也能工作。
+
+  2. 绑定蓄力发光特效（可选）
+
+  把炮手 Prefab 上的 Effect 图层的 SpriteRenderer 拖入 Effect Sprite 字段。蓄力时会从暗到亮渐变（颜色范围可在 Inspector 调节 Effect Dim Color
+   / Effect Glow Color）。
+
+  新的行为流程
+
+  入场 → 停下 (1.2s 首发蓄力，Effect 渐亮)
+       → 整体 Y 轴压缩 (0.14s) → 发射火球 → 弹起拉伸 (0.1s) → 复原 (0.18s)
+       → 横向换位 → 正常蓄力间隔 (4s，Effect 渐亮)
+       → 下一轮…
+
+------------------------------------------------------------------------------------------------------------------------
+
+需要解决2个问题，1.自爆怪需要添加自爆的功能，还有特效和声音（包括自爆怪被激光打爆或者碰撞护盾或光棱塔后自爆，自爆会对一定范围内的怪物造成伤害，如果是靠近玩家，也会对玩家造成伤害，爆炸是无差别伤害。然后爆炸后留下一滩熔浆液）。2.精英自爆怪死亡后，熔浆液没有变成2.5倍。
+
+全部修改完成。总结：
+
+  ---
+  问题1：自爆怪 AoE 功能
+
+  两条死亡路径都覆盖到了：
+  - 激光击杀 → Die() → 播放爆炸 VFX+音效（替代蒸汽）→ 留坑 → TriggerExplosionAoE()
+  - 碰撞护盾/塔 → Explode() → 爆炸 VFX+音效 → 留坑 → TriggerExplosionAoE()
+
+  AoE 行为：
+  - Physics2D.OverlapCircleAll 扫描范围内所有碰撞体
+  - 命中敌人 → TakeDamage(damage, blastDir*280) 并附带爆炸标记（标记为爆炸死亡，跳过蒸汽VFX）
+  - 命中护盾 → shield.TakeDamage()
+  - 命中光棱塔 → turret.TakeDamage()
+
+  数值（可在 Inspector 调整）：
+
+  ┌────────────┬──────────┬──────────┬──────────┐
+  │    怪物    │ AoE 伤害 │ AoE 半径 │ 留坑倍率 │
+  ├────────────┼──────────┼──────────┼──────────┤
+  │ 普通自爆怪 │ 120      │ 2.5      │ 1x       │
+  ├────────────┼──────────┼──────────┼──────────┤
+  │ 精英自爆怪 │ 250      │ 3.5      │ 2.5x     │
+  └────────────┴──────────┴──────────┴──────────┘
+
+  ---
+  问题2：精英自爆怪留坑大小
+
+  之前代码是 EnemyPoolManager.Instance.Spawn(puddleEnemyType, transform.position) 没有对返回的 EnemyBlob 做任何 scale 修改。现在改为：
+  var puddle = EnemyPoolManager.Instance.Spawn(...);
+  if (puddle != null && puddleSizeMultiplier != 1f)
+      puddle.transform.localScale *= puddleSizeMultiplier;
+
+  精英自爆怪 puddleSizeMultiplier = 2.5，留下的熔浆液为原始大小的 2.5 倍。
+------------------------------------------------------------------------------------------------------------------------
+

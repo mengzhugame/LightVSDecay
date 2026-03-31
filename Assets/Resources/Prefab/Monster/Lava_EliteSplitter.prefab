@@ -406,6 +406,13 @@ MonoBehaviour:
   enemyType: 11
   bodySprite: {fileID: 1499092416614390808}
   eyesController: {fileID: 4562472799079139575}
+  extraEyes:
+  - {fileID: 4438348706945823766}
+  - {fileID: 1026256239121846563}
+  - {fileID: 5703987922771016950}
+  - {fileID: 8386154033378543062}
+  - {fileID: 49553113092655798}
+  - {fileID: 6901486591661163267}
   decorations:
   - {fileID: 1576981585528960605}
   - {fileID: 7216877771101471130}

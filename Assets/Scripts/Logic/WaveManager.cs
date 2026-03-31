@@ -46,22 +46,13 @@ namespace LightVsDecay.Logic
         [Tooltip("波次配置（ScriptableObject）")]
         [SerializeField] private WaveConfig waveConfig;
         
-        [Header("BOSS 相关")]
-        [Tooltip("BOSS 预制体")]
-        [SerializeField] private GameObject bossPrefab;
-        
-        [Tooltip("BOSS 生成位置")]
+        [Header("BOSS 生成位置")]
+        [Tooltip("BOSS 出场坐标（场景内 Transform 节点）")]
         [SerializeField] private Transform bossSpawnPoint;
-        
+
         [Header("生成设置")]
         [Tooltip("生成区域边界偏移（相对于屏幕边缘）")]
         [SerializeField] private float spawnOffset = 1.5f;
-        [Header("精英怪预制体（不走对象池）")]
-        [Tooltip("精英坦克预制体")]
-        [SerializeField] private GameObject eliteTankPrefab;
-
-        [Tooltip("精英漂流者预制体")]
-        [SerializeField] private GameObject eliteDrifterPrefab;
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
         [SerializeField] private bool showSpawnArea = false;
@@ -88,6 +79,7 @@ namespace LightVsDecay.Logic
         // BOSS 相关
         private bool bossSpawned = false;
         private GameObject currentBossInstance;
+        private GameObject cachedBossPrefab; // 从 ChapterConfig 缓存，SpawnBoss 时读取
         
         // 屏幕边界
         private Camera gameCamera;
@@ -193,8 +185,7 @@ namespace LightVsDecay.Logic
                     waveConfig = GameManager.Instance.WaveConfig;
 
                 var chapterCfg = GameManager.Instance.CurrentChapterConfig;
-                if (chapterCfg != null && chapterCfg.bossPrefab != null)
-                    bossPrefab = chapterCfg.bossPrefab;
+                cachedBossPrefab = chapterCfg?.bossPrefab;
             }
 
             GameLogger.Log($"[WaveManager] 当前 waveConfig: {waveConfig?.name ?? "NULL"}");
@@ -382,30 +373,28 @@ namespace LightVsDecay.Logic
         }
         
         /// <summary>
-        /// 生成 BOSS
+        /// 生成 BOSS（预制体来自 ChapterConfig.bossPrefab，由 OnGameStart 缓存）
         /// </summary>
         private void SpawnBoss()
         {
-            if (bossPrefab == null)
+            if (cachedBossPrefab == null)
             {
-                GameLogger.LogError("[WaveManager] BOSS 预制体未设置！");
+                GameLogger.LogError("[WaveManager] BOSS 预制体未设置！请在 ChapterConfig 的 Boss Prefab 字段中配置。");
                 return;
             }
-            
+
             if (bossSpawned)
             {
                 GameLogger.LogWarning("[WaveManager] BOSS 已经生成过了！");
                 return;
             }
-            
+
             Vector3 spawnPos = bossSpawnPoint != null ? bossSpawnPoint.position : new Vector3(0, 10f, 0);
-            currentBossInstance = Instantiate(bossPrefab, spawnPos, Quaternion.identity);
+            currentBossInstance = Instantiate(cachedBossPrefab, spawnPos, Quaternion.identity);
             bossSpawned = true;
-            
+
             if (showDebugInfo)
-            {
                 GameLogger.Log($"[WaveManager] BOSS 已生成 @ {spawnPos}");
-            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -541,28 +530,14 @@ namespace LightVsDecay.Logic
         /// </summary>
         private void SpawnSingleEnemy(SpawnGroup group)
         {
-            // ★ 精英怪：直接 Instantiate，不走对象池（必须放在最前面！）
-            if (group.enemyType == EnemyType.EliteTank || group.enemyType == EnemyType.EliteDrifter)
-            {
-                SpawnEliteEnemy(group);
-                return;
-            }
-
-            // ★ 检查对象池（仅对普通敌人）
-            if (!EnemyPoolManager.Instance.HasPool(group.enemyType))
-            {
-                GameLogger.LogWarning($"[WaveManager] 敌人类型 {group.enemyType} 没有对象池！");
-                return;
-            }
-
-            // ★ Drifter：使用特殊生成逻辑（屏幕内 + 传送门）
+            // ★ Drifter：特殊入场逻辑（屏幕内传送门效果）
             if (group.enemyType == EnemyType.Drifter)
             {
                 SpawnDrifterSpecial(group);
                 return;
             }
 
-            // ★ 普通敌人：走对象池
+            // ★ 统一走 EnemyPoolManager（内部自动区分池化/直接生成）
             Vector3 position = GetSpawnPosition(group.spawnZone);
             EnemyBlob enemy = EnemyPoolManager.Instance.Spawn(group.enemyType, position);
 
@@ -570,9 +545,7 @@ namespace LightVsDecay.Logic
             {
                 ApplyDifficultyModifiers(enemy, group);
                 if (BattleStatistics.Instance != null)
-                {
                     BattleStatistics.Instance.RecordEnemySpawn(group.enemyType, enemy.MaxHealth);
-                }
                 enemiesSpawned++;
             }
         }
@@ -617,53 +590,6 @@ namespace LightVsDecay.Logic
                     }
                 }
             });
-        }
-        /// <summary>
-        /// 生成精英怪（直接 Instantiate，不走对象池）
-        /// </summary>
-        private void SpawnEliteEnemy(SpawnGroup group)
-        {
-            GameObject prefab = null;
-    
-            switch (group.enemyType)
-            {
-                case EnemyType.EliteTank:
-                    prefab = eliteTankPrefab;
-                    break;
-                case EnemyType.EliteDrifter:
-                    prefab = eliteDrifterPrefab;
-                    break;
-            }
-    
-            if (prefab == null)
-            {
-                GameLogger.LogError($"[WaveManager] 精英怪预制体未设置: {group.enemyType}，请在 Inspector 中配置！");
-                return;
-            }
-    
-            Vector3 position = GetSpawnPosition(group.spawnZone);
-            GameObject eliteObj = Instantiate(prefab, position, Quaternion.identity);
-    
-            EnemyBlob enemy = eliteObj.GetComponent<EnemyBlob>();
-            if (enemy != null)
-            {
-                // 应用难度倍率
-                ApplyDifficultyModifiers(enemy, group);
-                if (BattleStatistics.Instance != null)
-                {
-                    BattleStatistics.Instance.RecordEnemySpawn(group.enemyType, enemy.MaxHealth);
-                }
-                enemiesSpawned++;
-
-                if (showDebugInfo)
-                {
-                    GameLogger.Log($"[WaveManager] ⭐ 精英怪已生成: {group.enemyType} @ {position}");
-                }
-            }
-            else
-            {
-                GameLogger.LogError($"[WaveManager] 精英怪预制体缺少 EnemyBlob 组件: {group.enemyType}");
-            }
         }
         /// <summary>
         /// 应用波次难度修正

@@ -40,6 +40,7 @@ namespace LightVsDecay.Logic.Enemy
         [Header("视觉组件")]
         [SerializeField] private SpriteRenderer bodySprite;
         [SerializeField] private EnemyEyes eyesController;
+        [SerializeField] private EnemyEyes[] extraEyes; // 多眼怪用：额外眼睛列表（分裂怪3只眼/精英分裂怪7只眼等）
         [SerializeField] private Transform[] decorations;
         [Header("受击闪烁设置")]
         [SerializeField] private float hitFlashDuration = 0.15f;        // 闪烁持续时间
@@ -139,6 +140,9 @@ namespace LightVsDecay.Logic.Enemy
         private float splitImpulseSpeed = 4f;
         private bool spawnPuddleOnDeath = false;
         private EnemyType puddleEnemyType = EnemyType.LavaPuddle;
+        private float puddleSizeMultiplier = 1f;
+        private int   explosionAoeDamage   = 0;
+        private float explosionAoeRadius   = 3f;
         private bool disableHitFlash = false;
         
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -409,8 +413,11 @@ namespace LightVsDecay.Logic.Enemy
                 splitEnemyType = data.splitEnemyType;
                 splitCount = data.splitCount;
                 splitImpulseSpeed = data.splitImpulseSpeed;
-                spawnPuddleOnDeath = data.spawnPuddleOnDeath;
-                puddleEnemyType = data.puddleEnemyType;
+                spawnPuddleOnDeath    = data.spawnPuddleOnDeath;
+                puddleEnemyType       = data.puddleEnemyType;
+                puddleSizeMultiplier  = data.puddleSizeMultiplier;
+                explosionAoeDamage    = data.explosionAoeDamage;
+                explosionAoeRadius    = data.explosionAoeRadius;
                 disableHitFlash = data.disableHitFlash;
 
                 // disableKnockback 覆盖 canBeKnockedBack（静止障碍不可被推动）
@@ -606,10 +613,7 @@ namespace LightVsDecay.Logic.Enemy
                 deathCoroutine = null;
             }
             
-            if (eyesController != null)
-            {
-                eyesController.StopBlink();
-            }
+            ForEachEye(e => e.StopBlink());
             
             if (rb != null)
             {
@@ -685,16 +689,7 @@ namespace LightVsDecay.Logic.Enemy
                     }
                 }
             }
-            if (eyesController != null)
-            {
-                SpriteRenderer eyesSR = eyesController.GetComponent<SpriteRenderer>();
-                if (eyesSR != null)
-                {
-                    Color c = eyesSR.color;
-                    c.a = 1f;
-                    eyesSR.color = c;
-                }
-            }
+            SetEyesAlpha(1f);
             
             foreach (Transform decoration in decorations)
             {
@@ -892,9 +887,9 @@ namespace LightVsDecay.Logic.Enemy
             
             TriggerHitEffect();
 
-            if (!disableHitFlash && eyesController != null)
+            if (!disableHitFlash)
             {
-                eyesController.TriggerSquint();
+                ForEachEye(e => e.TriggerSquint());
             }
             
             // 缩放
@@ -1057,6 +1052,33 @@ namespace LightVsDecay.Logic.Enemy
                 rb.drag = 0f;  // 无减速时保持原样
             }
         }
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 眼睛 Helper（支持多眼怪）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>对所有眼睛（主眼 + extraEyes）执行同一操作。</summary>
+        private void ForEachEye(System.Action<EnemyEyes> action)
+        {
+            if (eyesController != null) action(eyesController);
+            if (extraEyes != null)
+                foreach (var eye in extraEyes)
+                    if (eye != null) action(eye);
+        }
+
+        /// <summary>统一设置所有眼睛 SpriteRenderer 的透明度（用于死亡淡出 / 重生还原）。</summary>
+        private void SetEyesAlpha(float alpha)
+        {
+            void Apply(EnemyEyes eye)
+            {
+                SpriteRenderer sr = eye.GetComponent<SpriteRenderer>();
+                if (sr != null) { Color c = sr.color; c.a = alpha; sr.color = c; }
+            }
+            if (eyesController != null) Apply(eyesController);
+            if (extraEyes != null)
+                foreach (var eye in extraEyes)
+                    if (eye != null) Apply(eye);
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Shader 效果
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1223,10 +1245,18 @@ namespace LightVsDecay.Logic.Enemy
                                                  SkillEffectManager.Instance.IsFocusExplosionEnabled &&
                                                  !killedByExecution;
 
-                // 普通死亡：无 Focus 爆炸 且 无漏洞扩散时播放蒸汽
+                // 普通死亡：无 Focus 爆炸 且 无漏洞扩散时播放蒸汽（自爆怪用爆炸特效）
                 if (!willTriggerFocusExplosion && !willTriggerShatterExplosion)
                 {
-                    VFXPoolManager.Instance.PlayEnemySteam(transform.position);
+                    if (explosionAoeDamage > 0)
+                    {
+                        VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
+                        AudioManager.Instance?.PlayEnemyExplode();
+                    }
+                    else
+                    {
+                        VFXPoolManager.Instance.PlayEnemySteam(transform.position);
+                    }
                 }
             }
             
@@ -1256,11 +1286,16 @@ namespace LightVsDecay.Logic.Enemy
                     }
                 }
 
-                // 爆炸者：死亡时在原位生成熔岩水坑
+                // 爆炸者：死亡时在原位生成熔岩水坑（支持大小倍率）
                 if (spawnPuddleOnDeath)
                 {
-                    EnemyPoolManager.Instance.Spawn(puddleEnemyType, transform.position);
+                    var puddle = EnemyPoolManager.Instance.Spawn(puddleEnemyType, transform.position);
+                    if (puddle != null && puddleSizeMultiplier != 1f)
+                        puddle.transform.localScale *= puddleSizeMultiplier;
                 }
+
+                // 自爆范围伤害（无差别 AoE）
+                TriggerExplosionAoE();
             }
 
             // Ch3：催化者死亡时触发范围暴走
@@ -1294,16 +1329,7 @@ namespace LightVsDecay.Logic.Enemy
                     }
                 }
                 
-                if (eyesController != null)
-                {
-                    SpriteRenderer eyesSR = eyesController.GetComponent<SpriteRenderer>();
-                    if (eyesSR != null)
-                    {
-                        Color c = eyesSR.color;
-                        c.a = alpha;
-                        eyesSR.color = c;
-                    }
-                }
+                SetEyesAlpha(alpha);
                 
                 foreach (Transform decoration in decorations)
                 {
@@ -1439,18 +1465,64 @@ namespace LightVsDecay.Logic.Enemy
         {
             if (isDead) return;
             isDead = true;
-            // 【新增】播放自爆音效
-            if (AudioManager.Instance != null)
+
+            AudioManager.Instance?.PlayEnemyExplode();
+            VFXPoolManager.Instance?.PlayEnemyExplosion(transform.position);
+
+            // 碰撞死亡也要留坑（与激光击杀路径保持一致）
+            if (EnemyPoolManager.Instance != null && spawnPuddleOnDeath)
             {
-                AudioManager.Instance.PlayEnemyExplode();
+                var puddle = EnemyPoolManager.Instance.Spawn(puddleEnemyType, transform.position);
+                if (puddle != null && puddleSizeMultiplier != 1f)
+                    puddle.transform.localScale *= puddleSizeMultiplier;
             }
-            if (VFXPoolManager.Instance != null)
-            {
-                VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
-            }
-            
+
+            // 自爆范围伤害
+            TriggerExplosionAoE();
+
             GameEvents.TriggerEnemyDied(enemyType, transform.position, xpReward, coinReward);
             ReturnToPool();
+        }
+
+        /// <summary>
+        /// 自爆无差别范围伤害：对爆炸半径内所有敌人、护盾、光棱塔造成伤害。
+        /// </summary>
+        private void TriggerExplosionAoE()
+        {
+            if (explosionAoeDamage <= 0 || explosionAoeRadius <= 0f) return;
+
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, explosionAoeRadius);
+            foreach (var col in hits)
+            {
+                if (col == null || col.gameObject == gameObject) continue;
+
+                // 伤害其他敌人
+                var enemy = col.GetComponent<EnemyBlob>();
+                if (enemy != null && !enemy.IsDead)
+                {
+                    Vector2 blastDir = ((Vector2)enemy.transform.position - (Vector2)transform.position).normalized;
+                    enemy.TakeDamage(explosionAoeDamage, blastDir * 280f, false, true);
+                    continue;
+                }
+
+                // 伤害护盾
+                var shield = col.GetComponent<ShieldController>();
+                if (shield != null)
+                {
+                    BattleStatistics.Instance?.RecordPlayerDamage(explosionAoeDamage, PlayerDamageSource.MobCollision);
+                    shield.TakeDamage(explosionAoeDamage);
+                    continue;
+                }
+
+                // 伤害光棱塔
+                var turret = col.GetComponent<TurretHealth>()
+                          ?? col.GetComponentInParent<TurretHealth>();
+                if (turret != null)
+                {
+                    BattleStatistics.Instance?.RecordPlayerDamage(explosionAoeDamage, PlayerDamageSource.MobCollision);
+                    turret.TakeDamage(explosionAoeDamage);
+                }
+            }
         }
         
         private bool IsSmallEnemy()

@@ -56,6 +56,9 @@ namespace LightVsDecay.Core.Pool
 
         [Tooltip("所属章节索引（0=Ch1, 1=Ch2, 2=Ch3，-1=全章节通用）")]
         public int chapterIndex = -1;
+
+        [Tooltip("是否使用对象池。普通怪（数量多）填 true；精英怪/障碍物（1-2只）填 false，每次 Instantiate/Destroy，无池开销")]
+        public bool usePool = true;
     }
     
     /// <summary>
@@ -86,8 +89,10 @@ namespace LightVsDecay.Core.Pool
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private Dictionary<EnemyType, ObjectPool<EnemyBlob>> pools;
+        private Dictionary<EnemyType, EnemyPoolConfig> configs;   // 全类型配置查询表（含非池化）
+        private HashSet<EnemyBlob> nonPooledActive;               // 追踪非池化（精英怪）存活实例
         private Transform poolContainer;
-        
+
         // 统计
         private int totalActiveEnemies = 0;
         
@@ -112,6 +117,8 @@ namespace LightVsDecay.Core.Pool
 
             // 对象池由 GameManager.ApplyChapterConfig() 按章节按需初始化
             pools = new Dictionary<EnemyType, ObjectPool<EnemyBlob>>();
+            configs = new Dictionary<EnemyType, EnemyPoolConfig>();
+            nonPooledActive = new HashSet<EnemyBlob>();
         }
         
         protected override void OnSingletonDestroy()
@@ -148,6 +155,11 @@ namespace LightVsDecay.Core.Pool
             }
 
             pools = new Dictionary<EnemyType, ObjectPool<EnemyBlob>>();
+            configs = new Dictionary<EnemyType, EnemyPoolConfig>();
+            nonPooledActive = new HashSet<EnemyBlob>();
+
+            int poolCount = 0;
+            int directCount = 0;
 
             foreach (var config in enemyConfigs)
             {
@@ -161,30 +173,41 @@ namespace LightVsDecay.Core.Pool
                     continue;
                 }
 
-                // 为每种类型创建子容器
-                GameObject typeContainer = new GameObject($"Pool_{config.type}");
-                typeContainer.transform.SetParent(poolContainer);
+                // 登记到全类型查询表
+                configs[config.type] = config;
 
-                // 确定该类型的最大数量
-                int maxForType = config.maxCount > 0 ? config.maxCount : globalMaxEnemies;
-
-                // 创建对象池
-                var pool = new ObjectPool<EnemyBlob>(
-                    config.prefab,
-                    typeContainer.transform,
-                    config.prewarmCount,
-                    maxForType,
-                    allowDynamicExpand
-                );
-
-                pools[config.type] = pool;
-                if (showDebugInfo)
+                if (config.usePool)
                 {
-                    GameLogger.Log($"[EnemyPoolManager] {config.type} 池初始化完成: 预热{config.prewarmCount}, 上限{maxForType}");
+                    // ── 普通怪：创建对象池 ──
+                    GameObject typeContainer = new GameObject($"Pool_{config.type}");
+                    typeContainer.transform.SetParent(poolContainer);
+
+                    int maxForType = config.maxCount > 0 ? config.maxCount : globalMaxEnemies;
+                    var pool = new ObjectPool<EnemyBlob>(
+                        config.prefab,
+                        typeContainer.transform,
+                        config.prewarmCount,
+                        maxForType,
+                        allowDynamicExpand
+                    );
+
+                    pools[config.type] = pool;
+                    poolCount++;
+
+                    if (showDebugInfo)
+                        GameLogger.Log($"[EnemyPoolManager] [池化] {config.type}: 预热{config.prewarmCount}, 上限{maxForType}");
+                }
+                else
+                {
+                    // ── 精英怪/障碍物：仅注册配置，不建池，Spawn 时 Instantiate ──
+                    directCount++;
+
+                    if (showDebugInfo)
+                        GameLogger.Log($"[EnemyPoolManager] [直接] {config.type}: 每次 Instantiate/Destroy");
                 }
             }
 
-            GameLogger.Log($"[EnemyPoolManager] 章节 {chapterIndex + 1} 对象池初始化完成，共 {pools.Count} 种类型");
+            GameLogger.Log($"[EnemyPoolManager] 章节 {chapterIndex + 1} 初始化完成 — 池化:{poolCount} 种，直接生成:{directCount} 种");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -200,36 +223,53 @@ namespace LightVsDecay.Core.Pool
         /// <returns>敌人实例，如果失败返回null</returns>
         public EnemyBlob Spawn(EnemyType type, Vector3 position, Quaternion rotation = default)
         {
-            // 全局上限检查
-            if (totalActiveEnemies >= globalMaxEnemies)
-            {
-                GameLogger.LogWarning($"[EnemyPoolManager] 已达全局上限 {globalMaxEnemies}！");
-                return null;
-            }
-            
-            // 检查池是否存在
-            if (!pools.TryGetValue(type, out var pool))
-            {
-                GameLogger.LogError($"[EnemyPoolManager] 未找到 {type} 类型的对象池！");
-                return null;
-            }
-            
-            // 从池中获取
             if (rotation == default)
                 rotation = Quaternion.identity;
-            
-            EnemyBlob enemy = pool.Get(position, rotation);
-            
+
+            // 查询配置
+            if (!configs.TryGetValue(type, out var config))
+            {
+                GameLogger.LogError($"[EnemyPoolManager] 未注册的敌人类型 {type}！请在 Inspector 中添加配置。");
+                return null;
+            }
+
+            EnemyBlob enemy;
+
+            if (config.usePool)
+            {
+                // ── 普通怪：全局上限检查 + 从池中取 ──
+                if (totalActiveEnemies >= globalMaxEnemies)
+                {
+                    GameLogger.LogWarning($"[EnemyPoolManager] 已达全局上限 {globalMaxEnemies}！");
+                    return null;
+                }
+
+                if (!pools.TryGetValue(type, out var pool))
+                {
+                    GameLogger.LogError($"[EnemyPoolManager] {type} 的对象池未初始化！");
+                    return null;
+                }
+
+                enemy = pool.Get(position, rotation);
+            }
+            else
+            {
+                // ── 精英怪：直接 Instantiate，不受全局上限限制 ──
+                enemy = Object.Instantiate(config.prefab, position, rotation);
+                if (enemy != null)
+                    nonPooledActive.Add(enemy);
+            }
+
             if (enemy != null)
             {
-                // Stationary 障碍物（熔浆液、冰墙）不计入战斗敌人数，不影响波次清场和全局上限
+                // Stationary 障碍物不计入战斗敌人数
                 if (enemy.Data == null || !enemy.Data.IsStationary)
                     totalActiveEnemies++;
 
                 if (showDebugInfo)
-                    GameLogger.Log($"[EnemyPoolManager] 生成 {type} @ {position}, 当前总数: {totalActiveEnemies}");
+                    GameLogger.Log($"[EnemyPoolManager] 生成 {type} (pooled={config.usePool}) @ {position}, 总数: {totalActiveEnemies}");
             }
-            
+
             return enemy;
         }
         
@@ -242,71 +282,88 @@ namespace LightVsDecay.Core.Pool
         }
         
         /// <summary>
-        /// 回收敌人
+        /// 回收敌人（池化→归还；非池化→销毁）
         /// </summary>
         public void Despawn(EnemyBlob enemy)
         {
             if (enemy == null) return;
-    
-            // 通过 PoolKey 找到对应的池
+
             bool isStationary = enemy.Data != null && enemy.Data.IsStationary;
 
-            if (System.Enum.TryParse<EnemyType>(enemy.PoolKey, out var type))
+            if (!System.Enum.TryParse<EnemyType>(enemy.PoolKey, out var type))
             {
-                if (pools.TryGetValue(type, out var pool))
-                {
-                    pool.Return(enemy);
-                    if (!isStationary)
-                        totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
+                GameLogger.LogWarning($"[EnemyPoolManager] 无法解析敌人类型: {enemy.PoolKey}，降级直接销毁");
+                Destroy(enemy.gameObject);
+                if (!isStationary) totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
+                return;
+            }
 
-                    if (showDebugInfo)
-                        GameLogger.Log($"[EnemyPoolManager] 回收 {type}, 剩余总数: {totalActiveEnemies}");
-                }
-                else
-                {
-                    // 【修复】找到类型但没有对应池（如精英怪），直接销毁
-                    if (showDebugInfo)
-                        GameLogger.Log($"[EnemyPoolManager] {type} 无对象池，直接销毁");
+            // 根据注册配置决定归还方式
+            bool usePool = !configs.TryGetValue(type, out var config) || config.usePool;
 
-                    Destroy(enemy.gameObject);
-                }
+            if (usePool && pools.TryGetValue(type, out var pool))
+            {
+                pool.Return(enemy);
             }
             else
             {
-                GameLogger.LogWarning($"[EnemyPoolManager] 无法解析敌人类型: {enemy.PoolKey}");
-                // 降级处理：直接销毁
+                // 精英怪/非池化：直接销毁
+                nonPooledActive.Remove(enemy);
                 Destroy(enemy.gameObject);
-                if (!isStationary)
-                    totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
             }
+
+            if (!isStationary)
+                totalActiveEnemies = Mathf.Max(0, totalActiveEnemies - 1);
+
+            if (showDebugInfo)
+                GameLogger.Log($"[EnemyPoolManager] 回收 {type} (pooled={usePool}), 剩余总数: {totalActiveEnemies}");
         }
         
         /// <summary>
-        /// 回收所有敌人
+        /// 回收所有敌人（池化→归还；非池化→销毁）
         /// </summary>
         public void DespawnAll()
         {
+            // 归还池化敌人
             foreach (var pool in pools.Values)
-            {
                 pool.ReturnAll();
+
+            // 销毁非池化精英怪
+            foreach (var enemy in nonPooledActive)
+            {
+                if (enemy != null)
+                    Destroy(enemy.gameObject);
             }
+            nonPooledActive.Clear();
+
             totalActiveEnemies = 0;
             if (showDebugInfo)
-                GameLogger.Log("[EnemyPoolManager] 所有敌人已回收");
+                GameLogger.Log("[EnemyPoolManager] 所有敌人已回收/销毁");
         }
-        
+
         /// <summary>
-        /// 清空所有对象池
+        /// 清空所有对象池（章节切换时调用）
         /// </summary>
         public void ClearAllPools()
         {
             if (pools == null) return;
-            
+
             foreach (var pool in pools.Values)
-            {
                 pool.Clear();
-            }
             pools.Clear();
+
+            // 销毁残余非池化实例
+            if (nonPooledActive != null)
+            {
+                foreach (var enemy in nonPooledActive)
+                {
+                    if (enemy != null)
+                        Destroy(enemy.gameObject);
+                }
+                nonPooledActive.Clear();
+            }
+
+            configs?.Clear();
             totalActiveEnemies = 0;
             if (showDebugInfo)
                 GameLogger.Log("[EnemyPoolManager] 所有对象池已清空");
