@@ -209,6 +209,7 @@ namespace LightVsDecay.Logic.Player
         public void RegisterLaserHit(EnemyBlob enemy, float damage, bool isMainLaser)
         {
             if (!IsEnabled || enemy == null || enemy.IsDead) return;
+            if (enemy.Data != null && enemy.Data.IsStationary) return;
             
             int enemyId = enemy.GetInstanceID();
             
@@ -652,9 +653,10 @@ namespace LightVsDecay.Logic.Player
                 
                 EnemyBlob enemy = collider.GetComponentInParent<EnemyBlob>();
                 if (enemy == null || enemy.IsDead) continue;
-                
+                if (enemy.Data != null && enemy.Data.IsStationary) continue;
+
                 int enemyId = enemy.GetInstanceID();
-                
+
                 // 排除已在链中的敌人
                 if (excludeIds.Contains(enemyId)) continue;
                 
