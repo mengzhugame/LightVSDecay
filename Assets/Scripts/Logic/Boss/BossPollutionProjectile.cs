@@ -99,7 +99,7 @@ namespace LightVsDecay.Logic.Boss
         
         // V3.0 状态
         private float currentHP;
-        private BossController bossController;
+        private DarkBossController bossController;
         private BossHealth bossHealth;
         private bool isBeingPushed = false;
         private float pushRecoveryTimer = 0f;
@@ -266,7 +266,7 @@ namespace LightVsDecay.Logic.Boss
         
         private void FindBoss()
         {
-            bossController = FindObjectOfType<BossController>();
+            bossController = FindObjectOfType<DarkBossController>();
             bossHealth = FindObjectOfType<BossHealth>();
         }
 
@@ -536,7 +536,7 @@ namespace LightVsDecay.Logic.Boss
         /// V3.0 初始化（带物理参数）
         /// </summary>
         public void InitializeV3(float speed, float turn, int damage, float life, 
-            float hp, float ballMass, BossController controller)
+            float hp, float ballMass, DarkBossController controller)
         {
             moveSpeed = speed;
             turnSpeed = turn;

@@ -163,7 +163,7 @@ MonoBehaviour:
     chainRange: 3
     chainDamageDecay: 0.2
     reflexDamageMultiplier: 1
-    reflexLengthBonus: 0.6
+    reflexLengthBonus: 0.65
     critRateBonus: 0
     critDamageBonus: 0
     critKnockback: 0

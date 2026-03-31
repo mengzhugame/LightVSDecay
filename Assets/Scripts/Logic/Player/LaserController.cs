@@ -127,6 +127,7 @@ namespace LightVsDecay.Logic.Player
         private float tickTimer = 0f;
         private float skillWidthMultiplier = 1f;
         private float skillLengthMultiplier = 1f;
+        private float reflexLengthBonusApplied = 0f; // 已施加的 Reflex 长度加成（用于 delta 计算）
         
         // 大招倍率（由 OverloadManager 控制）
         private bool isOverloadActive = false;
@@ -169,6 +170,9 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private const float SUB_LASER_WIDTH_RATIO = 0.65f;
+        public const float MAIN_LASER_LENGTH_CAP = 29f;
+        public const float SUB_LASER_LENGTH_CAP  = 26f;
+        private const float OVERFLOW_TO_DAMAGE_RATIO = 2f; // 1% 溢出长度 → 2% 额外伤害
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性（委托给子模块）
@@ -182,6 +186,8 @@ namespace LightVsDecay.Logic.Player
         public int SubLaserCount => subLasers.Count;
         public float CurrentLaserLength => maxLaserLength * skillLengthMultiplier;
         public float CurrentDamagePerTick => damageCalculator.CurrentDamagePerTick;
+        public bool IsMainLaserAtLengthCap => CurrentLaserLength >= MAIN_LASER_LENGTH_CAP - 0.01f;
+        public bool HasReflexLengthBonus => reflexLengthBonusApplied > 0f;
         public float CurrentPanelDPS => damageCalculator.CurrentPanelDPS;
         public bool IsOverloadActive => isOverloadActive;
         /// <summary>获取面板 DPS（供 SkillEffectManager 计算爆炸伤害用）</summary>
@@ -1082,16 +1088,42 @@ namespace LightVsDecay.Logic.Player
         {
             float newMultiplier = skillLengthMultiplier + percent;
             if (newMultiplier < minPercent) newMultiplier = minPercent;
+
+            float maxAllowedMultiplier = MAIN_LASER_LENGTH_CAP / maxLaserLength;
+
+            if (percent > 0f)
+            {
+                if (skillLengthMultiplier >= maxAllowedMultiplier - 0.001f)
+                {
+                    // 已达上限，全部转为伤害加成
+                    damageCalculator.AddDamagePercent(percent * OVERFLOW_TO_DAMAGE_RATIO);
+                    GameLogger.Log($"[LaserController] 激光已达长度上限，溢出 {percent:P0} → +{percent * OVERFLOW_TO_DAMAGE_RATIO:P0} 伤害");
+                    return;
+                }
+
+                if (newMultiplier > maxAllowedMultiplier)
+                {
+                    // 部分溢出转为伤害
+                    float overflowPercent = newMultiplier - maxAllowedMultiplier;
+                    damageCalculator.AddDamagePercent(overflowPercent * OVERFLOW_TO_DAMAGE_RATIO);
+                    GameLogger.Log($"[LaserController] 激光长度部分溢出 {overflowPercent:P0} → +{overflowPercent * OVERFLOW_TO_DAMAGE_RATIO:P0} 伤害");
+                    newMultiplier = maxAllowedMultiplier;
+                }
+            }
+
             skillLengthMultiplier = newMultiplier;
 
             if (mainLaserBeam != null)
                 mainLaserBeam.SetMaxLength(CurrentLaserLength);
 
-            // ✅ 新增：同步更新所有副激光长度
+            // 同步更新所有副激光长度（副激光有独立上限）
             foreach (var subLaser in subLasers)
             {
                 if (subLaser.beam != null)
-                    subLaser.beam.SetMaxLength(CurrentLaserLength * subLaser.lengthMultiplier);
+                {
+                    float rawSubLen = CurrentLaserLength * subLaser.lengthMultiplier;
+                    subLaser.beam.SetMaxLength(Mathf.Min(rawSubLen, SUB_LASER_LENGTH_CAP));
+                }
             }
 
             if (showDebugInfo)
@@ -1102,6 +1134,7 @@ namespace LightVsDecay.Logic.Player
         {
             damageCalculator.ResetDropBonuses();
             skillLengthMultiplier = 1f;
+            reflexLengthBonusApplied = 0f;
     
             if (mainLaserBeam != null)
             {
@@ -1250,10 +1283,19 @@ namespace LightVsDecay.Logic.Player
                 subLaser.beam?.SetReflectionEnabled(reflexEnabled);
             }
 
-            // 调整激光总长度（使用 AddLengthPercent 与其他技能叠加）
+            // 调整激光总长度（使用增量 delta，避免升级时重复叠加）
             if (reflexEnabled && lengthBonus > 0f)
             {
-                AddLengthPercent(lengthBonus);
+                float delta = lengthBonus - reflexLengthBonusApplied;
+                if (delta > 0.001f)
+                {
+                    AddLengthPercent(delta);
+                    reflexLengthBonusApplied = lengthBonus;
+                }
+            }
+            else if (!reflexEnabled)
+            {
+                reflexLengthBonusApplied = 0f;
             }
 
             if (showDebugInfo)

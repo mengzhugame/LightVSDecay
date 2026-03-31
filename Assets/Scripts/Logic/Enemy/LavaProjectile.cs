@@ -50,6 +50,11 @@ namespace LightVsDecay.Logic.Enemy
         {
             rb = GetComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
+
+            // 确保子弹在 BossPollutionBall 层，使激光可以检测并击中它
+            int layer = LayerMask.NameToLayer("BossPollutionBall");
+            if (layer >= 0)
+                gameObject.layer = layer;
         }
 
         /// <summary>

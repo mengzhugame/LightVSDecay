@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2566907020457102604}
   - component: {fileID: 3136666623082115085}
   - component: {fileID: 2235898095362443961}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: LavaBall
   m_TagString: Untagged
@@ -121,7 +121,7 @@ GameObject:
   - component: {fileID: 6028655700193482341}
   - component: {fileID: 2606118717756483000}
   - component: {fileID: 9062787636191774005}
-  m_Layer: 0
+  m_Layer: 11
   m_HasEditorInfo: 1
   m_Name: LavaBall_Particle
   m_TagString: Untagged

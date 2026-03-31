@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Frozen_EliteDrifter
+  m_Name: Frost_EliteCaster
   m_EditorClassIdentifier: 
-  type: 6
-  displayName: "\u7CBE\u82F1\u6F02\u6D41\u8005"
-  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u88AB\u6FC0\u5149\u51FB\u6253\uFF0C\u4F1A\u5411\u540E\u5F39\u98DE"
+  type: 19
+  displayName: "\u7CBE\u82F1\u65BD\u6CD5\u8005"
+  description: "\u4E00\u6B21\u53EC\u55243~5\u9762\u51B0\u5899"
   maxHealth: 12500
   moveSpeed: 1
   mass: 1
@@ -22,7 +22,7 @@ MonoBehaviour:
   attackInterval: 1
   isSuicide: 0
   knockbackResistance: 0.5
-  behaviorType: 0
+  behaviorType: 4
   waveAmplitude: 1
   waveFrequency: 1.5
   outOfBoundsLifetime: 1
@@ -50,7 +50,36 @@ MonoBehaviour:
   deathCoinBurst: 0
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
+  splitOnDeath: 0
+  splitEnemyType: 0
+  splitCount: 2
+  splitImpulseSpeed: 4
+  spawnPuddleOnDeath: 0
+  puddleEnemyType: 13
+  disableHitFlash: 0
+  disableKnockback: 0
+  gunnerStopYPercent: 0.6
+  gunnerShootInterval: 8
+  gunnerRepositionRange: 2
+  gunnerProjectilePrefab: {fileID: 0}
+  gunnerProjectileSpeed: 5
+  gunnerProjectileDamage: 40
+  gunnerProjectileHP: 20
+  gunnerProjectileLifetime: 8
+  autoDestroyTime: 0
+  isCatalyst: 0
+  catalystBurstRadius: 5
+  catalystBurstDuration: 5
+  catalystSpeedMultiplier: 2
+  catalystDamageTakenMultiplier: 1.5
+  frostcasterStopYPercent: 0.7
+  frostcasterCastInterval: 10
+  frostcasterIceWallCount: 1
+  frostcasterRandomWallCount: 0
+  frostcasterIceWallType: 20
+  hasIceShield: 0
+  iceShieldMaxHP: 15000
   collisionBehavior: 1
-  isBouncing: 1
+  isBouncing: 0
   bounceForce: 200
   bounceStunDuration: 1

@@ -58,7 +58,7 @@ MonoBehaviour:
   puddleEnemyType: 13
   disableHitFlash: 0
   disableKnockback: 0
-  gunnerStopYPercent: 0.6
+  gunnerStopYPercent: 0.35
   gunnerShootInterval: 6
   gunnerRepositionRange: 2
   gunnerProjectilePrefab: {fileID: 1227954545292335531, guid: cb87b1bc8326ff4469a9fa0381d58661, type: 3}

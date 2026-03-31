@@ -21,7 +21,7 @@ namespace LightVsDecay.Logic.Boss
     /// 第一章Boss：污染之核。
     /// 专属机制：污秽球被动、Rusher召唤、连体Buff。
     /// </summary>
-    public class BossController : BaseBossController
+    public class DarkBossController : BaseBossController
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Ch1 专属：污秽球系统

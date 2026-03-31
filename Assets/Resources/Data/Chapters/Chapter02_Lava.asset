@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 221542e697f31cc4d9ac5764a95040a0, type: 3}
   m_Name: Chapter02_Lava
   m_EditorClassIdentifier: 
-  chapterIndex: 0
+  chapterIndex: 1
   chapterNumber: 2
   chapterName: "\u7194\u5CA9\u865A\u7A7A"
   chapterDescription: "\u7B2C\u4E8C\u7AE0\uFF1A\u7194\u5CA9\u865A\u7A7A"

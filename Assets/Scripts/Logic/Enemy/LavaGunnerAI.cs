@@ -36,6 +36,8 @@ namespace LightVsDecay.Logic.Enemy
         // 运行时引用
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+        [SerializeField] private Transform firePoint; // 炮口位置（在 Inspector 中指定子节点）；未设置则回退到 transform.position
+
         private EnemyBlob blob;
         private Rigidbody2D rb;
 
@@ -227,9 +229,10 @@ namespace LightVsDecay.Logic.Enemy
             Transform target = blob.TargetTower;
             if (target == null) return;
 
-            Vector2 dir = (target.position - transform.position).normalized;
+            Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
+            Vector2 dir = (target.position - spawnPos).normalized;
 
-            GameObject go = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
+            GameObject go = Instantiate(projectilePrefab, spawnPos, Quaternion.identity);
             var proj = go.GetComponent<LavaProjectile>();
             if (proj != null)
             {

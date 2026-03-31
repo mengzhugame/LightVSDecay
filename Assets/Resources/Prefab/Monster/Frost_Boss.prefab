@@ -279,7 +279,7 @@ GameObject:
   - component: {fileID: 3753804650466212142}
   m_Layer: 8
   m_HasEditorInfo: 1
-  m_Name: Body03
+  m_Name: BodyEffect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -502,13 +502,13 @@ GameObject:
   m_Component:
   - component: {fileID: 713578897887398448}
   - component: {fileID: 4853969746647132540}
-  - component: {fileID: 6022183369449016598}
   - component: {fileID: 4152793544605916984}
   - component: {fileID: 4045230242453856214}
-  - component: {fileID: 2326573804780523810}
+  - component: {fileID: -812662613189459138}
+  - component: {fileID: 8352497162205524613}
   m_Layer: 6
   m_HasEditorInfo: 1
-  m_Name: Frozen_Boss
+  m_Name: Frost_Boss
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -529,13 +529,13 @@ Transform:
   m_Children:
   - {fileID: 3216675721701219377}
   - {fileID: 8149999723651595958}
-  - {fileID: 1072126127777934955}
   - {fileID: 931808642989591996}
   - {fileID: 6967412725811152048}
   - {fileID: 3596588007298222788}
   - {fileID: 4797753621369269466}
   - {fileID: 7877338541586085845}
   - {fileID: 2661767340631970747}
+  - {fileID: 1072126127777934955}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!50 &4853969746647132540
@@ -565,8 +565,91 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 0
---- !u!58 &6022183369449016598
-CircleCollider2D:
+--- !u!114 &4152793544605916984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5603357567859342120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 071bfaa9d74fd2446a87ead3d1507fe7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slowTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  frozenTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
+  tintBlendRatio: 1
+  colorFadeSpeed: 5
+  frostSprite: {fileID: 21300000, guid: 03fcf73004bf0844980e26d2bbdc1a62, type: 3}
+  frostOverlayColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
+  overlayFadeDuration: 0.2
+  breathScaleMin: 0.95
+  breathScaleMax: 1.05
+  breathCycleDuration: 1.5
+--- !u!114 &4045230242453856214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5603357567859342120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58b616f6f1c8d0a4e843e871bc09a97e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  coreDamageMultiplier: 2
+  bodyCollider: {fileID: 0}
+  hitFlashDuration: 0.15
+  hitFlowSpeedMultiplier: 10
+  showDebugInfo: 0
+--- !u!114 &-812662613189459138
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5603357567859342120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8163f719dc5d616478d8097ed4656a0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: fd1ebf1a8fbc2c14daafa3b7344f081d, type: 2}
+  eyeController: {fileID: 92936717314814509}
+  bodyTransform: {fileID: 3216675721701219377}
+  bodyRenderers:
+  - {fileID: 2456025425081367213}
+  - {fileID: 3753804650466212142}
+  - {fileID: 769982427491440301}
+  - {fileID: 6202957349486318502}
+  - {fileID: 2841346695121059393}
+  - {fileID: 8810386752347603503}
+  - {fileID: 2752121163260519205}
+  redBodyEffect: {fileID: 2926926893331246699}
+  showDebugInfo: 0
+  iceWallCountMin: 2
+  iceWallCountMax: 3
+  freezeRayRotationSpeed: 60
+  freezeRayDuration: 3
+  freezeRayCooldownTime: 15
+  freezeRayTurretFreezeDuration: 1.5
+  freezeRayLength: 20
+  freezeRayVisual: {fileID: 0}
+  chargeTurretFreezeDuration: 1.5
+  absoluteZeroChannelDuration: 3
+  absoluteZeroInterruptThreshold: 5000
+  absoluteZeroTrueDamagePercent: 0.3
+  absoluteZeroTurretFreezeDuration: 3
+  absoluteZeroSummonCount: 15
+  absoluteZeroCooldownPhase12: 30
+  absoluteZeroCooldownPhase3: 12
+  absoluteZeroWarningEffect: {fileID: 0}
+  phase2TankSummonInterval: 30
+  freezeRayTriggerChance: 0.4
+--- !u!60 &8352497162205524613
+PolygonCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -598,67 +681,23 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
-  serializedVersion: 2
-  m_Radius: 2.15
---- !u!114 &4152793544605916984
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5603357567859342120}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 071bfaa9d74fd2446a87ead3d1507fe7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  slowTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
-  frozenTintColor: {r: 0.1, g: 0.65, b: 1, a: 1}
-  tintBlendRatio: 1
-  colorFadeSpeed: 5
-  frostSprite: {fileID: 21300000, guid: 03fcf73004bf0844980e26d2bbdc1a62, type: 3}
-  frostOverlayColor: {r: 0.3, g: 0.7, b: 1, a: 0.6}
-  overlayFadeDuration: 0.2
-  breathScaleMin: 0.95
-  breathScaleMax: 1.05
-  breathCycleDuration: 1.5
---- !u!114 &4045230242453856214
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5603357567859342120}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 58b616f6f1c8d0a4e843e871bc09a97e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  coreDamageMultiplier: 2
-  bodyCollider: {fileID: 6022183369449016598}
-  hitFlashDuration: 0.15
-  hitFlowSpeedMultiplier: 10
-  showDebugInfo: 0
---- !u!114 &2326573804780523810
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5603357567859342120}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 17d8803025536e9489aa84bffb9da209, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: a7575bca66b9d0648b544d425b82bca3, type: 2}
-  eyeController: {fileID: 92936717314814509}
-  bodyTransform: {fileID: 713578897887398448}
-  bodyRenderers:
-  - {fileID: 2456025425081367213}
-  - {fileID: 3668930546778612198}
-  redBodyEffect: {fileID: 2926926893331246699}
-  showDebugInfo: 1
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: -0.048167277, y: 2.6497293}
+      - {x: -2.2997406, y: -0.1485725}
+      - {x: -0.009777844, y: -2.7477503}
+      - {x: 1.2741694, y: -1.2906897}
+      - {x: 2.2756565, y: -0.14857236}
+  m_UseDelaunayMesh: 0
 --- !u!1 &5684288014325359832
 GameObject:
   m_ObjectHideFlags: 0

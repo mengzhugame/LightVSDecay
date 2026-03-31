@@ -1228,7 +1228,7 @@ MonoBehaviour:
     maxCount: 50
     chapterIndex: 0
   - type: 3
-    prefab: {fileID: 2336771263006096076, guid: ce10f2511ca53854faafac2cde6066ee, type: 3}
+    prefab: {fileID: 277119885811001129, guid: ce10f2511ca53854faafac2cde6066ee, type: 3}
     prewarmCount: 10
     maxCount: 30
     chapterIndex: 0
@@ -1259,6 +1259,26 @@ MonoBehaviour:
     chapterIndex: 1
   - type: 13
     prefab: {fileID: 349953605136580428, guid: d1c8bbf7b1cc7c9429c21ab34c7659f3, type: 3}
+    prewarmCount: 10
+    maxCount: 30
+    chapterIndex: 1
+  - type: 14
+    prefab: {fileID: 6466215615461531474, guid: faa38aa0a1d215b439d8abdfd7639072, type: 3}
+    prewarmCount: 10
+    maxCount: 50
+    chapterIndex: 2
+  - type: 15
+    prefab: {fileID: 1938901262160730929, guid: b9e446413fb4a0c4bb02e9bafe4ad0ad, type: 3}
+    prewarmCount: 5
+    maxCount: 20
+    chapterIndex: 2
+  - type: 16
+    prefab: {fileID: 5186059643794218232, guid: 5f7d7c797cdddd540affb3c22034da55, type: 3}
+    prewarmCount: 10
+    maxCount: 30
+    chapterIndex: 2
+  - type: 17
+    prefab: {fileID: 7337693297560147520, guid: a17a806a883b75e40bc6331eba89e05c, type: 3}
     prewarmCount: 10
     maxCount: 30
     chapterIndex: 1
@@ -14932,6 +14952,10 @@ PrefabInstance:
     - target: {fileID: 5844153098700814839, guid: b035ff1eaab6c1640b96e01dc32ffbf5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7931949307721135902, guid: b035ff1eaab6c1640b96e01dc32ffbf5, type: 3}
+      propertyPath: m_SortingOrder
+      value: -2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

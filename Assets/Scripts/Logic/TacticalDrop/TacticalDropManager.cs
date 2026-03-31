@@ -484,7 +484,11 @@ namespace LightVsDecay.Logic.TacticalDrop
             // 检查护盾状态
             bool isShieldBroken = shieldController == null || shieldController.CurrentShieldHP <= 0;
 
-            RewardEntry reward = rewardConfig.GetRandomSupplyReward(isShieldBroken);
+            // 激光长度状态（用于过滤或降权长度选项）
+            bool laserAtCap = laserController != null && laserController.IsMainLaserAtLengthCap;
+            bool laserHasLengthSkill = laserController != null && laserController.HasReflexLengthBonus;
+
+            RewardEntry reward = rewardConfig.GetRandomSupplyReward(isShieldBroken, laserAtCap, laserHasLengthSkill);
             if (reward == null)
             {
                 GameLogger.LogWarning("[TacticalDropManager] 补给箱奖励池为空！");
@@ -525,8 +529,12 @@ namespace LightVsDecay.Logic.TacticalDrop
     
             // 检查保底
             bool forceEpic = gachaBadLuckCounter >= rewardConfig.gachaBadLuckProtectionCount;
-    
-            var (resultType, reward, mockText) = rewardConfig.GetGachaResult(forceEpic);
+
+            // 激光长度状态
+            bool laserAtCap = laserController != null && laserController.IsMainLaserAtLengthCap;
+            bool laserHasLengthSkill = laserController != null && laserController.HasReflexLengthBonus;
+
+            var (resultType, reward, mockText) = rewardConfig.GetGachaResult(forceEpic, laserAtCap, laserHasLengthSkill);
     
             if (showDebugInfo)
             {

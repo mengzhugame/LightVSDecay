@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Frozen_Slime
+  m_Name: Frost_Slime
   m_EditorClassIdentifier: 
-  type: 0
-  displayName: "\u7C98\u6DB2"
+  type: 14
+  displayName: "\u51B0\u971C\u7C98\u6DB2\u602A"
   description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u6570\u91CF\u591A\uFF0C\u8BA9\u73A9\u5BB6\u4F53\u9A8C\u5272\u8349"
   maxHealth: 1000
   moveSpeed: 0.8
@@ -50,6 +50,35 @@ MonoBehaviour:
   deathCoinBurst: 0
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
+  splitOnDeath: 0
+  splitEnemyType: 0
+  splitCount: 2
+  splitImpulseSpeed: 4
+  spawnPuddleOnDeath: 0
+  puddleEnemyType: 13
+  disableHitFlash: 0
+  disableKnockback: 0
+  gunnerStopYPercent: 0.6
+  gunnerShootInterval: 8
+  gunnerRepositionRange: 2
+  gunnerProjectilePrefab: {fileID: 0}
+  gunnerProjectileSpeed: 5
+  gunnerProjectileDamage: 40
+  gunnerProjectileHP: 20
+  gunnerProjectileLifetime: 8
+  autoDestroyTime: 0
+  isCatalyst: 0
+  catalystBurstRadius: 5
+  catalystBurstDuration: 5
+  catalystSpeedMultiplier: 2
+  catalystDamageTakenMultiplier: 1.5
+  frostcasterStopYPercent: 0.7
+  frostcasterCastInterval: 10
+  frostcasterIceWallCount: 1
+  frostcasterRandomWallCount: 0
+  frostcasterIceWallType: 20
+  hasIceShield: 0
+  iceShieldMaxHP: 15000
   collisionBehavior: 0
   isBouncing: 0
   bounceForce: 300

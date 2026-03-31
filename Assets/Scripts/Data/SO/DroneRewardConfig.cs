@@ -339,11 +339,13 @@ namespace LightVsDecay.Data.SO
         /// 从补给箱奖励池随机抽取
         /// </summary>
         /// <param name="isShieldBroken">护盾是否已破碎</param>
-        public RewardEntry GetRandomSupplyReward(bool isShieldBroken = false)
+        /// <param name="laserAtLengthCap">激光是否已达长度上限（移除长度选项）</param>
+        /// <param name="laserHasLengthSkill">玩家是否已选增长激光长度的技能（降低长度选项权重）</param>
+        public RewardEntry GetRandomSupplyReward(bool isShieldBroken = false, bool laserAtLengthCap = false, bool laserHasLengthSkill = false)
         {
             // 构建过滤后的奖励池
             List<RewardEntry> filteredPool = new List<RewardEntry>();
-    
+
             foreach (var entry in supplyRewards)
             {
                 if (isShieldBroken)
@@ -362,16 +364,37 @@ namespace LightVsDecay.Data.SO
                         continue;
                     }
                 }
-        
+
+                // 激光已达长度上限：移除增加长度的选项
+                if (laserAtLengthCap && entry.type == RewardType.LaserLengthPercent)
+                {
+                    continue;
+                }
+
+                // 玩家已有增长激光长度技能：降低长度选项权重至一半
+                if (laserHasLengthSkill && !laserAtLengthCap && entry.type == RewardType.LaserLengthPercent)
+                {
+                    var reduced = new RewardEntry
+                    {
+                        type = entry.type,
+                        value = entry.value,
+                        displayText = entry.displayText,
+                        weight = Mathf.Max(1, entry.weight / 2),
+                        isJackpot = entry.isJackpot
+                    };
+                    filteredPool.Add(reduced);
+                    continue;
+                }
+
                 filteredPool.Add(entry);
             }
-    
+
             if (filteredPool.Count == 0)
             {
                 GameLogger.LogWarning("[DroneRewardConfig] 补给箱过滤后奖励池为空！");
                 return null;
             }
-    
+
             return GetWeightedRandom(filteredPool);
         }
         
@@ -379,10 +402,12 @@ namespace LightVsDecay.Data.SO
         /// 获取金箱结果
         /// </summary>
         /// <param name="forceEpic">是否强制史诗（保底触发）</param>
-        public (GachaResultType resultType, RewardEntry reward, string mockText) GetGachaResult(bool forceEpic = false)
+        /// <param name="laserAtLengthCap">激光是否已达长度上限（移除长度选项）</param>
+        /// <param name="laserHasLengthSkill">玩家是否已选增长激光长度的技能（降低长度选项权重）</param>
+        public (GachaResultType resultType, RewardEntry reward, string mockText) GetGachaResult(bool forceEpic = false, bool laserAtLengthCap = false, bool laserHasLengthSkill = false)
         {
             GachaResultConfig resultConfig = null;
-            
+
             if (forceEpic)
             {
                 // 强制史诗大奖
@@ -393,7 +418,7 @@ namespace LightVsDecay.Data.SO
                 // 按概率抽取结果类型
                 int roll = UnityEngine.Random.Range(0, 100);
                 int cumulative = 0;
-                
+
                 foreach (var config in gachaResults)
                 {
                     cumulative += config.probability;
@@ -404,13 +429,13 @@ namespace LightVsDecay.Data.SO
                     }
                 }
             }
-            
+
             if (resultConfig == null)
             {
                 // 保底返回普通
                 resultConfig = gachaResults.Find(r => r.resultType == GachaResultType.Normal);
             }
-            
+
             // 根据结果类型处理
             if (resultConfig.resultType == GachaResultType.Nothing)
             {
@@ -420,12 +445,40 @@ namespace LightVsDecay.Data.SO
                 {
                     coinReward = GetWeightedRandom(resultConfig.rewardPool);
                 }
-                
+
                 return (GachaResultType.Nothing, coinReward, null);
             }
-            
-            RewardEntry reward = GetWeightedRandom(resultConfig.rewardPool);
+
+            // 构建激光状态过滤后的奖励池
+            List<RewardEntry> pool = BuildLaserFilteredPool(resultConfig.rewardPool, laserAtLengthCap, laserHasLengthSkill);
+            RewardEntry reward = GetWeightedRandom(pool.Count > 0 ? pool : resultConfig.rewardPool);
             return (resultConfig.resultType, reward, null);
+        }
+
+        private List<RewardEntry> BuildLaserFilteredPool(List<RewardEntry> source, bool laserAtLengthCap, bool laserHasLengthSkill)
+        {
+            var pool = new List<RewardEntry>(source.Count);
+            foreach (var entry in source)
+            {
+                if (laserAtLengthCap && entry.type == RewardType.LaserLengthPercent)
+                    continue;
+
+                if (laserHasLengthSkill && !laserAtLengthCap && entry.type == RewardType.LaserLengthPercent)
+                {
+                    pool.Add(new RewardEntry
+                    {
+                        type = entry.type,
+                        value = entry.value,
+                        displayText = entry.displayText,
+                        weight = Mathf.Max(1, entry.weight / 2),
+                        isJackpot = entry.isJackpot
+                    });
+                    continue;
+                }
+
+                pool.Add(entry);
+            }
+            return pool;
         }
         
         /// <summary>

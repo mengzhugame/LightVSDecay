@@ -118,8 +118,8 @@ MonoBehaviour:
       weight: 20
       isJackpot: 0
     - type: 7
-      value: 0.1
-      displayText: "\u6FC0\u5149\u957F\u5EA6+10%"
+      value: 0.07
+      displayText: "\u6FC0\u5149\u957F\u5EA6+7%"
       weight: 20
       isJackpot: 0
   - resultType: 3
@@ -146,8 +146,8 @@ MonoBehaviour:
       weight: 25
       isJackpot: 1
     - type: 7
-      value: 0.2
-      displayText: "\u6FC0\u5149\u957F\u5EA6+20%"
+      value: 0.14
+      displayText: "\u6FC0\u5149\u957F\u5EA6+14%"
       weight: 20
       isJackpot: 1
   dealEntries:

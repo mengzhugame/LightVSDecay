@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64aa65cebc317f545ac1491badeaae0a, type: 3}
   m_Name: Chapter02_01
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   totalWaves: 10
   waveInterval: 12
   globalEnemyLimit: 200
@@ -25,7 +25,7 @@ MonoBehaviour:
       count: 4
       pattern: 0
       customInterval: -1
-      spawnZone: 0
+      spawnZone: 1
     - spawnTime: 20
       enemyType: 7
       count: 4
@@ -37,7 +37,7 @@ MonoBehaviour:
       count: 3
       pattern: 1
       customInterval: -1
-      spawnZone: 0
+      spawnZone: 2
     difficultyMultiplier: 1
     isBossWave: 0
     hintText: "\u7194\u7089\u82CF\u9192\uFF0C\u5206\u88C2\u8005\u6765\u88AD\uFF01"
@@ -48,10 +48,10 @@ MonoBehaviour:
     - spawnTime: 0
       enemyType: 9
       count: 4
-      pattern: 3
+      pattern: 0
       customInterval: -1
       spawnZone: 2
-    - spawnTime: 20
+    - spawnTime: 15
       enemyType: 7
       count: 7
       pattern: 1
@@ -76,7 +76,7 @@ MonoBehaviour:
       pattern: 3
       customInterval: -1
       spawnZone: 3
-    - spawnTime: 18
+    - spawnTime: 12
       enemyType: 8
       count: 2
       pattern: 0
@@ -107,7 +107,7 @@ MonoBehaviour:
       pattern: 3
       customInterval: -1
       spawnZone: 2
-    - spawnTime: 15
+    - spawnTime: 10
       enemyType: 8
       count: 2
       pattern: 0
@@ -144,7 +144,7 @@ MonoBehaviour:
       pattern: 3
       customInterval: -1
       spawnZone: 3
-    - spawnTime: 15
+    - spawnTime: 10
       enemyType: 8
       count: 2
       pattern: 0
@@ -322,7 +322,7 @@ MonoBehaviour:
       pattern: 5
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 22
+    - spawnTime: 18
       enemyType: 8
       count: 3
       pattern: 1

@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
-  m_Name: Frozen_EliteTank
+  m_Name: Frost_EliteTank
   m_EditorClassIdentifier: 
-  type: 5
-  displayName: "\u7CBE\u82F1\u5766\u514B"
-  description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8089\u76FE\u602A\uFF0C\u8840\u9AD8\uFF0C\u8D28\u91CF\u5927\uFF0C\u6FC0\u5149\u63A8\u4E0D\u52A8"
+  type: 18
+  displayName: "\u7CBE\u82F1\u51B0\u7532\u536B\u58EB"
+  description: "\u524D\u7F6E\u51B0\u76FE\u673A\u5236"
   maxHealth: 20000
   moveSpeed: 1.3
   mass: 10
@@ -50,6 +50,35 @@ MonoBehaviour:
   deathCoinBurst: 0
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
+  splitOnDeath: 0
+  splitEnemyType: 0
+  splitCount: 2
+  splitImpulseSpeed: 4
+  spawnPuddleOnDeath: 0
+  puddleEnemyType: 13
+  disableHitFlash: 0
+  disableKnockback: 0
+  gunnerStopYPercent: 0.6
+  gunnerShootInterval: 8
+  gunnerRepositionRange: 2
+  gunnerProjectilePrefab: {fileID: 0}
+  gunnerProjectileSpeed: 5
+  gunnerProjectileDamage: 40
+  gunnerProjectileHP: 20
+  gunnerProjectileLifetime: 8
+  autoDestroyTime: 0
+  isCatalyst: 0
+  catalystBurstRadius: 5
+  catalystBurstDuration: 5
+  catalystSpeedMultiplier: 2
+  catalystDamageTakenMultiplier: 1.5
+  frostcasterStopYPercent: 0.7
+  frostcasterCastInterval: 10
+  frostcasterIceWallCount: 1
+  frostcasterRandomWallCount: 0
+  frostcasterIceWallType: 20
+  hasIceShield: 1
+  iceShieldMaxHP: 15000
   collisionBehavior: 0
   isBouncing: 0
   bounceForce: 300

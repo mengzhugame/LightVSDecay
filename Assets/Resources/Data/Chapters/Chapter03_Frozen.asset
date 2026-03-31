@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 221542e697f31cc4d9ac5764a95040a0, type: 3}
   m_Name: Chapter03_Frozen
   m_EditorClassIdentifier: 
-  chapterIndex: 0
+  chapterIndex: 2
   chapterNumber: 3
   chapterName: "\u6781\u5BD2\u865A\u7A7A"
   chapterDescription: "\u7B2C\u4E09\u7AE0\uFF1A\u6781\u5BD2\u865A\u7A7A"
@@ -23,7 +23,7 @@ MonoBehaviour:
   battleBGM: {fileID: 0}
   bossBGM: {fileID: 0}
   waveConfig: {fileID: 11400000, guid: 6cdd38226c8199e4eb9bea5549f81ae0, type: 2}
-  bossPrefab: {fileID: 7651956220622171640, guid: 5b037580938be1f40998b30cf4c7c9e2, type: 3}
+  bossPrefab: {fileID: 5603357567859342120, guid: b749e288d898c2f4ebc7ced4442876ff, type: 3}
   mechanicType: 2
   difficulties:
   - difficultyLevel: 1

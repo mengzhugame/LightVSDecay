@@ -390,7 +390,7 @@ CircleCollider2D:
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
-  m_Radius: 1.56
+  m_Radius: 2.1
 --- !u!114 &5494020074196298760
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -412,7 +412,7 @@ MonoBehaviour:
   - {fileID: 7449607628985974636}
   hitFlashDuration: 0.15
   hitSpeedBoostMultiplier: 3
-  defaultHitColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  defaultHitColor: {r: 1, g: 1, b: 1, a: 1}
   showDebugInfo: 0
 --- !u!114 &6547338699379500416
 MonoBehaviour:
