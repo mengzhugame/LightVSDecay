@@ -486,10 +486,15 @@ namespace LightVsDecay.Logic.Enemy
             transform.localScale = originalScale;
             speedMultiplier = 1f;
             
+            // Stationary 障碍物（熔浆液用 PolygonCollider2D，冰墙等）全部设为 Trigger
+            // 效果：怪物可穿越（无物理响应），Raycast 仍能检测到（queriesHitTriggers=true），激光依然被阻挡
+            if (behaviorType == EnemyBehaviorType.Stationary)
+            {
+                foreach (var col in GetComponents<Collider2D>())
+                    col.isTrigger = true;
+            }
             if (circleCollider != null)
             {
-                // Stationary 障碍物（熔浆液、冰墙）使用 Trigger：怪物可穿越，但 Raycast 仍能检测到（queriesHitTriggers=true）
-                circleCollider.isTrigger = (behaviorType == EnemyBehaviorType.Stationary);
                 circleCollider.enabled = true;
             }
 
@@ -613,10 +618,9 @@ namespace LightVsDecay.Logic.Enemy
                 rb.simulated = false;
             }
 
-            if (circleCollider != null)
-            {
-                circleCollider.isTrigger = false;
-            }
+            // 重置所有碰撞体的 isTrigger 状态（含 Stationary 设置过的）
+            foreach (var col in GetComponents<Collider2D>())
+                col.isTrigger = false;
 
             isDead = true;
             ResetVisuals();
