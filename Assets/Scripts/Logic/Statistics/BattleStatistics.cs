@@ -84,6 +84,9 @@ namespace LightVsDecay.Logic.Statistics
         private float _waveDmgFromMobExplosion = 0f;
         private int _waveBossAbsorptionCount = 0;
         private float _waveBossHealTotal = 0f;
+        private int _waveGunnerShotsFired = 0;   // P2
+        private int _waveBossMeteorCount = 0;     // P2
+        private int _wavePuddlePeakCount = 0;     // P3
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 波次基础
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -246,6 +249,14 @@ namespace LightVsDecay.Logic.Statistics
                     _waveDangerTime += Time.deltaTime;
                 }
             }
+
+            // 【V5.0 P3】水坑峰值追踪
+            if (EnemyPoolManager.Instance != null)
+            {
+                int currentPuddles = EnemyPoolManager.Instance.GetActiveCount(EnemyType.LavaPuddle);
+                if (currentPuddles > _wavePuddlePeakCount)
+                    _wavePuddlePeakCount = currentPuddles;
+            }
         }
         
         private void FixedUpdate()
@@ -391,6 +402,9 @@ namespace LightVsDecay.Logic.Statistics
             _waveDmgFromMobExplosion = 0f;
             _waveBossAbsorptionCount = 0;
             _waveBossHealTotal = 0f;
+            _waveGunnerShotsFired = 0;
+            _waveBossMeteorCount = 0;
+            _wavePuddlePeakCount = 0;
 
             // 重置伤害来源
             _waveMainLaserDamage = 0f;
@@ -586,6 +600,13 @@ namespace LightVsDecay.Logic.Statistics
                 // V5.0 Boss Ch2专属
                 bossAbsorptionCount = _waveBossAbsorptionCount,
                 bossHealTotal       = _waveBossHealTotal,
+
+                // V5.0 P2
+                gunnerShotsFired = _waveGunnerShotsFired,
+                bossMeteorCount  = _waveBossMeteorCount,
+
+                // V5.0 P3
+                puddlePeakCount = _wavePuddlePeakCount,
             };
             
             _allWaveStats.Add(data);
@@ -949,6 +970,27 @@ namespace LightVsDecay.Logic.Statistics
             _waveBossAbsorptionCount++;
         }
 
+        /// <summary>炮手开火一次（由LavaGunnerAI.FireProjectile调用）</summary>
+        public void RecordGunnerShot()
+        {
+            if (!CanRecord()) return;
+            _waveGunnerShotsFired++;
+        }
+
+        /// <summary>Boss陨石落地（由VolcanoMeteor调用，独立于summonCount）</summary>
+        public void RecordBossMeteor()
+        {
+            if (!CanRecord()) return;
+            _waveBossMeteorCount++;
+        }
+
+        /// <summary>熔岩水坑生成（自爆怪死亡或陨石落地时调用）</summary>
+        public void RecordPuddleSpawned()
+        {
+            if (!CanRecord()) return;
+            _waveSpawns.lavaPuddle++;
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 无人机选择上报
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1110,8 +1152,8 @@ namespace LightVsDecay.Logic.Statistics
             }
         }
         
-        // CSV字段总数（V5.0：75原有 + 19 Ch2新增 = 94）
-        private const int CSV_FIELD_COUNT = 94;
+        // CSV字段总数（V5.0：75原有 + 19 P1 + 3 P2/P3 = 97）
+        private const int CSV_FIELD_COUNT = 97;
         
         /// <summary>
         /// 构建CSV表头
@@ -1161,7 +1203,11 @@ namespace LightVsDecay.Logic.Statistics
                 // V5.0 炮手 & 伤害细分 (2)
                 "Gunner_Bullet_Dmg_To_Player,Dmg_From_Mob_Explosion," +
                 // V5.0 Boss Ch2专属 (2)
-                "Boss_Absorption_Count,Boss_Heal_Total";
+                "Boss_Absorption_Count,Boss_Heal_Total," +
+                // V5.0 P2 炮手 & 陨石 (2)
+                "Gunner_Shots_Fired,Boss_Meteor_Count," +
+                // V5.0 P3 水坑峰值 (1)
+                "Puddle_Peak_Count";
         }
         
         /// <summary>
@@ -1213,7 +1259,11 @@ namespace LightVsDecay.Logic.Statistics
                 // 18. V5.0 炮手 & 伤害细分 (90-91)
                 "{90:F0},{91:F0}," +
                 // 19. V5.0 Boss Ch2 (92-93)
-                "{92},{93:F0}",
+                "{92},{93:F0}," +
+                // 20. V5.0 P2 炮手 & 陨石 (94-95)
+                "{94},{95}," +
+                // 21. V5.0 P3 水坑峰值 (96)
+                "{96}",
 
                 // ================= 参数列表 =================
                 
@@ -1312,7 +1362,14 @@ namespace LightVsDecay.Logic.Statistics
 
                 // 19. V5.0 Boss Ch2
                 d.bossAbsorptionCount,      // 92
-                d.bossHealTotal             // 93
+                d.bossHealTotal,            // 93
+
+                // 20. V5.0 P2
+                d.gunnerShotsFired,         // 94
+                d.bossMeteorCount,          // 95
+
+                // 21. V5.0 P3
+                d.puddlePeakCount           // 96
             );
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

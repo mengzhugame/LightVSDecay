@@ -335,5 +335,12 @@ namespace LightVsDecay.Logic.Statistics
         // Boss Ch2专属 (2)
         public int bossAbsorptionCount;      // Boss吸收小怪次数
         public float bossHealTotal;          // Boss回血总量
+
+        // ═══ V5.0 P2 新增 ═══
+        public int gunnerShotsFired;         // 炮手开火次数
+        public int bossMeteorCount;          // Boss陨石攻击次数（独立于summonCount）
+
+        // ═══ V5.0 P3 新增 ═══
+        public int puddlePeakCount;          // 场上熔岩水坑峰值数量
     }
 }

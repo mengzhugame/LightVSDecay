@@ -1304,6 +1304,7 @@ namespace LightVsDecay.Logic.Enemy
                     var puddle = EnemyPoolManager.Instance.Spawn(puddleEnemyType, transform.position);
                     if (puddle != null && puddleSizeMultiplier != 1f)
                         puddle.transform.localScale *= puddleSizeMultiplier;
+                    BattleStatistics.Instance?.RecordPuddleSpawned();
                 }
 
                 // 自爆范围伤害（无差别 AoE）
@@ -1487,6 +1488,7 @@ namespace LightVsDecay.Logic.Enemy
                 var puddle = EnemyPoolManager.Instance.Spawn(puddleEnemyType, transform.position);
                 if (puddle != null && puddleSizeMultiplier != 1f)
                     puddle.transform.localScale *= puddleSizeMultiplier;
+                BattleStatistics.Instance?.RecordPuddleSpawned();
             }
 
             // 自爆范围伤害

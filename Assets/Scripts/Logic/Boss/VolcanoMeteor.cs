@@ -160,6 +160,8 @@ namespace LightVsDecay.Logic.Boss
             if (spawnPuddleOnLand && EnemyPoolManager.Instance != null)
             {
                 EnemyPoolManager.Instance.Spawn(LightVsDecay.Core.Pool.EnemyType.LavaPuddle, targetPosition);
+                BattleStatistics.Instance?.RecordPuddleSpawned();
+                BattleStatistics.Instance?.RecordBossMeteor();
             }
 
             if (showDebugInfo)
@@ -178,7 +180,7 @@ namespace LightVsDecay.Logic.Boss
                 if (shield != null)
                 {
                     if (BattleStatistics.Instance != null)
-                        BattleStatistics.Instance.RecordPlayerDamage(landingDamage, PlayerDamageSource.BossBullet);
+                        BattleStatistics.Instance.RecordPlayerDamage(landingDamage, PlayerDamageSource.BossMeteor);
                     shield.TakeDamage(landingDamage);
                 }
             }
@@ -193,7 +195,7 @@ namespace LightVsDecay.Logic.Boss
                     if (turret != null)
                     {
                         if (BattleStatistics.Instance != null)
-                            BattleStatistics.Instance.RecordPlayerDamage(landingDamage, PlayerDamageSource.BossBullet);
+                            BattleStatistics.Instance.RecordPlayerDamage(landingDamage, PlayerDamageSource.BossMeteor);
                         turret.TakeDamage(landingDamage);
                     }
                 }

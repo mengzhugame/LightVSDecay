@@ -12,6 +12,7 @@ using System.Collections;
 using UnityEngine;
 using LightVsDecay.Core;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Logic.Statistics;
 
 namespace LightVsDecay.Logic.Enemy
 {
@@ -337,6 +338,8 @@ namespace LightVsDecay.Logic.Enemy
             var proj = go.GetComponent<LavaProjectile>();
             if (proj != null)
                 proj.Initialize(dir, projectileSpeed, projectileDamage, projectileHP, projectileLifetime);
+
+            BattleStatistics.Instance?.RecordGunnerShot();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
