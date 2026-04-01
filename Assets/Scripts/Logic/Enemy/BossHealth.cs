@@ -336,6 +336,7 @@ namespace LightVsDecay.Logic.Enemy
             if (isDead || amount <= 0f) return;
             currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
             GameEvents.TriggerBossHealthChanged(HealthPercent);
+            BattleStatistics.Instance?.RecordBossHeal(amount);
         }
 
         private void ApplyDamage(float damage)

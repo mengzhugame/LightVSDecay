@@ -712,7 +712,10 @@ namespace LightVsDecay.Logic.Boss
 
             // 回血
             if (bossHealth != null)
+            {
                 bossHealth.HealHP(absorptionHealPerSlime);
+                BattleStatistics.Instance?.RecordBossAbsorption();
+            }
 
             // 攻击力叠层（体现为受到伤害减免，见 GetLinkedBuffDamageMultiplier）
             if (absorptionStacks < absorptionMaxStacks)

@@ -300,5 +300,40 @@ namespace LightVsDecay.Logic.Statistics
         // ═══ V4.7 新增：Boss伤害输出 + 波次难度系数 ═══
         public float bossDmgDealt;       // 玩家对Boss造成的总伤害
         public float waveDiffMult;       // 波次难度系数快照
+
+        // ═══ V5.0 Ch2专属统计 ═══
+
+        // Ch2 击杀统计 (5)
+        public int killLavaExploder;
+        public int killLavaSplitter;
+        public int killLavaGunner;
+        public int killLavaTank;
+        public int killLavaElite;
+
+        // Ch2 生成统计 (6)
+        public int spawnLavaExploder;
+        public int spawnLavaSplitter;
+        public int spawnLavaGunner;
+        public int spawnLavaTank;
+        public int spawnLavaElite;
+        public int spawnLavaPuddle;          // 水坑生成总数（自爆+陨石）
+
+        // 自爆怪行为 (2)
+        public int exploderDeathCount;       // 自爆触发次数（含碰撞死亡路径）
+        public float exploderAoeDmgToPlayer; // 自爆AoE对玩家伤害总量
+
+        // 分裂怪行为 (2)
+        public int splitterDeathCount;       // 分裂触发次数
+        public int splitterChildrenSpawned;  // 分裂产生子体总数
+
+        // 炮手行为 (1)
+        public float gunnerBulletDmgToPlayer; // 炮手子弹对玩家总伤害
+
+        // 玩家受伤细分 (1)
+        public float dmgFromMobExplosion;    // 自爆AoE对玩家伤害（从MobCollision拆出）
+
+        // Boss Ch2专属 (2)
+        public int bossAbsorptionCount;      // Boss吸收小怪次数
+        public float bossHealTotal;          // Boss回血总量
     }
 }

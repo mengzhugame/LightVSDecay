@@ -1295,6 +1295,7 @@ namespace LightVsDecay.Logic.Enemy
                     // 分裂死亡特效/音效（在 Inspector 配置，可留空）
                     VFXPoolManager.Instance?.PlayEnemySplit(transform.position);
                     AudioManager.Instance?.PlayEnemySplit();
+                    BattleStatistics.Instance?.RecordSplitterDeath(splitCount);
                 }
 
                 // 爆炸者：死亡时在原位生成熔岩水坑（支持大小倍率）
@@ -1501,6 +1502,7 @@ namespace LightVsDecay.Logic.Enemy
         private void TriggerExplosionAoE()
         {
             if (explosionAoeDamage <= 0 || explosionAoeRadius <= 0f) return;
+            BattleStatistics.Instance?.RecordExploderDeath();
 
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, explosionAoeRadius);
             foreach (var col in hits)

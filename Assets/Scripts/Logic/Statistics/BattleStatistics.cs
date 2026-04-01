@@ -71,6 +71,19 @@ namespace LightVsDecay.Logic.Statistics
         private float _peakDPS = 0f;
         private float _waveChainDamage = 0f;    // 连锁伤害累计
         private int _waveOverloadCount = 0;     // 大招释放次数
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 运行时状态 - V5.0 Ch2专属
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private int _waveExploderDeathCount = 0;
+        private float _waveExploderAoeDmgToPlayer = 0f;
+        private int _waveSplitterDeathCount = 0;
+        private int _waveSplitterChildrenSpawned = 0;
+        private float _waveGunnerBulletDmgToPlayer = 0f;
+        private float _waveDmgFromMobExplosion = 0f;
+        private int _waveBossAbsorptionCount = 0;
+        private float _waveBossHealTotal = 0f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 波次基础
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -368,6 +381,17 @@ namespace LightVsDecay.Logic.Statistics
             
             _waveChainDamage = 0f;
             _waveOverloadCount = 0;
+
+            // 重置 V5.0 Ch2专属
+            _waveExploderDeathCount = 0;
+            _waveExploderAoeDmgToPlayer = 0f;
+            _waveSplitterDeathCount = 0;
+            _waveSplitterChildrenSpawned = 0;
+            _waveGunnerBulletDmgToPlayer = 0f;
+            _waveDmgFromMobExplosion = 0f;
+            _waveBossAbsorptionCount = 0;
+            _waveBossHealTotal = 0f;
+
             // 重置伤害来源
             _waveMainLaserDamage = 0f;
             _waveSubLaserDamage = 0f;
@@ -531,6 +555,37 @@ namespace LightVsDecay.Logic.Statistics
                 // V4.7
                 bossDmgDealt = _waveBossDmgDealt,
                 waveDiffMult = _waveDiffMult,
+
+                // V5.0 Ch2击杀
+                killLavaExploder = _waveKills.lavaExploder,
+                killLavaSplitter = _waveKills.lavaSplitter,
+                killLavaGunner   = _waveKills.lavaGunner,
+                killLavaTank     = _waveKills.lavaTank,
+                killLavaElite    = _waveKills.lavaElite,
+
+                // V5.0 Ch2生成
+                spawnLavaExploder = _waveSpawns.lavaExploder,
+                spawnLavaSplitter = _waveSpawns.lavaSplitter,
+                spawnLavaGunner   = _waveSpawns.lavaGunner,
+                spawnLavaTank     = _waveSpawns.lavaTank,
+                spawnLavaElite    = _waveSpawns.lavaElite,
+                spawnLavaPuddle   = _waveSpawns.lavaPuddle,
+
+                // V5.0 自爆怪行为
+                exploderDeathCount       = _waveExploderDeathCount,
+                exploderAoeDmgToPlayer   = _waveExploderAoeDmgToPlayer,
+
+                // V5.0 分裂怪行为
+                splitterDeathCount      = _waveSplitterDeathCount,
+                splitterChildrenSpawned = _waveSplitterChildrenSpawned,
+
+                // V5.0 炮手 & 伤害细分
+                gunnerBulletDmgToPlayer = _waveGunnerBulletDmgToPlayer,
+                dmgFromMobExplosion     = _waveDmgFromMobExplosion,
+
+                // V5.0 Boss Ch2专属
+                bossAbsorptionCount = _waveBossAbsorptionCount,
+                bossHealTotal       = _waveBossHealTotal,
             };
             
             _allWaveStats.Add(data);
@@ -711,9 +766,16 @@ namespace LightVsDecay.Logic.Statistics
             switch (source)
             {
                 case PlayerDamageSource.MobCollision:
-                case PlayerDamageSource.MobBullet:       // 炮手子弹，归入小怪伤害
-                case PlayerDamageSource.MobExplosionAoE: // 自爆怪AoE，归入小怪伤害
                     _waveDmgFromMobs += damage;
+                    break;
+                case PlayerDamageSource.MobBullet:
+                    _waveDmgFromMobs += damage;
+                    _waveGunnerBulletDmgToPlayer += damage;
+                    break;
+                case PlayerDamageSource.MobExplosionAoE:
+                    _waveDmgFromMobs += damage;
+                    _waveDmgFromMobExplosion += damage;
+                    _waveExploderAoeDmgToPlayer += damage;
                     break;
                 case PlayerDamageSource.BossCollision:
                     _waveBossCollisionDamage += damage;
@@ -853,6 +915,40 @@ namespace LightVsDecay.Logic.Statistics
             _waveDiffMult = mult;
         }
         
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // V5.0 Ch2专属上报
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>自爆怪AoE触发（击杀和碰撞两条路径均覆盖）</summary>
+        public void RecordExploderDeath()
+        {
+            if (!CanRecord()) return;
+            _waveExploderDeathCount++;
+        }
+
+        /// <summary>分裂怪触发分裂</summary>
+        /// <param name="childrenCount">本次分裂产生的子体数量</param>
+        public void RecordSplitterDeath(int childrenCount)
+        {
+            if (!CanRecord()) return;
+            _waveSplitterDeathCount++;
+            _waveSplitterChildrenSpawned += childrenCount;
+        }
+
+        /// <summary>Boss回血（由BossHealth.HealHP调用）</summary>
+        public void RecordBossHeal(float amount)
+        {
+            if (!CanRecord()) return;
+            _waveBossHealTotal += amount;
+        }
+
+        /// <summary>Boss吸收小怪计数（由VolcanoBossController调用）</summary>
+        public void RecordBossAbsorption()
+        {
+            if (!CanRecord()) return;
+            _waveBossAbsorptionCount++;
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 无人机选择上报
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1014,8 +1110,8 @@ namespace LightVsDecay.Logic.Statistics
             }
         }
         
-        // CSV字段总数
-        private const int CSV_FIELD_COUNT = 75;
+        // CSV字段总数（V5.0：75原有 + 19 Ch2新增 = 94）
+        private const int CSV_FIELD_COUNT = 94;
         
         /// <summary>
         /// 构建CSV表头
@@ -1053,7 +1149,19 @@ namespace LightVsDecay.Logic.Statistics
                 // V4.5 生成统计 + 配置标识 (7)
                 "Spawn_Slime,Spawn_Rusher,Spawn_Tank,Spawn_Drifter,Spawn_Elite,Spawn_Total,Wave_Config_Id," +
                 // V4.7 Boss伤害输出 + 波次难度系数 (2)
-                "Boss_Dmg_Dealt,Wave_Diff_Mult";
+                "Boss_Dmg_Dealt,Wave_Diff_Mult," +
+                // V5.0 Ch2击杀统计 (5)
+                "Kill_LavaExploder,Kill_LavaSplitter,Kill_LavaGunner,Kill_LavaTank,Kill_LavaElite," +
+                // V5.0 Ch2生成统计 (6)
+                "Spawn_LavaExploder,Spawn_LavaSplitter,Spawn_LavaGunner,Spawn_LavaTank,Spawn_LavaElite,Spawn_LavaPuddle," +
+                // V5.0 自爆怪行为 (2)
+                "Exploder_Death_Count,Exploder_AoE_Dmg_To_Player," +
+                // V5.0 分裂怪行为 (2)
+                "Splitter_Death_Count,Splitter_Children_Spawned," +
+                // V5.0 炮手 & 伤害细分 (2)
+                "Gunner_Bullet_Dmg_To_Player,Dmg_From_Mob_Explosion," +
+                // V5.0 Boss Ch2专属 (2)
+                "Boss_Absorption_Count,Boss_Heal_Total";
         }
         
         /// <summary>
@@ -1093,7 +1201,19 @@ namespace LightVsDecay.Logic.Statistics
                 // 12. V4.5 生成统计 (66-72)
                 "{66},{67},{68},{69},{70},{71},{72}," +
                 // 13. V4.7 Boss伤害 + 波次难度 (73-74)
-                "{73:F0},{74:F2}",
+                "{73:F0},{74:F2}," +
+                // 14. V5.0 Ch2击杀 (75-79)
+                "{75},{76},{77},{78},{79}," +
+                // 15. V5.0 Ch2生成 (80-85)
+                "{80},{81},{82},{83},{84},{85}," +
+                // 16. V5.0 自爆怪 (86-87)
+                "{86},{87:F0}," +
+                // 17. V5.0 分裂怪 (88-89)
+                "{88},{89}," +
+                // 18. V5.0 炮手 & 伤害细分 (90-91)
+                "{90:F0},{91:F0}," +
+                // 19. V5.0 Boss Ch2 (92-93)
+                "{92},{93:F0}",
 
                 // ================= 参数列表 =================
                 
@@ -1161,7 +1281,38 @@ namespace LightVsDecay.Logic.Statistics
 
                 // 13. V4.7
                 d.bossDmgDealt,      // 73
-                d.waveDiffMult       // 74
+                d.waveDiffMult,      // 74
+
+                // 14. V5.0 Ch2击杀
+                d.killLavaExploder,  // 75
+                d.killLavaSplitter,  // 76
+                d.killLavaGunner,    // 77
+                d.killLavaTank,      // 78
+                d.killLavaElite,     // 79
+
+                // 15. V5.0 Ch2生成
+                d.spawnLavaExploder, // 80
+                d.spawnLavaSplitter, // 81
+                d.spawnLavaGunner,   // 82
+                d.spawnLavaTank,     // 83
+                d.spawnLavaElite,    // 84
+                d.spawnLavaPuddle,   // 85
+
+                // 16. V5.0 自爆怪
+                d.exploderDeathCount,       // 86
+                d.exploderAoeDmgToPlayer,   // 87
+
+                // 17. V5.0 分裂怪
+                d.splitterDeathCount,       // 88
+                d.splitterChildrenSpawned,  // 89
+
+                // 18. V5.0 炮手 & 伤害细分
+                d.gunnerBulletDmgToPlayer,  // 90
+                d.dmgFromMobExplosion,      // 91
+
+                // 19. V5.0 Boss Ch2
+                d.bossAbsorptionCount,      // 92
+                d.bossHealTotal             // 93
             );
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
