@@ -196,6 +196,7 @@ namespace LightVsDecay.Logic.Enemy
         private float frostSpeedMultiplier = 1f;  // Frost 减速倍率
         private bool isFrozen = false;             // 是否完全冰冻
         private FrostDebuff frostDebuff;           // 缓存 FrostDebuff 组件
+        private CatalystBerserkDebuff catalystBerserkDebuff; // 缓存暴走视觉组件
         
         private int shieldLayer;
         private int towerLayer;
@@ -241,6 +242,12 @@ namespace LightVsDecay.Logic.Enemy
             if (frostDebuff == null)
             {
                 frostDebuff = gameObject.AddComponent<FrostDebuff>();
+            }
+            // 暴走视觉组件（催化者死亡爆发使用）
+            catalystBerserkDebuff = GetComponent<CatalystBerserkDebuff>();
+            if (catalystBerserkDebuff == null)
+            {
+                catalystBerserkDebuff = gameObject.AddComponent<CatalystBerserkDebuff>();
             }
             // Ch3 组件缓存
             frostcasterAI = GetComponent<FrostcasterAI>();
@@ -531,6 +538,8 @@ namespace LightVsDecay.Logic.Enemy
             {
                 frostDebuff.ResetDebuff();
             }
+            // 重置暴走视觉状态
+            catalystBerserkDebuff?.ResetBerserk();
             // 重置横穿屏幕状态
             crossScreenTarget = Vector3.zero;
             crossScreenStartPos = Vector3.zero;
@@ -1639,9 +1648,12 @@ namespace LightVsDecay.Logic.Enemy
             berserkSpeedMultiplier = speedMult;
             berserkDamageTakenMultiplier = damageTakenMult;
 
-            // 暴走视觉：体型缩小至 70%（激活冲刺感）
+            // 暴走视觉：体型缩小至 70%（激活冲刺感）+ 冰刺覆盖
             if (!isDead)
+            {
                 transform.localScale = originalScale * 0.7f;
+                catalystBerserkDebuff?.ApplyBerserk(duration);
+            }
 
             float elapsed = 0f;
             while (elapsed < duration)
@@ -1670,6 +1682,9 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         private void TriggerCatalystBurst()
         {
+            // 冷气烟雾特效
+            VFXPoolManager.Instance?.Play(VFXType.CatalystBurst, transform.position);
+
             LayerMask enemyMask = LayerMask.GetMask("Enemy", "BouncingEnemy");
             Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, catalystBurstRadius, enemyMask);
             foreach (var col in nearby)

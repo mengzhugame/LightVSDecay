@@ -33,6 +33,8 @@ namespace LightVsDecay.Core.Pool
         DroneExplosion,         // 无人机爆炸
         // Ch2 怪物相关（低频）
         EnemySplit,             // 分裂怪死亡爆开
+        // Ch3 怪物相关（低频）
+        CatalystBurst,          // 极寒催化者死亡冷气烟雾
     }
     
     /// <summary>
