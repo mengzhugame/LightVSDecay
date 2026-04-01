@@ -22,7 +22,7 @@ MonoBehaviour:
   attackInterval: 1
   isSuicide: 0
   knockbackResistance: 1
-  behaviorType: 4
+  behaviorType: 0
   waveAmplitude: 1
   waveFrequency: 1.5
   outOfBoundsLifetime: 1
@@ -67,7 +67,7 @@ MonoBehaviour:
   gunnerProjectileHP: 20
   gunnerProjectileLifetime: 8
   autoDestroyTime: 0
-  isCatalyst: 0
+  isCatalyst: 1
   catalystBurstRadius: 5
   catalystBurstDuration: 5
   catalystSpeedMultiplier: 2
