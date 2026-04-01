@@ -150,7 +150,7 @@ MonoBehaviour:
       pattern: 0
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 22
+    - spawnTime: 14
       enemyType: 10
       count: 2
       pattern: 5
@@ -187,13 +187,13 @@ MonoBehaviour:
       pattern: 3
       customInterval: -1
       spawnZone: 2
-    - spawnTime: 20
+    - spawnTime: 22
       enemyType: 10
       count: 2
       pattern: 5
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 28
+    - spawnTime: 20
       enemyType: 8
       count: 2
       pattern: 0
@@ -236,7 +236,7 @@ MonoBehaviour:
       pattern: 5
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 28
+    - spawnTime: 18
       enemyType: 8
       count: 2
       pattern: 0
@@ -273,7 +273,7 @@ MonoBehaviour:
       pattern: 0
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 15
+    - spawnTime: 12
       enemyType: 10
       count: 2
       pattern: 5
@@ -328,7 +328,7 @@ MonoBehaviour:
       pattern: 1
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 28
+    - spawnTime: 22
       enemyType: 10
       count: 3
       pattern: 5
@@ -353,8 +353,8 @@ MonoBehaviour:
     displayName: "\u7B2C\u5341\u6CE2"
     description: "\u7194\u7089\u5DE8\u517D The Magma Furnace \u964D\u4E34\uFF01"
     spawnGroups: []
-    difficultyMultiplier: 1.5
+    difficultyMultiplier: 3
     isBossWave: 1
     hintText: "\u7194\u7089\u5DE8\u517D\u964D\u4E34\uFF01"
-  bossHealth: 900000
-  bossMoveSpeed: 0.3
+  bossHealth: 9000000
+  bossMoveSpeed: 0.2
