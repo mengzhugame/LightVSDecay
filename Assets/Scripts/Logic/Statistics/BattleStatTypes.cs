@@ -35,9 +35,12 @@ namespace LightVsDecay.Logic.Statistics
     public enum PlayerDamageSource
     {
         MobCollision,       // 小怪碰撞
+        MobBullet,          // 小怪子弹（炮手 LavaGunner）
+        MobExplosionAoE,    // 小怪爆炸 AoE（自爆怪 LavaExploder）
         BossCollision,      // Boss 撞击（Charge/Press）
-        BossBullet,         // Boss 子弹（污秽球）
+        BossBullet,         // Boss 子弹（污秽球/熔浆弹）
         BossFriction,       // Boss 摩擦伤害
+        BossMeteor,         // Boss 陨石（火山Boss 专用）
         Other
     }
     
@@ -51,30 +54,48 @@ namespace LightVsDecay.Logic.Statistics
     [Serializable]
     public class SpawnCounter
     {
+        // ─── Ch1 ───
         public int slime = 0;
         public int rusher = 0;
         public int tank = 0;
         public int drifter = 0;
         public int elite = 0;
+        // ─── Ch2 ───
+        public int lavaExploder = 0;
+        public int lavaSplitter = 0;
+        public int lavaGunner = 0;
+        public int lavaTank = 0;
+        public int lavaElite = 0;
+        public int lavaPuddle = 0;      // 地形障碍，不计入战斗Total
 
-        public int Total => slime + rusher + tank + drifter + elite;
+        public int Total => slime + rusher + tank + drifter + elite
+                          + lavaExploder + lavaSplitter + lavaGunner + lavaTank + lavaElite;
 
         public void Reset()
         {
             slime = rusher = tank = drifter = elite = 0;
+            lavaExploder = lavaSplitter = lavaGunner = lavaTank = lavaElite = lavaPuddle = 0;
         }
 
         public void Add(EnemyType type)
         {
             switch (type)
             {
-                case EnemyType.Slime: slime++; break;
-                case EnemyType.Rusher: rusher++; break;
-                case EnemyType.Tank: tank++; break;
-                case EnemyType.Drifter: drifter++; break;
+                // Ch1
+                case EnemyType.Slime:        slime++;       break;
+                case EnemyType.Rusher:       rusher++;      break;
+                case EnemyType.Tank:         tank++;        break;
+                case EnemyType.Drifter:      drifter++;     break;
                 case EnemyType.EliteTank:
-                case EnemyType.EliteDrifter:
-                    elite++; break;
+                case EnemyType.EliteDrifter: elite++;       break;
+                // Ch2
+                case EnemyType.LavaExploder:       lavaExploder++; break;
+                case EnemyType.EliteLavaExploder:  lavaElite++;    break;
+                case EnemyType.LavaSplitter:       lavaSplitter++; break;
+                case EnemyType.EliteLavaSplitter:  lavaElite++;    break;
+                case EnemyType.LavaGunner:         lavaGunner++;   break;
+                case EnemyType.LavaTank:           lavaTank++;     break;
+                case EnemyType.LavaPuddle:         lavaPuddle++;   break;
             }
         }
     }
@@ -85,30 +106,47 @@ namespace LightVsDecay.Logic.Statistics
     [Serializable]
     public class KillCounter
     {
+        // ─── Ch1 ───
         public int slime = 0;
         public int rusher = 0;
         public int tank = 0;
         public int drifter = 0;
         public int elite = 0;
-        
-        public int Total => slime + rusher + tank + drifter + elite;
-        
+        // ─── Ch2 ───
+        public int lavaExploder = 0;
+        public int lavaSplitter = 0;
+        public int lavaGunner = 0;
+        public int lavaTank = 0;
+        public int lavaElite = 0;
+        // 注：LavaPuddle 不可击杀，不计入KillCounter
+
+        public int Total => slime + rusher + tank + drifter + elite
+                          + lavaExploder + lavaSplitter + lavaGunner + lavaTank + lavaElite;
+
         public void Reset()
         {
             slime = rusher = tank = drifter = elite = 0;
+            lavaExploder = lavaSplitter = lavaGunner = lavaTank = lavaElite = 0;
         }
-        
+
         public void Add(EnemyType type)
         {
             switch (type)
             {
-                case EnemyType.Slime: slime++; break;
-                case EnemyType.Rusher: rusher++; break;
-                case EnemyType.Tank: tank++; break;
-                case EnemyType.Drifter: drifter++; break;
+                // Ch1
+                case EnemyType.Slime:        slime++;       break;
+                case EnemyType.Rusher:       rusher++;      break;
+                case EnemyType.Tank:         tank++;        break;
+                case EnemyType.Drifter:      drifter++;     break;
                 case EnemyType.EliteTank:
-                case EnemyType.EliteDrifter:
-                    elite++; break;
+                case EnemyType.EliteDrifter: elite++;       break;
+                // Ch2
+                case EnemyType.LavaExploder:       lavaExploder++; break;
+                case EnemyType.EliteLavaExploder:  lavaElite++;    break;
+                case EnemyType.LavaSplitter:       lavaSplitter++; break;
+                case EnemyType.EliteLavaSplitter:  lavaElite++;    break;
+                case EnemyType.LavaGunner:         lavaGunner++;   break;
+                case EnemyType.LavaTank:           lavaTank++;     break;
             }
         }
     }

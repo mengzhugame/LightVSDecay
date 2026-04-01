@@ -711,6 +711,8 @@ namespace LightVsDecay.Logic.Statistics
             switch (source)
             {
                 case PlayerDamageSource.MobCollision:
+                case PlayerDamageSource.MobBullet:       // 炮手子弹，归入小怪伤害
+                case PlayerDamageSource.MobExplosionAoE: // 自爆怪AoE，归入小怪伤害
                     _waveDmgFromMobs += damage;
                     break;
                 case PlayerDamageSource.BossCollision:
@@ -719,6 +721,7 @@ namespace LightVsDecay.Logic.Statistics
                     break;
                 case PlayerDamageSource.BossBullet:
                 case PlayerDamageSource.BossFriction:
+                case PlayerDamageSource.BossMeteor:      // 陨石归入Boss子弹类
                     _waveBossBulletDamage += damage;
                     _waveDmgFromBoss += damage;
                     break;

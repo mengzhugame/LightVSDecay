@@ -137,7 +137,7 @@ namespace LightVsDecay.Logic.Enemy
                 {
                     // 上报伤害统计
                     if (BattleStatistics.Instance != null)
-                        BattleStatistics.Instance.RecordPlayerDamage(damage, PlayerDamageSource.BossBullet);
+                        BattleStatistics.Instance.RecordPlayerDamage(damage, PlayerDamageSource.MobBullet);
                     shield.TakeDamage(damage);
                 }
                 DestroyProjectile();
@@ -150,7 +150,7 @@ namespace LightVsDecay.Logic.Enemy
                 if (turret != null)
                 {
                     if (BattleStatistics.Instance != null)
-                        BattleStatistics.Instance.RecordPlayerDamage(damage, PlayerDamageSource.BossBullet);
+                        BattleStatistics.Instance.RecordPlayerDamage(damage, PlayerDamageSource.MobBullet);
                     turret.TakeDamage(damage);
                 }
                 DestroyProjectile();

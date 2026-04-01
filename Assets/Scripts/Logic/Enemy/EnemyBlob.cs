@@ -1520,7 +1520,7 @@ namespace LightVsDecay.Logic.Enemy
                 var shield = col.GetComponent<ShieldController>();
                 if (shield != null)
                 {
-                    BattleStatistics.Instance?.RecordPlayerDamage(explosionAoeDamage, PlayerDamageSource.MobCollision);
+                    BattleStatistics.Instance?.RecordPlayerDamage(explosionAoeDamage, PlayerDamageSource.MobExplosionAoE);
                     shield.TakeDamage(explosionAoeDamage);
                     continue;
                 }
@@ -1530,7 +1530,7 @@ namespace LightVsDecay.Logic.Enemy
                           ?? col.GetComponentInParent<TurretHealth>();
                 if (turret != null)
                 {
-                    BattleStatistics.Instance?.RecordPlayerDamage(explosionAoeDamage, PlayerDamageSource.MobCollision);
+                    BattleStatistics.Instance?.RecordPlayerDamage(explosionAoeDamage, PlayerDamageSource.MobExplosionAoE);
                     turret.TakeDamage(explosionAoeDamage);
                 }
             }
