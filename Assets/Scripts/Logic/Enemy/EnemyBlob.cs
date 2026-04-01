@@ -84,6 +84,8 @@ namespace LightVsDecay.Logic.Enemy
         private int coinReward = 1;
         // 行为设置
         private EnemyBehaviorType behaviorType = EnemyBehaviorType.Chase;
+        // Boss 汲取融合：覆盖追击目标（null = 追玩家塔）
+        private Transform overrideTarget = null;
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Frost 照射时间追踪【新增】
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -217,6 +219,9 @@ namespace LightVsDecay.Logic.Enemy
 
         /// <summary>当前追击目标塔（供 LavaGunnerAI 瞄准）</summary>
         public Transform TargetTower => targetTower;
+
+        /// <summary>是否为静止障碍（熔浆液等），用于激光穿透阻断判断</summary>
+        public bool IsStationary => behaviorType == EnemyBehaviorType.Stationary;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Layer 切换（弹跳怪入境签证）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -741,11 +746,18 @@ namespace LightVsDecay.Logic.Enemy
         /// <summary>
         /// 追击移动（原逻辑）
         /// </summary>
+        /// <summary>
+        /// 设置移动覆盖目标（用于 Boss 汲取融合，让召唤小怪向 Boss 聚拢而非追玩家塔）。
+        /// 传入 null 可解除覆盖，恢复默认追塔行为。
+        /// </summary>
+        public void SetOverrideTarget(Transform target) { overrideTarget = target; }
+
         private void MoveChase()
         {
-            if (targetTower == null) return;
+            Transform chaseTarget = (overrideTarget != null) ? overrideTarget : targetTower;
+            if (chaseTarget == null) return;
 
-            Vector2 direction = (targetTower.position - transform.position).normalized;
+            Vector2 direction = (chaseTarget.position - transform.position).normalized;
 
             float currentMoveSpeed = baseMoveSpeed * speedMultiplier * frostSpeedMultiplier * berserkSpeedMultiplier;
             float moveForce = currentMoveSpeed * 10f;
@@ -859,8 +871,9 @@ namespace LightVsDecay.Logic.Enemy
             {
                 BattleStatistics.Instance.RecordDamage(effectiveDamage, overkillDamage, enemyType, actualSource, isCrit);
             }
-            // 【新增】记录爆炸伤害标记
-            if (fromExplosion)
+            // 【修正】仅在爆炸伤害足以致死时标记，避免非致死爆炸污染 flag
+            // （若仅受伤存活，后续被激光补刀时不应跳过死亡特效）
+            if (fromExplosion && (currentHealth - damage) <= 0)
             {
                 killedByExplosion = true;
             }
@@ -868,13 +881,13 @@ namespace LightVsDecay.Logic.Enemy
             if (!disableHitFlash && FloatingTextManager.Instance != null)
             {
                 if (isShatter)
-                {
                     FloatingTextManager.Instance.ShowShatterDamage(transform.position, damage, isCrit);
-                }
+                else if (actualSource == DamageSource.Chain)
+                    FloatingTextManager.Instance.ShowChainDamage(transform.position, damage, isCrit);
+                else if (actualSource == DamageSource.Explosion)
+                    FloatingTextManager.Instance.ShowExplosionDamage(transform.position, damage, isCrit);
                 else
-                {
                     FloatingTextManager.Instance.ShowDamage(transform.position, damage, isCrit);
-                }
             }
             currentHealth -= damage;
             lastHitTime = Time.time;
@@ -1233,28 +1246,22 @@ namespace LightVsDecay.Logic.Enemy
             // 普通敌人死亡 VFX
             else if (VFXPoolManager.Instance != null)
             {
-                if (killedByExplosion)
-                {
-                    // 被爆炸杀死：爆炸特效已在伤害来源处播放，直接回收
-                    ReturnToPool();
-                    return;
-                }
-
                 // 检查是否会触发 Focus Lv5 爆炸
                 bool willTriggerFocusExplosion = SkillEffectManager.Instance != null &&
                                                  SkillEffectManager.Instance.IsFocusExplosionEnabled &&
                                                  !killedByExecution;
 
-                // 普通死亡：无 Focus 爆炸 且 无漏洞扩散时播放蒸汽（自爆怪用爆炸特效）
                 if (!willTriggerFocusExplosion && !willTriggerShatterExplosion)
                 {
                     if (explosionAoeDamage > 0)
                     {
+                        // 自爆怪：无论是否被爆炸杀死，都播放自身爆炸特效（支持连锁视觉）
                         VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
                         AudioManager.Instance?.PlayEnemyExplode();
                     }
-                    else
+                    else if (!killedByExplosion)
                     {
+                        // 普通怪被爆炸杀死：来源爆炸特效已覆盖，跳过蒸汽避免重叠
                         VFXPoolManager.Instance.PlayEnemySteam(transform.position);
                     }
                 }
@@ -1284,6 +1291,10 @@ namespace LightVsDecay.Logic.Enemy
                                 child.ApplyInitialImpulse(dir * splitImpulseSpeed);
                         }
                     }
+
+                    // 分裂死亡特效/音效（在 Inspector 配置，可留空）
+                    VFXPoolManager.Instance?.PlayEnemySplit(transform.position);
+                    AudioManager.Instance?.PlayEnemySplit();
                 }
 
                 // 爆炸者：死亡时在原位生成熔岩水坑（支持大小倍率）
@@ -1569,7 +1580,7 @@ namespace LightVsDecay.Logic.Enemy
         }
 
         /// <summary>
-        /// 被 Boss 汲取融合吸收——无奖励静默死亡，不给经验/金币
+        /// 被 Boss 汲取融合吸收——缩小动画 + 蒸汽特效/音效，无奖励
         /// </summary>
         public void AbsorbedByBoss()
         {
@@ -1577,7 +1588,29 @@ namespace LightVsDecay.Logic.Enemy
             isDead = true;
             rb.velocity = Vector2.zero;
             if (circleCollider != null) circleCollider.enabled = false;
-            // 不触发 GameEvents.TriggerEnemyDied，不给奖励
+            StartCoroutine(AbsorbShrinkRoutine());
+        }
+
+        private IEnumerator AbsorbShrinkRoutine()
+        {
+            const float shrinkDuration = 0.4f;
+            Vector3 startScale = transform.localScale;
+            float elapsed = 0f;
+
+            while (elapsed < shrinkDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / shrinkDuration);
+                transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
+                yield return null;
+            }
+
+            transform.localScale = Vector3.zero;
+
+            // 播放蒸汽特效和死亡音效（与激光击杀效果相同）
+            VFXPoolManager.Instance?.PlayEnemySteam(transform.position);
+            AudioManager.Instance?.PlayEnemyDeath();
+
             ReturnToPool();
         }
 

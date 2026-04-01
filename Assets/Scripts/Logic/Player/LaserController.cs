@@ -559,9 +559,13 @@ namespace LightVsDecay.Logic.Player
                 // 普通敌人检测
                 EnemyBlob enemy = collider.GetComponentInParent<EnemyBlob>();
                 if (enemy == null || enemy.IsDead) continue;
-                
+
+                // 静止障碍（熔浆液等）：物理阻断激光穿透，不消耗穿透层数
+                if (enemy.IsStationary)
+                    break;
+
                 ProcessEnemyHit(enemy, segment, currentDamage, knockbackMultiplier, true, penetratedCount);
-                
+
                 penetratedCount++;
                 currentDamage = penetrationHandler.GetNextDamage(currentDamage);
             }

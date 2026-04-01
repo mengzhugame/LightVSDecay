@@ -120,8 +120,8 @@ namespace LightVsDecay.Logic.Boss
             rb.gravityScale = 0f;
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             
-            // V3.0: 不使用触发器，使用物理碰撞
-            col.isTrigger = false;
+            // 使用触发器模式：子弹穿透所有怪物，只对 Shield / Tower / Wall 响应
+            col.isTrigger = true;
             
             if (spriteRenderer != null)
             {

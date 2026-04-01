@@ -704,6 +704,15 @@ namespace LightVsDecay.Audio
         }
         
         /// <summary>
+        /// 播放分裂怪死亡爆开音效（可不配置，留空则静默）
+        /// </summary>
+        public void PlayEnemySplit()
+        {
+            if (config != null && config.enemySplit != null)
+                PlaySFX(config.enemySplit, config.enemyDefaultVolume);
+        }
+
+        /// <summary>
         /// 播放怪物冰冻音效
         /// </summary>
         public void PlayEnemyFreeze()

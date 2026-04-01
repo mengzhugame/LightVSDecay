@@ -2,17 +2,18 @@
 // VolcanoBossController.cs
 // 文件位置: Assets/Scripts/Logic/Boss/VolcanoBossController.cs
 // 用途：第二章 Boss ——《熔炉巨兽 (The Magma Furnace)》
-// 继承 BaseBossController，实现以下专属机制：
 //
-//   阶段一（HP>70%）：陨石喷发（被动）+ 汲取融合（召唤）+ 熔岩冲撞（Charge）
-//   阶段二（30%<HP≤70%）：同上，汲取融合升级为8只（含2只爆炸者）
-//   阶段三（HP≤30%）：触发绝境碾压（Press），难度逐轮递增
+// 功能总览：
+//   ─ 阶段一（HP>70%） ：陨石喷发（被动）+ 汲取融合（召唤6只LavaSlime）+ 火山冲撞
+//   ─ 阶段二（30%<HP≤70%）：同上，汲取融合升级为8只
+//   ─ 阶段三（HP≤30%） ：绝境碾压×3轮（激光角力），角力期间从裂缝喷射侧向火球
 //
-//   汲取融合：召唤 LavaSplitter，向 Boss 汇聚，被吸收后
-//             Boss 回血 2000，获得永久 5% 攻击力（最多6层）
-//   陨石喷发：Idle 被动，每隔 meteorInterval 秒砸 3 颗陨石
-//   熔岩冲撞：Base Charge（无敌冲撞）
-//   绝境碾压：Base Press（激光角力），三轮递增难度
+//   ─ 阶段切换：Body02/Body03 换图 + 屏幕震动 + VFX/SFX钩子
+//   ─ Body03 材质动画：Idle岩浆呼吸脉冲、冲撞前摇变红、Press白炽化
+//   ─ 待机动画：整体极小幅度"沉重呼吸"缩放
+//   ─ 移动动画：VisualRoot 高频Perlin震动 + 停止瞬间屏幕冲击震
+//   ─ 火山口粒子：随阶段提升发射速率
+//   ─ VFX/SFX：全部预留 SerializeField 接口，留空时静默
 // ============================================================
 
 using UnityEngine;
@@ -20,29 +21,35 @@ using System.Collections;
 using System.Collections.Generic;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Audio;
 using LightVsDecay.Data;
+#if DOTWEEN
+using DG.Tweening;
+#endif
 
 namespace LightVsDecay.Logic.Boss
 {
     /// <summary>
     /// 第二章Boss：熔炉巨兽。
-    /// 专属机制：汲取融合（吸收小怪回血强化）、陨石喷发（地形压制）、
-    ///           熔岩冲撞（Charge带燃烧轨迹）、绝境碾压（30%HP阈值三轮角力）。
+    /// 继承 BaseBossController，在基类状态机基础上实现火山专属视觉与技能。
     /// </summary>
     public class VolcanoBossController : BaseBossController
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Inspector 配置（Ch2 专属）
+        // Inspector 配置 · 汲取融合
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         [Header("汲取融合 · 配置")]
-        [Tooltip("阶段一召唤数量（全部为自爆怪）")]
+        [Tooltip("阶段一召唤数量（全部为 LavaSlime）")]
         [SerializeField] private int summonCountPhase1 = 6;
 
-        [Tooltip("阶段二召唤数量（全部为自爆怪，数量增加）")]
+        [Tooltip("阶段二召唤数量")]
         [SerializeField] private int summonCountPhase2 = 8;
 
-        [Tooltip("吸收半径（小怪进入此范围被吸收）")]
+        [Tooltip("吸收触发点：火山口椭圆 Trigger 节点（Is Trigger = true，无 Rigidbody）；粘液怪以此为移动目标")]
+        [SerializeField] private Transform absorptionPoint;
+
+        [Tooltip("吸收半径（小怪到 absorptionPoint 的距离阈值）")]
         [SerializeField] private float absorptionRadius = 1.2f;
 
         [Tooltip("每次吸收回复的 HP")]
@@ -53,6 +60,10 @@ namespace LightVsDecay.Logic.Boss
 
         [Tooltip("吸收层数上限")]
         [SerializeField] private int absorptionMaxStacks = 6;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 · 陨石喷发
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         [Header("陨石喷发 · 配置")]
         [Tooltip("陨石预制体（需挂 VolcanoMeteor 组件，Layer = BossPollutionBall）")]
@@ -67,21 +78,21 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("陨石落点散布半径（以玩家塔为中心）")]
         [SerializeField] private float meteorSpreadRadius = 3f;
 
-        [Header("火山冲撞 · 岩浆隔离带")]
-        [Tooltip("冲撞路径岩浆水坑间距（越小越密集，建议 1.5）")]
-        [SerializeField] private float chargeTrailSpacing = 1.5f;
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 · 绝境碾压
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         [Header("绝境碾压 · 配置")]
         [Tooltip("触发阈值（HP 百分比）")]
         [SerializeField] private float desperatePressThreshold = 0.3f;
 
-        [Tooltip("绝境碾压次数（对应激光角力轮次）")]
+        [Tooltip("绝境碾压轮次")]
         [SerializeField] private int desperatePressRounds = 3;
 
-        [Tooltip("角力期间每次喷射火球的间隔（秒）")]
+        [Tooltip("角力期间裂缝火球喷射间隔（秒）")]
         [SerializeField] private float pressFireballInterval = 2f;
 
-        [Tooltip("角力火球预制体（需挂 LavaProjectile，Layer = BossPollutionBall）")]
+        [Tooltip("角力火球预制体（Layer = BossPollutionBall）")]
         [SerializeField] private GameObject pressFireballPrefab;
 
         [Tooltip("角力火球单发伤害")]
@@ -91,12 +102,186 @@ namespace LightVsDecay.Logic.Boss
         [SerializeField] private float pressFireballSpeed = 6f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 · 阶段外观（图片换帧）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("阶段外观 · Body02 岩石外壳")]
+        [Tooltip("Body02 的 SpriteRenderer（拖入 Body02 子节点）")]
+        [SerializeField] private SpriteRenderer body02Renderer;
+
+        [Tooltip("Body02 各阶段图片：[0]=阶段一（完整），[1]=阶段二（中度破裂），[2]=阶段三（重度破裂）")]
+        [SerializeField] private Sprite[] body02PhaseSprites = new Sprite[3];
+
+        [Header("阶段外观 · Body03 顶部喷发")]
+        [Tooltip("Body03 的 SpriteRenderer（拖入 Body03 子节点）")]
+        [SerializeField] private SpriteRenderer body03Renderer;
+
+        [Tooltip("Body03 各阶段图片：[0]=阶段一，[1]=阶段二，[2]=阶段三")]
+        [SerializeField] private Sprite[] body03PhaseSprites = new Sprite[3];
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 · Body03 材质颜色（HDR _Color）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("Body03 材质颜色 (WobblyLiquidSprite Shader → _Color，HDR)")]
+        [Tooltip("待机岩浆颜色（橙色，低亮）")]
+        [ColorUsage(true, true)]
+        [SerializeField] private Color body03IdleColor = new Color(2.0f, 0.72f, 0.08f, 1f);
+
+        [Tooltip("待机呼吸最低亮度（IdleColor 乘以此系数得到最暗值，0~1）")]
+        [Range(0.3f, 0.9f)]
+        [SerializeField] private float body03IdlePulseMin = 0.55f;
+
+        [Tooltip("Idle 呼吸脉冲周期（秒）")]
+        [SerializeField] private float body03IdlePulsePeriod = 2.5f;
+
+        [Tooltip("冲撞前摇：颜色渐变目标（橙红）")]
+        [ColorUsage(true, true)]
+        [SerializeField] private Color body03ChargeTelegraphColor = new Color(3.5f, 0.25f, 0.04f, 1f);
+
+        [Tooltip("冲撞中（霸体期）颜色（深红）")]
+        [ColorUsage(true, true)]
+        [SerializeField] private Color body03ChargeActiveColor = new Color(4.5f, 0.08f, 0.04f, 1f);
+
+        [Tooltip("绝境碾压激光角力颜色（白炽）")]
+        [ColorUsage(true, true)]
+        [SerializeField] private Color body03PressColor = new Color(6f, 4.8f, 3.2f, 1f);
+
+        [Tooltip("汲取融合召唤时颜色（能量外放，变暗）")]
+        [ColorUsage(true, true)]
+        [SerializeField] private Color body03SummonColor = new Color(0.8f, 0.28f, 0.04f, 1f);
+
+        [Tooltip("Body03 颜色插值速度（值越大，颜色切换越快）")]
+        [SerializeField] private float body03LerpSpeed = 2.5f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 · 待机沉重呼吸
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("待机动画 · 沉重呼吸缩放")]
+        [Tooltip("Scale 幅度（值越小越微妙，推荐 0.01~0.02）")]
+        [SerializeField] private float breathingAmplitude = 0.015f;
+
+        [Tooltip("呼吸周期（秒，推荐 3.5~5）")]
+        [SerializeField] private float breathingPeriod = 4f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 · 移动震动（VisualRoot）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("移动动画 · VisualRoot 身体震动")]
+        [Tooltip("预制体中 VisualRoot 子节点（包裹 Body/Body02/Body03/Eyes）")]
+        [SerializeField] private Transform visualRoot;
+
+        [Tooltip("震动幅度（世界单位，推荐 0.02~0.04）")]
+        [SerializeField] private float moveShakeAmplitude = 0.025f;
+
+        [Tooltip("震动频率（Perlin 采样速度，推荐 15~22）")]
+        [SerializeField] private float moveShakeSpeed = 18f;
+
+        [Tooltip("停止时屏幕冲击震强度")]
+        [SerializeField] private float stopImpactIntensity = 0.12f;
+
+        [Tooltip("停止时屏幕冲击震持续时长")]
+        [SerializeField] private float stopImpactDuration = 0.35f;
+
+        [Tooltip("移动判定阈值（每帧位移低于此值视为停止）")]
+        [SerializeField] private float moveThreshold = 0.005f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 · 火山口粒子
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("火山口粒子（Body03 顶部子节点）")]
+        [Tooltip("火山口粒子系统（CraterParticles 子节点）")]
+        [SerializeField] private ParticleSystem craterParticles;
+
+        [Tooltip("阶段一 发射速率（颗/秒）")]
+        [SerializeField] private float craterEmissionPhase1 = 10f;
+
+        [Tooltip("阶段二 发射速率")]
+        [SerializeField] private float craterEmissionPhase2 = 18f;
+
+        [Tooltip("阶段三 发射速率")]
+        [SerializeField] private float craterEmissionPhase3 = 30f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 · 阶段切换屏幕震动
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("阶段切换 · 屏幕震动")]
+        [Tooltip("阶段一→二震动强度")]
+        [SerializeField] private float phase2TransitionShakeIntensity = 0.2f;
+
+        [Tooltip("阶段一→二震动时长")]
+        [SerializeField] private float phase2TransitionShakeDuration = 0.5f;
+
+        [Tooltip("阶段二→三震动强度")]
+        [SerializeField] private float phase3TransitionShakeIntensity = 0.35f;
+
+        [Tooltip("阶段二→三震动时长")]
+        [SerializeField] private float phase3TransitionShakeDuration = 0.8f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置 · 眼睛阶段三颜色
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("眼睛颜色 · 阶段三（红色）")]
+        [Tooltip("阶段三眼睛闭眼颜色（暗红）")]
+        [SerializeField] private Color eyePhase3ClosedColor = new Color(0.35f, 0.04f, 0.04f, 1f);
+
+        [Tooltip("阶段三眼睛睁眼颜色（亮红）")]
+        [SerializeField] private Color eyePhase3OpenColor  = new Color(1.0f, 0.08f, 0.04f, 1f);
+
+        [Tooltip("阶段三眼睛颜色过渡时长（秒）")]
+        [SerializeField] private float eyePhase3TintDuration = 0.6f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // ══ VFX 预留接口 ══════════════════════════════════════
+        // 将对应 VFX 预制体拖入此处；留空时自动跳过，不会报错
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("━━ VFX 预留接口 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")]
+        [Tooltip("【阶段一→二】切换特效（留空=暂不播放）")]
+        [SerializeField] private GameObject vfxPhase2Transition;
+
+        [Tooltip("【阶段二→三】切换特效（留空=暂不播放）")]
+        [SerializeField] private GameObject vfxPhase3Transition;
+
+        [Tooltip("【汲取融合】吸收小怪时特效（在Boss位置播放；留空=暂不播放）")]
+        [SerializeField] private GameObject vfxAbsorbSlime;
+
+        [Tooltip("【陨石喷发】顶部发射特效（在Body03位置播放；留空=暂不播放）")]
+        [SerializeField] private GameObject vfxMeteorBurst;
+
+        [Tooltip("【绝境碾压】激光角力开始特效（留空=暂不播放）")]
+        [SerializeField] private GameObject vfxDesperatePressStart;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // ══ SFX 预留接口 ══════════════════════════════════════
+        // 将对应 AudioClip 拖入此处；留空时自动跳过，不会报错
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("━━ SFX 预留接口 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")]
+        [Tooltip("【陨石发射】每颗陨石飞出时的音效（留空=静默）")]
+        [SerializeField] private AudioClip sfxMeteorLaunch;
+
+        [Tooltip("【汲取融合】吸收小怪时的音效（留空=静默）")]
+        [SerializeField] private AudioClip sfxAbsorbSlime;
+
+        [Tooltip("【阶段切换】阶段过渡时的爆裂音效（留空=静默）")]
+        [SerializeField] private AudioClip sfxPhaseTransition;
+
+        [Tooltip("【绝境碾压】激光角力开始时的音效（留空=静默）")]
+        [SerializeField] private AudioClip sfxDesperatePressStart;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         // 阶段
-        private int currentPhase = 1;
-        private bool phase3Triggered = false;
+        private int  currentPhase     = 1;
+        private bool phase3Triggered  = false;
 
         // 陨石被动计时
         private float meteorTimer = 0f;
@@ -106,59 +291,236 @@ namespace LightVsDecay.Logic.Boss
             new List<LightVsDecay.Logic.Enemy.EnemyBlob>();
         private int absorptionStacks = 0;
 
-        // 绝境碾压轮次
-        private int desperatePressRoundsDone = 0;
+        // 绝境碾压
+        private int   desperatePressRoundsDone = 0;
+        private float pressFireballTimer       = 0f;
 
-        // 绝境碾压火球计时
-        private float pressFireballTimer = 0f;
+        // Body03 材质实例与动画
+        private Material body03MatInstance;
+        private Color    body03CurrentColor;
+        private Color    body03TargetColor;
+        private bool     isChargeTelegraph; // 当前帧是否处于冲撞前摇
+
+        // 待机呼吸缩放
+        private Vector3 breathingBaseScale;
+
+        // 移动检测（用于停止冲击震）
+        private Vector3 prevPosition;
+        private bool    wasMoving;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // BaseBossController 钩子实现
+        // 初始化
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         protected override void OnBossInitialized()
         {
-            currentPhase = 1;
-            phase3Triggered = false;
-            absorptionStacks = 0;
+            // —— 重置运行时状态 ——
+            currentPhase             = 1;
+            phase3Triggered          = false;
+            absorptionStacks         = 0;
             desperatePressRoundsDone = 0;
-            meteorTimer = 0f;
-            pressFireballTimer = 0f;
+            meteorTimer              = 0f;
+            pressFireballTimer       = 0f;
             summonedSlimes.Clear();
+
+            // —— 缓存呼吸基准缩放 ——
+            breathingBaseScale = transform.localScale;
+
+            // —— 缓存移动初始位置 ——
+            prevPosition = transform.position;
+            wasMoving    = false;
+
+            // —— Body03 材质实例化（避免修改共享材质） ——
+            if (body03Renderer != null)
+            {
+                // 调用 .material 时 Unity 自动创建独立实例
+                body03MatInstance  = body03Renderer.material;
+                body03CurrentColor = body03IdleColor;
+                body03TargetColor  = body03IdleColor;
+                body03MatInstance.SetColor("_Color", body03CurrentColor);
+            }
+
+            // —— 应用阶段一外观 ——
+            ApplyPhaseSprites(1);
+
+            // —— 启动火山口粒子 ——
+            SetCraterEmissionRate(craterEmissionPhase1);
+            if (craterParticles != null && !craterParticles.isPlaying)
+                craterParticles.Play();
+
+            // —— 排除 Body03 不受冰冻蓝色染色影响 ——
+            // Body03 使用 WobblyLiquidSprite HDR Shader，蓝色顶点色乘橙色会产生
+            // 难看的灰绿色。仅对 Body01/Body02 应用冰冻 tint，保留 Body03 材质原貌。
+            if (frostDebuff != null && body03Renderer != null && bodyRenderers != null)
+            {
+                var filtered = System.Array.FindAll(bodyRenderers, r => r != null && r != body03Renderer);
+                frostDebuff.SetTargetRenderers(filtered);
+            }
+
+            if (showDebugInfo)
+                GameLogger.Log("[VolcanoBoss] 初始化完成");
         }
 
-        // ── 阶段检测（每帧在 OnExtraUpdate 中刷新）──────────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 状态机钩子（重写 EnterState / ExitState 拦截状态切换）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        protected override void EnterState(BossState state)
+        {
+            base.EnterState(state);
+            OnVolcanoEnterState(state);
+        }
+
+        protected override void ExitState(BossState state)
+        {
+            OnVolcanoExitState(state);
+            base.ExitState(state);
+        }
+
+        private void OnVolcanoEnterState(BossState state)
+        {
+            switch (state)
+            {
+                case BossState.Idle:
+                    body03TargetColor = body03IdleColor; // 回到岩浆橙色
+                    break;
+
+                case BossState.Charge:
+                    // 前摇期颜色在 UpdateBody03Color 中按时间渐变
+                    // 此处设为起始值，防止从上一个状态直接跳变
+                    body03TargetColor = body03IdleColor;
+                    break;
+
+                case BossState.Summon:
+                    body03TargetColor = body03SummonColor; // 能量外放，变暗
+                    break;
+
+                case BossState.Press:
+                    body03TargetColor = body03PressColor;  // 白炽化
+                    // —— VFX 预留 ——
+                    PlayVFXAtSelf(vfxDesperatePressStart);
+                    // —— SFX 预留 ——
+                    PlaySFX(sfxDesperatePressStart);
+                    break;
+
+                case BossState.Stun:
+                case BossState.Frozen:
+                    // 保持当前颜色，不做切换
+                    break;
+            }
+        }
+
+        private void OnVolcanoExitState(BossState state)
+        {
+            // 离开 Charge 时颜色回归 Idle（下一个 EnterState 会再设置）
+            if (state == BossState.Charge)
+                body03TargetColor = body03IdleColor;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 每帧更新（OnExtraUpdate 由 BaseBossController.Update 调用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         protected override void OnExtraUpdate()
         {
             UpdatePhase();
             CheckAbsorption();
+            UpdateBody03Color();
+            UpdateBreathingScale();
+            UpdateMoveShake();
         }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 阶段管理
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private void UpdatePhase()
         {
             float hp = HealthPercent;
 
-            // 阶段三触发（仅触发一次，进入后不退出）
+            // 阶段三（仅触发一次）
             if (!phase3Triggered && hp <= desperatePressThreshold)
             {
                 phase3Triggered = true;
-                currentPhase = 3;
-                if (showDebugInfo)
-                    GameLogger.Log("[VolcanoBoss] 进入阶段三：绝境碾压！");
-                // 中断当前行为，强制进入 Press
+                currentPhase    = 3;
+                OnEnterPhase3();
                 InterruptCharge();
-                ForceStun(); // 短暂硬直后自动进入 Idle → ChooseActiveSkill → Press
+                ForceStun();
+                return;
             }
-            else if (currentPhase < 2 && hp <= 0.7f)
+
+            // 阶段二
+            if (currentPhase < 2 && hp <= 0.7f)
             {
                 currentPhase = 2;
-                if (showDebugInfo)
-                    GameLogger.Log("[VolcanoBoss] 进入阶段二：熔炉爆发！");
+                OnEnterPhase2();
             }
         }
 
-        // ── 被动：陨石喷发 ───────────────────────────────────────
+        private void OnEnterPhase2()
+        {
+            if (showDebugInfo) GameLogger.Log("[VolcanoBoss] ── 进入阶段二：熔炉爆发 ──");
+
+            // 换图
+            ApplyPhaseSprites(2);
+
+            // 粒子加强
+            SetCraterEmissionRate(craterEmissionPhase2);
+
+            // 屏幕震动
+            CameraShake.Instance?.Shake(phase2TransitionShakeIntensity, phase2TransitionShakeDuration);
+
+            // —— VFX 预留 ——
+            // 接入方式：将阶段切换特效预制体拖入 Inspector → vfxPhase2Transition
+            PlayVFXAtSelf(vfxPhase2Transition);
+
+            // —— SFX 预留 ——
+            // 接入方式：将阶段切换音效拖入 Inspector → sfxPhaseTransition
+            PlaySFX(sfxPhaseTransition);
+        }
+
+        private void OnEnterPhase3()
+        {
+            if (showDebugInfo) GameLogger.Log("[VolcanoBoss] ── 进入阶段三：绝境碾压 ──");
+
+            // 换图
+            ApplyPhaseSprites(3);
+
+            // 粒子最强
+            SetCraterEmissionRate(craterEmissionPhase3);
+
+            // 屏幕强震
+            CameraShake.Instance?.Shake(phase3TransitionShakeIntensity, phase3TransitionShakeDuration);
+
+            // 眼睛变红（调用 BossEyeController.SetTintColor）
+            if (eyeController != null)
+                eyeController.SetTintColor(eyePhase3ClosedColor, eyePhase3OpenColor, eyePhase3TintDuration);
+
+            // —— VFX 预留 ——
+            // 接入方式：将阶段三切换特效预制体拖入 Inspector → vfxPhase3Transition
+            PlayVFXAtSelf(vfxPhase3Transition);
+
+            // —— SFX 预留 ——
+            PlaySFX(sfxPhaseTransition);
+        }
+
+        /// <summary>将 Body02 / Body03 切换为指定阶段的图片（1/2/3）</summary>
+        private void ApplyPhaseSprites(int phase)
+        {
+            int idx = Mathf.Clamp(phase - 1, 0, 2);
+
+            if (body02Renderer != null && body02PhaseSprites != null
+                && idx < body02PhaseSprites.Length && body02PhaseSprites[idx] != null)
+                body02Renderer.sprite = body02PhaseSprites[idx];
+
+            if (body03Renderer != null && body03PhaseSprites != null
+                && idx < body03PhaseSprites.Length && body03PhaseSprites[idx] != null)
+                body03Renderer.sprite = body03PhaseSprites[idx];
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 被动：陨石喷发（Idle 期间持续计时）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         protected override void OnEnterIdle()
         {
@@ -183,35 +545,67 @@ namespace LightVsDecay.Logic.Boss
                 yield break;
             }
 
-            // 查找玩家塔位置
-            GameObject towerGO = GameObject.FindGameObjectWithTag("Tower");
-            Vector3 towerPos = towerGO != null ? towerGO.transform.position : Vector3.zero;
+            // Body03 白炽化蓄力（1.5s 前摇）
+            float telegraphTime = 1.5f;
+            float elapsed       = 0f;
+            Color startColor    = body03CurrentColor;
 
-            for (int i = 0; i < meteorCount; i++)
+            while (elapsed < telegraphTime)
             {
-                // 在塔周围随机落点（但偏移量确保有意义的散布）
-                float angle = (360f / meteorCount) * i + Random.Range(-30f, 30f);
-                float dist  = Random.Range(0.5f, meteorSpreadRadius);
-                Vector2 offset = Quaternion.Euler(0, 0, angle) * Vector2.up * dist;
-                Vector3 targetPos = towerPos + (Vector3)offset;
-
-                GameObject go = Instantiate(meteorPrefab, targetPos + Vector3.up * 12f, Quaternion.identity);
-                var meteor = go.GetComponent<VolcanoMeteor>();
-                if (meteor != null)
-                    meteor.Launch(targetPos);
-
-                yield return new WaitForSeconds(0.4f); // 陨石之间错开 0.4s
+                elapsed += Time.deltaTime;
+                float t = elapsed / telegraphTime;
+                // 蓄力期间 body03TargetColor 向白炽方向推进
+                body03TargetColor = Color.Lerp(startColor, body03PressColor, t);
+                yield return null;
             }
 
+            // 查找玩家塔位置
+            GameObject towerGO = GameObject.FindGameObjectWithTag("Tower");
+            Vector3    towerPos = towerGO != null ? towerGO.transform.position : Vector3.zero;
+
+            // 发射陨石
+            for (int i = 0; i < meteorCount; i++)
+            {
+                float angle  = (360f / meteorCount) * i + Random.Range(-30f, 30f);
+                float dist   = Random.Range(0.5f, meteorSpreadRadius);
+                Vector2 off  = Quaternion.Euler(0, 0, angle) * Vector2.up * dist;
+                Vector3 tgt  = towerPos + (Vector3)off;
+
+                GameObject go = Instantiate(meteorPrefab, tgt + Vector3.up * 12f, Quaternion.identity);
+                var meteor = go.GetComponent<VolcanoMeteor>();
+                if (meteor != null) meteor.Launch(tgt);
+
+                // —— Body03 每颗陨石发射时闪光（脉冲）——
+                body03TargetColor = body03PressColor * 1.3f; // 短暂超亮
+
+                // —— VFX 预留 ——
+                // 接入方式：将陨石发射特效预制体拖入 Inspector → vfxMeteorBurst
+                // 该特效会在 Body03 位置播放
+                Vector3 body03Pos = body03Renderer != null
+                    ? body03Renderer.transform.position
+                    : transform.position;
+                PlayVFXAt(vfxMeteorBurst, body03Pos);
+
+                // —— SFX 预留 ——
+                // 接入方式：将陨石音效拖入 Inspector → sfxMeteorLaunch
+                PlaySFX(sfxMeteorLaunch);
+
+                yield return new WaitForSeconds(0.4f);
+            }
+
+            // 结束后 Body03 颜色回到 Idle
+            body03TargetColor = body03IdleColor;
+
             if (showDebugInfo)
-                GameLogger.Log($"[VolcanoBoss] 陨石喷发：{meteorCount} 颗");
+                GameLogger.Log($"[VolcanoBoss] 陨石喷发 {meteorCount} 颗");
         }
 
-        // ── 主动技能选择 ─────────────────────────────────────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 主动技能选择
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         protected override void ChooseActiveSkill()
         {
-            // 阶段三：全部走 Press（绝境碾压）
             if (phase3Triggered)
             {
                 if (desperatePressRoundsDone < desperatePressRounds)
@@ -221,29 +615,30 @@ namespace LightVsDecay.Logic.Boss
                 }
                 else
                 {
-                    // 全部轮次完成，回到普通行为
                     phase3Triggered = false;
                     ChangeState(BossState.Idle);
                 }
                 return;
             }
 
-            // 阶段一/二：随机 Charge / Summon（不用 Press）
-            float roll = Random.value;
-            if (roll < 0.5f)
+            // 阶段一/二：50% Charge / 50% Summon
+            if (Random.value < 0.5f)
                 ChangeState(BossState.Charge);
             else
                 ChangeState(BossState.Summon);
         }
 
-        // ── 汲取融合：召唤行为 ───────────────────────────────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 汲取融合：召唤
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         protected override IEnumerator ExecuteSummonBehavior()
         {
             summonedSlimes.RemoveAll(e => e == null || e.IsDead);
 
-            // 汲取融合全部召唤自爆岩浆怪（LavaExploder）
-            int totalCount = (currentPhase >= 2) ? summonCountPhase2 : summonCountPhase1;
+            int totalCount  = (currentPhase >= 2) ? summonCountPhase2 : summonCountPhase1;
+            float angleStep = totalCount > 0 ? 360f / totalCount : 0f;
+            float spawnRadius = 4f;
 
             if (EnemyPoolManager.Instance == null)
             {
@@ -251,27 +646,42 @@ namespace LightVsDecay.Logic.Boss
                 yield break;
             }
 
-            // 围绕 Boss 生成，均匀角度分布
-            float angleStep = totalCount > 0 ? 360f / totalCount : 0f;
-            float spawnRadius = 4f;
+            // 缓存 Boss 自身碰撞体，用于忽略与粘液怪的物理碰撞
+            Collider2D bossCol = GetComponent<Collider2D>();
+
+            // 吸收目标：优先使用 absorptionPoint，未配置则退回 Boss 根节点
+            Transform absTarget = (absorptionPoint != null) ? absorptionPoint : this.transform;
 
             for (int i = 0; i < totalCount; i++)
             {
-                float angle = angleStep * i;
-                Vector2 offset = Quaternion.Euler(0, 0, angle) * Vector2.up * spawnRadius;
-                var enemy = EnemyPoolManager.Instance.Spawn(
-                    EnemyType.LavaExploder, transform.position + (Vector3)offset);
+                float   angle    = angleStep * i;
+                Vector2 offset   = Quaternion.Euler(0, 0, angle) * Vector2.up * spawnRadius;
+                Vector3 spawnPos = transform.position + (Vector3)offset;
+
+                var enemy = EnemyPoolManager.Instance.Spawn(EnemyType.LavaSlime, spawnPos);
                 if (enemy != null)
+                {
+                    // 让粘液怪向火山口吸收点移动
+                    enemy.SetOverrideTarget(absTarget);
+
+                    // 忽略 Boss ↔ 粘液怪 的物理碰撞，防止粘液怪推飞 Boss
+                    Collider2D slimeCol = enemy.GetComponent<Collider2D>();
+                    if (bossCol != null && slimeCol != null)
+                        Physics2D.IgnoreCollision(bossCol, slimeCol, true);
+
                     summonedSlimes.Add(enemy);
+                }
             }
 
             if (showDebugInfo)
-                GameLogger.Log($"[VolcanoBoss] 汲取融合：召唤 {totalCount} 只自爆岩浆怪");
+                GameLogger.Log($"[VolcanoBoss] 汲取融合：召唤 {totalCount} 只 LavaSlime");
 
             yield break;
         }
 
-        // ── 汲取融合：吸收检测（每帧）───────────────────────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 汲取融合：吸收检测（每帧）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private void CheckAbsorption()
         {
@@ -286,8 +696,9 @@ namespace LightVsDecay.Logic.Boss
                     continue;
                 }
 
-                float dist = Vector2.Distance(transform.position, slime.transform.position);
-                if (dist <= absorptionRadius)
+                // 以 absorptionPoint 为检测中心（未配置时退回 Boss 根节点）
+                Vector3 checkCenter = (absorptionPoint != null) ? absorptionPoint.position : transform.position;
+                if (Vector2.Distance(checkCenter, slime.transform.position) <= absorptionRadius)
                 {
                     AbsorbSlime(slime);
                     summonedSlimes.RemoveAt(i);
@@ -297,60 +708,67 @@ namespace LightVsDecay.Logic.Boss
 
         private void AbsorbSlime(LightVsDecay.Logic.Enemy.EnemyBlob slime)
         {
-            // 静默吸收（无经验/金币）
             slime.AbsorbedByBoss();
 
             // 回血
             if (bossHealth != null)
                 bossHealth.HealHP(absorptionHealPerSlime);
 
-            // 永久攻击力叠层（上限6层）
+            // 攻击力叠层（体现为受到伤害减免，见 GetLinkedBuffDamageMultiplier）
             if (absorptionStacks < absorptionMaxStacks)
-            {
                 absorptionStacks++;
-            }
+
+            // Body03 吸收脉冲
+            body03TargetColor = body03IdleColor * 1.8f; // 短暂爆亮
+
+            // —— VFX 预留 ——
+            // 接入方式：将吸收特效预制体拖入 Inspector → vfxAbsorbSlime
+            PlayVFXAtSelf(vfxAbsorbSlime);
+
+            // —— SFX 预留 ——
+            // 接入方式：将吸收音效拖入 Inspector → sfxAbsorbSlime
+            PlaySFX(sfxAbsorbSlime);
 
             if (showDebugInfo)
-                GameLogger.Log($"[VolcanoBoss] 吸收一只！回血 {absorptionHealPerSlime}，攻击层数: {absorptionStacks}/{absorptionMaxStacks}");
+                GameLogger.Log($"[VolcanoBoss] 吸收！回血 {absorptionHealPerSlime}，层数: {absorptionStacks}/{absorptionMaxStacks}");
         }
 
-        // ── 连体Buff：汲取融合攻击加成转为防御减免（对称设计）──
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 汲取融合 Buff：受伤减免倍率（每层 -3%，上限 -18%）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         public override float GetLinkedBuffDamageMultiplier()
         {
-            // 吸收层数越高，Boss 受到的伤害越少（每层减 3%，上限 -18%）
-            float reductionPerStack = 0.03f;
-            return Mathf.Max(0.1f, 1f - absorptionStacks * reductionPerStack);
+            return Mathf.Max(0.1f, 1f - absorptionStacks * 0.03f);
         }
 
-        // ── 火山冲撞：冲撞路径生成岩浆隔离带 ───────────────────
-
-        protected override void OnChargeDashComplete(Vector3 startPos, Vector3 endPos)
-        {
-            if (EnemyPoolManager.Instance == null) return;
-
-            float pathLength = Vector3.Distance(startPos, endPos);
-            int puddleCount = Mathf.Max(1, Mathf.RoundToInt(pathLength / chargeTrailSpacing));
-
-            for (int i = 0; i <= puddleCount; i++)
-            {
-                float t = puddleCount > 0 ? (float)i / puddleCount : 0f;
-                Vector3 pos = Vector3.Lerp(startPos, endPos, t);
-                EnemyPoolManager.Instance.Spawn(EnemyType.LavaPuddle, pos);
-            }
-
-            if (showDebugInfo)
-                GameLogger.Log($"[VolcanoBoss] 火山冲撞：路径生成 {puddleCount + 1} 个岩浆水坑");
-        }
-
-        // ── 熔岩冲撞：冲撞速度随阶段提升 ───────────────────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 火山冲撞：速度倍率
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         protected override float GetChargeSpeedMultiplier()
         {
             return currentPhase >= 2 ? 1.2f : 1f;
         }
 
-        // ── 绝境碾压：角力期间每2秒向两侧喷射2发火球 ──────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 火山冲撞：冲撞完成（路径拖尾预留）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        protected override void OnChargeDashComplete(Vector3 startPos, Vector3 endPos)
+        {
+            // 冲撞路径熔浆拖尾暂时移除（椭圆水坑形状与冲撞路径视觉不匹配）
+            // —— VFX 预留 ——
+            // TODO：待熔浆拖尾粒子特效资产完成后，在此处接入。
+            // 参考接入方式：在路径上按间隔实例化拖尾特效，而非 LavaPuddle。
+
+            if (showDebugInfo)
+                GameLogger.Log("[VolcanoBoss] 火山冲撞完成（拖尾待接入粒子特效）");
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 绝境碾压：角力期间每 2s 向两侧喷射裂缝火球
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         protected override void OnPressTick(float deltaTime)
         {
@@ -367,8 +785,10 @@ namespace LightVsDecay.Logic.Boss
             FirePressBall(Vector2.left);
             FirePressBall(Vector2.right);
 
-            if (showDebugInfo)
-                GameLogger.Log("[VolcanoBoss] 绝境碾压：喷射2发裂缝火球");
+            // Press 火球喷射时 Body03 同步脉冲
+            body03TargetColor = body03PressColor * 1.4f;
+
+            if (showDebugInfo) GameLogger.Log("[VolcanoBoss] 绝境碾压：喷射裂缝火球×2");
         }
 
         private void FirePressBall(Vector2 direction)
@@ -376,8 +796,153 @@ namespace LightVsDecay.Logic.Boss
             GameObject go = Instantiate(pressFireballPrefab, transform.position, Quaternion.identity);
             var proj = go.GetComponent<LightVsDecay.Logic.Enemy.LavaProjectile>();
             if (proj != null)
-                proj.Initialize(direction, pressFireballSpeed, pressFireballDamage,
-                                hp: 999f, lifetime: 5f); // 火球不被击落，5秒后消失
+                proj.Initialize(direction, pressFireballSpeed, pressFireballDamage, hp: 999f, lifetime: 5f);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Body03 材质颜色动画
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void UpdateBody03Color()
+        {
+            if (body03MatInstance == null) return;
+
+            // 根据状态覆写 TargetColor（部分状态在 OnVolcanoEnterState 中已设置，
+            // 此处补充需要每帧动态计算的情况）
+            switch (CurrentState)
+            {
+                case BossState.Idle:
+                case BossState.Spawn:
+                    // 岩浆呼吸脉冲：在 IdleColor 最低亮度和原始亮度之间 Sin 振荡
+                    float pulse = (Mathf.Sin(Time.time * (Mathf.PI * 2f / body03IdlePulsePeriod)) + 1f) * 0.5f;
+                    float mult  = Mathf.Lerp(body03IdlePulseMin, 1.0f, pulse);
+                    body03TargetColor = body03IdleColor * mult;
+                    break;
+
+                case BossState.Charge:
+                    // 前摇期：IsInChargeTelegraph = true（基类暴露的属性）
+                    if (IsInChargeTelegraph)
+                    {
+                        // 前摇持续时间从 config 中读取，平滑插值到蓄力红色
+                        float telegraphDur = config != null ? config.chargeTelegraphDuration : 1.2f;
+                        // 用 stateTimer 近似：观察 body03CurrentColor 与目标的距离
+                        // 直接将 target 设为 ChargeTelegraphColor，由 Lerp 速度控制过渡快慢
+                        body03TargetColor = body03ChargeTelegraphColor;
+                    }
+                    else
+                    {
+                        // 实际冲撞中（霸体期）：深红维持
+                        body03TargetColor = body03ChargeActiveColor;
+                    }
+                    break;
+
+                case BossState.Press:
+                    // Press 期间 target 在 PressColor 附近振荡（由 OnPressTick 脉冲覆写，
+                    // 脉冲过后此处将 target 拉回 PressColor）
+                    body03TargetColor = Color.Lerp(body03TargetColor, body03PressColor,
+                                                    Time.deltaTime * body03LerpSpeed * 2f);
+                    break;
+
+                case BossState.Summon:
+                    body03TargetColor = body03SummonColor;
+                    break;
+                // Stun / Frozen：保持当前目标颜色，不额外操作
+            }
+
+            // 每帧 Lerp：body03CurrentColor → body03TargetColor
+            body03CurrentColor = Color.Lerp(body03CurrentColor, body03TargetColor,
+                                             Time.deltaTime * body03LerpSpeed);
+            body03MatInstance.SetColor("_Color", body03CurrentColor);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 待机沉重呼吸缩放（Scale 极小幅度膨胀）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void UpdateBreathingScale()
+        {
+            // 只在非冲撞/非Press时呼吸（冲撞期间 Boss 有蓄力缩放，不要叠加）
+            if (CurrentState == BossState.Charge || CurrentState == BossState.Press) return;
+
+            float freq   = Mathf.PI * 2f / breathingPeriod;
+            float breath = (Mathf.Sin(Time.time * freq) + 1f) * 0.5f; // 0~1
+
+            // X 幅度约为 Y 的一半，营造"气压鼓起"而非均匀膨胀的效果
+            float scaleX = breathingBaseScale.x * (1f + breathingAmplitude * 0.6f * breath);
+            float scaleY = breathingBaseScale.y * (1f + breathingAmplitude * breath);
+            transform.localScale = new Vector3(scaleX, scaleY, breathingBaseScale.z);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 移动震动与停止冲击震
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void UpdateMoveShake()
+        {
+            if (visualRoot == null) return;
+
+            // 检测本帧是否在移动
+            float moved  = Vector3.Distance(transform.position, prevPosition);
+            bool isMoving = moved > moveThreshold;
+
+            if (isMoving)
+            {
+                // PerlinNoise 采样：X / Y 用不同种子偏移避免同向
+                float shakeX = (Mathf.PerlinNoise(Time.time * moveShakeSpeed, 0f)        - 0.5f) * 2f * moveShakeAmplitude;
+                float shakeY = (Mathf.PerlinNoise(0f,        Time.time * moveShakeSpeed + 3.7f) - 0.5f) * 2f * moveShakeAmplitude * 0.6f;
+                visualRoot.localPosition = new Vector3(shakeX, shakeY, 0f);
+            }
+            else
+            {
+                // 停止：localPosition 归零
+                visualRoot.localPosition = Vector3.MoveTowards(
+                    visualRoot.localPosition, Vector3.zero, Time.deltaTime * 0.1f);
+
+                // 刚刚停下来时触发冲击震
+                if (wasMoving && !isMoving)
+                {
+                    CameraShake.Instance?.ImpactShake(Vector2.down, stopImpactIntensity, stopImpactDuration);
+                }
+            }
+
+            wasMoving    = isMoving;
+            prevPosition = transform.position;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 火山口粒子：发射速率设置
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void SetCraterEmissionRate(float rate)
+        {
+            if (craterParticles == null) return;
+            var emission = craterParticles.emission;
+            emission.rateOverTime = rate;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // VFX / SFX 辅助方法
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>在 Boss 自身位置播放 VFX（prefab 为 null 时静默）</summary>
+        private void PlayVFXAtSelf(GameObject prefab)
+        {
+            if (prefab == null) return;
+            Instantiate(prefab, transform.position, Quaternion.identity);
+        }
+
+        /// <summary>在指定位置播放 VFX（prefab 为 null 时静默）</summary>
+        private void PlayVFXAt(GameObject prefab, Vector3 position)
+        {
+            if (prefab == null) return;
+            Instantiate(prefab, position, Quaternion.identity);
+        }
+
+        /// <summary>播放一次性 SFX（clip 为 null 时静默）</summary>
+        private void PlaySFX(AudioClip clip)
+        {
+            if (clip == null) return;
+            AudioManager.Instance?.PlaySFX(clip);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -389,11 +954,12 @@ namespace LightVsDecay.Logic.Boss
         {
             base.OnGUI();
             if (!showDebugInfo) return;
-            GUILayout.BeginArea(new Rect(10, 460, 300, 100));
+            GUILayout.BeginArea(new Rect(10, 460, 320, 120));
             GUILayout.Label("=== Ch2 熔炉巨兽 ===");
             GUILayout.Label($"阶段: {currentPhase}  |  汲取层数: {absorptionStacks}/{absorptionMaxStacks}");
-            GUILayout.Label($"待吸收小怪: {summonedSlimes.Count}  |  绝境碾压轮次: {desperatePressRoundsDone}/{desperatePressRounds}");
+            GUILayout.Label($"待吸收小怪: {summonedSlimes.Count}  |  碾压轮次: {desperatePressRoundsDone}/{desperatePressRounds}");
             GUILayout.Label($"陨石计时: {meteorTimer:F1}s / {meteorInterval}s");
+            GUILayout.Label($"Body03颜色: R={body03CurrentColor.r:F1} G={body03CurrentColor.g:F1} B={body03CurrentColor.b:F1}");
             GUILayout.EndArea();
         }
 #endif

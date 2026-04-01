@@ -75,9 +75,10 @@ namespace LightVsDecay.Logic.Enemy
         // 配置（从 EnemyData 读取）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private float stopYPercent    = 0.35f;
-        private float shootInterval   = 5f;
-        private float repositionRange = 2f;
+        private float stopYPercent      = 0.35f;
+        private float maxDistFromTower  = 6.5f;
+        private float shootInterval     = 5f;
+        private float repositionRange   = 2f;
         private GameObject projectilePrefab;
         private float projectileSpeed    = 5f;
         private int   projectileDamage   = 65;
@@ -162,6 +163,7 @@ namespace LightVsDecay.Logic.Enemy
             if (data == null) return;
 
             stopYPercent      = data.gunnerStopYPercent;
+            maxDistFromTower  = data.gunnerMaxDistFromTower;
             shootInterval     = data.gunnerShootInterval;
             repositionRange   = data.gunnerRepositionRange;
             projectilePrefab  = data.gunnerProjectilePrefab;
@@ -180,6 +182,16 @@ namespace LightVsDecay.Logic.Enemy
             else
             {
                 targetWorldY = 3f;
+            }
+
+            // 用光棱塔 Y + 最大允许距离来硬性限制停驻高度，
+            // 防止炮手超出激光射程。
+            Transform tower = blob.TargetTower;
+            if (tower != null)
+            {
+                float yLimit = tower.position.y + maxDistFromTower;
+                if (targetWorldY > yLimit)
+                    targetWorldY = yLimit;
             }
 
             targetWorldX = transform.position.x;

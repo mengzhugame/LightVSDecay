@@ -228,6 +228,10 @@ namespace LightVsDecay.Data.SO
         [Range(0.1f, 0.9f)]
         public float gunnerStopYPercent = 0.6f;
 
+        [Tooltip("距光棱塔的最大 Y 轴距离（世界单位）。炮手不会停在超过此距离的位置，防止激光射程不够。建议设为激光最大长度 × 0.85")]
+        [Min(1f)]
+        public float gunnerMaxDistFromTower = 6.5f;
+
         [Tooltip("射击间隔（秒）")]
         [Min(1f)]
         public float gunnerShootInterval = 8f;

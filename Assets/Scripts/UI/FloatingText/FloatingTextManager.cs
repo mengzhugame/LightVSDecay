@@ -144,6 +144,8 @@ namespace LightVsDecay.UI.FloatingText
             // 预热主要类型
             PrewarmType(FloatingTextType.Normal, config.prewarmCount / 2);
             PrewarmType(FloatingTextType.Crit, config.prewarmCount / 4);
+            PrewarmType(FloatingTextType.Chain, 8);       // 连锁闪电可能多跳，多备几个
+            PrewarmType(FloatingTextType.Explosion, 4);
             PrewarmType(FloatingTextType.BossShield, 5);
             PrewarmType(FloatingTextType.BossCore, 5);
             // 预热玩家受击飘字类型
@@ -235,6 +237,26 @@ namespace LightVsDecay.UI.FloatingText
             Show(worldPosition, text, type);
         }
         
+        /// <summary>
+        /// 显示连锁闪电伤害飘字（电弧黄，暴击时升级为 Crit 样式）
+        /// </summary>
+        public void ShowChainDamage(Vector3 worldPosition, float damage, bool isCrit = false)
+        {
+            FloatingTextType type = isCrit ? FloatingTextType.Crit : FloatingTextType.Chain;
+            string text = Mathf.RoundToInt(damage).ToString();
+            Show(worldPosition, text, type);
+        }
+
+        /// <summary>
+        /// 显示爆炸/AoE 伤害飘字（烈焰橙，暴击时升级为 Crit 样式）
+        /// </summary>
+        public void ShowExplosionDamage(Vector3 worldPosition, float damage, bool isCrit = false)
+        {
+            FloatingTextType type = isCrit ? FloatingTextType.Crit : FloatingTextType.Explosion;
+            string text = Mathf.RoundToInt(damage).ToString();
+            Show(worldPosition, text, type);
+        }
+
         /// <summary>
         /// 显示处决飘字
         /// </summary>

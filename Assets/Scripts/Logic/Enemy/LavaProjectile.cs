@@ -55,6 +55,11 @@ namespace LightVsDecay.Logic.Enemy
             int layer = LayerMask.NameToLayer("BossPollutionBall");
             if (layer >= 0)
                 gameObject.layer = layer;
+
+            // 使用触发器模式：子弹穿透所有怪物，只对 Shield / Tower / Wall 响应
+            var col = GetComponent<Collider2D>();
+            if (col != null)
+                col.isTrigger = true;
         }
 
         /// <summary>

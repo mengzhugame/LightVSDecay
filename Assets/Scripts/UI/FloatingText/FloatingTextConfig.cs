@@ -154,12 +154,21 @@ namespace LightVsDecay.UI.FloatingText
         [Header("碎冰优先级")]
         [Range(0, 100)]
         public int shatterPriority = 55;
-        
+
         [Range(0, 100)]
         public int shatterCritPriority = 85;
-        
+
         [Range(0, 100)]
         public int executionPriority = 90;
+
+        [Header("连锁闪电/爆炸优先级")]
+        [Tooltip("连锁闪电每跳伤害优先级（略低于普通，同屏多条时优先回收）")]
+        [Range(0, 100)]
+        public int chainPriority = 0;
+
+        [Tooltip("爆炸/AoE 伤害优先级")]
+        [Range(0, 100)]
+        public int explosionPriority = 1;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 样式配置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -381,6 +390,46 @@ namespace LightVsDecay.UI.FloatingText
             scalePeakPercent = 0.15f,
             sizeMultiplier = 1.4f  // 比普通大40%
         };
+        [Header("连锁闪电样式")]
+        public FloatingTextStyle chainStyle = new FloatingTextStyle
+        {
+            textColor      = new Color(1f,   0.84f, 0f,   1f),  // 电弧黄 #FFD700
+            outlineColor   = new Color(0.5f, 0.38f, 0f,   1f),  // 深金描边
+            fontSize       = 28f,
+            isBold         = false,
+            outlineWidth   = 0.15f,
+            duration       = 0.5f,
+            initialUpSpeed = 130f,
+            horizontalRandomRange = 70f,
+            gravity        = 130f,
+            fadeStartPercent = 0.45f,
+            useScaleAnimation = true,
+            initialScale   = 0.9f,
+            peakScale      = 1.15f,
+            scalePeakPercent = 0.15f,
+            sizeMultiplier = 0.9f   // 比普通略小，不抢主激光风头
+        };
+
+        [Header("爆炸/AoE 伤害样式")]
+        public FloatingTextStyle explosionStyle = new FloatingTextStyle
+        {
+            textColor      = new Color(1f,   0.42f, 0f,   1f),  // 烈焰橙 #FF6A00
+            outlineColor   = new Color(0.48f, 0.19f, 0f,   1f), // 暗橙描边
+            fontSize       = 32f,
+            isBold         = true,
+            outlineWidth   = 0.2f,
+            duration       = 0.7f,
+            initialUpSpeed = 140f,
+            horizontalRandomRange = 55f,
+            gravity        = 110f,
+            fadeStartPercent = 0.5f,
+            useScaleAnimation = true,
+            initialScale   = 0.75f,
+            peakScale      = 1.3f,
+            scalePeakPercent = 0.2f,
+            sizeMultiplier = 1.0f
+        };
+
         [Header("处决样式")]
         public FloatingTextStyle executionStyle = new FloatingTextStyle
         {
@@ -435,6 +484,10 @@ namespace LightVsDecay.UI.FloatingText
                     return shatterCritStyle;
                 case FloatingTextType.Execution:
                     return executionStyle;
+                case FloatingTextType.Chain:
+                    return chainStyle;
+                case FloatingTextType.Explosion:
+                    return explosionStyle;
                 case FloatingTextType.Normal:
                 default:
                     return normalStyle;
@@ -471,6 +524,10 @@ namespace LightVsDecay.UI.FloatingText
                     return shatterCritPriority;
                 case FloatingTextType.Execution:
                     return executionPriority;
+                case FloatingTextType.Chain:
+                    return chainPriority;
+                case FloatingTextType.Explosion:
+                    return explosionPriority;
                 case FloatingTextType.Normal:
                 default:
                     return normalPriority;
@@ -504,6 +561,8 @@ namespace LightVsDecay.UI.FloatingText
                 case FloatingTextType.Shatter:
                 case FloatingTextType.ShatterCrit:
                 case FloatingTextType.Execution:
+                case FloatingTextType.Chain:
+                case FloatingTextType.Explosion:
                     return normalPrefab;  // 复用普通Prefab，通过样式区分
                 case FloatingTextType.Normal:
                 default:

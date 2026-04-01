@@ -56,9 +56,13 @@ MonoBehaviour:
   splitImpulseSpeed: 4
   spawnPuddleOnDeath: 0
   puddleEnemyType: 13
+  puddleSizeMultiplier: 1
+  explosionAoeDamage: 0
+  explosionAoeRadius: 3
   disableHitFlash: 0
   disableKnockback: 0
-  gunnerStopYPercent: 0.35
+  gunnerStopYPercent: 0.4
+  gunnerMaxDistFromTower: 16.15
   gunnerShootInterval: 4
   gunnerRepositionRange: 2
   gunnerProjectilePrefab: {fileID: 1227954545292335531, guid: cb87b1bc8326ff4469a9fa0381d58661, type: 3}

@@ -338,9 +338,9 @@ namespace LightVsDecay.Logic.Player
                 var collider = nearbyEnemies[i];
                 if (collider == null) continue;
                 
-                // 获取 EnemyBlob 组件验证是否有效
+                // 获取 EnemyBlob 组件验证是否有效；跳过熔浆液等静止地形障碍
                 var enemy = collider.GetComponent<EnemyBlob>();
-                if (enemy == null || enemy.IsDead) continue;
+                if (enemy == null || enemy.IsDead || enemy.IsStationary) continue;
                 
                 float dist = Vector3.Distance(position, collider.transform.position);
                 if (dist < nearestDist)

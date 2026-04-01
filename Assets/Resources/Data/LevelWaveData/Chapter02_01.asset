@@ -113,7 +113,7 @@ MonoBehaviour:
       pattern: 0
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 22
+    - spawnTime: 10
       enemyType: 10
       count: 2
       pattern: 5

@@ -31,6 +31,8 @@ namespace LightVsDecay.Core.Pool
         LevelUp,            // 升级特效
         // 无人机相关（低频）
         DroneExplosion,         // 无人机爆炸
+        // Ch2 怪物相关（低频）
+        EnemySplit,             // 分裂怪死亡爆开
     }
     
     /// <summary>
@@ -383,6 +385,13 @@ namespace LightVsDecay.Core.Pool
         public void PlayDroneExplosion(Vector3 position)
         {
             Play(VFXType.DroneExplosion, position);
+        }
+        /// <summary>
+        /// 播放分裂怪死亡爆开特效（可在 Inspector 留空预制体）
+        /// </summary>
+        public void PlayEnemySplit(Vector3 position)
+        {
+            Play(VFXType.EnemySplit, position);
         }
         /// <summary>
         /// 播放数据破碎爆炸特效（漏洞扩散 - 冰块碎裂效果）

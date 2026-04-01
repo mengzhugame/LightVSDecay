@@ -442,20 +442,55 @@ namespace LightVsDecay.UI.Panels
         /// <summary>更新Boss血量（带缓冲效果）</summary>
         private void UpdateBossHealthWithValue(float normalizedHP, int currentHealth)
         {
-            // 红色条瞬间减少
-            bossCurrentHP = normalizedHP;
-            UpdateBossHealthDisplay(normalizedHP);
+            bool isHealing = normalizedHP > bossCurrentHP;
 
-            // 【修复】只有在"既没有等待也没有追赶"时才启动新协程
-            // 如果正在等待或追赶中，协程会自动更新到新的目标值
-            if (!isBufferWaiting && !isBufferChasing)
+            if (isHealing)
             {
+                // 回血：buffer（红色底）立即跳到新值，solid（实体HP）慢追上去
+                // 视觉效果：先亮红底 → 再填实，表现出血条"被灌入"的饱胀感
+                bossCurrentHP = normalizedHP;
+                if (bossBloodBuffer != null)
+                    bossBloodBuffer.fillAmount = normalizedHP;  // buffer 立即跳
+
+                // solid 慢追：用 BossHealCoroutine 从当前值补到目标
                 if (bossBufferCoroutine != null)
-                {
                     StopCoroutine(bossBufferCoroutine);
-                }
-                bossBufferCoroutine = StartCoroutine(BossBufferCoroutine());
+                bossBufferCoroutine = StartCoroutine(BossHealFillCoroutine(normalizedHP));
             }
+            else
+            {
+                // 掉血：solid 先降，buffer 延迟慢追（原有逻辑不变）
+                bossCurrentHP = normalizedHP;
+                UpdateBossHealthDisplay(normalizedHP);
+
+                if (!isBufferWaiting && !isBufferChasing)
+                {
+                    if (bossBufferCoroutine != null)
+                        StopCoroutine(bossBufferCoroutine);
+                    bossBufferCoroutine = StartCoroutine(BossBufferCoroutine());
+                }
+            }
+        }
+
+        /// <summary>回血时：solid fill 从当前值慢速追上 buffer（已跳至目标）</summary>
+        private IEnumerator BossHealFillCoroutine(float targetHP)
+        {
+            isBufferChasing = true;
+            float chaseSpeed = 1f / bossBufferDuration;
+
+            while (bossBloodFill != null &&
+                   Mathf.Abs(bossBloodFill.fillAmount - targetHP) > 0.001f)
+            {
+                float maxMove = chaseSpeed * Time.deltaTime;
+                bossBloodFill.fillAmount = Mathf.MoveTowards(bossBloodFill.fillAmount, targetHP, maxMove);
+                yield return null;
+            }
+
+            if (bossBloodFill != null)
+                bossBloodFill.fillAmount = targetHP;
+
+            isBufferChasing = false;
+            bossBufferCoroutine = null;
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // UI 更新方法

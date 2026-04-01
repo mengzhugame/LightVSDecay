@@ -382,7 +382,7 @@ namespace LightVsDecay.Logic.Boss
                 StopCoroutine(transitionCoroutine);
                 transitionCoroutine = null;
             }
-            
+
 #if DOTWEEN
             if (scaleTweener != null && scaleTweener.IsActive())
             {
@@ -393,6 +393,53 @@ namespace LightVsDecay.Logic.Boss
                 colorTweener.Kill();
             }
 #endif
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 颜色染色接口（供 VolcanoBossController 阶段三调用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private Coroutine tintCoroutine;
+
+        /// <summary>
+        /// 平滑过渡眼睛颜色（用于阶段三变红等场景）。
+        /// 修改 closedColor / openColor，所有后续开闭动画自动使用新颜色。
+        /// </summary>
+        /// <param name="newClosedColor">新的闭眼颜色</param>
+        /// <param name="newOpenColor">新的睁眼颜色</param>
+        /// <param name="duration">过渡时长（秒）</param>
+        public void SetTintColor(Color newClosedColor, Color newOpenColor, float duration = 0.5f)
+        {
+            if (tintCoroutine != null) StopCoroutine(tintCoroutine);
+            tintCoroutine = StartCoroutine(TintTransitionRoutine(newClosedColor, newOpenColor, duration));
+        }
+
+        private IEnumerator TintTransitionRoutine(Color targetClosed, Color targetOpen, float duration)
+        {
+            Color startClosed = closedColor;
+            Color startOpen   = openColor;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                closedColor = Color.Lerp(startClosed, targetClosed, t);
+                openColor   = Color.Lerp(startOpen,   targetOpen,   t);
+
+                // 实时刷新眼睛颜色：根据当前开闭状态计算混合值
+                if (eyeRenderer != null)
+                {
+                    float eyeBlend = currentState == BossEyeState.Open    ? 1f :
+                                     currentState == BossEyeState.Opening ? 0.5f : 0f;
+                    eyeRenderer.color = Color.Lerp(closedColor, openColor, eyeBlend);
+                }
+                yield return null;
+            }
+
+            closedColor = targetClosed;
+            openColor   = targetOpen;
+            tintCoroutine = null;
         }
     }
 }

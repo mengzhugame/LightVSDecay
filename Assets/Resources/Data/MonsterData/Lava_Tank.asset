@@ -15,7 +15,7 @@ MonoBehaviour:
   type: 8
   displayName: "\u7194\u5CA9\u5766\u514B"
   description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8089\u76FE\u602A\uFF0C\u8840\u9AD8\uFF0C\u8D28\u91CF\u5927\uFF0C\u6FC0\u5149\u63A8\u4E0D\u52A8"
-  maxHealth: 5200
+  maxHealth: 10000
   moveSpeed: 1.35
   mass: 8
   contactDamage: 40
@@ -56,6 +56,9 @@ MonoBehaviour:
   splitImpulseSpeed: 4
   spawnPuddleOnDeath: 0
   puddleEnemyType: 13
+  puddleSizeMultiplier: 1
+  explosionAoeDamage: 0
+  explosionAoeRadius: 3
   disableHitFlash: 0
   disableKnockback: 0
   gunnerStopYPercent: 0.6

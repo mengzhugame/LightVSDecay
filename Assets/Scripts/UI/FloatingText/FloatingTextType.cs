@@ -58,6 +58,12 @@ namespace LightVsDecay.UI.FloatingText
         ShatterCrit,
         
         /// <summary>处决 - 特殊文字 "EXECUTE!"</summary>
-        Execution
+        Execution,
+
+        /// <summary>连锁闪电每跳伤害 - 电弧黄，小字快闪</summary>
+        Chain,
+
+        /// <summary>爆炸/AoE 伤害 - 烈焰橙，中字扩散</summary>
+        Explosion
     }
 }

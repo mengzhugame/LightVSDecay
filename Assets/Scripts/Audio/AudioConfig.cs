@@ -90,7 +90,10 @@ namespace LightVsDecay.Audio
         
         [Tooltip("怪物冰冻")]
         public AudioClip enemyFreeze;
-        
+
+        [Tooltip("分裂怪死亡爆开音效（可不配置）")]
+        public AudioClip enemySplit;
+
         [Tooltip("怪物音效音量")]
         [Range(0f, 1f)]
         public float enemyDefaultVolume = 0.6f;
