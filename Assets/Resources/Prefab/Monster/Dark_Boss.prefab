@@ -237,7 +237,7 @@ GameObject:
   - component: {fileID: 4824721405945485430}
   m_Layer: 8
   m_HasEditorInfo: 1
-  m_Name: Body03
+  m_Name: RedBodyEffect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

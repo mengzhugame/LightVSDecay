@@ -123,7 +123,6 @@ MonoBehaviour:
   extraEyes: []
   decorations:
   - {fileID: 1388450756219101312}
-  - {fileID: 4779186157272398428}
   - {fileID: 6315448026444805188}
   - {fileID: 6897408050421802946}
   hitFlashDuration: 0.15

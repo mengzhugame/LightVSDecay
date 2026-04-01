@@ -43,13 +43,13 @@ Material:
     m_Floats:
     - _Alpha: 1
     - _Distortion_Strength: 0.02
-    - _Flow_Speed: 0.1
+    - _Flow_Speed: 1
     - _HitIntensity: 0
     - _Noise_Scale: 10
     - _SimpleNoiseScale: 30
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _HitColor: {r: 1, g: 1, b: 1, a: 1}
+    - _HitColor: {r: 0.3283019, g: 0.3283019, b: 0.3283019, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &6525933608244509770
 MonoBehaviour:

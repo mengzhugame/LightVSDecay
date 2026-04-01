@@ -75,8 +75,8 @@ MonoBehaviour:
       count: 6
       pattern: 3
       customInterval: -1
-      spawnZone: 3
-    - spawnTime: 8
+      spawnZone: 2
+    - spawnTime: 2
       enemyType: 8
       count: 2
       pattern: 0
@@ -143,14 +143,14 @@ MonoBehaviour:
       count: 8
       pattern: 3
       customInterval: -1
-      spawnZone: 3
-    - spawnTime: 10
+      spawnZone: 2
+    - spawnTime: 5
       enemyType: 8
       count: 2
       pattern: 0
       customInterval: -1
       spawnZone: 1
-    - spawnTime: 14
+    - spawnTime: 16
       enemyType: 10
       count: 2
       pattern: 5
@@ -266,7 +266,7 @@ MonoBehaviour:
       count: 8
       pattern: 3
       customInterval: -1
-      spawnZone: 3
+      spawnZone: 2
     - spawnTime: 10
       enemyType: 8
       count: 2

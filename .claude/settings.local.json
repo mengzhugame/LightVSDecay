@@ -21,7 +21,14 @@
       "Bash(grep -r EnemyPoolManager D:ProjectLightVSDecayAssets --include=*.prefab --include=*.scene -l)",
       "Bash(xargs grep:*)",
       "Bash(find D:/Project/LightVSDecay/Assets/Art_Resource -name *background* -o -name *Background* -o -name *bg* -o -name *BG*)",
-      "Bash(find D:/Project/LightVSDecay -maxdepth 4 -name *.unity)"
+      "Bash(find D:/Project/LightVSDecay -maxdepth 4 -name *.unity)",
+      "Bash(find D:ProjectLightVSDecayAssetsScripts -name *.cs -type f)",
+      "Bash(grep -r \"skillButton\\\\|OverloadButton\\\\|UltButton\" D:ProjectLightVSDecayAssetsScripts --include=*.cs)",
+      "Bash(find D:ProjectLightVSDecayAssetsScriptsLogicStatistics -type f -name *.cs)",
+      "Bash(find D:ProjectLightVSDecayAssetsScripts -type f -name *Result*.cs)",
+      "Bash(find D:ProjectLightVSDecayAssetsScriptsUI -type f -name *.cs)",
+      "Bash(grep -r BattleStatistics.Instance D:ProjectLightVSDecayAssetsScripts --include=*.cs -n)",
+      "Bash(grep -rh BattleStatistics.Instance D:ProjectLightVSDecayAssetsScripts --include=*.cs -A1)"
     ]
   }
 }

@@ -282,6 +282,7 @@ GameObject:
   - component: {fileID: 6101768834325460337}
   - component: {fileID: 5956673407715313727}
   - component: {fileID: 1506144082942902046}
+  - component: {fileID: -1999477909994325970}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Frost_EliteCaster
@@ -459,6 +460,7 @@ MonoBehaviour:
   enemyType: 19
   bodySprite: {fileID: 973824948529328900}
   eyesController: {fileID: 6195582208599223021}
+  extraEyes: []
   decorations:
   - {fileID: 2230132166450626595}
   - {fileID: 716913396758296070}
@@ -468,6 +470,18 @@ MonoBehaviour:
   hitSpeedBoostMultiplier: 3
   defaultHitColor: {r: 1, g: 1, b: 1, a: 1}
   showDebugInfo: 0
+--- !u!114 &-1999477909994325970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2251029097310130735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef4d96efa85c9c2429cc4c6bc1378b6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6826766016649320786
 GameObject:
   m_ObjectHideFlags: 0

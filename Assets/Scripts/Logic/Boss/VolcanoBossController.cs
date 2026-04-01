@@ -23,6 +23,7 @@ using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Audio;
 using LightVsDecay.Data;
+using LightVsDecay.Logic.Statistics;
 #if DOTWEEN
 using DG.Tweening;
 #endif
