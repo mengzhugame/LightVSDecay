@@ -223,6 +223,9 @@ namespace LightVsDecay.Logic.Enemy
 
         /// <summary>是否为静止障碍（熔浆液等），用于激光穿透阻断判断</summary>
         public bool IsStationary => behaviorType == EnemyBehaviorType.Stationary;
+
+        /// <summary>是否拥有存活的前置冰盾（精英冰甲卫士专用，用于激光穿透阻断）</summary>
+        public bool HasActiveIceShield => iceShield != null && iceShield.IsActive;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Layer 切换（弹跳怪入境签证）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -859,10 +862,12 @@ namespace LightVsDecay.Logic.Enemy
             // 静止地形障碍（如熔浆液）完全免疫所有伤害
             if (behaviorType == EnemyBehaviorType.Stationary) return;
 
-            // Ch3：冰盾存在时，激光伤害完全重定向到冰盾（不伤害本体）
+            // Ch3：冰盾存在时，激光伤害重定向到冰盾（减免50%），本体保留20%物理推力
             if (iceShield != null && iceShield.IsActive)
             {
-                iceShield.TakeDamage(damage);
+                iceShield.TakeDamage(damage * 0.5f);
+                if (canBeKnockedBack)
+                    ApplyKnockbackByType(knockbackForce * 0.2f);
                 return;
             }
 

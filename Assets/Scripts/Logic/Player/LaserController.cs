@@ -568,6 +568,10 @@ namespace LightVsDecay.Logic.Player
 
                 penetratedCount++;
                 currentDamage = penetrationHandler.GetNextDamage(currentDamage);
+
+                // 冰甲卫士（冰盾存活）：打完本次伤害后阻断穿透，激光不越过冰盾击中后方目标
+                if (enemy.HasActiveIceShield)
+                    break;
             }
         }
         
