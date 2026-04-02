@@ -246,12 +246,8 @@ namespace LightVsDecay.Logic.Enemy
             {
                 frostDebuff = gameObject.AddComponent<FrostDebuff>();
             }
-            // 暴走视觉组件（催化者死亡爆发使用）
+            // 暴走视觉组件（催化者死亡爆发使用，需在 Prefab 上手动挂载，否则无视觉效果）
             catalystBerserkDebuff = GetComponent<CatalystBerserkDebuff>();
-            if (catalystBerserkDebuff == null)
-            {
-                catalystBerserkDebuff = gameObject.AddComponent<CatalystBerserkDebuff>();
-            }
             // Ch3 组件缓存
             frostcasterAI = GetComponent<FrostcasterAI>();
             iceShield = GetComponentInChildren<IceShieldController>(true);
