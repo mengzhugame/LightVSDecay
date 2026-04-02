@@ -12,6 +12,7 @@
 
 using UnityEngine;
 using LightVsDecay.Core;
+using LightVsDecay.Core.Pool;
 using LightVsDecay.UI.FloatingText;
 
 namespace LightVsDecay.Logic.Enemy
@@ -108,7 +109,9 @@ namespace LightVsDecay.Logic.Enemy
         {
             isActive = false;
             SetVisual(false);
-            // TODO: 播放冰盾破碎特效（美术资源到位后添加）
+
+            // 冰盾破碎特效
+            VFXPoolManager.Instance?.Play(VFXType.IceShieldBreak, transform.position);
 
             if (showDebugInfo)
                 GameLogger.Log("[IceShield] 冰盾已破碎！本体恢复正常受击。");

@@ -35,6 +35,7 @@ namespace LightVsDecay.Core.Pool
         EnemySplit,             // 分裂怪死亡爆开
         // Ch3 怪物相关（低频）
         CatalystBurst,          // 极寒催化者死亡冷气烟雾
+        IceShieldBreak,         // 精英冰甲卫士冰盾破碎
     }
     
     /// <summary>
