@@ -223,17 +223,17 @@ namespace LightVsDecay.Data.SO
         [Tooltip("是否禁用击退（静止物体）")]
         public bool disableKnockback = false;
 
-        [Header("远程炮手设置（RangedGunner 专用）")]
+        [Header("远程怪通用设置（RangedGunner / FrostCaster 共用）")]
         [Tooltip("停驻位置：从屏幕顶部往下的比例（0=顶部，1=底部）")]
         [Range(0.1f, 0.9f)]
         public float gunnerStopYPercent = 0.6f;
 
-        [Tooltip("距光棱塔的最大 Y 轴距离（世界单位）。炮手不会停在超过此距离的位置，防止激光射程不够。建议设为激光最大长度 × 0.85")]
+        [Tooltip("距光棱塔的最大 Y 轴距离（世界单位）。防止停驻位置超出激光射程。建议设为激光最大长度 × 0.85")]
         [Min(1f)]
         public float gunnerMaxDistFromTower = 6.5f;
 
-        [Tooltip("射击间隔（秒）")]
-        [Min(1f)]
+        [Tooltip("行动间隔（秒）：Gunner = 射击蓄力时长；FrostCaster = 施法蓄力时长")]
+        [Min(0.5f)]
         public float gunnerShootInterval = 8f;
 
         [Tooltip("换位时的横向移动范围（单位：米）")]
@@ -297,14 +297,6 @@ namespace LightVsDecay.Data.SO
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         [Header("霜冻施法者设置（FrostCaster 专用）")]
-        [Tooltip("停驻位置：从屏幕顶部往下的比例（0=顶部，1=底部）")]
-        [Range(0.1f, 0.9f)]
-        public float frostcasterStopYPercent = 0.7f;
-
-        [Tooltip("施法间隔（秒）")]
-        [Min(1f)]
-        public float frostcasterCastInterval = 10f;
-
         [Tooltip("每次施法召唤的冰墙数量（精英版可配置为随机上限，运行时取 1~此值）")]
         [Min(1)]
         public int frostcasterIceWallCount = 1;

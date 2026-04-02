@@ -22,7 +22,7 @@ MonoBehaviour:
   attackInterval: 1
   isSuicide: 0
   knockbackResistance: 0
-  behaviorType: 0
+  behaviorType: 4
   waveAmplitude: 1
   waveFrequency: 1.5
   outOfBoundsLifetime: 1
@@ -56,11 +56,15 @@ MonoBehaviour:
   splitImpulseSpeed: 4
   spawnPuddleOnDeath: 0
   puddleEnemyType: 13
+  puddleSizeMultiplier: 1
+  explosionAoeDamage: 0
+  explosionAoeRadius: 3
   disableHitFlash: 0
   disableKnockback: 0
-  gunnerStopYPercent: 0.6
-  gunnerShootInterval: 8
-  gunnerRepositionRange: 2
+  gunnerStopYPercent: 0.7
+  gunnerMaxDistFromTower: 6.5
+  gunnerShootInterval: 2
+  gunnerRepositionRange: 3
   gunnerProjectilePrefab: {fileID: 0}
   gunnerProjectileSpeed: 5
   gunnerProjectileDamage: 40

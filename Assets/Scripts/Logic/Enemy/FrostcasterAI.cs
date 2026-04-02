@@ -1,27 +1,20 @@
 // ============================================================
 // FrostcasterAI.cs
 // 文件位置: Assets/Scripts/Logic/Enemy/FrostcasterAI.cs
-// 用途：霜冻施法者 AI 状态机（第三章）
 // 行为流程：
-//   Entering → 从屏幕顶部入场，到达目标 Y 后停驻
-//   Idle     → 等待 castInterval 秒
-//   Casting  → 在场地随机位置召唤 N 面冰墙，短暂停顿后回 Idle
+//   Entering      → 从屏幕顶部入场，到达停驻 Y
+//   Charging      → 蓄力阶段：BodyEffect 从暗渐亮，计时结束触发施法
+//   Casting       → 压缩→召唤冰墙→弹起→复原→发光淡出→换位
+//   Repositioning → 横向移动到新 X，到达后回 Charging
 // ============================================================
 
 using System.Collections;
 using UnityEngine;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
-using LightVsDecay.Data.SO;
 
 namespace LightVsDecay.Logic.Enemy
 {
-    /// <summary>
-    /// 霜冻施法者 AI 控制器。
-    /// 挂载在与 EnemyBlob 相同的 GameObject 上，
-    /// EnemyBlob.MoveTowardsTower 在 FrostCaster 模式下不执行，
-    /// 此组件全权负责 Rigidbody2D 速度控制。
-    /// </summary>
     [RequireComponent(typeof(EnemyBlob))]
     [RequireComponent(typeof(Rigidbody2D))]
     public class FrostcasterAI : MonoBehaviour
@@ -30,7 +23,44 @@ namespace LightVsDecay.Logic.Enemy
         // 状态枚举
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private enum CasterState { Entering, Idle, Casting }
+        private enum CasterState { Entering, Charging, Casting, Repositioning }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Inspector 配置
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("施法特效")]
+        [Tooltip("蓄力/施法时发光的 BodyEffect SpriteRenderer")]
+        [SerializeField] private SpriteRenderer effectSprite;
+
+        [Tooltip("蓄力开始时的暗淡颜色（透明度为 0 表示完全不可见）")]
+        [SerializeField][ColorUsage(true, true)]
+        private Color effectDimColor  = new Color(0.35f, 0.80f, 1f, 0f);
+
+        [Tooltip("蓄力结束时的最亮颜色（可填 HDR 值触发 Bloom）")]
+        [SerializeField][ColorUsage(true, true)]
+        private Color effectGlowColor = new Color(0.35f, 0.90f, 1f, 1f);
+
+        [Tooltip("施法后发光淡出时长（秒）")]
+        [SerializeField] private float glowFadeoutDuration = 0.4f;
+
+        [Header("入场首发延迟")]
+        [Tooltip("入场停稳后多久开始第一次蓄力（秒）；之后每次使用 castInterval")]
+        [SerializeField] private float firstCastDelay = 1.5f;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 施法动画常量（压缩-弹起）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private const float COMPRESS_X        = 1.25f;
+        private const float COMPRESS_Y        = 0.60f;
+        private const float COMPRESS_DURATION = 0.13f;
+
+        private const float BOUNCE_X          = 0.82f;
+        private const float BOUNCE_Y          = 1.28f;
+        private const float BOUNCE_DURATION   = 0.09f;
+
+        private const float RESTORE_DURATION  = 0.16f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时引用
@@ -43,28 +73,32 @@ namespace LightVsDecay.Logic.Enemy
         // 配置（从 EnemyData 读取）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private float stopYPercent = 0.7f;
-        private float castInterval = 10f;
-        private int iceWallCount = 1;
-        private bool randomWallCount = false;
-        private EnemyType iceWallType = EnemyType.IceWall;
+        private float stopYPercent   = 0.7f;
+        private float maxDistFromTower = 6.5f;
+        private float castInterval   = 2f;
+        private float repositionRange = 3f;
+
+        private int       iceWallCount   = 1;
+        private bool      randomWallCount = false;
+        private EnemyType iceWallType    = EnemyType.IceWall;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private CasterState state = CasterState.Entering;
+        private CasterState state      = CasterState.Entering;
         private float targetWorldY;
-        private float idleTimer;
-        private bool isActive = false;
+        private float targetWorldX;
+        private float chargeTimer    = 0f;
+        private float chargeDuration = 2f;
+        private bool  isActive       = false;
+        private bool  isFirstCast    = true;
 
-        // 常量
-        private const float ENTRY_SPEED  = 3f;
-        private const float SNAP_DIST    = 0.08f;
-        private const float CAST_PAUSE   = 0.5f;  // 施法后停顿
-        // 冰墙召唤区域（屏幕内随机，排除靠近玩家塔的下半屏）
-        private const float WALL_MARGIN  = 1.5f;  // 距屏幕边缘最小距离
-        private const float WALL_SPAWN_MAX_Y_RATIO = 0.75f; // 最低不超过屏幕 75% 处
+        private const float ENTRY_SPEED      = 3f;
+        private const float REPOSITION_SPEED = 3f;
+        private const float SNAP_DIST        = 0.08f;
+        private const float WALL_MARGIN      = 1.5f;
+        private const float WALL_SPAWN_MAX_Y_RATIO = 0.75f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -76,6 +110,14 @@ namespace LightVsDecay.Logic.Enemy
             rb   = GetComponent<Rigidbody2D>();
         }
 
+        private void Update()
+        {
+            if (!isActive || blob == null || blob.IsDead) return;
+
+            if (state == CasterState.Charging)
+                UpdateChargeGlow();
+        }
+
         private void FixedUpdate()
         {
             if (!isActive || blob == null || blob.IsDead) return;
@@ -85,22 +127,20 @@ namespace LightVsDecay.Logic.Enemy
                 case CasterState.Entering:
                     UpdateEntering();
                     break;
-                case CasterState.Idle:
-                    UpdateIdle();
+                case CasterState.Repositioning:
+                    UpdateRepositioning();
                     break;
-                case CasterState.Casting:
+                default:
                     rb.velocity = Vector2.zero;
                     break;
             }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 对象池事件（由 EnemyBlob 调用）
+        // 对象池事件
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        /// <summary>
-        /// EnemyBlob.OnSpawn() 时调用，重新读取配置并开始入场。
-        /// </summary>
+        /// <summary>EnemyBlob.OnSpawn() 时调用，重新读取配置并开始入场。</summary>
         public void OnBlobSpawned()
         {
             StopAllCoroutines();
@@ -108,8 +148,13 @@ namespace LightVsDecay.Logic.Enemy
             var data = blob.Data;
             if (data == null) return;
 
-            stopYPercent    = data.frostcasterStopYPercent;
-            castInterval    = data.frostcasterCastInterval;
+            // 共用远程怪参数
+            stopYPercent    = data.gunnerStopYPercent;
+            maxDistFromTower = data.gunnerMaxDistFromTower;
+            castInterval    = data.gunnerShootInterval;
+            repositionRange = data.gunnerRepositionRange;
+
+            // 施法者专属参数
             iceWallCount    = data.frostcasterIceWallCount;
             randomWallCount = data.frostcasterRandomWallCount;
             iceWallType     = data.frostcasterIceWallType;
@@ -127,19 +172,30 @@ namespace LightVsDecay.Logic.Enemy
                 targetWorldY = 3f;
             }
 
-            idleTimer = castInterval;
-            state     = CasterState.Entering;
-            isActive  = true;
+            // 限制在激光射程内
+            Transform tower = blob.TargetTower;
+            if (tower != null)
+            {
+                float yLimit = tower.position.y + maxDistFromTower;
+                if (targetWorldY > yLimit)
+                    targetWorldY = yLimit;
+            }
+
+            targetWorldX = transform.position.x;
+            state        = CasterState.Entering;
+            isActive     = true;
+            isFirstCast  = true;
+
+            ResetEffectGlow();
         }
 
-        /// <summary>
-        /// EnemyBlob.OnDespawn() 时调用，停止所有协程。
-        /// </summary>
+        /// <summary>EnemyBlob.OnDespawn() 时调用，停止所有协程。</summary>
         public void OnBlobDeactivated()
         {
             isActive = false;
             StopAllCoroutines();
             if (rb != null) rb.velocity = Vector2.zero;
+            ResetEffectGlow();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -159,64 +215,144 @@ namespace LightVsDecay.Logic.Enemy
                 Vector3 pos = transform.position;
                 pos.y = targetWorldY;
                 transform.position = pos;
-                EnterIdle();
+                targetWorldX = pos.x;
+
+                EnterCharging(isFirstCast ? firstCastDelay : castInterval);
             }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 待机
+        // 蓄力发光
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private void EnterIdle()
+        private void EnterCharging(float duration)
         {
-            state     = CasterState.Idle;
-            idleTimer = castInterval;
-            rb.velocity = Vector2.zero;
+            state         = CasterState.Charging;
+            chargeTimer   = 0f;
+            chargeDuration = duration;
+            rb.velocity   = Vector2.zero;
+            ResetEffectGlow();
         }
 
-        private void UpdateIdle()
+        private void UpdateChargeGlow()
         {
-            rb.velocity = Vector2.zero;
-            idleTimer -= Time.fixedDeltaTime;
-            if (idleTimer <= 0f)
+            chargeTimer += Time.deltaTime;
+
+            float t = Mathf.Clamp01(chargeTimer / chargeDuration);
+            if (effectSprite != null)
+                effectSprite.color = Color.Lerp(effectDimColor, effectGlowColor, t);
+
+            if (chargeTimer >= chargeDuration)
             {
+                state = CasterState.Casting;
+                isFirstCast = false;
                 StartCoroutine(CastRoutine());
             }
         }
 
+        private void ResetEffectGlow()
+        {
+            if (effectSprite != null)
+                effectSprite.color = effectDimColor;
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 施法
+        // 施法（压缩→召唤→弹起→复原→淡出→换位）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private IEnumerator CastRoutine()
         {
-            state = CasterState.Casting;
             rb.velocity = Vector2.zero;
 
-            if (EnemyPoolManager.Instance != null)
-            {
-                int count = randomWallCount
-                    ? Random.Range(1, iceWallCount + 1)
-                    : iceWallCount;
+            Vector3 baseScale = transform.localScale;
 
-                for (int i = 0; i < count; i++)
-                {
-                    Vector3 spawnPos = GetRandomIceWallPosition();
-                    EnemyPoolManager.Instance.Spawn(iceWallType, spawnPos);
-                    // 多面冰墙时略微错开生成间隔，避免全部重叠
-                    if (count > 1) yield return new WaitForSeconds(0.15f);
-                }
-            }
+            // 1. 压缩（蓄力压缩感）
+            Vector3 compressScale = new Vector3(
+                baseScale.x * COMPRESS_X,
+                baseScale.y * COMPRESS_Y,
+                baseScale.z);
+            yield return StartCoroutine(LerpScale(baseScale, compressScale, COMPRESS_DURATION));
 
-            yield return new WaitForSeconds(CAST_PAUSE);
+            // 2. 压缩峰值：召唤冰墙
+            SpawnIceWalls();
 
+            // 3. 弹起（释放感）
+            Vector3 bounceScale = new Vector3(
+                baseScale.x * BOUNCE_X,
+                baseScale.y * BOUNCE_Y,
+                baseScale.z);
+            yield return StartCoroutine(LerpScale(compressScale, bounceScale, BOUNCE_DURATION));
+
+            // 4. 复原
+            yield return StartCoroutine(LerpScale(bounceScale, baseScale, RESTORE_DURATION));
+
+            // 5. 发光淡出
+            yield return StartCoroutine(FadeGlow(effectGlowColor, effectDimColor, glowFadeoutDuration));
+
+            // 6. 换位
             if (!blob.IsDead)
-                EnterIdle();
+            {
+                ChooseNewTargetX();
+                state = CasterState.Repositioning;
+            }
         }
 
-        /// <summary>
-        /// 在场地上半部随机取一个合法的冰墙生成位置。
-        /// </summary>
+        private void SpawnIceWalls()
+        {
+            if (EnemyPoolManager.Instance == null) return;
+
+            int count = randomWallCount
+                ? Random.Range(1, iceWallCount + 1)
+                : iceWallCount;
+
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 spawnPos = GetRandomIceWallPosition();
+                EnemyPoolManager.Instance.Spawn(iceWallType, spawnPos);
+            }
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 换位
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void ChooseNewTargetX()
+        {
+            Camera cam = Camera.main;
+            float halfWidth = cam != null ? cam.orthographicSize * cam.aspect : 8f;
+            float margin    = 1.5f;
+            float minX      = -halfWidth + margin;
+            float maxX      =  halfWidth - margin;
+
+            float candidateMin = Mathf.Max(minX, transform.position.x - repositionRange);
+            float candidateMax = Mathf.Min(maxX, transform.position.x + repositionRange);
+
+            targetWorldX = (candidateMin < candidateMax)
+                ? Random.Range(candidateMin, candidateMax)
+                : transform.position.x;
+        }
+
+        private void UpdateRepositioning()
+        {
+            float dx = targetWorldX - transform.position.x;
+            if (Mathf.Abs(dx) > SNAP_DIST)
+            {
+                rb.velocity = new Vector2(Mathf.Sign(dx) * REPOSITION_SPEED, 0f);
+            }
+            else
+            {
+                rb.velocity = Vector2.zero;
+                Vector3 pos = transform.position;
+                pos.x = targetWorldX;
+                transform.position = pos;
+                EnterCharging(castInterval);
+            }
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 辅助：冰墙生成位置
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
         private Vector3 GetRandomIceWallPosition()
         {
             Camera cam = Camera.main;
@@ -230,12 +366,41 @@ namespace LightVsDecay.Logic.Enemy
             float minX = camX - halfW + WALL_MARGIN;
             float maxX = camX + halfW - WALL_MARGIN;
             float maxY = camY + halfH - WALL_MARGIN;
-            float minY = camY - halfH * WALL_SPAWN_MAX_Y_RATIO + WALL_MARGIN; // 不超过 75% 以下
+            float minY = camY - halfH * WALL_SPAWN_MAX_Y_RATIO + WALL_MARGIN;
 
-            float x = Random.Range(minX, maxX);
-            float y = Random.Range(minY, maxY);
+            return new Vector3(
+                Random.Range(minX, maxX),
+                Random.Range(minY, maxY),
+                0f);
+        }
 
-            return new Vector3(x, y, 0f);
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 辅助：动画协程
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private IEnumerator LerpScale(Vector3 from, Vector3 to, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                transform.localScale = Vector3.Lerp(from, to, Mathf.Clamp01(elapsed / duration));
+                yield return null;
+            }
+            transform.localScale = to;
+        }
+
+        private IEnumerator FadeGlow(Color from, Color to, float duration)
+        {
+            if (effectSprite == null) yield break;
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                effectSprite.color = Color.Lerp(from, to, Mathf.Clamp01(elapsed / duration));
+                yield return null;
+            }
+            effectSprite.color = to;
         }
     }
 }
