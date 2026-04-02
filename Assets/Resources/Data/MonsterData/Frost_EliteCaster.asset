@@ -61,10 +61,10 @@ MonoBehaviour:
   explosionAoeRadius: 3
   disableHitFlash: 0
   disableKnockback: 0
-  gunnerStopYPercent: 0.65
-  gunnerMaxDistFromTower: 6.5
-  gunnerShootInterval: 8
-  gunnerRepositionRange: 2.5
+  gunnerStopYPercent: 0.4
+  gunnerMaxDistFromTower: 16.15
+  gunnerShootInterval: 2
+  gunnerRepositionRange: 3
   gunnerProjectilePrefab: {fileID: 0}
   gunnerProjectileSpeed: 5
   gunnerProjectileDamage: 40
@@ -76,8 +76,6 @@ MonoBehaviour:
   catalystBurstDuration: 5
   catalystSpeedMultiplier: 2
   catalystDamageTakenMultiplier: 1.5
-  frostcasterStopYPercent: 0.7
-  frostcasterCastInterval: 10
   frostcasterIceWallCount: 1
   frostcasterRandomWallCount: 1
   frostcasterIceWallType: 20

@@ -21,7 +21,7 @@ namespace LightVsDecay.Logic.Enemy
     /// 配置数据从 EnemyData ScriptableObject 读取
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
-    [RequireComponent(typeof(CircleCollider2D))]
+    [RequireComponent(typeof(Collider2D))]
     public class EnemyBlob : MonoBehaviour, IPoolable
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1639,6 +1639,8 @@ namespace LightVsDecay.Logic.Enemy
         public void ApplyBerserk(float duration, float speedMult, float damageTakenMult)
         {
             if (isDead) return;
+            // 已暴走时忽略再次触发：倍率已是 replace 语义，跳过可防止协程重启导致的意外叠加
+            if (isBerserking) return;
             if (berserkCoroutine != null) StopCoroutine(berserkCoroutine);
             berserkCoroutine = StartCoroutine(BerserkCoroutine(duration, speedMult, damageTakenMult));
         }

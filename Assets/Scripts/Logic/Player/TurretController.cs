@@ -31,19 +31,27 @@ namespace LightVsDecay.Logic.Player
         [Tooltip("大招期间是否禁用手动控制")]
         [SerializeField] private bool disableInputDuringUlt = true;
         
+        [Header("冻结视觉（Boss冰封QTE）")]
+        [Tooltip("冻结时显示的冰封覆盖图 SpriteRenderer（显隐控制）")]
+        [SerializeField] private SpriteRenderer frozenOverlay;
+
+        [Tooltip("玩家每次点击/触摸可缩短的冻结时长（秒）")]
+        [SerializeField] private float freezeClickReductionPerTap = 0.1f;
+
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
-        
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private float currentAngle = 0f;      // 当前角度（0度 = 朝上）
         private float targetAngle = 0f;       // 目标角度（用于平滑插值）
         private bool isUltActive = false;      // 大招是否激活
         private bool isDragging = false;       // 是否正在拖拽
         private bool isFrozenByBoss = false;   // 是否被Boss冻结（禁止旋转和射击）
         private Coroutine freezeCoroutine;
+        private int pendingFreezeTaps = 0;     // 冻结期间待处理的点击次数（QTE）
 
         /// <summary>是否当前处于冻结状态（供 LaserController 查询以停止射击）</summary>
         public bool IsFrozen => isFrozenByBoss;
@@ -82,9 +90,12 @@ namespace LightVsDecay.Logic.Player
         
         private void Update()
         {
-            // 冻结期间禁用所有输入（Boss冰封技能）
+            // 冻结期间：仅处理 QTE 点击，跳过旋转和射击
             if (isFrozenByBoss)
+            {
+                CheckFreezeQTEInput();
                 return;
+            }
 
             // 大招期间禁用手动控制
             if (isUltActive && disableInputDuringUlt)
@@ -95,6 +106,23 @@ namespace LightVsDecay.Logic.Player
 
             // 平滑旋转
             ApplySmoothRotation();
+        }
+
+        /// <summary>
+        /// 冻结期间检测点击/触摸，累计 QTE 减冻计数
+        /// </summary>
+        private void CheckFreezeQTEInput()
+        {
+            if (Input.touchCount > 0)
+            {
+                for (int i = 0; i < Input.touchCount; i++)
+                    if (Input.GetTouch(i).phase == TouchPhase.Began)
+                        pendingFreezeTaps++;
+            }
+            else if (Input.GetMouseButtonDown(0))
+            {
+                pendingFreezeTaps++;
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -253,8 +281,28 @@ namespace LightVsDecay.Logic.Player
             isFrozenByBoss = true;
             isDragging = false;
             activeTouchId = -1;
+            pendingFreezeTaps = 0;
 
-            yield return new WaitForSeconds(duration);
+            if (frozenOverlay != null)
+                frozenOverlay.gameObject.SetActive(true);
+
+            float remaining = duration;
+            while (remaining > 0f)
+            {
+                remaining -= Time.deltaTime;
+
+                // QTE：每次点击缩短 freezeClickReductionPerTap 秒
+                if (pendingFreezeTaps > 0)
+                {
+                    remaining -= pendingFreezeTaps * freezeClickReductionPerTap;
+                    pendingFreezeTaps = 0;
+                }
+
+                yield return null;
+            }
+
+            if (frozenOverlay != null)
+                frozenOverlay.gameObject.SetActive(false);
 
             isFrozenByBoss = false;
             freezeCoroutine = null;

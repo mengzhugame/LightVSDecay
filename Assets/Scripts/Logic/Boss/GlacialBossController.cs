@@ -8,10 +8,10 @@
 //   阶段二（30%<HP≤65%）：同上，额外每30秒召唤一只极寒坦克
 //   阶段三（HP≤30%）：绝对零度冷却缩短至12秒，高频压迫
 //
-//   冰墙构建：召唤 2~3 堵冰墙阻断激光，可被击毁（Summon状态）
-//   冰封射线：停驻后旋转冰蓝射线3秒，命中光棱塔冻结1.5秒
-//   极寒冲撞：霸体冲向塔，命中后冻结1.5秒，路径不留伤害区域
-//   绝对零度：最高优先，3秒蓄力；5000伤害可打断；否则塔受真伤+冻结+增援
+//   技能1 冰墙构建：RedBodyEffect发光蓄力 → 召唤2~3堵冰墙（30秒自动消失）
+//   技能2 冰封射线：固定朝向光棱塔射出蓝色激光3秒；命中护盾→扣护盾血；命中塔→冻结1.5秒
+//   技能3 极寒冲撞：霸体冲向塔，命中后冻结1.5秒
+//   技能4 绝对零度：3秒蓄力；5000伤害可打断；否则冰刺飞出→塔受真伤+冻结3秒+增援
 // ============================================================
 
 using UnityEngine;
@@ -24,8 +24,6 @@ namespace LightVsDecay.Logic.Boss
 {
     /// <summary>
     /// 第三章Boss：极寒之核。
-    /// 专属机制：冰墙构建（地形封锁）、冰封射线（范围冻结）、
-    ///           极寒冲撞（冲撞冻结）、绝对零度（最高优先打断机制）。
     /// </summary>
     public class GlacialBossController : BaseBossController
     {
@@ -40,43 +38,60 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("每次召唤冰墙的最大数量")]
         [SerializeField] private int iceWallCountMax = 3;
 
-        [Header("冰封射线 · 配置")]
-        [Tooltip("射线旋转速度（度/秒）")]
-        [SerializeField] private float freezeRayRotationSpeed = 60f;
+        [Header("冰墙构建 · 视觉")]
+        [Tooltip("蓄力发光淡入时长（秒）")]
+        [SerializeField] private float iceWallGlowFadeInDuration = 1.5f;
 
-        [Tooltip("冰封射线持续时间（秒）")]
+        [Tooltip("发光淡出时长（秒）")]
+        [SerializeField] private float iceWallGlowFadeOutDuration = 1f;
+
+        [Header("冰封射线 · 配置")]
+        [Tooltip("蓄力时长（秒），期间顶部水晶闪烁")]
+        [SerializeField] private float freezeRayChargeUpDuration = 1f;
+
+        [Tooltip("射线持续时长（秒）")]
         [SerializeField] private float freezeRayDuration = 3f;
 
-        [Tooltip("冰封射线冷却时间（秒）")]
-        [SerializeField] private float freezeRayCooldownTime = 15f;
+        [Tooltip("射线冷却时长（秒）")]
+        [SerializeField] private float freezeRayCooldownTime = 20f;
 
-        [Tooltip("射线命中光棱塔的冻结时长（秒）")]
+        [Tooltip("命中光棱塔本体的冻结时长（秒）")]
         [SerializeField] private float freezeRayTurretFreezeDuration = 1.5f;
 
-        [Tooltip("射线检测长度（世界单位）")]
+        [Tooltip("命中护盾时每秒造成的护盾伤害")]
+        [SerializeField] private float freezeRayShieldDamagePerSecond = 500f;
+
+        [Tooltip("射线检测最大长度（世界单位）")]
         [SerializeField] private float freezeRayLength = 20f;
 
-        [Tooltip("射线视觉 GameObject（旋转控制）。为空则跳过视觉")]
-        [SerializeField] private Transform freezeRayVisual;
+        [Header("冰封射线 · 视觉")]
+        [Tooltip("Laser 节点上的 LineRenderer 组件（蓝色激光）")]
+        [SerializeField] private LineRenderer laserLineRenderer;
+
+        [Tooltip("激光末端特效 Transform（EndVFX 节点），跟随射线终点")]
+        [SerializeField] private Transform laserEndVFX;
+
+        [Tooltip("顶部水晶 SpriteRenderer（Body03 节点），蓄力时闪烁")]
+        [SerializeField] private SpriteRenderer body03Crystal;
 
         [Header("极寒冲撞 · 配置")]
-        [Tooltip("冲撞命中光棱塔的冻结时长（秒）")]
+        [Tooltip("冲撞命中后光棱塔冻结时长（秒）")]
         [SerializeField] private float chargeTurretFreezeDuration = 1.5f;
 
         [Header("绝对零度 · 配置")]
-        [Tooltip("蓄力时间（秒）")]
+        [Tooltip("蓄力时长（秒）")]
         [SerializeField] private float absoluteZeroChannelDuration = 3f;
 
-        [Tooltip("打断所需总伤害量")]
+        [Tooltip("打断所需累计伤害量")]
         [SerializeField] private float absoluteZeroInterruptThreshold = 5000f;
 
-        [Tooltip("打断失败时，光棱塔承受当前血量的百分比真实伤害")]
+        [Tooltip("打断失败时，光棱塔当前血量的百分比真实伤害")]
         [SerializeField] private float absoluteZeroTrueDamagePercent = 0.30f;
 
         [Tooltip("打断失败时，光棱塔冻结时长（秒）")]
         [SerializeField] private float absoluteZeroTurretFreezeDuration = 3f;
 
-        [Tooltip("打断失败时，额外召唤的小怪数量")]
+        [Tooltip("打断失败时，额外召唤的 FrostSlime 数量")]
         [SerializeField] private int absoluteZeroSummonCount = 15;
 
         [Tooltip("阶段1/2的绝对零度冷却（秒）")]
@@ -85,45 +100,74 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("阶段3的绝对零度冷却（秒）（≤30%HP）")]
         [SerializeField] private float absoluteZeroCooldownPhase3 = 12f;
 
-        [Tooltip("绝对零度视觉 GameObject（蓄力警告）。为空则跳过")]
+        [Tooltip("绝对零度全屏警告特效 GameObject（为空则跳过）")]
         [SerializeField] private GameObject absoluteZeroWarningEffect;
+
+        [Header("绝对零度 · 冰刺")]
+        [Tooltip("BingCi01~04 节点 Transform（左上、左下、右上、右下）")]
+        [SerializeField] private Transform[] bingCiTransforms = new Transform[4];
+
+        [Tooltip("BingCi01~04 节点 SpriteRenderer（用于控制显隐）")]
+        [SerializeField] private SpriteRenderer[] bingCiRenderers = new SpriteRenderer[4];
+
+        [Tooltip("冰刺投射体 Prefab（需含 IceSpikeProjectile 脚本，层级 BossPollutionBall）")]
+        [SerializeField] private GameObject iceSpikeProjectilePrefab;
+
+        [Tooltip("冰刺拔出位移量（世界单位）")]
+        [SerializeField] private float bingCiPullOutDistance = 0.4f;
+
+        [Tooltip("冰刺拔出动画时长（秒）")]
+        [SerializeField] private float bingCiPullOutDuration = 0.4f;
+
+        [Tooltip("单枚冰刺旋转对准动画时长（秒）")]
+        [SerializeField] private float bingCiRotateDuration = 0.6f;
+
+        [Tooltip("四枚冰刺依次开始旋转的间隔（秒）")]
+        [SerializeField] private float bingCiRotateStagger = 0.1f;
+
+        [Tooltip("四枚冰刺依次射出的间隔（秒）")]
+        [SerializeField] private float bingCiFireStagger = 0.15f;
+
+        [Tooltip("冰刺射出后等待再生的延迟（秒）")]
+        [SerializeField] private float bingCiRegenDelay = 2f;
+
+        [Tooltip("冰刺再生淡入时长（秒）")]
+        [SerializeField] private float bingCiRegenFadeDuration = 0.5f;
 
         [Header("阶段二 · 极寒坦克召唤")]
         [Tooltip("阶段2每隔多少秒召唤一只极寒坦克")]
         [SerializeField] private float phase2TankSummonInterval = 30f;
 
         [Header("冰封射线触发概率")]
-        [Tooltip("冷却就绪且选到主动技能时，触发冰封射线的概率（0~1）")]
+        [Tooltip("冷却就绪且选到主动技能时触发冰封射线的概率（0~1）")]
         [SerializeField] private float freezeRayTriggerChance = 0.4f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        // 阶段
         private int currentPhase = 1;
 
-        // 冰封射线冷却
         private float freezeRayCooldownTimer = 0f;
         private bool freezeRayReady = false;
+        private bool freezeRayHitThisCast = false;
 
-        // 绝对零度冷却
         private float absoluteZeroCooldownTimer = 0f;
         private bool absoluteZeroTriggered = false;
         private bool absoluteZeroActive = false;
 
-        // 阶段2额外FrostTank计时
         private float phase2TankTimer = 0f;
 
-        // 玩家塔组件缓存
         private TurretController turretController;
         private TurretHealth turretHealth;
-
-        // 射线检测层
         private LayerMask rayHitLayers;
 
-        // 冰封射线已冻结标志（单次触发）
-        private bool freezeRayHitThisCast = false;
+        // BingCi 原始局部坐标（用于拔出计算与再生复位）
+        private Vector3[] bingCiOriginalLocalPositions;
+
+        // 绝对零度冰刺结算（跨协程共享状态）
+        private int bingCiResolvedCount;
+        private bool bingCiAnyHitTower;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // BaseBossController 钩子实现
@@ -135,31 +179,49 @@ namespace LightVsDecay.Logic.Boss
             absoluteZeroActive = false;
             absoluteZeroTriggered = false;
 
-            // 冰封射线：初始无冷却（立即可用，鼓励早期施压）
             freezeRayCooldownTimer = 0f;
             freezeRayReady = true;
 
-            // 绝对零度：初始冷却为阶段1时长
             absoluteZeroCooldownTimer = absoluteZeroCooldownPhase12;
             absoluteZeroTriggered = false;
 
             phase2TankTimer = phase2TankSummonInterval;
 
-            // 缓存玩家组件
             FindTurretComponents();
 
-            // 射线检测层
             rayHitLayers = LayerMask.GetMask("Shield", "Tower");
 
-            // 冰封射线视觉初始隐藏
-            if (freezeRayVisual != null)
-                freezeRayVisual.gameObject.SetActive(false);
+            // 初始化 RedBodyEffect：alpha 设为 0
+            if (redBodyEffect != null)
+            {
+                Color c = redBodyEffect.GetComponent<SpriteRenderer>().color;
+                c.a = 0f;
+                redBodyEffect.GetComponent<SpriteRenderer>().color = c;
+            }
+
+            // 初始隐藏激光 LineRenderer
+            if (laserLineRenderer != null)
+                laserLineRenderer.enabled = false;
+
+            if (laserEndVFX != null)
+                laserEndVFX.gameObject.SetActive(false);
 
             if (absoluteZeroWarningEffect != null)
                 absoluteZeroWarningEffect.SetActive(false);
+
+            // 缓存 BingCi 原始局部坐标
+            if (bingCiTransforms != null)
+            {
+                bingCiOriginalLocalPositions = new Vector3[bingCiTransforms.Length];
+                for (int i = 0; i < bingCiTransforms.Length; i++)
+                {
+                    if (bingCiTransforms[i] != null)
+                        bingCiOriginalLocalPositions[i] = bingCiTransforms[i].localPosition;
+                }
+            }
         }
 
-        // ── 阶段检测 ────────────────────────────────────────
+        // ── 阶段与冷却更新 ──────────────────────────────────
 
         protected override void OnExtraUpdate()
         {
@@ -167,7 +229,6 @@ namespace LightVsDecay.Logic.Boss
             UpdateFreezeRayCooldown();
             UpdateAbsoluteZeroCooldown();
 
-            // 阶段2：额外 FrostTank 召唤
             if (currentPhase == 2)
                 UpdatePhase2TankSummon();
         }
@@ -179,7 +240,6 @@ namespace LightVsDecay.Logic.Boss
             if (currentPhase == 1 && hp <= 0.65f)
             {
                 currentPhase = 2;
-                // 进入阶段2重置阶段2坦克计时
                 phase2TankTimer = phase2TankSummonInterval;
                 if (showDebugInfo)
                     GameLogger.Log("[GlacialBoss] 进入阶段二：极寒爆发！");
@@ -187,7 +247,6 @@ namespace LightVsDecay.Logic.Boss
             else if (currentPhase < 3 && hp <= 0.3f)
             {
                 currentPhase = 3;
-                // 阶段3：绝对零度冷却缩短
                 absoluteZeroCooldownTimer = Mathf.Min(absoluteZeroCooldownTimer, absoluteZeroCooldownPhase3);
                 if (showDebugInfo)
                     GameLogger.Log("[GlacialBoss] 进入阶段三：绝对压制！");
@@ -223,7 +282,6 @@ namespace LightVsDecay.Logic.Boss
             if (phase2TankTimer <= 0f)
             {
                 phase2TankTimer = phase2TankSummonInterval;
-                // 在屏幕随机边缘召唤一只极寒坦克
                 Vector3 spawnPos = GetRandomSpawnEdgePosition();
                 EnemyPoolManager.Instance.Spawn(EnemyType.FrostTank, spawnPos);
                 if (showDebugInfo)
@@ -234,26 +292,23 @@ namespace LightVsDecay.Logic.Boss
         // ── Idle 回调 ────────────────────────────────────────
 
         protected override void OnEnterIdle() { }
-
         protected override void OnIdlePassiveUpdate(float deltaTime) { }
 
         // ── 主动技能选择 ─────────────────────────────────────
 
         protected override void ChooseActiveSkill()
         {
-            // 绝对零度已在 OnExtraUpdate 触发，此处直接用 Charge 兜底
-            // 冰封射线：冷却就绪时按概率触发
             if (freezeRayReady && Random.value < freezeRayTriggerChance)
             {
                 StartFreezeRay();
                 return;
             }
-
-            // 兜底：极寒冲撞
             ChangeState(BossState.Charge);
         }
 
-        // ── 技能1：冰墙构建 ─────────────────────────────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 技能1：冰墙构建
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         protected override IEnumerator ExecuteSummonBehavior()
         {
@@ -263,28 +318,34 @@ namespace LightVsDecay.Logic.Boss
                 yield break;
             }
 
-            int count = Random.Range(iceWallCountMin, iceWallCountMax + 1);
+            // 蓄力发光（1.5s）
+            yield return StartCoroutine(FadeAlpha(redBodyEffect.GetComponent<SpriteRenderer>(), 0f, 1f, iceWallGlowFadeInDuration));
 
+            // 生成冰墙
+            int count = Random.Range(iceWallCountMin, iceWallCountMax + 1);
             for (int i = 0; i < count; i++)
             {
                 Vector3 pos = GetRandomIceWallPosition();
                 EnemyPoolManager.Instance.Spawn(EnemyType.IceWall, pos);
-                // 多堵冰墙略微错开
                 if (count > 1) yield return new WaitForSeconds(0.2f);
             }
 
             if (showDebugInfo)
                 GameLogger.Log($"[GlacialBoss] 冰墙构建：召唤 {count} 堵冰墙");
+
+            // 发光淡出（1s）
+            yield return StartCoroutine(FadeAlpha(redBodyEffect.GetComponent<SpriteRenderer>(), 1f, 0f, iceWallGlowFadeOutDuration));
         }
 
-        // ── 技能2：冰封射线 ─────────────────────────────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 技能2：冰封射线（固定方向，不扫射）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private void StartFreezeRay()
         {
             freezeRayReady = false;
             freezeRayCooldownTimer = freezeRayCooldownTime;
 
-            // 停止 Boss 移动：进入 Stun（杀掉旧 stateCoroutine），立即覆盖为射线协程
             ChangeState(BossState.Stun);
             if (stateCoroutine != null) StopCoroutine(stateCoroutine);
             stateCoroutine = StartCoroutine(FreezeRayRoutine());
@@ -296,58 +357,85 @@ namespace LightVsDecay.Logic.Boss
 
             freezeRayHitThisCast = false;
 
-            // 初始射线角度：朝向玩家塔
-            float startAngle = GetAngleToTurret();
-            float currentAngle = startAngle;
-            float totalRotation = freezeRayRotationSpeed * freezeRayDuration; // 总旋转角度
+            // === 蓄力阶段：顶部水晶闪烁 ===
+            yield return StartCoroutine(Body03BlinkRoutine(freezeRayChargeUpDuration));
 
-            // 启用视觉
-            if (freezeRayVisual != null)
-                freezeRayVisual.gameObject.SetActive(true);
+            // 计算固定方向（Boss中心 → 光棱塔），整个射线阶段不变
+            Vector2 rayDir;
+            if (turretController != null)
+                rayDir = (turretController.transform.position - transform.position).normalized;
+            else
+                rayDir = Vector2.down;
 
+            // 启用 LineRenderer 和末端特效
+            if (laserLineRenderer != null) laserLineRenderer.enabled = true;
+            if (laserEndVFX != null) laserEndVFX.gameObject.SetActive(true);
+
+            // === 射线阶段（freezeRayDuration 秒）===
             float elapsed = 0f;
             while (elapsed < freezeRayDuration)
             {
                 elapsed += Time.deltaTime;
-                currentAngle = startAngle + elapsed * freezeRayRotationSpeed;
 
-                // 更新视觉旋转
-                if (freezeRayVisual != null)
-                    freezeRayVisual.rotation = Quaternion.Euler(0f, 0f, currentAngle);
+                // Raycast：检测护盾层与塔本体层
+                var hit = Physics2D.Raycast(transform.position, rayDir, freezeRayLength, rayHitLayers);
+                Vector2 endPoint;
 
-                // 射线检测（朝当前角度方向）
-                if (!freezeRayHitThisCast)
+                if (hit.collider != null)
                 {
-                    Vector2 rayDir = Quaternion.Euler(0f, 0f, currentAngle) * Vector2.down;
-                    var hit = Physics2D.Raycast(transform.position, rayDir, freezeRayLength, rayHitLayers);
-                    if (hit.collider != null)
+                    endPoint = hit.point;
+
+                    ShieldController sc = hit.collider.GetComponent<ShieldController>();
+                    if (sc != null)
                     {
+                        // 命中护盾：每帧扣血，不冻结
+                        sc.TakeDamage(Mathf.RoundToInt(freezeRayShieldDamagePerSecond * Time.deltaTime));
+                    }
+                    else if (!freezeRayHitThisCast)
+                    {
+                        // 命中塔本体：触发冻结（本次施法只触发一次）
                         freezeRayHitThisCast = true;
                         ApplyTurretFreeze(freezeRayTurretFreezeDuration);
                         if (showDebugInfo)
-                            GameLogger.Log($"[GlacialBoss] 冰封射线命中！冻结 {freezeRayTurretFreezeDuration}s");
+                            GameLogger.Log($"[GlacialBoss] 冰封射线命中塔！冻结 {freezeRayTurretFreezeDuration}s");
                     }
                 }
+                else
+                {
+                    endPoint = (Vector2)transform.position + rayDir * freezeRayLength;
+                }
 
-                // Boss 在射线期间保持静止
+                // 更新 LineRenderer 端点
+                if (laserLineRenderer != null)
+                {
+                    laserLineRenderer.SetPosition(0, transform.position);
+                    laserLineRenderer.SetPosition(1, endPoint);
+                }
+
+                // 末端特效跟随
+                if (laserEndVFX != null)
+                    laserEndVFX.position = endPoint;
+
+                // 射线期间 Boss 保持静止
                 if (rb != null) rb.velocity = Vector2.zero;
 
                 yield return null;
             }
 
-            // 关闭视觉
-            if (freezeRayVisual != null)
-                freezeRayVisual.gameObject.SetActive(false);
+            // === 结束：关闭视觉 ===
+            if (laserLineRenderer != null) laserLineRenderer.enabled = false;
+            if (laserEndVFX != null) laserEndVFX.gameObject.SetActive(false);
 
             if (showDebugInfo) GameLogger.Log("[GlacialBoss] 冰封射线结束");
             ChangeState(BossState.Idle);
         }
 
-        // ── 技能3：极寒冲撞 ─────────────────────────────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 技能3：极寒冲撞
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         protected override void OnChargeDashComplete(Vector3 startPos, Vector3 endPos)
         {
-            // 冲撞落地后冻结光棱塔
             ApplyTurretFreeze(chargeTurretFreezeDuration);
             if (showDebugInfo)
                 GameLogger.Log($"[GlacialBoss] 极寒冲撞落地，冻结光棱塔 {chargeTurretFreezeDuration}s");
@@ -358,19 +446,17 @@ namespace LightVsDecay.Logic.Boss
             return currentPhase >= 3 ? 1.15f : 1f;
         }
 
-        // ── 技能4：绝对零度 ─────────────────────────────────
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 技能4：绝对零度
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private void TriggerAbsoluteZero()
         {
             if (absoluteZeroActive) return;
             absoluteZeroActive = true;
-
             if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度启动！");
 
-            // 中断当前冲撞（如果有）
             InterruptCharge();
-
-            // 进入 Stun 停止Boss所有运动，立即覆盖为绝对零度协程
             ChangeState(BossState.Stun);
             if (stateCoroutine != null) StopCoroutine(stateCoroutine);
             stateCoroutine = StartCoroutine(AbsoluteZeroRoutine());
@@ -380,15 +466,12 @@ namespace LightVsDecay.Logic.Boss
         {
             if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度：3秒蓄力开始");
 
-            // 全屏警告视觉
             if (absoluteZeroWarningEffect != null)
                 absoluteZeroWarningEffect.SetActive(true);
 
-            // 全屏警告文字（UI 层可监听 FloatingTextManager 实现更丰富的表现）
             LightVsDecay.UI.FloatingText.FloatingTextManager.Instance?.ShowStatus(
                 transform.position, "绝对零度！打断需造成 5000 伤害！");
 
-            // 记录蓄力开始时的 Boss HP 百分比（用于计算被打断时受到的伤害量）
             float hpPercentAtStart = bossHealth.HealthPercent;
             float maxHP = config != null ? config.maxHealth : 750000f;
 
@@ -400,38 +483,31 @@ namespace LightVsDecay.Logic.Boss
                 elapsed += Time.deltaTime;
                 rb.velocity = Vector2.zero;
 
-                // 检测打断：Boss 在蓄力期间受到的累计伤害
                 float damageDealt = (hpPercentAtStart - bossHealth.HealthPercent) * maxHP;
                 if (damageDealt >= absoluteZeroInterruptThreshold)
                 {
                     interrupted = true;
                     break;
                 }
-
                 yield return null;
             }
 
-            // 关闭视觉
             if (absoluteZeroWarningEffect != null)
                 absoluteZeroWarningEffect.SetActive(false);
 
             if (interrupted)
             {
-                // 打断成功：Boss 眩晕
                 if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度被打断！Boss 眩晕");
                 FloatingTextShowInterrupted();
                 absoluteZeroActive = false;
-                // 重置冷却
                 absoluteZeroCooldownTimer = currentPhase >= 3
                     ? absoluteZeroCooldownPhase3
                     : absoluteZeroCooldownPhase12;
                 absoluteZeroTriggered = false;
-
-                ForceStun(); // 打断后短暂眩晕，然后回Idle
+                ForceStun();
             }
             else
             {
-                // 打断失败：施放完整绝对零度
                 if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度释放！");
                 yield return StartCoroutine(AbsoluteZeroDetonateRoutine());
 
@@ -446,24 +522,99 @@ namespace LightVsDecay.Logic.Boss
 
         private IEnumerator AbsoluteZeroDetonateRoutine()
         {
+            int totalSpikes = (bingCiTransforms != null) ? bingCiTransforms.Length : 0;
+            bingCiResolvedCount = 0;
+            bingCiAnyHitTower = false;
+
+            // 无冰刺配置时直接惩罚（向下兼容）
+            if (totalSpikes == 0 || iceSpikeProjectilePrefab == null)
+            {
+                ApplyAbsoluteZeroPenalty();
+                yield return new WaitForSeconds(0.5f);
+                yield break;
+            }
+
+            // Step 1：拔出（0.4s）
+            yield return StartCoroutine(BingCiPullOut());
+
+            // Step 2：旋转对准（0.6s，错开 0.1s）
+            Vector2 dirToTurret = turretController != null
+                ? (turretController.transform.position - transform.position).normalized
+                : Vector2.down;
+            yield return StartCoroutine(BingCiRotateTowardTower(dirToTurret));
+
+            // Step 3：射出冰刺（错开 0.15s），隐藏 BingCi 精灵
+            for (int i = 0; i < totalSpikes; i++)
+            {
+                if (i > 0) yield return new WaitForSeconds(bingCiFireStagger);
+
+                if (bingCiTransforms[i] == null) { bingCiResolvedCount++; continue; }
+
+                // 生成投射体
+                Vector3 spawnPos = bingCiTransforms[i].position;
+                GameObject spikeGO = Instantiate(iceSpikeProjectilePrefab, spawnPos, Quaternion.identity);
+                IceSpikeProjectile spike = spikeGO.GetComponent<IceSpikeProjectile>();
+                if (spike != null)
+                {
+                    spike.OnReachedTower += () => { bingCiResolvedCount++; bingCiAnyHitTower = true; };
+                    spike.OnDestroyedByLaser += () => { bingCiResolvedCount++; };
+                    spike.Launch(dirToTurret);
+                }
+                else
+                {
+                    bingCiResolvedCount++; // 防御性计数
+                }
+
+                // 隐藏对应 BingCi 精灵
+                if (bingCiRenderers != null && i < bingCiRenderers.Length && bingCiRenderers[i] != null)
+                {
+                    Color c = bingCiRenderers[i].color;
+                    c.a = 0f;
+                    bingCiRenderers[i].color = c;
+                }
+            }
+
+            // 等待所有冰刺结算（超时 10s）
+            float waitTimer = 0f;
+            while (bingCiResolvedCount < totalSpikes && waitTimer < 10f)
+            {
+                waitTimer += Time.deltaTime;
+                yield return null;
+            }
+
+            // 惩罚结算：任意冰刺命中塔即触发
+            if (bingCiAnyHitTower)
+                ApplyAbsoluteZeroPenalty();
+
+            // 延迟后冰刺再生
+            yield return new WaitForSeconds(bingCiRegenDelay);
+            yield return StartCoroutine(BingCiRegen());
+
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 辅助方法
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void ApplyAbsoluteZeroPenalty()
+        {
             // 真实伤害：光棱塔当前血量的 30%
             if (turretHealth != null)
             {
-                // 通过 TurretHealth.TakeDamage 施加百分比真实伤害
-                // 先尝试对护盾，再对本体
                 int trueDamage = Mathf.RoundToInt(turretHealth.CurrentHullHP * absoluteZeroTrueDamagePercent);
                 turretHealth.TakeDamage(trueDamage);
                 if (showDebugInfo)
                     GameLogger.Log($"[GlacialBoss] 绝对零度真实伤害 {trueDamage}");
             }
 
-            // 冻结光棱塔 3 秒
+            // 冻结光棱塔
             ApplyTurretFreeze(absoluteZeroTurretFreezeDuration);
 
-            // 短暂震屏强调
+            // 震屏
             CameraShake.Instance?.Shake(0.8f, 0.5f);
 
-            // 召唤额外怪物波次（FrostSlime）
+            // 额外召唤增援
             if (EnemyPoolManager.Instance != null)
             {
                 for (int i = 0; i < absoluteZeroSummonCount; i++)
@@ -472,13 +623,164 @@ namespace LightVsDecay.Logic.Boss
                     EnemyPoolManager.Instance.Spawn(EnemyType.FrostSlime, pos);
                 }
             }
-
-            yield return new WaitForSeconds(0.5f);
         }
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 辅助方法
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // ── BingCi 动画协程 ──────────────────────────────────
+
+        /// <summary>Step1：冰刺拔出——各自向外位移 bingCiPullOutDistance（0.4s）</summary>
+        private IEnumerator BingCiPullOut()
+        {
+            if (bingCiTransforms == null || bingCiOriginalLocalPositions == null) yield break;
+
+            int n = bingCiTransforms.Length;
+            Vector3[] startPositions = new Vector3[n];
+            Vector3[] targetPositions = new Vector3[n];
+
+            for (int i = 0; i < n; i++)
+            {
+                if (bingCiTransforms[i] == null) continue;
+                startPositions[i] = bingCiTransforms[i].localPosition;
+                Vector3 outDir = bingCiOriginalLocalPositions[i] == Vector3.zero
+                    ? Vector3.up
+                    : bingCiOriginalLocalPositions[i].normalized;
+                targetPositions[i] = bingCiOriginalLocalPositions[i] + outDir * bingCiPullOutDistance;
+            }
+
+            float elapsed = 0f;
+            while (elapsed < bingCiPullOutDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / bingCiPullOutDuration);
+                for (int i = 0; i < n; i++)
+                {
+                    if (bingCiTransforms[i] == null) continue;
+                    bingCiTransforms[i].localPosition = Vector3.Lerp(startPositions[i], targetPositions[i], t);
+                }
+                yield return null;
+            }
+        }
+
+        /// <summary>Step2：四枚冰刺错开 rotateStagger 依次旋转对准光棱塔（每枚 0.6s）</summary>
+        private IEnumerator BingCiRotateTowardTower(Vector2 dirToTurret)
+        {
+            if (bingCiTransforms == null) yield break;
+
+            // 刺尖方向对准 dirToTurret：localRotation 0 时刺尖朝上，所以用 Atan2 + 90° 修正
+            float angle = Mathf.Atan2(dirToTurret.y, dirToTurret.x) * Mathf.Rad2Deg - 90f;
+            Quaternion targetRot = Quaternion.Euler(0f, 0f, angle);
+
+            int n = bingCiTransforms.Length;
+            // 并发启动，各自延迟 i * stagger
+            for (int i = 0; i < n; i++)
+                StartCoroutine(RotateSingleBingCi(i, targetRot, i * bingCiRotateStagger));
+
+            // 等待最后一枚完成
+            float totalWait = (n - 1) * bingCiRotateStagger + bingCiRotateDuration;
+            yield return new WaitForSeconds(totalWait);
+        }
+
+        private IEnumerator RotateSingleBingCi(int index, Quaternion targetRot, float delay)
+        {
+            if (delay > 0f) yield return new WaitForSeconds(delay);
+            if (bingCiTransforms == null || index >= bingCiTransforms.Length || bingCiTransforms[index] == null)
+                yield break;
+
+            Quaternion startRot = bingCiTransforms[index].localRotation;
+            float elapsed = 0f;
+            while (elapsed < bingCiRotateDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / bingCiRotateDuration);
+                bingCiTransforms[index].localRotation = Quaternion.Slerp(startRot, targetRot, t);
+                yield return null;
+            }
+        }
+
+        /// <summary>再生：复位 BingCi 位置/旋转，alpha 0→1（0.5s）</summary>
+        private IEnumerator BingCiRegen()
+        {
+            if (bingCiTransforms == null || bingCiOriginalLocalPositions == null) yield break;
+
+            int n = bingCiTransforms.Length;
+
+            // 复位变换
+            for (int i = 0; i < n; i++)
+            {
+                if (bingCiTransforms[i] == null) continue;
+                bingCiTransforms[i].localPosition = bingCiOriginalLocalPositions[i];
+                bingCiTransforms[i].localRotation = Quaternion.identity;
+            }
+
+            // Alpha 淡入
+            float elapsed = 0f;
+            while (elapsed < bingCiRegenFadeDuration)
+            {
+                elapsed += Time.deltaTime;
+                float alpha = Mathf.Clamp01(elapsed / bingCiRegenFadeDuration);
+                if (bingCiRenderers != null)
+                {
+                    for (int i = 0; i < bingCiRenderers.Length; i++)
+                    {
+                        if (bingCiRenderers[i] == null) continue;
+                        Color c = bingCiRenderers[i].color;
+                        c.a = alpha;
+                        bingCiRenderers[i].color = c;
+                    }
+                }
+                yield return null;
+            }
+        }
+
+        // ── 通用视觉辅助 ─────────────────────────────────────
+
+        /// <summary>顶部水晶蓄力闪烁协程（duration 秒）</summary>
+        private IEnumerator Body03BlinkRoutine(float duration)
+        {
+            if (body03Crystal == null)
+            {
+                yield return new WaitForSeconds(duration);
+                yield break;
+            }
+
+            float elapsed = 0f;
+            bool visible = true;
+            float blinkInterval = 0.2f;
+            float nextBlink = blinkInterval;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                nextBlink -= Time.deltaTime;
+                if (nextBlink <= 0f)
+                {
+                    visible = !visible;
+                    body03Crystal.enabled = visible;
+                    nextBlink = blinkInterval;
+                }
+                yield return null;
+            }
+            body03Crystal.enabled = true;
+        }
+
+        /// <summary>SpriteRenderer alpha 线性渐变（fromAlpha → toAlpha，duration 秒）</summary>
+        private IEnumerator FadeAlpha(SpriteRenderer sr, float fromAlpha, float toAlpha, float duration)
+        {
+            if (sr == null) { yield return new WaitForSeconds(duration); yield break; }
+
+            Color c = sr.color;
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                c.a = Mathf.Lerp(fromAlpha, toAlpha, elapsed / duration);
+                sr.color = c;
+                yield return null;
+            }
+            c.a = toAlpha;
+            sr.color = c;
+        }
+
+        // ── 通用逻辑辅助 ─────────────────────────────────────
 
         private void FindTurretComponents()
         {
@@ -498,15 +800,6 @@ namespace LightVsDecay.Logic.Boss
                 turretController.Freeze(duration);
         }
 
-        /// <summary>获取 Boss 朝向玩家塔的角度（用于射线初始方向）</summary>
-        private float GetAngleToTurret()
-        {
-            if (turretController == null) return -90f; // 默认朝下
-            Vector2 dir = (turretController.transform.position - transform.position).normalized;
-            return Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg; // Z轴旋转（0°=朝上）
-        }
-
-        /// <summary>在屏幕可见区域内随机取一个冰墙生成位置</summary>
         private Vector3 GetRandomIceWallPosition()
         {
             Camera cam = Camera.main;
@@ -518,13 +811,11 @@ namespace LightVsDecay.Logic.Boss
 
             float x = Random.Range(cam.transform.position.x - halfW + margin,
                                    cam.transform.position.x + halfW - margin);
-            // 只在上半屏生成冰墙（避免紧贴塔）
             float y = Random.Range(cam.transform.position.y,
                                    cam.transform.position.y + halfH - margin);
             return new Vector3(x, y, 0f);
         }
 
-        /// <summary>获取屏幕边缘随机位置（用于 Phase2 FrostTank 和绝对零度增援）</summary>
         private Vector3 GetRandomSpawnEdgePosition()
         {
             Camera cam = Camera.main;
@@ -532,9 +823,8 @@ namespace LightVsDecay.Logic.Boss
 
             float halfW = cam.orthographicSize * cam.aspect;
             float halfH = cam.orthographicSize;
-            float edge = 1.5f;
+            float edge  = 1.5f;
 
-            // 从上方入场
             float x = Random.Range(-halfW + edge, halfW - edge) + cam.transform.position.x;
             float y = cam.transform.position.y + halfH + edge;
             return new Vector3(x, y, 0f);

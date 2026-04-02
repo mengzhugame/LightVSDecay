@@ -119,6 +119,7 @@ MonoBehaviour:
   enemyType: 12
   bodySprite: {fileID: 5711266985827518147}
   eyesController: {fileID: 5646425625729873227}
+  extraEyes: []
   decorations:
   - {fileID: 6639158586126556823}
   - {fileID: 535458911280438716}
@@ -177,8 +178,8 @@ Transform:
   m_GameObject: {fileID: 1168578914824229395}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0.271, y: 1.992, z: 0}
+  m_LocalScale: {x: 1.4203999, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2775309859623214171}

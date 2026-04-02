@@ -104,7 +104,7 @@ namespace LightVsDecay.Logic.Enemy
 
             overlayRenderer.color = overlayColor;
             overlayRenderer.sortingLayerName = "Enemy";
-            overlayRenderer.sortingOrder = 15;   // 冰刺在最上层
+            overlayRenderer.sortingOrder = -1;   // 冰刺在身体下层
 
             overlay.SetActive(false);
         }

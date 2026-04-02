@@ -101,8 +101,8 @@ GameObject:
   - component: {fileID: 6224388295452102496}
   - component: {fileID: 7392211137020160984}
   - component: {fileID: 6402380625862226979}
-  - component: {fileID: 4049132327917296289}
   - component: {fileID: 1938901262160730929}
+  - component: {fileID: -4084352553895796084}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Frost_Tank
@@ -223,41 +223,6 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 4, y: 4}
   m_EdgeRadius: 0
---- !u!58 &4049132327917296289
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1015045838383309280}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
-  serializedVersion: 2
-  m_Radius: 0.5
 --- !u!114 &1938901262160730929
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -274,6 +239,7 @@ MonoBehaviour:
   enemyType: 15
   bodySprite: {fileID: 8479118863604915321}
   eyesController: {fileID: 2384282089683783590}
+  extraEyes: []
   decorations:
   - {fileID: 9188201491311970510}
   - {fileID: 7452033813101763988}
@@ -281,6 +247,22 @@ MonoBehaviour:
   hitSpeedBoostMultiplier: 3
   defaultHitColor: {r: 1, g: 1, b: 1, a: 1}
   showDebugInfo: 0
+--- !u!114 &-4084352553895796084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1015045838383309280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7303a4a0e89830b488b607d88bbef980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  iceSpikeSprite: {fileID: 21300000, guid: 733554aba7f07d24c933198387b56ef0, type: 3}
+  overlayColor: {r: 0.4, g: 0.88, b: 1, a: 0.82}
+  pulseSpeed: 5
+  pulseAmplitude: 0.06
 --- !u!1 &1879333898842508429
 GameObject:
   m_ObjectHideFlags: 0

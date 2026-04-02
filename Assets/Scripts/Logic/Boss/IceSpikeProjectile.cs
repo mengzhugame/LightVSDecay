@@ -1,0 +1,94 @@
+// ============================================================
+// IceSpikeProjectile.cs
+// 文件位置: Assets/Scripts/Logic/Boss/IceSpikeProjectile.cs
+// 用途：极寒之核技能4"绝对零度"发射的冰刺投射体。
+//       HP=5000，可被激光击落。命中光棱塔或超时后触发回调。
+// 预制体需挂载：Rigidbody2D + CircleCollider2D(isTrigger)
+// 预制体层级：BossPollutionBall（使激光可以检测到）
+// ============================================================
+
+using UnityEngine;
+using LightVsDecay.Core;
+
+namespace LightVsDecay.Logic.Boss
+{
+    /// <summary>
+    /// 极寒之核"绝对零度"冰刺投射体。
+    /// </summary>
+    public class IceSpikeProjectile : MonoBehaviour
+    {
+        [SerializeField] private float moveSpeed = 16f;
+        [SerializeField] private float maxLifetime = 10f;
+
+        private float currentHP;
+        private bool isResolved;
+        private Vector2 moveDirection;
+        private float elapsed;
+        private Rigidbody2D rb;
+
+        public bool IsDestroyed => isResolved;
+
+        /// <summary>冰刺被激光摧毁时回调（计入"被拦截"）</summary>
+        public System.Action OnDestroyedByLaser;
+
+        /// <summary>冰刺命中塔/护盾或超时时回调（计入"未被拦截"）</summary>
+        public System.Action OnReachedTower;
+
+        private void Awake()
+        {
+            rb = GetComponent<Rigidbody2D>();
+        }
+
+        /// <summary>初始化并发射</summary>
+        public void Launch(Vector2 direction, float hp = 5000f)
+        {
+            moveDirection = direction.normalized;
+            currentHP = hp;
+            isResolved = false;
+            elapsed = 0f;
+
+            if (rb != null)
+                rb.velocity = moveDirection * moveSpeed;
+        }
+
+        private void Update()
+        {
+            if (isResolved) return;
+
+            elapsed += Time.deltaTime;
+            if (elapsed >= maxLifetime)
+                Resolve(hitTower: true);
+        }
+
+        /// <summary>被激光命中时调用（由 LaserController 驱动）</summary>
+        public void TakeDamage(float damage)
+        {
+            if (isResolved) return;
+            currentHP -= damage;
+            if (currentHP <= 0f)
+                Resolve(hitTower: false);
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (isResolved) return;
+            if (other.CompareTag("Tower") || other.CompareTag("Shield"))
+                Resolve(hitTower: true);
+        }
+
+        private void Resolve(bool hitTower)
+        {
+            if (isResolved) return;
+            isResolved = true;
+
+            if (rb != null) rb.velocity = Vector2.zero;
+
+            if (hitTower)
+                OnReachedTower?.Invoke();
+            else
+                OnDestroyedByLaser?.Invoke();
+
+            gameObject.SetActive(false);
+        }
+    }
+}

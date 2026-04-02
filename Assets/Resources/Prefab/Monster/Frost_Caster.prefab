@@ -12,9 +12,9 @@ GameObject:
   - component: {fileID: 5262763115040599310}
   - component: {fileID: 6007247852788926418}
   - component: {fileID: 5445393514144820084}
-  - component: {fileID: 9151856568328625574}
   - component: {fileID: 7337693297560147520}
   - component: {fileID: 5778805252954264373}
+  - component: {fileID: 3280001470272472403}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Frost_Caster
@@ -140,41 +140,6 @@ PolygonCollider2D:
       - {x: 0.41447076, y: -3.562783}
       - {x: 1.3361988, y: 1.0793016}
   m_UseDelaunayMesh: 0
---- !u!58 &9151856568328625574
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 480579228690192331}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
-  serializedVersion: 2
-  m_Radius: 0.5
 --- !u!114 &7337693297560147520
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -212,6 +177,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef4d96efa85c9c2429cc4c6bc1378b6a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  effectSprite: {fileID: 4901263530798537965}
+  effectDimColor: {r: 0.35, g: 0.8, b: 1, a: 0}
+  effectGlowColor: {r: 0.35, g: 0.9, b: 1, a: 1}
+  glowFadeoutDuration: 0.4
+  firstCastDelay: 1.5
+--- !u!114 &3280001470272472403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480579228690192331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7303a4a0e89830b488b607d88bbef980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  iceSpikeSprite: {fileID: 21300000, guid: 733554aba7f07d24c933198387b56ef0, type: 3}
+  overlayColor: {r: 0.4, g: 0.88, b: 1, a: 0.82}
+  pulseSpeed: 5
+  pulseAmplitude: 0.06
 --- !u!1 &2062201692002390227
 GameObject:
   m_ObjectHideFlags: 0
@@ -269,7 +255,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 24fe0bf8f9079464c98330d3e75aac0c, type: 2}
+  - {fileID: 2100000, guid: 7e798154fa21a1d4893acfe0d5dad304, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -289,9 +275,9 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 10
+  m_SortingOrder: 9
   m_Sprite: {fileID: 21300000, guid: bb4d5cde3c2bae845a4ef91822b4f5a1, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

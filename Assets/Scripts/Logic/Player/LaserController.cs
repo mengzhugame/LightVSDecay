@@ -492,6 +492,13 @@ namespace LightVsDecay.Logic.Player
                     if (meteor != null && !meteor.IsDestroyed)
                     {
                         meteor.TakeDamage(baseDamage);
+                        continue;
+                    }
+                    // 冰刺（GlacialBoss 绝对零度，可被击落）
+                    IceSpikeProjectile iceSpike = collider.GetComponent<IceSpikeProjectile>();
+                    if (iceSpike != null && !iceSpike.IsDestroyed)
+                    {
+                        iceSpike.TakeDamage(baseDamage);
                     }
                     continue;
                 }
@@ -611,6 +618,13 @@ namespace LightVsDecay.Logic.Player
                     if (meteor != null && !meteor.IsDestroyed)
                     {
                         meteor.TakeDamage(damage);
+                        continue;
+                    }
+                    // 冰刺（GlacialBoss 绝对零度，可被击落）
+                    IceSpikeProjectile iceSpike = collider.GetComponent<IceSpikeProjectile>();
+                    if (iceSpike != null && !iceSpike.IsDestroyed)
+                    {
+                        iceSpike.TakeDamage(damage);
                     }
                     continue;
                 }

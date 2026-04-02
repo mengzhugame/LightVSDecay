@@ -392,6 +392,7 @@ GameObject:
   - component: {fileID: 5343637081309622957}
   - component: {fileID: 6466215615461531474}
   - component: {fileID: 5316185292051227668}
+  - component: {fileID: -4572230896720049102}
   m_Layer: 6
   m_HasEditorInfo: 1
   m_Name: Frost_Slime
@@ -497,6 +498,7 @@ MonoBehaviour:
   enemyType: 14
   bodySprite: {fileID: 655440523532032296}
   eyesController: {fileID: 869606453655455829}
+  extraEyes: []
   decorations:
   - {fileID: 7760608025570307878}
   - {fileID: 2952209439162524498}
@@ -526,3 +528,19 @@ MonoBehaviour:
   breathScaleMin: 0.95
   breathScaleMax: 1.05
   breathCycleDuration: 1.5
+--- !u!114 &-4572230896720049102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8775720239184918657}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7303a4a0e89830b488b607d88bbef980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  iceSpikeSprite: {fileID: 21300000, guid: 733554aba7f07d24c933198387b56ef0, type: 3}
+  overlayColor: {r: 0.4, g: 0.88, b: 1, a: 0.82}
+  pulseSpeed: 5
+  pulseAmplitude: 0.06

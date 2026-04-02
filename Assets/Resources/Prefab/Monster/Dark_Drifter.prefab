@@ -302,7 +302,6 @@ GameObject:
   - component: {fileID: 1567805994478184235}
   - component: {fileID: 2236089286846062727}
   - component: {fileID: 1134907585907479600}
-  - component: {fileID: 1230643296759762539}
   - component: {fileID: 277119885811001129}
   m_Layer: 6
   m_HasEditorInfo: 1
@@ -430,41 +429,6 @@ PolygonCollider2D:
       - {x: 0.29727888, y: -1.2371315}
       - {x: 0.7446437, y: 0.049090236}
   m_UseDelaunayMesh: 0
---- !u!58 &1230643296759762539
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6171739888601257571}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
-  serializedVersion: 2
-  m_Radius: 0.5
 --- !u!114 &277119885811001129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -481,6 +445,7 @@ MonoBehaviour:
   enemyType: 3
   bodySprite: {fileID: 4335784821728048696}
   eyesController: {fileID: 6691269152021299885}
+  extraEyes: []
   decorations:
   - {fileID: 5850622431092275405}
   - {fileID: 3203237212370406469}
