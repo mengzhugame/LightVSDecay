@@ -257,7 +257,10 @@ namespace LightVsDecay.Core.Pool
                 // ── 精英怪：直接 Instantiate，不受全局上限限制 ──
                 enemy = Object.Instantiate(config.prefab, position, rotation);
                 if (enemy != null)
+                {
                     nonPooledActive.Add(enemy);
+                    enemy.OnSpawn(); // 池化路径由 ObjectPool.Get() 调用；非池化需手动补调
+                }
             }
 
             if (enemy != null)
