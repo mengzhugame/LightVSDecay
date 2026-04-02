@@ -74,16 +74,20 @@ namespace LightVsDecay.Logic.Enemy
         }
         
         /// <summary>
-        /// 眼睛始终注视光棱塔
+        /// 整体怪物朝向光棱塔（旋转根节点，眼睛跟随父级）
         /// </summary>
         private void LookAtTower()
         {
-            Vector3 direction = targetTower.position - transform.position;
+            Transform root = transform.root;
+            Vector3 direction = targetTower.position - root.position;
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            
-            // 平滑旋转
-            Quaternion targetRotation = Quaternion.Euler(0, 0, angle + 90); // -90因为Sprite朝上
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * lookAtSmoothness);
+
+            // 平滑旋转根节点（整体怪物）
+            Quaternion targetRotation = Quaternion.Euler(0, 0, angle + 90);
+            root.rotation = Quaternion.Lerp(root.rotation, targetRotation, Time.deltaTime * lookAtSmoothness);
+
+            // 眼睛自身不叠加额外旋转，跟随父级即可
+            transform.localRotation = Quaternion.identity;
         }
         
         /// <summary>
