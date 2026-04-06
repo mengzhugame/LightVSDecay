@@ -10,6 +10,7 @@
 
 using System.Collections;
 using UnityEngine;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Statistics;
@@ -338,6 +339,9 @@ namespace LightVsDecay.Logic.Enemy
             var proj = go.GetComponent<LavaProjectile>();
             if (proj != null)
                 proj.Initialize(dir, projectileSpeed, projectileDamage, projectileHP, projectileLifetime);
+
+            // 喷吐音效
+            AudioManager.Instance?.PlayGunnerSpit();
 
             BattleStatistics.Instance?.RecordGunnerShot();
         }

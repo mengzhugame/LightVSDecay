@@ -33,9 +33,12 @@ namespace LightVsDecay.Core.Pool
         DroneExplosion,         // 无人机爆炸
         // Ch2 怪物相关（低频）
         EnemySplit,             // 分裂怪死亡爆开
+        GrenadeExplosionFire,   // 炸弹怪/精英炸弹怪死亡爆炸
         // Ch3 怪物相关（低频）
         CatalystBurst,          // 极寒催化者死亡冷气烟雾
         IceShieldBreak,         // 精英冰甲卫士冰盾破碎
+        WinterImpact,           // 冰墙召唤落地特效
+        ProjectileExplosion,    // 激光击破投射物（通用爆炸）
     }
     
     /// <summary>
@@ -402,6 +405,27 @@ namespace LightVsDecay.Core.Pool
         public void PlayShatterExplosion(Vector3 position)
         {
             Play(VFXType.ShatterExplosion, position);
+        }
+        /// <summary>
+        /// 播放炸弹怪死亡爆炸特效（VFX_GrenadeExplosionFire）
+        /// </summary>
+        public void PlayGrenadeExplosionFire(Vector3 position)
+        {
+            Play(VFXType.GrenadeExplosionFire, position);
+        }
+        /// <summary>
+        /// 播放冰墙召唤落地特效（VFX_Winter_Impact）
+        /// </summary>
+        public void PlayWinterImpact(Vector3 position)
+        {
+            Play(VFXType.WinterImpact, position);
+        }
+        /// <summary>
+        /// 播放激光击破投射物爆炸特效（通用，适用于所有章节投射物）
+        /// </summary>
+        public void PlayProjectileExplosion(Vector3 position)
+        {
+            Play(VFXType.ProjectileExplosion, position);
         }
         /// <summary>
         /// 计算粒子系统总时长（用于非池化VFX）

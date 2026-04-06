@@ -94,6 +94,30 @@ namespace LightVsDecay.Audio
         [Tooltip("分裂怪死亡爆开音效（可不配置）")]
         public AudioClip enemySplit;
 
+        [Tooltip("炸弹怪/精英炸弹怪死亡爆炸音效（LavaExploder/EliteLavaExploder）")]
+        public AudioClip grenadeExplosion;
+
+        [Tooltip("激光击破投射物爆炸音效（通用，适用于熔岩炮弹、Boss污秽球、冰刺、陨石）")]
+        public AudioClip projectileExplode;
+
+        [Tooltip("熔浆液生成音效（LavaPuddle 生成时播放）")]
+        public AudioClip lavaPuddleSpawn;
+
+        [Tooltip("熔岩炮手喷吐火球音效")]
+        public AudioClip gunnerSpit;
+
+        [Tooltip("火球飞行音效（挂在 LavaProjectile 上的 AudioSource 使用）")]
+        public AudioClip fireballFlight;
+
+        [Tooltip("极寒催化者死亡冷气释放特效音效")]
+        public AudioClip catalystBurst;
+
+        [Tooltip("冰墙生成落地音效（FrostcasterAI 召唤冰墙时播放）")]
+        public AudioClip iceWallSpawn;
+
+        [Tooltip("冰盾破裂音效（Frost_EliteTank 冰盾 HP 归零时播放）")]
+        public AudioClip iceShieldBreak;
+
         [Tooltip("怪物音效音量")]
         [Range(0f, 1f)]
         public float enemyDefaultVolume = 0.6f;
@@ -109,10 +133,14 @@ namespace LightVsDecay.Audio
         public AudioClip shieldHit;  // 【新增】
 
         [Tooltip("光棱塔受击")]
-        public AudioClip towerHit;   // 【新增】
+        public AudioClip towerHit;
+        [Tooltip("光棱塔被冰冻音效（Boss 冰封技能命中时播放）")]
+        public AudioClip towerFreeze;
+        [Tooltip("光棱塔解冻音效（冻结解除时播放）")]
+        public AudioClip towerUnfreeze;
         [Tooltip("低血量警告（心跳）")]
         public AudioClip lowHealthWarning;
-        
+
         [Tooltip("玩家音效音量")]
         [Range(0f, 1f)]
         public float playerDefaultVolume = 0.7f;
@@ -139,7 +167,13 @@ namespace LightVsDecay.Audio
         
         [Tooltip("Boss召唤小怪")]
         public AudioClip bossSummon;
-        
+
+        [Tooltip("BOSS来袭警告音效（波次出现 Boss 时的 UI 警报声）")]
+        public AudioClip bossWarning;
+
+        [Tooltip("熔岩BOSS吸收融合音效（每次吸收 LavaSlime 回血时播放，与 VolcanoBossController.sfxAbsorbSlime 共享同一音效）")]
+        public AudioClip bossAbsorb;
+
         [Tooltip("Boss 音效音量")]
         [Range(0f, 1f)]
         public float bossDefaultVolume = 0.7f;

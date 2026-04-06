@@ -8,7 +8,9 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
+using LightVsDecay.Core.Pool;
 
 namespace LightVsDecay.Logic.Boss
 {
@@ -84,9 +86,16 @@ namespace LightVsDecay.Logic.Boss
             if (rb != null) rb.velocity = Vector2.zero;
 
             if (hitTower)
+            {
                 OnReachedTower?.Invoke();
+            }
             else
+            {
+                // 被激光击落：播放爆炸特效和音效
+                VFXPoolManager.Instance?.PlayProjectileExplosion(transform.position);
+                AudioManager.Instance?.PlayProjectileExplode();
                 OnDestroyedByLaser?.Invoke();
+            }
 
             gameObject.SetActive(false);
         }

@@ -335,11 +335,11 @@ MonoBehaviour:
   eyePhase3TintDuration: 0.6
   vfxPhase2Transition: {fileID: 0}
   vfxPhase3Transition: {fileID: 0}
-  vfxAbsorbSlime: {fileID: 0}
+  vfxAbsorbSlime: {fileID: 111332, guid: d92d5f49a69eca04ca2836ee6ec67555, type: 3}
   vfxMeteorBurst: {fileID: 0}
   vfxDesperatePressStart: {fileID: 0}
   sfxMeteorLaunch: {fileID: 0}
-  sfxAbsorbSlime: {fileID: 0}
+  sfxAbsorbSlime: {fileID: 8300000, guid: fa71b508e0d53db4f9c533873de88f9c, type: 3}
   sfxPhaseTransition: {fileID: 0}
   sfxDesperatePressStart: {fileID: 0}
 --- !u!60 &479435283563098905

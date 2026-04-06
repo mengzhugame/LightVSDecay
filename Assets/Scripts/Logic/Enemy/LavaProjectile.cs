@@ -9,7 +9,9 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
+using LightVsDecay.Core.Pool;
 using LightVsDecay.Logic.Player;
 using LightVsDecay.Logic.Statistics;
 
@@ -106,7 +108,7 @@ namespace LightVsDecay.Logic.Enemy
             currentHP -= amount;
             if (currentHP <= 0f)
             {
-                DestroyProjectile();
+                DestroyProjectile(byLaser: true);
             }
         }
 
@@ -164,15 +166,22 @@ namespace LightVsDecay.Logic.Enemy
             }
         }
 
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 销毁
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private void DestroyProjectile()
+        private void DestroyProjectile(bool byLaser = false)
         {
             if (isDead) return;
             isDead = true;
-            // TODO: 播放熔岩弹爆炸特效（Stage 5 美术资源到位后添加）
+
+            if (byLaser)
+            {
+                VFXPoolManager.Instance?.PlayProjectileExplosion(transform.position);
+                AudioManager.Instance?.PlayProjectileExplode();
+            }
+
             Destroy(gameObject);
         }
     }

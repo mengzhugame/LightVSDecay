@@ -11,6 +11,7 @@
 // ============================================================
 
 using UnityEngine;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.UI.FloatingText;
@@ -110,8 +111,9 @@ namespace LightVsDecay.Logic.Enemy
             isActive = false;
             SetVisual(false);
 
-            // 冰盾破碎特效
+            // 冰盾破碎特效 + 音效
             VFXPoolManager.Instance?.Play(VFXType.IceShieldBreak, transform.position);
+            AudioManager.Instance?.PlayIceShieldBreak();
 
             if (showDebugInfo)
                 GameLogger.Log("[IceShield] 冰盾已破碎！本体恢复正常受击。");

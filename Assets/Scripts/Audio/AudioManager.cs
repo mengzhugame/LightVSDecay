@@ -722,6 +722,69 @@ namespace LightVsDecay.Audio
                 PlaySFX(config.enemyFreeze, config.enemyDefaultVolume);
             }
         }
+
+        /// <summary>
+        /// 播放激光击破投射物爆炸音效（通用）
+        /// </summary>
+        public void PlayProjectileExplode()
+        {
+            if (config != null && config.projectileExplode != null)
+                PlaySFX(config.projectileExplode, config.enemyDefaultVolume);
+        }
+
+        /// <summary>
+        /// 播放炸弹怪死亡爆炸音效（LavaExploder / EliteLavaExploder）
+        /// </summary>
+        public void PlayGrenadeExplosion()
+        {
+            if (config != null && config.grenadeExplosion != null)
+                PlaySFX(config.grenadeExplosion, config.enemyDefaultVolume);
+        }
+
+        /// <summary>
+        /// 播放熔浆液生成音效（LavaPuddle 生成时调用）
+        /// </summary>
+        public void PlayLavaPuddleSpawn()
+        {
+            if (config != null && config.lavaPuddleSpawn != null)
+                PlaySFX(config.lavaPuddleSpawn, config.enemyDefaultVolume);
+        }
+
+        /// <summary>
+        /// 播放熔岩炮手喷吐音效
+        /// </summary>
+        public void PlayGunnerSpit()
+        {
+            if (config != null && config.gunnerSpit != null)
+                PlaySFX(config.gunnerSpit, config.enemyDefaultVolume);
+        }
+
+        /// <summary>
+        /// 播放极寒催化者死亡冷气释放特效音效
+        /// </summary>
+        public void PlayCatalystBurst()
+        {
+            if (config != null && config.catalystBurst != null)
+                PlaySFX(config.catalystBurst, config.enemyDefaultVolume);
+        }
+
+        /// <summary>
+        /// 播放冰墙生成落地音效
+        /// </summary>
+        public void PlayIceWallSpawn()
+        {
+            if (config != null && config.iceWallSpawn != null)
+                PlaySFX(config.iceWallSpawn, config.enemyDefaultVolume);
+        }
+
+        /// <summary>
+        /// 播放冰盾破裂音效（Frost_EliteTank 冰盾归零时）
+        /// </summary>
+        public void PlayIceShieldBreak()
+        {
+            if (config != null && config.iceShieldBreak != null)
+                PlaySFX(config.iceShieldBreak, config.enemyDefaultVolume);
+        }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 玩家音效
@@ -759,7 +822,34 @@ namespace LightVsDecay.Audio
                 PlaySFX(config.towerHit, config.playerDefaultVolume);
             }
         }
-        
+
+        /// <summary>
+        /// 播放光棱塔被冰冻音效（Boss 冰封技能命中时调用）
+        /// </summary>
+        public void PlayTowerFreeze()
+        {
+            if (config != null && config.towerFreeze != null)
+                PlaySFX(config.towerFreeze, config.playerDefaultVolume);
+        }
+
+        /// <summary>
+        /// 播放光棱塔解冻音效（冻结解除时调用）
+        /// </summary>
+        public void PlayTowerUnfreeze()
+        {
+            if (config != null && config.towerUnfreeze != null)
+                PlaySFX(config.towerUnfreeze, config.playerDefaultVolume);
+        }
+
+        /// <summary>
+        /// 播放 BOSS 来袭警告音效（由 BossWarningUI 在警告横幅显示时调用）
+        /// </summary>
+        public void PlayBossWarning()
+        {
+            if (config != null && config.bossWarning != null)
+                PlaySFX(config.bossWarning, config.bossDefaultVolume);
+        }
+
         /// <summary>
         /// 播放低血量警告音效
         /// </summary>
@@ -951,7 +1041,7 @@ namespace LightVsDecay.Audio
         
         private void OnBossFightStart()
         {
-            // 可选：切换到 Boss 战 BGM
+            // 切换到 Boss 战 BGM（警告音效由 BossWarningUI 更早播放）
             if (config != null && config.bossBGM != null)
             {
                 PlayBGM(config.bossBGM);

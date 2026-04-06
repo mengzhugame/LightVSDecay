@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Logic.Enemy;
@@ -78,6 +79,15 @@ namespace LightVsDecay.Logic.Player
         [Header("UI 动画")]
         [Tooltip("进度条平滑速度")]
         [SerializeField] private float fillSmoothSpeed = 5f;
+
+        [Tooltip("按钮点击时压缩到的最小缩放（0.85 = 压缩15%）")]
+        [SerializeField] private float btnPressScale = 0.85f;
+
+        [Tooltip("按压下去的时长（秒）")]
+        [SerializeField] private float btnPressDuration = 0.08f;
+
+        [Tooltip("弹回原始大小的时长（秒）")]
+        [SerializeField] private float btnReleaseDuration = 0.18f;
         
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
@@ -95,6 +105,8 @@ namespace LightVsDecay.Logic.Player
         private TurretController turretController;
         private LaserController laserController;
         private LayerMask enemyLayerMask;
+        private RectTransform skillButtonRect;
+        private Coroutine btnAnimCoroutine;
         
         // 自动瞄准缓存
         private Collider2D[] nearbyEnemies = new Collider2D[50];
@@ -232,6 +244,7 @@ namespace LightVsDecay.Logic.Player
             if (skillButton != null)
             {
                 skillButton.onClick.AddListener(OnSkillButtonClicked);
+                skillButtonRect = skillButton.GetComponent<RectTransform>();
             }
             
             // 初始化进度条
@@ -554,7 +567,49 @@ namespace LightVsDecay.Logic.Player
         /// </summary>
         private void OnSkillButtonClicked()
         {
+            AudioManager.Instance?.PlayButtonClick();
+
+            if (skillButtonRect != null)
+            {
+                if (btnAnimCoroutine != null) StopCoroutine(btnAnimCoroutine);
+                btnAnimCoroutine = StartCoroutine(ButtonPressAnim());
+            }
+
             TryActivate();
+        }
+
+        private IEnumerator ButtonPressAnim()
+        {
+            // 压下：1.0 → btnPressScale
+            float elapsed = 0f;
+            while (elapsed < btnPressDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / btnPressDuration);
+                skillButtonRect.localScale = Vector3.one * Mathf.Lerp(1f, btnPressScale, t);
+                yield return null;
+            }
+            skillButtonRect.localScale = Vector3.one * btnPressScale;
+
+            // 弹回：btnPressScale → 1.0（EaseOutBack 弹性）
+            elapsed = 0f;
+            while (elapsed < btnReleaseDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / btnReleaseDuration);
+                float scale = Mathf.LerpUnclamped(btnPressScale, 1f, EaseOutBack(t));
+                skillButtonRect.localScale = Vector3.one * scale;
+                yield return null;
+            }
+            skillButtonRect.localScale = Vector3.one;
+            btnAnimCoroutine = null;
+        }
+
+        private static float EaseOutBack(float t)
+        {
+            const float c1 = 1.70158f;
+            const float c3 = c1 + 1f;
+            return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

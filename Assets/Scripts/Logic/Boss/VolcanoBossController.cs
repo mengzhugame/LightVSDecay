@@ -252,6 +252,9 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("【汲取融合】吸收小怪时特效（在Boss位置播放；留空=暂不播放）")]
         [SerializeField] private GameObject vfxAbsorbSlime;
 
+        [Tooltip("吸收特效持续时长（秒），超时自动销毁，避免特效残留")]
+        [SerializeField] private float absorbVFXDuration = 2f;
+
         [Tooltip("【陨石喷发】顶部发射特效（在Body03位置播放；留空=暂不播放）")]
         [SerializeField] private GameObject vfxMeteorBurst;
 
@@ -525,7 +528,8 @@ namespace LightVsDecay.Logic.Boss
 
         protected override void OnEnterIdle()
         {
-            meteorTimer = 0f;
+            // meteorTimer 不在此重置——需要跨多个 Idle 周期累积，
+            // 直到达到 meteorInterval 才触发，重置在 OnIdlePassiveUpdate 内完成。
         }
 
         protected override void OnIdlePassiveUpdate(float deltaTime)
@@ -725,9 +729,12 @@ namespace LightVsDecay.Logic.Boss
             // Body03 吸收脉冲
             body03TargetColor = body03IdleColor * 1.8f; // 短暂爆亮
 
-            // —— VFX 预留 ——
-            // 接入方式：将吸收特效预制体拖入 Inspector → vfxAbsorbSlime
-            PlayVFXAtSelf(vfxAbsorbSlime);
+            // —— VFX：吸收特效，到时自动销毁 ——
+            if (vfxAbsorbSlime != null)
+            {
+                GameObject vfxGo = Instantiate(vfxAbsorbSlime, transform.position, Quaternion.identity);
+                Destroy(vfxGo, absorbVFXDuration);
+            }
 
             // —— SFX 预留 ——
             // 接入方式：将吸收音效拖入 Inspector → sfxAbsorbSlime

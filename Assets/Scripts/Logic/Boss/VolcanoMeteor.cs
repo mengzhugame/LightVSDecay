@@ -10,6 +10,7 @@
 
 using UnityEngine;
 using System.Collections;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Logic.Player;
@@ -120,6 +121,11 @@ namespace LightVsDecay.Logic.Boss
                 isDestroyed = true;
                 isFalling   = false;
                 if (warningCircle != null) warningCircle.gameObject.SetActive(false);
+
+                // 被激光击落：播放爆炸特效和音效
+                VFXPoolManager.Instance?.PlayProjectileExplosion(transform.position);
+                AudioManager.Instance?.PlayProjectileExplode();
+
                 if (showDebugInfo) GameLogger.Log("[VolcanoMeteor] 陨石被激光击落！");
                 Destroy(gameObject, 0.1f);
             }

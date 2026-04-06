@@ -10,6 +10,7 @@
 
 using System.Collections;
 using UnityEngine;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 
@@ -309,7 +310,12 @@ namespace LightVsDecay.Logic.Enemy
             {
                 Vector3 spawnPos = GetRandomIceWallPosition();
                 EnemyPoolManager.Instance.Spawn(iceWallType, spawnPos);
+                // 每堵冰墙独立播放落地特效和音效
+                VFXPoolManager.Instance?.PlayWinterImpact(spawnPos);
             }
+
+            // 整组冰墙统一播放一次生成音效（避免多次叠加刺耳）
+            AudioManager.Instance?.PlayIceWallSpawn();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

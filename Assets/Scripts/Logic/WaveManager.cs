@@ -14,6 +14,7 @@ using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Statistics;
 using LightVsDecay.Logic.TacticalDrop;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.Logic
 {
@@ -49,6 +50,13 @@ namespace LightVsDecay.Logic
         [Header("BOSS 生成位置")]
         [Tooltip("BOSS 出场坐标（场景内 Transform 节点）")]
         [SerializeField] private Transform bossSpawnPoint;
+
+        [Header("BOSS 来袭警告")]
+        [Tooltip("JingGaoTip 节点上挂的 BossWarningUI 组件，不填则跳过警告动画直接生成 BOSS")]
+        [SerializeField] private BossWarningUI bossWarningUI;
+
+        [Tooltip("警告 UI 出现后多少秒生成 BOSS（与 UI 动画解耦，独立计时）")]
+        [SerializeField] private float bossSpawnDelay = 1f;
 
         [Header("生成设置")]
         [Tooltip("生成区域边界偏移（相对于屏幕边缘）")]
@@ -361,11 +369,24 @@ namespace LightVsDecay.Logic
             
             // 进入 BOSS 战状态
             ChangeState(WaveState.BossFight);
-            
-            // 生成 BOSS（延迟一帧确保清场完成）
-            StartCoroutine(SpawnBossDelayed());
+
+            // 有警告 UI 时先播警告动画，结束后再生成 BOSS；否则直接生成
+            if (bossWarningUI != null)
+                StartCoroutine(ShowWarningThenSpawnBoss());
+            else
+                StartCoroutine(SpawnBossDelayed());
         }
-        
+
+        private IEnumerator ShowWarningThenSpawnBoss()
+        {
+            // UI 动画独立运行，不阻塞 Boss 生成
+            StartCoroutine(bossWarningUI.ShowAndWait());
+
+            // Boss 在短延迟后独立出场，不等 UI 动画结束
+            yield return new WaitForSeconds(bossSpawnDelay);
+            SpawnBoss();
+        }
+
         private IEnumerator SpawnBossDelayed()
         {
             yield return null; // 等待一帧

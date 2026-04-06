@@ -1265,9 +1265,20 @@ namespace LightVsDecay.Logic.Enemy
                 {
                     if (explosionAoeDamage > 0)
                     {
-                        // 自爆怪：无论是否被爆炸杀死，都播放自身爆炸特效（支持连锁视觉）
-                        VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
-                        AudioManager.Instance?.PlayEnemyExplode();
+                        // Ch2 炸弹怪（LavaExploder / EliteLavaExploder）：播放专属爆炸特效
+                        bool isGrenadeType = enemyType == EnemyType.LavaExploder ||
+                                             enemyType == EnemyType.EliteLavaExploder;
+                        if (isGrenadeType)
+                        {
+                            VFXPoolManager.Instance.PlayGrenadeExplosionFire(transform.position);
+                            AudioManager.Instance?.PlayGrenadeExplosion();
+                        }
+                        else
+                        {
+                            // 其他自爆怪：使用通用爆炸特效和音效
+                            VFXPoolManager.Instance.PlayEnemyExplosion(transform.position);
+                            AudioManager.Instance?.PlayEnemyExplode();
+                        }
                     }
                     else if (!killedByExplosion)
                     {
@@ -1314,6 +1325,8 @@ namespace LightVsDecay.Logic.Enemy
                     var puddle = EnemyPoolManager.Instance.Spawn(puddleEnemyType, transform.position);
                     if (puddle != null && puddleSizeMultiplier != 1f)
                         puddle.transform.localScale *= puddleSizeMultiplier;
+                    // 熔浆液生成音效
+                    AudioManager.Instance?.PlayLavaPuddleSpawn();
                     BattleStatistics.Instance?.RecordPuddleSpawned();
                 }
 
@@ -1685,8 +1698,10 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         private void TriggerCatalystBurst()
         {
-            // 冷气烟雾特效
+            // 冷气烟雾特效（VFX_NovaFrost）
             VFXPoolManager.Instance?.Play(VFXType.CatalystBurst, transform.position);
+            // 冷气释放音效
+            AudioManager.Instance?.PlayCatalystBurst();
 
             LayerMask enemyMask = LayerMask.GetMask("Enemy", "BouncingEnemy");
             Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, catalystBurstRadius, enemyMask);

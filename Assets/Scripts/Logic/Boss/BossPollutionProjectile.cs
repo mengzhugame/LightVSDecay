@@ -7,6 +7,7 @@
 
 using System.Collections;
 using UnityEngine;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Logic.Player;
 using LightVsDecay.Logic.Enemy;
@@ -484,16 +485,19 @@ namespace LightVsDecay.Logic.Boss
                 orbParticle.gameObject.SetActive(false);
             }
             
-            // 播放爆炸特效
-            if (playExplosion && explosionParticle != null)
+            // 播放爆炸特效 + 音效
+            if (playExplosion)
             {
-                Vector3 explosionPos = transform.position;
-                
-                explosionParticle.transform.SetParent(null);
-                explosionParticle.transform.position = explosionPos;
-                explosionParticle.Play();
-                
-                Destroy(explosionParticle.gameObject, explosionParticle.main.duration + 0.5f);
+                AudioManager.Instance?.PlayProjectileExplode();
+
+                if (explosionParticle != null)
+                {
+                    Vector3 explosionPos = transform.position;
+                    explosionParticle.transform.SetParent(null);
+                    explosionParticle.transform.position = explosionPos;
+                    explosionParticle.Play();
+                    Destroy(explosionParticle.gameObject, explosionParticle.main.duration + 0.5f);
+                }
             }
             
             // 销毁主体

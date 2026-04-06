@@ -1,4 +1,5 @@
 using UnityEngine;
+using LightVsDecay.Audio;
 using LightVsDecay.Core;
 
 namespace LightVsDecay.Logic.Player
@@ -283,6 +284,9 @@ namespace LightVsDecay.Logic.Player
             activeTouchId = -1;
             pendingFreezeTaps = 0;
 
+            // 光棱塔被冰冻音效
+            AudioManager.Instance?.PlayTowerFreeze();
+
             if (frozenOverlay != null)
                 frozenOverlay.gameObject.SetActive(true);
 
@@ -303,6 +307,9 @@ namespace LightVsDecay.Logic.Player
 
             if (frozenOverlay != null)
                 frozenOverlay.gameObject.SetActive(false);
+
+            // 光棱塔解冻音效
+            AudioManager.Instance?.PlayTowerUnfreeze();
 
             isFrozenByBoss = false;
             freezeCoroutine = null;
