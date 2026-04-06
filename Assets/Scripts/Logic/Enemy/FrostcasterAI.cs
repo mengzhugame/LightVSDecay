@@ -13,6 +13,7 @@ using UnityEngine;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Logic.Statistics;
 
 namespace LightVsDecay.Logic.Enemy
 {
@@ -316,6 +317,7 @@ namespace LightVsDecay.Logic.Enemy
 
             // 整组冰墙统一播放一次生成音效（避免多次叠加刺耳）
             AudioManager.Instance?.PlayIceWallSpawn();
+            BattleStatistics.Instance?.RecordFrostcasterCast();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

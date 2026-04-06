@@ -14,6 +14,7 @@ using UnityEngine;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Logic.Statistics;
 using LightVsDecay.UI.FloatingText;
 
 namespace LightVsDecay.Logic.Enemy
@@ -88,6 +89,7 @@ namespace LightVsDecay.Logic.Enemy
             if (!isActive) return;
 
             currentHP -= amount;
+            BattleStatistics.Instance?.RecordIceShieldDamageAbsorbed(amount);
 
             // 显示伤害飘字（复用 Boss 护盾样式，蓝色调）
             if (FloatingTextManager.Instance != null)
@@ -110,6 +112,7 @@ namespace LightVsDecay.Logic.Enemy
         {
             isActive = false;
             SetVisual(false);
+            BattleStatistics.Instance?.RecordIceShieldBroken();
 
             // 冰盾破碎特效 + 音效
             VFXPoolManager.Instance?.Play(VFXType.IceShieldBreak, transform.position);

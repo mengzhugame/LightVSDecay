@@ -140,10 +140,19 @@ namespace LightVsDecay.Logic.Statistics
         private FrostStats _waveFrost = new FrostStats();
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 运行时状态 - Ch3
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private Ch3Stats _waveCh3 = new Ch3Stats();
+        private int      _waveIceWallPeakCount   = 0;
+        private bool     _turretCurrentlyFrozen  = false;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - Boss
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private BossStats _bossStats = new BossStats();
+        private GlacialBossStats _glacialBossStats = new GlacialBossStats();
         private float _waveBossCollisionDamage = 0f;
         private float _waveBossBulletDamage = 0f;
         private float _waveBossPushbackTime = 0f;
@@ -256,6 +265,20 @@ namespace LightVsDecay.Logic.Statistics
                 int currentPuddles = EnemyPoolManager.Instance.GetActiveCount(EnemyType.LavaPuddle);
                 if (currentPuddles > _wavePuddlePeakCount)
                     _wavePuddlePeakCount = currentPuddles;
+            }
+
+            // 【V6.0 Ch3】冰墙峰值追踪
+            if (EnemyPoolManager.Instance != null)
+            {
+                int currentIceWalls = EnemyPoolManager.Instance.GetActiveCount(EnemyType.IceWall);
+                if (currentIceWalls > _waveIceWallPeakCount)
+                    _waveIceWallPeakCount = currentIceWalls;
+            }
+
+            // 【V6.0 Ch3】光棱塔冻结时长实时累计
+            if (_turretCurrentlyFrozen)
+            {
+                _waveCh3.towerFreezeDuration += Time.deltaTime;
             }
         }
         
@@ -419,17 +442,23 @@ namespace LightVsDecay.Logic.Statistics
             
             // 重置Frost统计
             _waveFrost.Reset();
-            
+
+            // 重置 Ch3 统计
+            _waveCh3.Reset();
+            _waveIceWallPeakCount  = 0;
+            _turretCurrentlyFrozen = false;
+
             // 重置Boss统计
             _waveBossCollisionDamage = 0f;
             _waveBossBulletDamage = 0f;
             _waveBossPushbackTime = 0f;
             _isBossBeingPushed = false;
-            
+
             // Boss波重置Boss统计器
             if (WaveManager.Instance != null && WaveManager.Instance.IsBossWave)
             {
                 _bossStats.Reset();
+                _glacialBossStats.Reset();
             }
             
             // 重置无人机选择
@@ -607,6 +636,45 @@ namespace LightVsDecay.Logic.Statistics
 
                 // V5.0 P3
                 puddlePeakCount = _wavePuddlePeakCount,
+
+                // V6.0 Ch3 击杀
+                killFrostSlime        = _waveKills.frostSlime,
+                killFrostTank         = _waveKills.frostTank,
+                killFrostCatalyst     = _waveKills.frostCatalyst,
+                killFrostcaster       = _waveKills.frostcaster,
+                killIceShieldGuard    = _waveKills.iceShieldGuard,
+                killFrostcasterElite  = _waveKills.frostcasterElite,
+
+                // V6.0 Ch3 生成
+                spawnFrostSlime        = _waveSpawns.frostSlime,
+                spawnFrostTank         = _waveSpawns.frostTank,
+                spawnFrostCatalyst     = _waveSpawns.frostCatalyst,
+                spawnFrostcaster       = _waveSpawns.frostcaster,
+                spawnIceShieldGuard    = _waveSpawns.iceShieldGuard,
+                spawnFrostcasterElite  = _waveSpawns.frostcasterElite,
+                spawnIceWall           = _waveSpawns.iceWall,
+
+                // V6.0 冰盾
+                iceShieldBrokenCount  = _waveCh3.iceShieldBrokenCount,
+                iceShieldDmgAbsorbed  = _waveCh3.iceShieldDmgAbsorbed,
+
+                // V6.0 催化者 / 施法者
+                catalystBurstCount    = _waveCh3.catalystBurstCount,
+                frostcasterCastCount  = _waveCh3.frostcasterCastCount,
+
+                // V6.0 冰墙 / 塔冻 / 冰刺
+                iceWallPeakCount          = _waveIceWallPeakCount,
+                towerFreezeCount          = _waveCh3.towerFreezeCount,
+                towerFreezeDuration       = _waveCh3.towerFreezeDuration,
+                iceSpikeInterceptedCount  = _waveCh3.iceSpikeInterceptedCount,
+                iceSpikeHitCount          = _waveCh3.iceSpikeHitCount,
+
+                // V6.0 极寒之核 Boss
+                glacialIceWallBuildCount       = _glacialBossStats.iceWallBuildCount,
+                glacialFreezeRayCount          = _glacialBossStats.freezeRayCount,
+                glacialChargeCount             = _glacialBossStats.chargeCount,
+                glacialAbsoluteZeroCount       = _glacialBossStats.absoluteZeroCount,
+                glacialAbsoluteZeroInterrupted = _glacialBossStats.absoluteZeroInterrupted,
             };
             
             _allWaveStats.Add(data);
@@ -673,6 +741,7 @@ namespace LightVsDecay.Logic.Statistics
             
             // 重置Boss统计
             _bossStats.Reset();
+            _glacialBossStats.Reset();
         }
                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 伤害上报
@@ -1102,9 +1171,106 @@ namespace LightVsDecay.Logic.Statistics
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // V6.0 Ch3 专属上报
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>精英冰甲卫士冰盾吸收激光伤害（由 IceShieldController.TakeDamage 调用）</summary>
+        public void RecordIceShieldDamageAbsorbed(float amount)
+        {
+            if (!CanRecord()) return;
+            _waveCh3.iceShieldDmgAbsorbed += amount;
+        }
+
+        /// <summary>精英冰甲卫士冰盾破碎（由 IceShieldController.OnShieldBroken 调用）</summary>
+        public void RecordIceShieldBroken()
+        {
+            if (!CanRecord()) return;
+            _waveCh3.iceShieldBrokenCount++;
+        }
+
+        /// <summary>极寒催化者死亡爆发（由 EnemyBlob.TriggerCatalystBurst 调用）</summary>
+        public void RecordCatalystBurst()
+        {
+            if (!CanRecord()) return;
+            _waveCh3.catalystBurstCount++;
+        }
+
+        /// <summary>霜冻施法者完成一次冰墙召唤（由 FrostcasterAI.SpawnIceWalls 调用）</summary>
+        public void RecordFrostcasterCast()
+        {
+            if (!CanRecord()) return;
+            _waveCh3.frostcasterCastCount++;
+        }
+
+        /// <summary>光棱塔被冻结（由 TurretController.FreezeCoroutine 调用，传入实际冻结时长）</summary>
+        public void RecordTowerFreezeStart(float duration)
+        {
+            if (!CanRecord()) return;
+            _waveCh3.towerFreezeCount++;
+            _turretCurrentlyFrozen = true;
+            // 时长由 Update 逐帧累计，此处不叠加 duration，避免与 QTE 缩短冲突
+        }
+
+        /// <summary>光棱塔解冻（由 TurretController.FreezeCoroutine 结束时调用）</summary>
+        public void RecordTowerFreezeEnd()
+        {
+            if (!CanRecord()) return;
+            _turretCurrentlyFrozen = false;
+        }
+
+        /// <summary>冰刺被激光拦截（由 IceSpikeProjectile.OnDestroyedByLaser 调用）</summary>
+        public void RecordIceSpikeIntercepted()
+        {
+            if (!CanRecord()) return;
+            _waveCh3.iceSpikeInterceptedCount++;
+        }
+
+        /// <summary>冰刺命中光棱塔（由 IceSpikeProjectile.OnReachedTower 调用）</summary>
+        public void RecordIceSpikeHit()
+        {
+            if (!CanRecord()) return;
+            _waveCh3.iceSpikeHitCount++;
+        }
+
+        /// <summary>极寒之核：冰墙构建技能释放（由 GlacialBossController.ExecuteSummonBehavior 调用）</summary>
+        public void RecordGlacialBossIceWallBuild()
+        {
+            if (!CanRecord()) return;
+            _glacialBossStats.iceWallBuildCount++;
+        }
+
+        /// <summary>极寒之核：冰封射线释放（由 GlacialBossController.FreezeRayRoutine 调用）</summary>
+        public void RecordGlacialBossFreezeRay()
+        {
+            if (!CanRecord()) return;
+            _glacialBossStats.freezeRayCount++;
+        }
+
+        /// <summary>极寒之核：极寒冲撞（由 GlacialBossController OnEnterCharge 相关方法调用）</summary>
+        public void RecordGlacialBossCharge()
+        {
+            if (!CanRecord()) return;
+            _glacialBossStats.chargeCount++;
+        }
+
+        /// <summary>极寒之核：绝对零度施放（由 GlacialBossController.AbsoluteZeroRoutine 调用）</summary>
+        public void RecordGlacialBossAbsoluteZero()
+        {
+            if (!CanRecord()) return;
+            _glacialBossStats.absoluteZeroCount++;
+        }
+
+        /// <summary>极寒之核：绝对零度被打断（由 GlacialBossController.AbsoluteZeroRoutine 打断分支调用）</summary>
+        public void RecordGlacialBossAbsoluteZeroInterrupted()
+        {
+            if (!CanRecord()) return;
+            _glacialBossStats.absoluteZeroInterrupted++;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 内部检查方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         /// <summary>
         /// 检查是否可以记录数据（开关 + 追踪状态）
         /// </summary>
@@ -1152,8 +1318,8 @@ namespace LightVsDecay.Logic.Statistics
             }
         }
         
-        // CSV字段总数（V5.0：75原有 + 19 P1 + 3 P2/P3 = 97）
-        private const int CSV_FIELD_COUNT = 97;
+        // CSV字段总数（V6.0：97 + 27 Ch3 = 124）
+        private const int CSV_FIELD_COUNT = 124;
         
         /// <summary>
         /// 构建CSV表头
@@ -1207,7 +1373,23 @@ namespace LightVsDecay.Logic.Statistics
                 // V5.0 P2 炮手 & 陨石 (2)
                 "Gunner_Shots_Fired,Boss_Meteor_Count," +
                 // V5.0 P3 水坑峰值 (1)
-                "Puddle_Peak_Count";
+                "Puddle_Peak_Count," +
+                // V6.0 Ch3 击杀统计 (6)
+                "Kill_FrostSlime,Kill_FrostTank,Kill_FrostCatalyst,Kill_Frostcaster,Kill_IceShieldGuard,Kill_FrostcasterElite," +
+                // V6.0 Ch3 生成统计 (7)
+                "Spawn_FrostSlime,Spawn_FrostTank,Spawn_FrostCatalyst,Spawn_Frostcaster,Spawn_IceShieldGuard,Spawn_FrostcasterElite,Spawn_IceWall," +
+                // V6.0 冰盾 (2)
+                "IceShield_Broken_Count,IceShield_Dmg_Absorbed," +
+                // V6.0 催化者 / 施法者 (2)
+                "Catalyst_Burst_Count,Frostcaster_Cast_Count," +
+                // V6.0 冰墙峰值 (1)
+                "IceWall_Peak_Count," +
+                // V6.0 塔冻 (2)
+                "Tower_Freeze_Count,Tower_Freeze_Duration," +
+                // V6.0 冰刺 (2)
+                "IceSpike_Intercepted_Count,IceSpike_Hit_Count," +
+                // V6.0 极寒之核 Boss (5)
+                "Glacial_IceWall_Build_Count,Glacial_FreezeRay_Count,Glacial_Charge_Count,Glacial_AbsZero_Count,Glacial_AbsZero_Interrupted";
         }
         
         /// <summary>
@@ -1263,7 +1445,23 @@ namespace LightVsDecay.Logic.Statistics
                 // 20. V5.0 P2 炮手 & 陨石 (94-95)
                 "{94},{95}," +
                 // 21. V5.0 P3 水坑峰值 (96)
-                "{96}",
+                "{96}," +
+                // 22. V6.0 Ch3 击杀 (97-102)
+                "{97},{98},{99},{100},{101},{102}," +
+                // 23. V6.0 Ch3 生成 (103-109)
+                "{103},{104},{105},{106},{107},{108},{109}," +
+                // 24. V6.0 冰盾 (110-111)
+                "{110},{111:F0}," +
+                // 25. V6.0 催化者/施法者 (112-113)
+                "{112},{113}," +
+                // 26. V6.0 冰墙峰值 (114)
+                "{114}," +
+                // 27. V6.0 塔冻 (115-116)
+                "{115},{116:F1}," +
+                // 28. V6.0 冰刺 (117-118)
+                "{117},{118}," +
+                // 29. V6.0 极寒之核 Boss (119-123)
+                "{119},{120},{121},{122},{123}",
 
                 // ================= 参数列表 =================
                 
@@ -1369,7 +1567,50 @@ namespace LightVsDecay.Logic.Statistics
                 d.bossMeteorCount,          // 95
 
                 // 21. V5.0 P3
-                d.puddlePeakCount           // 96
+                d.puddlePeakCount,          // 96
+
+                // 22. V6.0 Ch3 击杀
+                d.killFrostSlime,           // 97
+                d.killFrostTank,            // 98
+                d.killFrostCatalyst,        // 99
+                d.killFrostcaster,          // 100
+                d.killIceShieldGuard,       // 101
+                d.killFrostcasterElite,     // 102
+
+                // 23. V6.0 Ch3 生成
+                d.spawnFrostSlime,          // 103
+                d.spawnFrostTank,           // 104
+                d.spawnFrostCatalyst,       // 105
+                d.spawnFrostcaster,         // 106
+                d.spawnIceShieldGuard,      // 107
+                d.spawnFrostcasterElite,    // 108
+                d.spawnIceWall,             // 109
+
+                // 24. V6.0 冰盾
+                d.iceShieldBrokenCount,     // 110
+                d.iceShieldDmgAbsorbed,     // 111
+
+                // 25. V6.0 催化者/施法者
+                d.catalystBurstCount,       // 112
+                d.frostcasterCastCount,     // 113
+
+                // 26. V6.0 冰墙峰值
+                d.iceWallPeakCount,         // 114
+
+                // 27. V6.0 塔冻
+                d.towerFreezeCount,         // 115
+                d.towerFreezeDuration,      // 116
+
+                // 28. V6.0 冰刺
+                d.iceSpikeInterceptedCount, // 117
+                d.iceSpikeHitCount,         // 118
+
+                // 29. V6.0 极寒之核 Boss
+                d.glacialIceWallBuildCount,         // 119
+                d.glacialFreezeRayCount,            // 120
+                d.glacialChargeCount,               // 121
+                d.glacialAbsoluteZeroCount,         // 122
+                d.glacialAbsoluteZeroInterrupted    // 123
             );
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

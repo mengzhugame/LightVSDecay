@@ -68,13 +68,24 @@ namespace LightVsDecay.Logic.Statistics
         public int lavaElite = 0;
         public int lavaPuddle = 0;      // 地形障碍，不计入战斗Total
 
+        // ─── Ch3 ───
+        public int frostSlime = 0;
+        public int frostTank = 0;
+        public int frostCatalyst = 0;
+        public int frostcaster = 0;
+        public int iceShieldGuard = 0;
+        public int frostcasterElite = 0;
+        public int iceWall = 0;             // 地形障碍，不计入战斗 Total
+
         public int Total => slime + rusher + tank + drifter + elite
-                          + lavaExploder + lavaSplitter + lavaGunner + lavaTank + lavaElite;
+                          + lavaExploder + lavaSplitter + lavaGunner + lavaTank + lavaElite
+                          + frostSlime + frostTank + frostCatalyst + frostcaster + iceShieldGuard + frostcasterElite;
 
         public void Reset()
         {
             slime = rusher = tank = drifter = elite = 0;
             lavaExploder = lavaSplitter = lavaGunner = lavaTank = lavaElite = lavaPuddle = 0;
+            frostSlime = frostTank = frostCatalyst = frostcaster = iceShieldGuard = frostcasterElite = iceWall = 0;
         }
 
         public void Add(EnemyType type)
@@ -96,6 +107,14 @@ namespace LightVsDecay.Logic.Statistics
                 case EnemyType.LavaGunner:         lavaGunner++;   break;
                 case EnemyType.LavaTank:           lavaTank++;     break;
                 case EnemyType.LavaPuddle:         lavaPuddle++;   break;
+                // Ch3
+                case EnemyType.FrostSlime:          frostSlime++;       break;
+                case EnemyType.FrostTank:           frostTank++;        break;
+                case EnemyType.FrostCatalyst:       frostCatalyst++;    break;
+                case EnemyType.Frostcaster:         frostcaster++;      break;
+                case EnemyType.EliteIceShieldGuard: iceShieldGuard++;   break;
+                case EnemyType.EliteFrostcaster:    frostcasterElite++; break;
+                case EnemyType.IceWall:             iceWall++;          break;
             }
         }
     }
@@ -120,13 +139,24 @@ namespace LightVsDecay.Logic.Statistics
         public int lavaElite = 0;
         // 注：LavaPuddle 不可击杀，不计入KillCounter
 
+        // ─── Ch3 ───
+        public int frostSlime = 0;
+        public int frostTank = 0;
+        public int frostCatalyst = 0;
+        public int frostcaster = 0;
+        public int iceShieldGuard = 0;
+        public int frostcasterElite = 0;
+        // 注：IceWall 不可击杀，不计入 KillCounter
+
         public int Total => slime + rusher + tank + drifter + elite
-                          + lavaExploder + lavaSplitter + lavaGunner + lavaTank + lavaElite;
+                          + lavaExploder + lavaSplitter + lavaGunner + lavaTank + lavaElite
+                          + frostSlime + frostTank + frostCatalyst + frostcaster + iceShieldGuard + frostcasterElite;
 
         public void Reset()
         {
             slime = rusher = tank = drifter = elite = 0;
             lavaExploder = lavaSplitter = lavaGunner = lavaTank = lavaElite = 0;
+            frostSlime = frostTank = frostCatalyst = frostcaster = iceShieldGuard = frostcasterElite = 0;
         }
 
         public void Add(EnemyType type)
@@ -147,6 +177,13 @@ namespace LightVsDecay.Logic.Statistics
                 case EnemyType.EliteLavaSplitter:  lavaElite++;    break;
                 case EnemyType.LavaGunner:         lavaGunner++;   break;
                 case EnemyType.LavaTank:           lavaTank++;     break;
+                // Ch3
+                case EnemyType.FrostSlime:          frostSlime++;       break;
+                case EnemyType.FrostTank:           frostTank++;        break;
+                case EnemyType.FrostCatalyst:       frostCatalyst++;    break;
+                case EnemyType.Frostcaster:         frostcaster++;      break;
+                case EnemyType.EliteIceShieldGuard: iceShieldGuard++;   break;
+                case EnemyType.EliteFrostcaster:    frostcasterElite++; break;
             }
         }
     }
@@ -180,12 +217,67 @@ namespace LightVsDecay.Logic.Statistics
         public int stunCount = 0;
         public float hpRemaining = 1f;
         public string lastPhase = "None";
-        
+
         public void Reset()
         {
             chargeCount = pressCount = summonCount = stunCount = 0;
             hpRemaining = 1f;
             lastPhase = "None";
+        }
+    }
+
+    /// <summary>
+    /// Ch3 第三章战斗统计器
+    /// </summary>
+    [Serializable]
+    public class Ch3Stats
+    {
+        // 冰盾机制
+        public int   iceShieldBrokenCount = 0;
+        public float iceShieldDmgAbsorbed = 0f;
+
+        // 催化者机制
+        public int catalystBurstCount = 0;
+
+        // 霜冻施法者机制
+        public int frostcasterCastCount = 0;
+
+        // 光棱塔冻结
+        public int   towerFreezeCount    = 0;
+        public float towerFreezeDuration = 0f;
+
+        // 冰刺（绝对零度）
+        public int iceSpikeInterceptedCount = 0;
+        public int iceSpikeHitCount         = 0;
+
+        public void Reset()
+        {
+            iceShieldBrokenCount    = 0;
+            iceShieldDmgAbsorbed    = 0f;
+            catalystBurstCount      = 0;
+            frostcasterCastCount    = 0;
+            towerFreezeCount        = 0;
+            towerFreezeDuration     = 0f;
+            iceSpikeInterceptedCount = 0;
+            iceSpikeHitCount         = 0;
+        }
+    }
+
+    /// <summary>
+    /// 极寒之核 Boss 专属统计器
+    /// </summary>
+    [Serializable]
+    public class GlacialBossStats
+    {
+        public int iceWallBuildCount         = 0;   // 冰墙构建技能释放次数
+        public int freezeRayCount            = 0;   // 冰封射线释放次数
+        public int chargeCount               = 0;   // 极寒冲撞次数
+        public int absoluteZeroCount         = 0;   // 绝对零度施放次数
+        public int absoluteZeroInterrupted   = 0;   // 绝对零度被打断次数
+
+        public void Reset()
+        {
+            iceWallBuildCount = freezeRayCount = chargeCount = absoluteZeroCount = absoluteZeroInterrupted = 0;
         }
     }
     
@@ -342,5 +434,50 @@ namespace LightVsDecay.Logic.Statistics
 
         // ═══ V5.0 P3 新增 ═══
         public int puddlePeakCount;          // 场上熔岩水坑峰值数量
+
+        // ═══ V6.0 Ch3 击杀统计 (6) ═══
+        public int killFrostSlime;
+        public int killFrostTank;
+        public int killFrostCatalyst;
+        public int killFrostcaster;
+        public int killIceShieldGuard;
+        public int killFrostcasterElite;
+
+        // ═══ V6.0 Ch3 生成统计 (7) ═══
+        public int spawnFrostSlime;
+        public int spawnFrostTank;
+        public int spawnFrostCatalyst;
+        public int spawnFrostcaster;
+        public int spawnIceShieldGuard;
+        public int spawnFrostcasterElite;
+        public int spawnIceWall;             // 冰墙生成总数（施法者+Boss）
+
+        // ═══ V6.0 冰盾机制 (2) ═══
+        public int   iceShieldBrokenCount;   // 本波破碎冰盾数量
+        public float iceShieldDmgAbsorbed;   // 冰盾吸收的激光总伤害
+
+        // ═══ V6.0 催化者机制 (1) ═══
+        public int catalystBurstCount;       // 催化者死亡爆发触发次数
+
+        // ═══ V6.0 霜冻施法者机制 (1) ═══
+        public int frostcasterCastCount;     // 霜冻施法者召唤冰墙次数
+
+        // ═══ V6.0 冰墙峰值 (1) ═══
+        public int iceWallPeakCount;         // 场上冰墙峰值数量
+
+        // ═══ V6.0 光棱塔冻结 (2) ═══
+        public int   towerFreezeCount;       // 光棱塔被冻结次数
+        public float towerFreezeDuration;    // 光棱塔冻结总时长（秒）
+
+        // ═══ V6.0 冰刺 (2) ═══
+        public int iceSpikeInterceptedCount; // 被激光拦截的冰刺数量
+        public int iceSpikeHitCount;         // 命中光棱塔的冰刺数量
+
+        // ═══ V6.0 极寒之核 Boss (5) ═══
+        public int glacialIceWallBuildCount;       // Boss 冰墙构建次数
+        public int glacialFreezeRayCount;          // 冰封射线释放次数
+        public int glacialChargeCount;             // 极寒冲撞次数
+        public int glacialAbsoluteZeroCount;       // 绝对零度施放次数
+        public int glacialAbsoluteZeroInterrupted; // 绝对零度被打断次数
     }
 }

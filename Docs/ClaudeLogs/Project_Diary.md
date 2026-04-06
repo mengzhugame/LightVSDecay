@@ -55,3 +55,21 @@
 - `Assets/Resources/Data/MonsterData/Lava_EliteExploder.asset` — xpReward 200→110
 - `Assets/Resources/Data/MonsterData/Lava_EliteSplitter.asset` — xpReward 400→220
 - `Assets/Resources/Data/LevelWaveData/Chapter02_01.asset` — 波次全面重写
+
+## 2026-04-07：Ch3 数据采集系统（V6.0）
+
+### 本次任务
+为第三章（极寒虚空）的全部新机制接入 BattleStatistics 数据采集，扩展 CSV 从 97 列至 124 列。
+
+### 修改文件
+- **BattleStatTypes.cs**：KillCounter/SpawnCounter 新增 Ch3 六种怪物+冰墙，新增 `Ch3Stats`、`GlacialBossStats` 两个统计器，WaveStatData 新增 27 个字段
+- **BattleStatistics.cs**：新增 `_waveCh3`、`_glacialBossStats`、`_waveIceWallPeakCount`、`_turretCurrentlyFrozen` 运行时字段；Update 追踪冰墙峰值和塔冻时长；新增 12 个 RecordXxx 方法；CSV 扩展至 124 列
+- **IceShieldController.cs**：TakeDamage → `RecordIceShieldDamageAbsorbed`；OnShieldBroken → `RecordIceShieldBroken`
+- **FrostcasterAI.cs**：SpawnIceWalls 末尾 → `RecordFrostcasterCast`
+- **EnemyBlob.cs**：TriggerCatalystBurst 起始 → `RecordCatalystBurst`
+- **GlacialBossController.cs**：IceWallBuild/FreezeRay/Charge/AbsZero/AbsZeroInterrupted 各插入统计调用
+- **TurretController.cs**：FreezeCoroutine 起始/结束 → `RecordTowerFreezeStart` / `RecordTowerFreezeEnd`
+
+### 关键设计决策
+- 塔冻时长用 `_turretCurrentlyFrozen` 标志 + `Update` 逐帧累计，而非在 RecordTowerFreezeStart 直接加 duration——避免 QTE 缩短冻结时长导致数据虚高
+- 冰刺统计（RecordIceSpikeIntercepted/Hit）已接入接口，调用点通过 IceSpikeProjectile.OnDestroyedByLaser / OnReachedTower 委托触发，当前 GlacialBossController 已用 spike.OnReachedTower += 和 spike.OnDestroyedByLaser += 绑定，需在 IceSpikeProjectile 内部回调时补调 RecordXxx（待 IceSpikeProjectile 实现后由该文件负责调用）

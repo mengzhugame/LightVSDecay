@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Lava_Exploder_Body04
+  m_Name: Lava_EliteExploder
   m_Shader: {fileID: -6465566751694194690, guid: def5f24a4e28319428ceaa8037b041af, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -42,11 +42,11 @@ Material:
     m_Ints: []
     m_Floats:
     - _Alpha: 1
-    - _Distortion_Strength: 0.1
-    - _Flow_Speed: 0.8
+    - _Distortion_Strength: 0.15
+    - _Flow_Speed: 0.1
     - _HitIntensity: 0
-    - _Noise_Scale: 4.8
-    - _SimpleNoiseScale: 13.42
+    - _Noise_Scale: 0.5
+    - _SimpleNoiseScale: 10
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _HitColor: {r: 0.3132075, g: 0.2927747, b: 0.16251332, a: 1}

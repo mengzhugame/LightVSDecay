@@ -19,6 +19,7 @@ using System.Collections;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Logic.Player;
+using LightVsDecay.Logic.Statistics;
 
 namespace LightVsDecay.Logic.Boss
 {
@@ -330,6 +331,8 @@ namespace LightVsDecay.Logic.Boss
                 if (count > 1) yield return new WaitForSeconds(0.2f);
             }
 
+            BattleStatistics.Instance?.RecordGlacialBossIceWallBuild();
+
             if (showDebugInfo)
                 GameLogger.Log($"[GlacialBoss] 冰墙构建：召唤 {count} 堵冰墙");
 
@@ -353,6 +356,7 @@ namespace LightVsDecay.Logic.Boss
 
         private IEnumerator FreezeRayRoutine()
         {
+            BattleStatistics.Instance?.RecordGlacialBossFreezeRay();
             if (showDebugInfo) GameLogger.Log("[GlacialBoss] 冰封射线开始！");
 
             freezeRayHitThisCast = false;
@@ -436,6 +440,7 @@ namespace LightVsDecay.Logic.Boss
 
         protected override void OnChargeDashComplete(Vector3 startPos, Vector3 endPos)
         {
+            BattleStatistics.Instance?.RecordGlacialBossCharge();
             ApplyTurretFreeze(chargeTurretFreezeDuration);
             if (showDebugInfo)
                 GameLogger.Log($"[GlacialBoss] 极寒冲撞落地，冻结光棱塔 {chargeTurretFreezeDuration}s");
@@ -464,6 +469,7 @@ namespace LightVsDecay.Logic.Boss
 
         private IEnumerator AbsoluteZeroRoutine()
         {
+            BattleStatistics.Instance?.RecordGlacialBossAbsoluteZero();
             if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度：3秒蓄力开始");
 
             if (absoluteZeroWarningEffect != null)
@@ -497,6 +503,7 @@ namespace LightVsDecay.Logic.Boss
 
             if (interrupted)
             {
+                BattleStatistics.Instance?.RecordGlacialBossAbsoluteZeroInterrupted();
                 if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度被打断！Boss 眩晕");
                 FloatingTextShowInterrupted();
                 absoluteZeroActive = false;

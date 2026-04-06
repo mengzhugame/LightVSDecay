@@ -187,7 +187,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalScale: {x: 1.6, y: 1.6, z: 1.6}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6530855281258271766}
@@ -286,16 +286,23 @@ MonoBehaviour:
   absorptionHealPerSlime: 2000
   absorptionATKPerStack: 0.1
   absorptionMaxStacks: 6
-  meteorPrefab: {fileID: 4483929947745537524, guid: 9f54224b940586746bb641fbd8ebc457, type: 3}
-  meteorCount: 3
-  meteorInterval: 12
-  meteorSpreadRadius: 3
+  slimeSpawnY: -8
+  slimeSpawnYScatter: 2
+  slimeSpawnLeftXMin: -12
+  slimeSpawnLeftXMax: -10
+  slimeSpawnRightXMin: 10
+  slimeSpawnRightXMax: 12
+  fireballPrefab: {fileID: 1227954545292335531, guid: cb87b1bc8326ff4469a9fa0381d58661, type: 3}
+  fireballSpawnPoint: {fileID: 2495339394388923440}
+  fireballCount: 4
+  fireballDamage: 400
+  fireballInterval: 10
+  fireballSpreadRadius: 2.5
+  fireballLaunchInterval: 0.35
+  fireballArcHeight: 8
+  fireballTravelTime: 2
   desperatePressThreshold: 0.3
   desperatePressRounds: 3
-  pressFireballInterval: 2
-  pressFireballPrefab: {fileID: 5892527745419892909, guid: 0a51f5ce870b26049962341424ff56e9, type: 3}
-  pressFireballDamage: 25
-  pressFireballSpeed: 6
   body02Renderer: {fileID: 585836121024178123}
   body02PhaseSprites:
   - {fileID: 21300000, guid: 8c2aecfe266256d4887a7844dfcb59bd, type: 3}
@@ -336,6 +343,7 @@ MonoBehaviour:
   vfxPhase2Transition: {fileID: 0}
   vfxPhase3Transition: {fileID: 0}
   vfxAbsorbSlime: {fileID: 111332, guid: d92d5f49a69eca04ca2836ee6ec67555, type: 3}
+  absorbVFXDuration: 2
   vfxMeteorBurst: {fileID: 0}
   vfxDesperatePressStart: {fileID: 0}
   sfxMeteorLaunch: {fileID: 0}

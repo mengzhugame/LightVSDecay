@@ -182,6 +182,9 @@ namespace LightVsDecay.Logic.Enemy
         private Vector3 originalScale;
         private bool isDead = false;
         private bool killedByExplosion = false;  // 【新增】是否被爆炸杀死
+        // 接触伤害冷却（防止 OnCollisionStay2D 每帧重复造成伤害）
+        private float lastContactDamageTime = -999f;
+        private const float CONTACT_DAMAGE_INTERVAL = 0.5f;
         private bool killedByExecution = false;  // 【新增】是否被处决秒杀
         private Material[] bodyMaterials;
         private bool isBeingHit = false;
@@ -488,6 +491,7 @@ namespace LightVsDecay.Logic.Enemy
             isDead = false;
             killedByExplosion = false;  // 重置爆炸死亡标记
             killedByExecution = false;  // 重置处决标记
+            lastContactDamageTime = -999f;
             wasImpairedOnDeath = false;// 重置数据破碎标记
             isElite = false;// 重置精英状态
             waveModifiers = DifficultyModifiers.Default; // 重置波次难度为默认（等待 WaveManager 设置）
@@ -1406,20 +1410,42 @@ namespace LightVsDecay.Logic.Enemy
         private void OnCollisionEnter2D(Collision2D collision)
         {
             if (isDead) return;
-            // 【新增】宝箱怪不处理碰撞（无碰撞行为）
-            if (data != null && data.collisionBehavior == EnemyCollisionBehavior.None)
-            {
-                return;
-            }
+            if (data != null && data.collisionBehavior == EnemyCollisionBehavior.None) return;
+
             int collisionLayer = collision.gameObject.layer;
-    
-            // 【修改】使用 Layer 判断而非 Tag
             if (collisionLayer == shieldLayer)
             {
+                lastContactDamageTime = Time.time;
                 HandleShieldCollision(collision.gameObject);
             }
             else if (collisionLayer == towerLayer)
             {
+                lastContactDamageTime = Time.time;
+                HandleTowerCollision(collision.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// 无敌结束后敌人仍贴着护盾/塔时补充伤害。
+        /// OnCollisionEnter2D 在无敌期被拦截后不会重新触发，
+        /// 由 Stay 带冷却补足，确保无敌解除后立刻恢复扣血。
+        /// </summary>
+        private void OnCollisionStay2D(Collision2D collision)
+        {
+            if (isDead) return;
+            if (data != null && data.collisionBehavior == EnemyCollisionBehavior.None) return;
+            if (OverloadManager.Instance != null && OverloadManager.Instance.IsActive) return;
+            if (Time.time - lastContactDamageTime < CONTACT_DAMAGE_INTERVAL) return;
+
+            int collisionLayer = collision.gameObject.layer;
+            if (collisionLayer == shieldLayer)
+            {
+                lastContactDamageTime = Time.time;
+                HandleShieldCollision(collision.gameObject);
+            }
+            else if (collisionLayer == towerLayer)
+            {
+                lastContactDamageTime = Time.time;
                 HandleTowerCollision(collision.gameObject);
             }
         }
@@ -1698,6 +1724,7 @@ namespace LightVsDecay.Logic.Enemy
         /// </summary>
         private void TriggerCatalystBurst()
         {
+            BattleStatistics.Instance?.RecordCatalystBurst();
             // 冷气烟雾特效（VFX_NovaFrost）
             VFXPoolManager.Instance?.Play(VFXType.CatalystBurst, transform.position);
             // 冷气释放音效

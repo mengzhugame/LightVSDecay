@@ -1,6 +1,7 @@
 using UnityEngine;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
+using LightVsDecay.Logic.Statistics;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -283,6 +284,7 @@ namespace LightVsDecay.Logic.Player
             isDragging = false;
             activeTouchId = -1;
             pendingFreezeTaps = 0;
+            BattleStatistics.Instance?.RecordTowerFreezeStart(duration);
 
             // 光棱塔被冰冻音效
             AudioManager.Instance?.PlayTowerFreeze();
@@ -310,6 +312,7 @@ namespace LightVsDecay.Logic.Player
 
             // 光棱塔解冻音效
             AudioManager.Instance?.PlayTowerUnfreeze();
+            BattleStatistics.Instance?.RecordTowerFreezeEnd();
 
             isFrozenByBoss = false;
             freezeCoroutine = null;

@@ -62,22 +62,55 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("吸收层数上限")]
         [SerializeField] private int absorptionMaxStacks = 6;
 
+        [Tooltip("粘液怪出生点 Y 坐标（光棱塔上方，默认 -8）")]
+        [SerializeField] private float slimeSpawnY = -8f;
+
+        [Tooltip("粘液怪 Y 方向随机散布范围（让各怪错落不整齐，默认 1.5）")]
+        [SerializeField] private float slimeSpawnYScatter = 1.5f;
+
+        [Tooltip("左侧生成区域 X 最小值（负数，默认 -12）")]
+        [SerializeField] private float slimeSpawnLeftXMin = -12f;
+
+        [Tooltip("左侧生成区域 X 最大值（负数，默认 -10）")]
+        [SerializeField] private float slimeSpawnLeftXMax = -10f;
+
+        [Tooltip("右侧生成区域 X 最小值（正数，默认 10）")]
+        [SerializeField] private float slimeSpawnRightXMin = 10f;
+
+        [Tooltip("右侧生成区域 X 最大值（正数，默认 12）")]
+        [SerializeField] private float slimeSpawnRightXMax = 12f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Inspector 配置 · 陨石喷发
+        // Inspector 配置 · 火球喷发
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        [Header("陨石喷发 · 配置")]
-        [Tooltip("陨石预制体（需挂 VolcanoMeteor 组件，Layer = BossPollutionBall）")]
-        [SerializeField] private GameObject meteorPrefab;
+        [Header("火球喷发 · 配置")]
+        [Tooltip("火球预制体（挂 LavaProjectile 组件，Layer = BossPollutionBall）")]
+        [SerializeField] private GameObject fireballPrefab;
 
-        [Tooltip("每次喷发陨石数量")]
-        [SerializeField] private int meteorCount = 3;
+        [Tooltip("火球发射点（火山口 Transform，未设置则使用 Body03 位置）")]
+        [SerializeField] private Transform fireballSpawnPoint;
 
-        [Tooltip("被动喷发间隔（秒）")]
-        [SerializeField] private float meteorInterval = 12f;
+        [Tooltip("每次喷发火球数量")]
+        [SerializeField] private int fireballCount = 4;
 
-        [Tooltip("陨石落点散布半径（以玩家塔为中心）")]
-        [SerializeField] private float meteorSpreadRadius = 3f;
+        [Tooltip("火球落地伤害")]
+        [SerializeField] private int fireballDamage = 400;
+
+        [Tooltip("被动喷发间隔（秒，跨 Idle 周期累积计时）")]
+        [SerializeField] private float fireballInterval = 10f;
+
+        [Tooltip("落点散布半径（以玩家塔为中心）")]
+        [SerializeField] private float fireballSpreadRadius = 2.5f;
+
+        [Tooltip("每颗火球错落发射间隔（秒）")]
+        [SerializeField] private float fireballLaunchInterval = 0.35f;
+
+        [Tooltip("贝塞尔弧顶高度（控制点相对起终点中点的额外Y偏移）")]
+        [SerializeField] private float fireballArcHeight = 6f;
+
+        [Tooltip("火球从喷口到落点的飞行时长（秒）")]
+        [SerializeField] private float fireballTravelTime = 1.4f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 · 绝境碾压
@@ -90,17 +123,6 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("绝境碾压轮次")]
         [SerializeField] private int desperatePressRounds = 3;
 
-        [Tooltip("角力期间裂缝火球喷射间隔（秒）")]
-        [SerializeField] private float pressFireballInterval = 2f;
-
-        [Tooltip("角力火球预制体（Layer = BossPollutionBall）")]
-        [SerializeField] private GameObject pressFireballPrefab;
-
-        [Tooltip("角力火球单发伤害")]
-        [SerializeField] private int pressFireballDamage = 25;
-
-        [Tooltip("角力火球飞行速度")]
-        [SerializeField] private float pressFireballSpeed = 6f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 · 阶段外观（图片换帧）
@@ -287,8 +309,8 @@ namespace LightVsDecay.Logic.Boss
         private int  currentPhase     = 1;
         private bool phase3Triggered  = false;
 
-        // 陨石被动计时
-        private float meteorTimer = 0f;
+        // 火球被动计时（跨 Idle 周期累积）
+        private float fireballTimer = 0f;
 
         // 汲取融合
         private List<LightVsDecay.Logic.Enemy.EnemyBlob> summonedSlimes =
@@ -296,8 +318,7 @@ namespace LightVsDecay.Logic.Boss
         private int absorptionStacks = 0;
 
         // 绝境碾压
-        private int   desperatePressRoundsDone = 0;
-        private float pressFireballTimer       = 0f;
+        private int desperatePressRoundsDone = 0;
 
         // Body03 材质实例与动画
         private Material body03MatInstance;
@@ -323,8 +344,7 @@ namespace LightVsDecay.Logic.Boss
             phase3Triggered          = false;
             absorptionStacks         = 0;
             desperatePressRoundsDone = 0;
-            meteorTimer              = 0f;
-            pressFireballTimer       = 0f;
+            fireballTimer            = 0f;
             summonedSlimes.Clear();
 
             // —— 缓存呼吸基准缩放 ——
@@ -528,30 +548,30 @@ namespace LightVsDecay.Logic.Boss
 
         protected override void OnEnterIdle()
         {
-            // meteorTimer 不在此重置——需要跨多个 Idle 周期累积，
-            // 直到达到 meteorInterval 才触发，重置在 OnIdlePassiveUpdate 内完成。
+            // fireballTimer 不在此重置——跨多个 Idle 周期累积，
+            // 达到 fireballInterval 后触发，重置在 OnIdlePassiveUpdate 内完成。
         }
 
         protected override void OnIdlePassiveUpdate(float deltaTime)
         {
-            meteorTimer += deltaTime;
-            if (meteorTimer >= meteorInterval)
+            fireballTimer += deltaTime;
+            if (fireballTimer >= fireballInterval)
             {
-                meteorTimer = 0f;
-                StartCoroutine(MeteorBurstRoutine());
+                fireballTimer = 0f;
+                StartCoroutine(FireballBurstRoutine());
             }
         }
 
-        private IEnumerator MeteorBurstRoutine()
+        private IEnumerator FireballBurstRoutine()
         {
-            if (meteorPrefab == null)
+            if (fireballPrefab == null)
             {
-                if (showDebugInfo) GameLogger.LogWarning("[VolcanoBoss] meteorPrefab 未设置！");
+                if (showDebugInfo) GameLogger.LogWarning("[VolcanoBoss] fireballPrefab 未设置！");
                 yield break;
             }
 
-            // Body03 白炽化蓄力（1.5s 前摇）
-            float telegraphTime = 1.5f;
+            // Body03 白炽化蓄力前摇（1.2s）
+            float telegraphTime = 1.2f;
             float elapsed       = 0f;
             Color startColor    = body03CurrentColor;
 
@@ -559,50 +579,56 @@ namespace LightVsDecay.Logic.Boss
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / telegraphTime;
-                // 蓄力期间 body03TargetColor 向白炽方向推进
                 body03TargetColor = Color.Lerp(startColor, body03PressColor, t);
                 yield return null;
             }
 
             // 查找玩家塔位置
-            GameObject towerGO = GameObject.FindGameObjectWithTag("Tower");
+            GameObject towerGO  = GameObject.FindGameObjectWithTag("Tower");
             Vector3    towerPos = towerGO != null ? towerGO.transform.position : Vector3.zero;
 
-            // 发射陨石
-            for (int i = 0; i < meteorCount; i++)
-            {
-                float angle  = (360f / meteorCount) * i + Random.Range(-30f, 30f);
-                float dist   = Random.Range(0.5f, meteorSpreadRadius);
-                Vector2 off  = Quaternion.Euler(0, 0, angle) * Vector2.up * dist;
-                Vector3 tgt  = towerPos + (Vector3)off;
-
-                GameObject go = Instantiate(meteorPrefab, tgt + Vector3.up * 12f, Quaternion.identity);
-                var meteor = go.GetComponent<VolcanoMeteor>();
-                if (meteor != null) meteor.Launch(tgt);
-
-                // —— Body03 每颗陨石发射时闪光（脉冲）——
-                body03TargetColor = body03PressColor * 1.3f; // 短暂超亮
-
-                // —— VFX 预留 ——
-                // 接入方式：将陨石发射特效预制体拖入 Inspector → vfxMeteorBurst
-                // 该特效会在 Body03 位置播放
-                Vector3 body03Pos = body03Renderer != null
+            // 火山口发射点：优先用 fireballSpawnPoint，次选 Body03，兜底 Boss 正上方
+            Vector3 spawnPos = fireballSpawnPoint != null
+                ? fireballSpawnPoint.position
+                : (body03Renderer != null
                     ? body03Renderer.transform.position
-                    : transform.position;
-                PlayVFXAt(vfxMeteorBurst, body03Pos);
+                    : transform.position + Vector3.up * 2f);
 
-                // —— SFX 预留 ——
-                // 接入方式：将陨石音效拖入 Inspector → sfxMeteorLaunch
+            // 逐颗错落发射
+            for (int i = 0; i < fireballCount; i++)
+            {
+                // 落点：玩家塔位置 + 随机散布偏移
+                float   spreadAngle = Random.Range(0f, 360f);
+                float   spreadDist  = Random.Range(0.3f, fireballSpreadRadius);
+                Vector2 spreadOff   = Quaternion.Euler(0f, 0f, spreadAngle) * Vector2.right * spreadDist;
+                Vector3 targetPos   = towerPos + (Vector3)spreadOff;
+
+                // 贝塞尔控制点：起终点中点 + 弧顶高度
+                // 控制点在发射点正上方，形成「垂直喷出→弯曲俯冲」的导弹轨迹
+                Vector3 controlPoint = spawnPos + Vector3.up * fireballArcHeight;
+
+                GameObject go      = Instantiate(fireballPrefab, spawnPos, Quaternion.identity);
+                var        lavaPrj = go.GetComponent<LightVsDecay.Logic.Enemy.LavaProjectile>();
+                if (lavaPrj != null)
+                    lavaPrj.LaunchBezier(spawnPos, controlPoint, targetPos, fireballTravelTime, fireballDamage);
+
+                // Body03 每发时脉冲亮闪
+                body03TargetColor = body03PressColor * 1.4f;
+
+                // VFX：喷口特效
+                PlayVFXAt(vfxMeteorBurst, spawnPos);
+
+                // SFX：发射音效
                 PlaySFX(sfxMeteorLaunch);
 
-                yield return new WaitForSeconds(0.4f);
+                yield return new WaitForSeconds(fireballLaunchInterval);
             }
 
-            // 结束后 Body03 颜色回到 Idle
+            // 恢复 Idle 颜色
             body03TargetColor = body03IdleColor;
 
             if (showDebugInfo)
-                GameLogger.Log($"[VolcanoBoss] 陨石喷发 {meteorCount} 颗");
+                GameLogger.Log($"[VolcanoBoss] 火球喷发 {fireballCount} 颗");
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -641,9 +667,7 @@ namespace LightVsDecay.Logic.Boss
         {
             summonedSlimes.RemoveAll(e => e == null || e.IsDead);
 
-            int totalCount  = (currentPhase >= 2) ? summonCountPhase2 : summonCountPhase1;
-            float angleStep = totalCount > 0 ? 360f / totalCount : 0f;
-            float spawnRadius = 4f;
+            int totalCount = (currentPhase >= 2) ? summonCountPhase2 : summonCountPhase1;
 
             if (EnemyPoolManager.Instance == null)
             {
@@ -651,17 +675,25 @@ namespace LightVsDecay.Logic.Boss
                 yield break;
             }
 
+            // 左右两侧固定坐标区域（光棱塔两侧屏幕外）
+
             // 缓存 Boss 自身碰撞体，用于忽略与粘液怪的物理碰撞
             Collider2D bossCol = GetComponent<Collider2D>();
 
             // 吸收目标：优先使用 absorptionPoint，未配置则退回 Boss 根节点
             Transform absTarget = (absorptionPoint != null) ? absorptionPoint : this.transform;
 
+            int leftCount  = totalCount / 2;
+            int rightCount = totalCount - leftCount;
+
             for (int i = 0; i < totalCount; i++)
             {
-                float   angle    = angleStep * i;
-                Vector2 offset   = Quaternion.Euler(0, 0, angle) * Vector2.up * spawnRadius;
-                Vector3 spawnPos = transform.position + (Vector3)offset;
+                // 前半批从左侧生成，后半批从右侧生成；Y 方向随机散布制造错落感
+                float x = (i < leftCount)
+                    ? Random.Range(slimeSpawnLeftXMin,  slimeSpawnLeftXMax)
+                    : Random.Range(slimeSpawnRightXMin, slimeSpawnRightXMax);
+                float y = slimeSpawnY - Random.Range(0f, slimeSpawnYScatter);
+                Vector3 spawnPos = new Vector3(x, y, 0f);
 
                 var enemy = EnemyPoolManager.Instance.Spawn(EnemyType.LavaSlime, spawnPos);
                 if (enemy != null)
@@ -777,38 +809,6 @@ namespace LightVsDecay.Logic.Boss
                 GameLogger.Log("[VolcanoBoss] 火山冲撞完成（拖尾待接入粒子特效）");
         }
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 绝境碾压：角力期间每 2s 向两侧喷射裂缝火球
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-        protected override void OnPressTick(float deltaTime)
-        {
-            pressFireballTimer += deltaTime;
-            if (pressFireballTimer < pressFireballInterval) return;
-            pressFireballTimer = 0f;
-
-            if (pressFireballPrefab == null)
-            {
-                if (showDebugInfo) GameLogger.LogWarning("[VolcanoBoss] pressFireballPrefab 未设置！");
-                return;
-            }
-
-            FirePressBall(Vector2.left);
-            FirePressBall(Vector2.right);
-
-            // Press 火球喷射时 Body03 同步脉冲
-            body03TargetColor = body03PressColor * 1.4f;
-
-            if (showDebugInfo) GameLogger.Log("[VolcanoBoss] 绝境碾压：喷射裂缝火球×2");
-        }
-
-        private void FirePressBall(Vector2 direction)
-        {
-            GameObject go = Instantiate(pressFireballPrefab, transform.position, Quaternion.identity);
-            var proj = go.GetComponent<LightVsDecay.Logic.Enemy.LavaProjectile>();
-            if (proj != null)
-                proj.Initialize(direction, pressFireballSpeed, pressFireballDamage, hp: 999f, lifetime: 5f);
-        }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Body03 材质颜色动画
@@ -969,7 +969,7 @@ namespace LightVsDecay.Logic.Boss
             GUILayout.Label("=== Ch2 熔炉巨兽 ===");
             GUILayout.Label($"阶段: {currentPhase}  |  汲取层数: {absorptionStacks}/{absorptionMaxStacks}");
             GUILayout.Label($"待吸收小怪: {summonedSlimes.Count}  |  碾压轮次: {desperatePressRoundsDone}/{desperatePressRounds}");
-            GUILayout.Label($"陨石计时: {meteorTimer:F1}s / {meteorInterval}s");
+            GUILayout.Label($"火球计时: {fireballTimer:F1}s / {fireballInterval}s");
             GUILayout.Label($"Body03颜色: R={body03CurrentColor.r:F1} G={body03CurrentColor.g:F1} B={body03CurrentColor.b:F1}");
             GUILayout.EndArea();
         }
