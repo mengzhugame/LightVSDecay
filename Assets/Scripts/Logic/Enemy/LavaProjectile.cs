@@ -203,6 +203,9 @@ namespace LightVsDecay.Logic.Enemy
                 }
             }
 
+            // 火球落地计数（对应 CSV: Boss_Fireball_Hit_Count）
+            BattleStatistics.Instance?.RecordBossMeteor();
+
             DestroyProjectile();
         }
 
@@ -291,6 +294,10 @@ namespace LightVsDecay.Logic.Enemy
             {
                 VFXPoolManager.Instance?.PlayProjectileExplosion(transform.position);
                 AudioManager.Instance?.PlayProjectileExplode();
+
+                // 贝塞尔模式（Boss火球）被激光拦截时记录
+                if (isBezierFlight)
+                    BattleStatistics.Instance?.RecordBossFireballIntercepted();
             }
 
             Destroy(gameObject);

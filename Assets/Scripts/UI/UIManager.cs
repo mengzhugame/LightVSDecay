@@ -157,10 +157,10 @@ namespace LightVsDecay.UI
         /// <param name="isVictory">是否胜利</param>
         public void ShowSettlementPanel(bool isVictory)
         {
-            // 【新增】停止激光循环音效
+            // 【新增】切到结算音频模式：关闭战斗音效，仅保留 UI 音效
             if (AudioManager.Instance != null)
             {
-                AudioManager.Instance.StopLaserLoop();
+                AudioManager.Instance.EnterBattleResultMode();
             }
 
             if (settlementPanel == null)

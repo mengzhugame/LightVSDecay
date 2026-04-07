@@ -220,7 +220,7 @@ MonoBehaviour:
     spawnGroups:
     - spawnTime: 0
       enemyType: 12
-      count: 2
+      count: 1
       pattern: 0
       customInterval: -1
       spawnZone: 1
@@ -281,7 +281,7 @@ MonoBehaviour:
       spawnZone: 1
     - spawnTime: 22
       enemyType: 11
-      count: 2
+      count: 1
       pattern: 0
       customInterval: -1
       spawnZone: 1

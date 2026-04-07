@@ -85,8 +85,10 @@ namespace LightVsDecay.Logic.Statistics
         private int _waveBossAbsorptionCount = 0;
         private float _waveBossHealTotal = 0f;
         private int _waveGunnerShotsFired = 0;   // P2
-        private int _waveBossMeteorCount = 0;     // P2
+        private int _waveBossMeteorCount = 0;     // P2（火球落地计数，原陨石系统已废弃）
         private int _wavePuddlePeakCount = 0;     // P3
+        private int _waveBossFireballBurstCount = 0;        // V6.1 火球喷发次数
+        private int _waveBossFireballInterceptedCount = 0;  // V6.1 火球被激光拦截次数
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态 - 波次基础
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -428,6 +430,8 @@ namespace LightVsDecay.Logic.Statistics
             _waveGunnerShotsFired = 0;
             _waveBossMeteorCount = 0;
             _wavePuddlePeakCount = 0;
+            _waveBossFireballBurstCount = 0;
+            _waveBossFireballInterceptedCount = 0;
 
             // 重置伤害来源
             _waveMainLaserDamage = 0f;
@@ -633,6 +637,10 @@ namespace LightVsDecay.Logic.Statistics
                 // V5.0 P2
                 gunnerShotsFired = _waveGunnerShotsFired,
                 bossMeteorCount  = _waveBossMeteorCount,
+
+                // V6.1 Ch2 火球系统
+                bossFireballBurstCount       = _waveBossFireballBurstCount,
+                bossFireballInterceptedCount = _waveBossFireballInterceptedCount,
 
                 // V5.0 P3
                 puddlePeakCount = _wavePuddlePeakCount,
@@ -1046,11 +1054,25 @@ namespace LightVsDecay.Logic.Statistics
             _waveGunnerShotsFired++;
         }
 
-        /// <summary>Boss陨石落地（由VolcanoMeteor调用，独立于summonCount）</summary>
+        /// <summary>Boss火球落地命中（由 LavaProjectile.OnBezierLanded 调用，对应 CSV: Boss_Fireball_Hit_Count）</summary>
         public void RecordBossMeteor()
         {
             if (!CanRecord()) return;
             _waveBossMeteorCount++;
+        }
+
+        /// <summary>火球喷发触发（由 VolcanoBossController.FireballBurstRoutine 调用）</summary>
+        public void RecordBossFireballBurst()
+        {
+            if (!CanRecord()) return;
+            _waveBossFireballBurstCount++;
+        }
+
+        /// <summary>火球被激光拦截击落（由 LavaProjectile.DestroyProjectile 在 Bezier 模式下调用）</summary>
+        public void RecordBossFireballIntercepted()
+        {
+            if (!CanRecord()) return;
+            _waveBossFireballInterceptedCount++;
         }
 
         /// <summary>熔岩水坑生成（自爆怪死亡或陨石落地时调用）</summary>
@@ -1319,7 +1341,7 @@ namespace LightVsDecay.Logic.Statistics
         }
         
         // CSV字段总数（V6.0：97 + 27 Ch3 = 124）
-        private const int CSV_FIELD_COUNT = 124;
+        private const int CSV_FIELD_COUNT = 126;
         
         /// <summary>
         /// 构建CSV表头
@@ -1370,8 +1392,10 @@ namespace LightVsDecay.Logic.Statistics
                 "Gunner_Bullet_Dmg_To_Player,Dmg_From_Mob_Explosion," +
                 // V5.0 Boss Ch2专属 (2)
                 "Boss_Absorption_Count,Boss_Heal_Total," +
-                // V5.0 P2 炮手 & 陨石 (2)
-                "Gunner_Shots_Fired,Boss_Meteor_Count," +
+                // V5.0 P2 炮手 & 火球落地 (2)
+                "Gunner_Shots_Fired,Boss_Fireball_Hit_Count," +
+                // V6.1 Ch2 火球系统 (2)
+                "Boss_Fireball_Burst_Count,Boss_Fireball_Intercepted_Count," +
                 // V5.0 P3 水坑峰值 (1)
                 "Puddle_Peak_Count," +
                 // V6.0 Ch3 击杀统计 (6)
@@ -1565,6 +1589,10 @@ namespace LightVsDecay.Logic.Statistics
                 // 20. V5.0 P2
                 d.gunnerShotsFired,         // 94
                 d.bossMeteorCount,          // 95
+
+                // 20.1 V6.1 Ch2 火球系统
+                d.bossFireballBurstCount,       // 96
+                d.bossFireballInterceptedCount, // 97
 
                 // 21. V5.0 P3
                 d.puddlePeakCount,          // 96

@@ -246,6 +246,8 @@ namespace LightVsDecay.Logic.Player
                 skillButton.onClick.AddListener(OnSkillButtonClicked);
                 skillButtonRect = skillButton.GetComponent<RectTransform>();
             }
+
+            ResolveReadyVFXReference();
             
             // 初始化进度条
             if (fillImage != null)
@@ -255,11 +257,61 @@ namespace LightVsDecay.Logic.Player
             }
             
             // 隐藏就绪特效
-            if (readyVFX != null)
+            HideReadyVFX();
+        }
+
+        private void ResolveReadyVFXReference()
+        {
+            if (readyVFX != null || skillButtonRect == null)
             {
-                readyVFX.Stop();
-                readyVFX.gameObject.SetActive(false);
+                return;
             }
+
+            ParticleSystem[] particleSystems = skillButtonRect.GetComponentsInChildren<ParticleSystem>(true);
+            foreach (ParticleSystem particleSystem in particleSystems)
+            {
+                if (particleSystem == null)
+                {
+                    continue;
+                }
+
+                if (particleSystem.gameObject.name.Contains("DaZhaoChongNeng"))
+                {
+                    readyVFX = particleSystem;
+                    break;
+                }
+            }
+
+            if (showDebugInfo && readyVFX == null)
+            {
+                GameLogger.LogWarning("[OverloadManager] readyVFX was not found under SkillButton.");
+            }
+        }
+
+        private void HideReadyVFX()
+        {
+            if (readyVFX == null)
+            {
+                return;
+            }
+
+            readyVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            readyVFX.Clear(true);
+            readyVFX.gameObject.SetActive(false);
+        }
+
+        private void ShowReadyVFX()
+        {
+            ResolveReadyVFXReference();
+            if (readyVFX == null)
+            {
+                return;
+            }
+
+            readyVFX.gameObject.SetActive(true);
+            readyVFX.Clear(true);
+            readyVFX.Simulate(0f, true, true);
+            readyVFX.Play(true);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -405,21 +457,13 @@ namespace LightVsDecay.Logic.Player
         private void OnEnterCharging()
         {
             // 隐藏就绪特效
-            if (readyVFX != null)
-            {
-                readyVFX.Stop();
-                readyVFX.gameObject.SetActive(false);
-            }
+            HideReadyVFX();
         }
         
         private void OnEnterReady()
         {
             // 显示就绪特效
-            if (readyVFX != null)
-            {
-                readyVFX.gameObject.SetActive(true);
-                readyVFX.Play();
-            }
+            ShowReadyVFX();
             
             if (showDebugInfo)
             {
@@ -430,11 +474,7 @@ namespace LightVsDecay.Logic.Player
         private void OnEnterActive()
         {
             // 隐藏就绪特效
-            if (readyVFX != null)
-            {
-                readyVFX.Stop();
-                readyVFX.gameObject.SetActive(false);
-            }
+            HideReadyVFX();
             
             // 设置激活计时器
             activeTimer = activeDuration;

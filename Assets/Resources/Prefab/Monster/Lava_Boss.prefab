@@ -298,9 +298,9 @@ MonoBehaviour:
   fireballDamage: 400
   fireballInterval: 10
   fireballSpreadRadius: 2.5
-  fireballLaunchInterval: 0.35
-  fireballArcHeight: 8
-  fireballTravelTime: 2
+  fireballLaunchInterval: 0.5
+  fireballArcHeight: 12
+  fireballTravelTime: 4
   desperatePressThreshold: 0.3
   desperatePressRounds: 3
   body02Renderer: {fileID: 585836121024178123}

@@ -28,7 +28,8 @@
       "Bash(find D:ProjectLightVSDecayAssetsScripts -type f -name *Result*.cs)",
       "Bash(find D:ProjectLightVSDecayAssetsScriptsUI -type f -name *.cs)",
       "Bash(grep -r BattleStatistics.Instance D:ProjectLightVSDecayAssetsScripts --include=*.cs -n)",
-      "Bash(grep -rh BattleStatistics.Instance D:ProjectLightVSDecayAssetsScripts --include=*.cs -A1)"
+      "Bash(grep -rh BattleStatistics.Instance D:ProjectLightVSDecayAssetsScripts --include=*.cs -A1)",
+      "Bash(wc -l \"/d/Project/GamePlanningDoc/20_项目/02_光与朽项目/01_策划文档\"/*.md)"
     ]
   }
 }

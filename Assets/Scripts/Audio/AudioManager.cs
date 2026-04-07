@@ -73,6 +73,7 @@ namespace LightVsDecay.Audio
         private AudioSource sfxSource;
         private AudioSource laserSource;      // 激光循环音效专用
         private AudioSource bossLoopSource;   // Boss 循环音效专用
+        private bool battleSfxMuted = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 音量设置
@@ -292,6 +293,9 @@ namespace LightVsDecay.Audio
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (config == null) return;
+
+            ExitBattleResultMode();
+            ResetBGMPitch();
     
             // 停止循环音效
             StopLaserLoop();
@@ -486,6 +490,8 @@ namespace LightVsDecay.Audio
         {
             if (!sfxEnabled) return;  // 【新增】音效关闭时不播放
             if (clip == null || sfxSource == null) return;
+
+            PrepareSfxSource();
             
             sfxSource.PlayOneShot(clip, sfxVolume * volumeMultiplier);
             
@@ -533,6 +539,9 @@ namespace LightVsDecay.Audio
         {
             if(showDebugInfo)
                 GameLogger.Log($"[AudioManager] StartLaserLoop 被调用");
+
+            if (battleSfxMuted)
+                return;
     
             if (config == null)
             {
@@ -688,7 +697,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.enemyExplode, config.enemyDefaultVolume);
+                PlayBattleSFX(config.enemyExplode, config.enemyDefaultVolume);
             }
         }
         
@@ -699,7 +708,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.enemyDeath, config.enemyDefaultVolume);
+                PlayBattleSFX(config.enemyDeath, config.enemyDefaultVolume);
             }
         }
         
@@ -709,7 +718,7 @@ namespace LightVsDecay.Audio
         public void PlayEnemySplit()
         {
             if (config != null && config.enemySplit != null)
-                PlaySFX(config.enemySplit, config.enemyDefaultVolume);
+                PlayBattleSFX(config.enemySplit, config.enemyDefaultVolume);
         }
 
         /// <summary>
@@ -719,7 +728,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.enemyFreeze, config.enemyDefaultVolume);
+                PlayBattleSFX(config.enemyFreeze, config.enemyDefaultVolume);
             }
         }
 
@@ -729,7 +738,7 @@ namespace LightVsDecay.Audio
         public void PlayProjectileExplode()
         {
             if (config != null && config.projectileExplode != null)
-                PlaySFX(config.projectileExplode, config.enemyDefaultVolume);
+                PlayBattleSFX(config.projectileExplode, config.enemyDefaultVolume);
         }
 
         /// <summary>
@@ -738,7 +747,7 @@ namespace LightVsDecay.Audio
         public void PlayGrenadeExplosion()
         {
             if (config != null && config.grenadeExplosion != null)
-                PlaySFX(config.grenadeExplosion, config.enemyDefaultVolume);
+                PlayBattleSFX(config.grenadeExplosion, config.enemyDefaultVolume);
         }
 
         /// <summary>
@@ -747,7 +756,7 @@ namespace LightVsDecay.Audio
         public void PlayLavaPuddleSpawn()
         {
             if (config != null && config.lavaPuddleSpawn != null)
-                PlaySFX(config.lavaPuddleSpawn, config.enemyDefaultVolume);
+                PlayBattleSFX(config.lavaPuddleSpawn, config.enemyDefaultVolume);
         }
 
         /// <summary>
@@ -756,7 +765,7 @@ namespace LightVsDecay.Audio
         public void PlayGunnerSpit()
         {
             if (config != null && config.gunnerSpit != null)
-                PlaySFX(config.gunnerSpit, config.enemyDefaultVolume);
+                PlayBattleSFX(config.gunnerSpit, config.enemyDefaultVolume);
         }
 
         /// <summary>
@@ -765,7 +774,7 @@ namespace LightVsDecay.Audio
         public void PlayCatalystBurst()
         {
             if (config != null && config.catalystBurst != null)
-                PlaySFX(config.catalystBurst, config.enemyDefaultVolume);
+                PlayBattleSFX(config.catalystBurst, config.enemyDefaultVolume);
         }
 
         /// <summary>
@@ -774,7 +783,7 @@ namespace LightVsDecay.Audio
         public void PlayIceWallSpawn()
         {
             if (config != null && config.iceWallSpawn != null)
-                PlaySFX(config.iceWallSpawn, config.enemyDefaultVolume);
+                PlayBattleSFX(config.iceWallSpawn, config.enemyDefaultVolume);
         }
 
         /// <summary>
@@ -783,7 +792,7 @@ namespace LightVsDecay.Audio
         public void PlayIceShieldBreak()
         {
             if (config != null && config.iceShieldBreak != null)
-                PlaySFX(config.iceShieldBreak, config.enemyDefaultVolume);
+                PlayBattleSFX(config.iceShieldBreak, config.enemyDefaultVolume);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -797,7 +806,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.shieldBreak, config.playerDefaultVolume);
+                PlayBattleSFX(config.shieldBreak, config.playerDefaultVolume);
             }
         }
         
@@ -808,7 +817,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null && config.shieldHit != null)
             {
-                PlaySFX(config.shieldHit, config.playerDefaultVolume);
+                PlayBattleSFX(config.shieldHit, config.playerDefaultVolume);
             }
         }
         
@@ -819,7 +828,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null && config.towerHit != null)
             {
-                PlaySFX(config.towerHit, config.playerDefaultVolume);
+                PlayBattleSFX(config.towerHit, config.playerDefaultVolume);
             }
         }
 
@@ -829,7 +838,7 @@ namespace LightVsDecay.Audio
         public void PlayTowerFreeze()
         {
             if (config != null && config.towerFreeze != null)
-                PlaySFX(config.towerFreeze, config.playerDefaultVolume);
+                PlayBattleSFX(config.towerFreeze, config.playerDefaultVolume);
         }
 
         /// <summary>
@@ -838,7 +847,7 @@ namespace LightVsDecay.Audio
         public void PlayTowerUnfreeze()
         {
             if (config != null && config.towerUnfreeze != null)
-                PlaySFX(config.towerUnfreeze, config.playerDefaultVolume);
+                PlayBattleSFX(config.towerUnfreeze, config.playerDefaultVolume);
         }
 
         /// <summary>
@@ -847,7 +856,7 @@ namespace LightVsDecay.Audio
         public void PlayBossWarning()
         {
             if (config != null && config.bossWarning != null)
-                PlaySFX(config.bossWarning, config.bossDefaultVolume);
+                PlayBattleSFX(config.bossWarning, config.bossDefaultVolume);
         }
 
         /// <summary>
@@ -857,7 +866,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.lowHealthWarning, config.playerDefaultVolume);
+                PlayBattleSFX(config.lowHealthWarning, config.playerDefaultVolume);
             }
         }
         
@@ -872,7 +881,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.bossRoar, config.bossDefaultVolume);
+                PlayBattleSFX(config.bossRoar, config.bossDefaultVolume);
             }
         }
 
@@ -895,7 +904,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.bossDash, config.bossDefaultVolume);
+                PlayBattleSFX(config.bossDash, config.bossDefaultVolume);
             }
         }
         /// <summary>
@@ -905,7 +914,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.bossChargeWarning, config.bossDefaultVolume);
+                PlayBattleSFX(config.bossChargeWarning, config.bossDefaultVolume);
             }
         }
         /// <summary>
@@ -915,7 +924,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.bossSummon, config.bossDefaultVolume);
+                PlayBattleSFX(config.bossSummon, config.bossDefaultVolume);
             }
         }
         /// <summary>
@@ -925,7 +934,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.bossSpit, config.bossDefaultVolume);
+                PlayBattleSFX(config.bossSpit, config.bossDefaultVolume);
             }
         }
         
@@ -940,7 +949,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.droneEnter, config.droneVolume);
+                PlayBattleSFX(config.droneEnter, config.droneVolume);
             }
         }
         /// <summary>
@@ -950,7 +959,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.droneLand, config.droneVolume);
+                PlayBattleSFX(config.droneLand, config.droneVolume);
             }
         }
         
@@ -961,7 +970,7 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
-                PlaySFX(config.droneBoxBreak, config.droneVolume);
+                PlayBattleSFX(config.droneBoxBreak, config.droneVolume);
             }
         }
         
@@ -975,6 +984,7 @@ namespace LightVsDecay.Audio
         public void PlayXpOrbCollect()
         {
             if (config == null || config.xpOrbCollect == null) return;
+            if (battleSfxMuted) return;
     
             float cooldown = config != null ? config.xpOrbCollectCooldown : 0.1f;
             if (Time.time - lastXpOrbCollectTime < cooldown) return;
@@ -1000,9 +1010,7 @@ namespace LightVsDecay.Audio
         
         private void OnGameVictory()
         {
-            // 停止循环音效
-            StopLaserLoop();
-            StopBossLoop();
+            EnterBattleResultMode();
             
             if (config != null)
             {
@@ -1012,9 +1020,7 @@ namespace LightVsDecay.Audio
         
         private void OnGameDefeat()
         {
-            // 停止循环音效
-            StopLaserLoop();
-            StopBossLoop();
+            EnterBattleResultMode();
             
             if (config != null)
             {
@@ -1026,6 +1032,9 @@ namespace LightVsDecay.Audio
         {
             // 敌人死亡时播放死亡音效
             // 注意：自爆音效在 EnemyBlob.Explode() 中单独调用
+            if (type == EnemyType.LavaExploder || type == EnemyType.EliteLavaExploder)
+                return;
+
             PlayEnemyDeath();
         }
         
@@ -1052,6 +1061,8 @@ namespace LightVsDecay.Audio
         /// </summary>
         private void OnGameResumed()
         {
+            if (battleSfxMuted) return;
+
             // 恢复激光音效
             StartLaserLoop();
     
@@ -1066,6 +1077,8 @@ namespace LightVsDecay.Audio
         /// </summary>
         private void OnLevelUpChoiceComplete()
         {
+            if (battleSfxMuted) return;
+
             // 恢复激光音效
             StartLaserLoop();
     
@@ -1134,6 +1147,50 @@ namespace LightVsDecay.Audio
         public void ResetBGMPitch()
         {
             SetBGMPitch(1.0f);
+        }
+
+        private void PrepareSfxSource()
+        {
+            if (sfxSource == null) return;
+
+            sfxSource.pitch = 1f;
+            sfxSource.panStereo = 0f;
+            sfxSource.loop = false;
+            sfxSource.mute = false;
+            sfxSource.spatialBlend = 0f;
+            sfxSource.dopplerLevel = 0f;
+        }
+
+        private void PlayBattleSFX(AudioClip clip, float volumeMultiplier)
+        {
+            if (battleSfxMuted) return;
+            PlaySFX(clip, volumeMultiplier);
+        }
+
+        public void EnterBattleResultMode()
+        {
+            battleSfxMuted = true;
+            StopLaserLoop();
+            StopBossLoop();
+            StopSceneBattleAudioSources();
+        }
+
+        public void ExitBattleResultMode()
+        {
+            battleSfxMuted = false;
+        }
+
+        private void StopSceneBattleAudioSources()
+        {
+            AudioSource[] allSources = FindObjectsOfType<AudioSource>(true);
+            foreach (AudioSource source in allSources)
+            {
+                if (source == null) continue;
+                if (source == bgmSource || source == sfxSource || source == laserSource || source == bossLoopSource)
+                    continue;
+
+                source.Stop();
+            }
         }
     }
 }

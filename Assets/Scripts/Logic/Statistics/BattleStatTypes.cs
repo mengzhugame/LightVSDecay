@@ -435,6 +435,10 @@ namespace LightVsDecay.Logic.Statistics
         // ═══ V5.0 P3 新增 ═══
         public int puddlePeakCount;          // 场上熔岩水坑峰值数量
 
+        // ═══ V6.1 Ch2 火球系统 (2) ═══
+        public int bossFireballBurstCount;          // 火球喷发触发次数（每次 FireballBurstRoutine 计1）
+        public int bossFireballInterceptedCount;    // 被激光拦截击落的火球数量
+
         // ═══ V6.0 Ch3 击杀统计 (6) ═══
         public int killFrostSlime;
         public int killFrostTank;
