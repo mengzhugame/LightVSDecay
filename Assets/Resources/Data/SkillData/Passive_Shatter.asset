@@ -144,7 +144,7 @@ MonoBehaviour:
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u5BF9\u51CF\u901F\u6216\u51B0\u51BB\u654C\u4EBA<color=#00BFFF>
-      +120%</color> \u4F24\u5BB3,\u51FB\u6740\u65F6\u89E6\u53D1 <color=#00BFFF>200%
+      +200%</color> \u4F24\u5BB3,\u51FB\u6740\u65F6\u89E6\u53D1 <color=#00BFFF>200%
       </color> \u788E\u51B0\u7206\u70B8"
     damageMultiplier: 1
     bossDamageBonus: 0
@@ -166,7 +166,7 @@ MonoBehaviour:
     penetrationCount: 0
     penetrationDecay: 0.1
     dealsTrueDamageToBoss: 0
-    shatterDamageBonus: 1.2
+    shatterDamageBonus: 2.0
     shatterExplosionOnKill: 1
     shatterExplosionRadius: 2
     frostSpreadRadius: 1.5

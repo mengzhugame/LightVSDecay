@@ -693,6 +693,7 @@ namespace LightVsDecay.Logic.Boss
 
         private void UpdateSummonCooldown()
         {
+            if (IsFrozen) return;
             if (summonCooldownTimer > 0)
             {
                 summonCooldownTimer -= Time.deltaTime;

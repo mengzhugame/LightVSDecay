@@ -155,8 +155,8 @@ MonoBehaviour:
     frostNovaSlowDuration: 2
     rotationSpeedBonus: 0
     knockbackBonus: 0
-  - description: "\u57FA\u7840 DPS <color=#00FF00>+100%</color>"
-    damageMultiplier: 2
+  - description: "\u57FA\u7840 DPS <color=#00FF00>+70%</color>"
+    damageMultiplier: 1.7
     bossDamageBonus: 0
     knockbackMultiplier: 0
     slowPercent: 0

@@ -80,6 +80,27 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("右侧生成区域 X 最大值（正数，默认 12）")]
         [SerializeField] private float slimeSpawnRightXMax = 12f;
 
+        [Header("回血上限 · 攻击模式")]
+        [Tooltip("Boss 累计回血达到最大HP的此比例后，切换为攻击型召唤（小怪直接攻击玩家）")]
+        [Range(0.1f, 1f)]
+        [SerializeField] private float healCapRatio = 0.4f;
+
+        [Tooltip("攻击模式：小怪生成点 Y 坐标（屏幕中部，默认 0）")]
+        [SerializeField] private float attackSpawnY = 0f;
+
+        [Tooltip("攻击模式：左侧生成 X 坐标（默认 -9）")]
+        [SerializeField] private float attackSpawnLeftX = -9f;
+
+        [Tooltip("攻击模式：右侧生成 X 坐标（默认 9）")]
+        [SerializeField] private float attackSpawnRightX = 9f;
+
+        [Tooltip("攻击模式：生成点 Y 方向随机散布范围（默认 1.5）")]
+        [SerializeField] private float attackSpawnYScatter = 1.5f;
+
+        [Header("冰冻易伤")]
+        [Tooltip("Boss 处于完全冻结状态时，受到的额外伤害倍率（默认 1.5 = +50%）")]
+        [SerializeField] private float frozenVulnerabilityMultiplier = 1.5f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 · 火球喷发
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -316,6 +337,8 @@ namespace LightVsDecay.Logic.Boss
         private List<LightVsDecay.Logic.Enemy.EnemyBlob> summonedSlimes =
             new List<LightVsDecay.Logic.Enemy.EnemyBlob>();
         private int absorptionStacks = 0;
+        private float totalHealedHP = 0f;
+        private bool healCapReached = false;
 
         // 绝境碾压
         private int desperatePressRoundsDone = 0;
@@ -343,6 +366,8 @@ namespace LightVsDecay.Logic.Boss
             currentPhase             = 1;
             phase3Triggered          = false;
             absorptionStacks         = 0;
+            totalHealedHP            = 0f;
+            healCapReached           = false;
             desperatePressRoundsDone = 0;
             fireballTimer            = 0f;
             summonedSlimes.Clear();
@@ -570,6 +595,9 @@ namespace LightVsDecay.Logic.Boss
                 yield break;
             }
 
+            // 记录本次火球喷发触发
+            BattleStatistics.Instance?.RecordBossFireballBurst();
+
             // Body03 白炽化蓄力前摇（1.2s）
             float telegraphTime = 1.2f;
             float elapsed       = 0f;
@@ -675,43 +703,64 @@ namespace LightVsDecay.Logic.Boss
                 yield break;
             }
 
-            // 左右两侧固定坐标区域（光棱塔两侧屏幕外）
-
             // 缓存 Boss 自身碰撞体，用于忽略与粘液怪的物理碰撞
             Collider2D bossCol = GetComponent<Collider2D>();
 
-            // 吸收目标：优先使用 absorptionPoint，未配置则退回 Boss 根节点
-            Transform absTarget = (absorptionPoint != null) ? absorptionPoint : this.transform;
+            int leftCount = totalCount / 2;
 
-            int leftCount  = totalCount / 2;
-            int rightCount = totalCount - leftCount;
-
-            for (int i = 0; i < totalCount; i++)
+            if (healCapReached)
             {
-                // 前半批从左侧生成，后半批从右侧生成；Y 方向随机散布制造错落感
-                float x = (i < leftCount)
-                    ? Random.Range(slimeSpawnLeftXMin,  slimeSpawnLeftXMax)
-                    : Random.Range(slimeSpawnRightXMin, slimeSpawnRightXMax);
-                float y = slimeSpawnY - Random.Range(0f, slimeSpawnYScatter);
-                Vector3 spawnPos = new Vector3(x, y, 0f);
-
-                var enemy = EnemyPoolManager.Instance.Spawn(EnemyType.LavaSlime, spawnPos);
-                if (enemy != null)
+                // ── 攻击模式：从屏幕中部左右两侧召唤，小怪直接攻向玩家/光棱塔 ──
+                for (int i = 0; i < totalCount; i++)
                 {
-                    // 让粘液怪向火山口吸收点移动
-                    enemy.SetOverrideTarget(absTarget);
+                    float x = (i < leftCount) ? attackSpawnLeftX : attackSpawnRightX;
+                    float y = attackSpawnY + Random.Range(-attackSpawnYScatter * 0.5f, attackSpawnYScatter * 0.5f);
+                    Vector3 spawnPos = new Vector3(x, y, 0f);
 
-                    // 忽略 Boss ↔ 粘液怪 的物理碰撞，防止粘液怪推飞 Boss
-                    Collider2D slimeCol = enemy.GetComponent<Collider2D>();
-                    if (bossCol != null && slimeCol != null)
-                        Physics2D.IgnoreCollision(bossCol, slimeCol, true);
+                    var enemy = EnemyPoolManager.Instance.Spawn(EnemyType.LavaSlime, spawnPos);
+                    if (enemy != null)
+                    {
+                        // 不设置 SetOverrideTarget，小怪自动以光棱塔为目标发动攻击
+                        Collider2D slimeCol = enemy.GetComponent<Collider2D>();
+                        if (bossCol != null && slimeCol != null)
+                            Physics2D.IgnoreCollision(bossCol, slimeCol, true);
 
-                    summonedSlimes.Add(enemy);
+                        summonedSlimes.Add(enemy);
+                    }
                 }
-            }
 
-            if (showDebugInfo)
-                GameLogger.Log($"[VolcanoBoss] 汲取融合：召唤 {totalCount} 只 LavaSlime");
+                if (showDebugInfo)
+                    GameLogger.Log($"[VolcanoBoss] 攻击模式召唤：{totalCount} 只 LavaSlime 从中部两侧出现");
+            }
+            else
+            {
+                // ── 回血模式：从屏幕底部左右两侧生成，小怪走向火山口吸收点 ──
+                Transform absTarget = (absorptionPoint != null) ? absorptionPoint : this.transform;
+
+                for (int i = 0; i < totalCount; i++)
+                {
+                    float x = (i < leftCount)
+                        ? Random.Range(slimeSpawnLeftXMin,  slimeSpawnLeftXMax)
+                        : Random.Range(slimeSpawnRightXMin, slimeSpawnRightXMax);
+                    float y = slimeSpawnY - Random.Range(0f, slimeSpawnYScatter);
+                    Vector3 spawnPos = new Vector3(x, y, 0f);
+
+                    var enemy = EnemyPoolManager.Instance.Spawn(EnemyType.LavaSlime, spawnPos);
+                    if (enemy != null)
+                    {
+                        enemy.SetOverrideTarget(absTarget);
+
+                        Collider2D slimeCol = enemy.GetComponent<Collider2D>();
+                        if (bossCol != null && slimeCol != null)
+                            Physics2D.IgnoreCollision(bossCol, slimeCol, true);
+
+                        summonedSlimes.Add(enemy);
+                    }
+                }
+
+                if (showDebugInfo)
+                    GameLogger.Log($"[VolcanoBoss] 汲取融合：召唤 {totalCount} 只 LavaSlime");
+            }
 
             yield break;
         }
@@ -722,6 +771,8 @@ namespace LightVsDecay.Logic.Boss
 
         private void CheckAbsorption()
         {
+            // 攻击模式下，小怪不进行吸收，直接攻击玩家
+            if (healCapReached) return;
             if (summonedSlimes.Count == 0) return;
 
             for (int i = summonedSlimes.Count - 1; i >= 0; i--)
@@ -747,11 +798,20 @@ namespace LightVsDecay.Logic.Boss
         {
             slime.AbsorbedByBoss();
 
-            // 回血
-            if (bossHealth != null)
+            // 回血（仅在未到达回血上限时执行）
+            if (bossHealth != null && !healCapReached)
             {
                 bossHealth.HealHP(absorptionHealPerSlime);
                 BattleStatistics.Instance?.RecordBossAbsorption();
+                totalHealedHP += absorptionHealPerSlime;
+
+                // 检测回血上限：累计回血 >= Boss最大HP × healCapRatio 时切换为攻击模式
+                if (!healCapReached && totalHealedHP >= bossHealth.MaxHealth * healCapRatio)
+                {
+                    healCapReached = true;
+                    if (showDebugInfo)
+                        GameLogger.Log($"[VolcanoBoss] 回血上限达到（{totalHealedHP}/{bossHealth.MaxHealth * healCapRatio}），切换为攻击模式召唤");
+                }
             }
 
             // 攻击力叠层（体现为受到伤害减免，见 GetLinkedBuffDamageMultiplier）
@@ -782,7 +842,9 @@ namespace LightVsDecay.Logic.Boss
 
         public override float GetLinkedBuffDamageMultiplier()
         {
-            return Mathf.Max(0.1f, 1f - absorptionStacks * 0.03f);
+            float baseMultiplier = Mathf.Max(0.1f, 1f - absorptionStacks * 0.03f);
+            if (IsFrozen) baseMultiplier *= frozenVulnerabilityMultiplier;
+            return baseMultiplier;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

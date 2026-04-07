@@ -160,7 +160,7 @@ MonoBehaviour:
     rotationSpeedBonus: 0
     knockbackBonus: 0
   - description: "\u66B4\u51FB\u7387 <color=#00FF00>+15%</color>\n\u66B4\u51FB\u4F24\u5BB3
-      <color=#00FF00>+90%</color>,\u9644\u5E26\u6280\u80FD\u6253\u65AD"
+      <color=#00FF00>+60%</color>,\u9644\u5E26\u6280\u80FD\u6253\u65AD"
     damageMultiplier: 1
     bossDamageBonus: 0
     knockbackMultiplier: 0
@@ -176,7 +176,7 @@ MonoBehaviour:
     chainRange: 0
     chainDamageDecay: 0.2
     critRateBonus: 0.15
-    critDamageBonus: 0.9
+    critDamageBonus: 0.6
     critKnockback: 1
     penetrationCount: 0
     penetrationDecay: 0.1
