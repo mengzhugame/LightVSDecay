@@ -45,6 +45,8 @@ namespace LightVsDecay.Logic.Enemy
         private const float TARGET_MARGIN = 1.5f;
         private const float SCREEN_SAFE_MARGIN = 0.8f;
         private const float OFFSCREEN_RECOVERY_TIMEOUT = 1.0f;
+        private const float REPOSITION_DESCEND_STEP = 0.85f;
+        private const float MIN_DESCEND_SCREEN_RATIO = 0.5f;
 
         private EnemyBlob blob;
         private Rigidbody2D rb;
@@ -62,6 +64,7 @@ namespace LightVsDecay.Logic.Enemy
         private GunnerState state = GunnerState.Entering;
         private float targetWorldY;
         private float targetWorldX;
+        private float minAdvanceWorldY;
         private float chargeTimer;
         private float chargeDuration = 5f;
         private bool isActive;
@@ -156,11 +159,14 @@ namespace LightVsDecay.Logic.Enemy
             {
                 float worldTop = cam.transform.position.y + cam.orthographicSize;
                 float worldBottom = cam.transform.position.y - cam.orthographicSize;
-                targetWorldY = Mathf.Lerp(worldTop, worldBottom, stopYPercent);
+                float screenHeight = worldTop - worldBottom;
+                targetWorldY = worldTop - screenHeight * stopYPercent;
+                minAdvanceWorldY = worldTop - screenHeight * MIN_DESCEND_SCREEN_RATIO;
             }
             else
             {
                 targetWorldY = 3f;
+                minAdvanceWorldY = 0f;
             }
 
             Transform tower = blob.TargetTower;
@@ -171,6 +177,11 @@ namespace LightVsDecay.Logic.Enemy
                 {
                     targetWorldY = yLimit;
                 }
+            }
+
+            if (targetWorldY < minAdvanceWorldY)
+            {
+                targetWorldY = minAdvanceWorldY;
             }
 
             targetWorldX = transform.position.x;
@@ -276,7 +287,7 @@ namespace LightVsDecay.Logic.Enemy
                 yield break;
             }
 
-            ChooseNewTargetX();
+            ChooseNextRepositionTarget();
             state = GunnerState.Repositioning;
         }
 
@@ -326,7 +337,7 @@ namespace LightVsDecay.Logic.Enemy
             BattleStatistics.Instance?.RecordGunnerShot();
         }
 
-        private void ChooseNewTargetX()
+        private void ChooseNextRepositionTarget()
         {
             float minX;
             float maxX;
@@ -351,20 +362,33 @@ namespace LightVsDecay.Logic.Enemy
             targetWorldX = candidateMin < candidateMax
                 ? Random.Range(candidateMin, candidateMax)
                 : Mathf.Clamp(transform.position.x, minX, maxX);
+
+            if (transform.position.y - minAdvanceWorldY > SNAP_DIST)
+            {
+                targetWorldY = Mathf.Max(minAdvanceWorldY, transform.position.y - REPOSITION_DESCEND_STEP);
+            }
+            else
+            {
+                targetWorldY = transform.position.y;
+            }
         }
 
         private void UpdateRepositioning()
         {
-            float dx = targetWorldX - transform.position.x;
-            if (Mathf.Abs(dx) > SNAP_DIST)
+            Vector2 currentPos = transform.position;
+            Vector2 targetPos = new Vector2(targetWorldX, targetWorldY);
+            Vector2 delta = targetPos - currentPos;
+
+            if (delta.magnitude > SNAP_DIST)
             {
-                rb.velocity = new Vector2(Mathf.Sign(dx) * REPOSITION_SPEED, 0f);
+                rb.velocity = delta.normalized * REPOSITION_SPEED;
                 return;
             }
 
             rb.velocity = Vector2.zero;
             Vector3 pos = transform.position;
             pos.x = targetWorldX;
+            pos.y = targetWorldY;
             transform.position = pos;
             EnterCharging(shootInterval);
         }

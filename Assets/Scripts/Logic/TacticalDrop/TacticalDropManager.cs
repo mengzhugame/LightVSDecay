@@ -631,7 +631,9 @@ namespace LightVsDecay.Logic.TacticalDrop
             // 检查护盾状态
             bool isShieldBroken = shieldController == null || shieldController.CurrentShieldHP <= 0;
 
-            DealEntry deal = rewardConfig.GetRandomDeal(isShieldBroken);
+            bool laserAtCap = laserController != null && laserController.IsMainLaserAtLengthCap;
+            bool laserHasLengthSkill = laserController != null && laserController.HasReflexLengthBonus;
+            DealEntry deal = rewardConfig.GetRandomDeal(isShieldBroken, laserAtCap, laserHasLengthSkill);
             if (deal == null)
             {
                 GameLogger.LogWarning("[TacticalDropManager] 契约箱交易池为空！");

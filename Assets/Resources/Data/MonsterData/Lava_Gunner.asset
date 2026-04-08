@@ -61,14 +61,14 @@ MonoBehaviour:
   explosionAoeRadius: 3
   disableHitFlash: 0
   disableKnockback: 0
-  gunnerStopYPercent: 0.4
+  gunnerStopYPercent: 0.2
   gunnerMaxDistFromTower: 16.15
   gunnerShootInterval: 4
   gunnerRepositionRange: 2
   gunnerProjectilePrefab: {fileID: 1227954545292335531, guid: cb87b1bc8326ff4469a9fa0381d58661, type: 3}
   gunnerProjectileSpeed: 10
   gunnerProjectileDamage: 65
-  gunnerProjectileHP: 20
+  gunnerProjectileHP: 40
   gunnerProjectileLifetime: 8
   autoDestroyTime: 0
   isCatalyst: 0

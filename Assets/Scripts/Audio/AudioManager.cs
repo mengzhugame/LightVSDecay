@@ -74,6 +74,8 @@ namespace LightVsDecay.Audio
         private AudioSource laserSource;      // 激光循环音效专用
         private AudioSource bossLoopSource;   // Boss 循环音效专用
         private bool battleSfxMuted = false;
+        private float lastEnemyExplodeTime = -1f;
+        private const float EnemyExplodeDedupWindow = 0.05f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 音量设置
@@ -697,6 +699,12 @@ namespace LightVsDecay.Audio
         {
             if (config != null)
             {
+                if (Time.unscaledTime - lastEnemyExplodeTime < EnemyExplodeDedupWindow)
+                {
+                    return;
+                }
+
+                lastEnemyExplodeTime = Time.unscaledTime;
                 PlayBattleSFX(config.enemyExplode, config.enemyDefaultVolume);
             }
         }
@@ -737,8 +745,7 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void PlayProjectileExplode()
         {
-            if (config != null && config.projectileExplode != null)
-                PlayBattleSFX(config.projectileExplode, config.enemyDefaultVolume);
+            PlayEnemyExplode();
         }
 
         /// <summary>
@@ -746,8 +753,7 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void PlayGrenadeExplosion()
         {
-            if (config != null && config.grenadeExplosion != null)
-                PlayBattleSFX(config.grenadeExplosion, config.enemyDefaultVolume);
+            PlayEnemyExplode();
         }
 
         /// <summary>

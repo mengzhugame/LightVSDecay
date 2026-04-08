@@ -97,7 +97,7 @@ PolygonCollider2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 92703024824987791}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Density: 1
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -292,6 +292,12 @@ MonoBehaviour:
   slimeSpawnLeftXMax: -10
   slimeSpawnRightXMin: 10
   slimeSpawnRightXMax: 12
+  healCapRatio: 0.4
+  attackSpawnY: 0
+  attackSpawnLeftX: -9
+  attackSpawnRightX: 9
+  attackSpawnYScatter: 1.5
+  frozenVulnerabilityMultiplier: 1.5
   fireballPrefab: {fileID: 1227954545292335531, guid: cb87b1bc8326ff4469a9fa0381d58661, type: 3}
   fireballSpawnPoint: {fileID: 2495339394388923440}
   fireballCount: 4

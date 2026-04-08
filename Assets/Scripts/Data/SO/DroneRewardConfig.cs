@@ -485,7 +485,7 @@ namespace LightVsDecay.Data.SO
         /// 获取契约箱交易
         /// </summary>
         /// <param name="isShieldBroken">护盾是否已破碎</param>
-        public DealEntry GetRandomDeal(bool isShieldBroken = false)
+        public DealEntry GetRandomDeal(bool isShieldBroken = false, bool laserAtLengthCap = false, bool laserHasLengthSkill = false)
         {
             if (dealEntries.Count == 0) return null;
     
@@ -499,7 +499,35 @@ namespace LightVsDecay.Data.SO
                 {
                     continue;
                 }
-        
+
+                if (entry.gain != null && entry.gain.type == RewardType.LaserLengthPercent)
+                {
+                    if (laserAtLengthCap)
+                    {
+                        continue;
+                    }
+
+                    if (laserHasLengthSkill)
+                    {
+                        DealEntry reduced = new DealEntry
+                        {
+                            dealName = entry.dealName,
+                            cost = entry.cost,
+                            gain = new RewardEntry
+                            {
+                                type = entry.gain.type,
+                                value = entry.gain.value,
+                                displayText = entry.gain.displayText,
+                                weight = entry.gain.weight,
+                                isJackpot = entry.gain.isJackpot
+                            },
+                            weight = Mathf.Max(1, entry.weight / 2)
+                        };
+                        filteredPool.Add(reduced);
+                        continue;
+                    }
+                }
+
                 filteredPool.Add(entry);
             }
     
