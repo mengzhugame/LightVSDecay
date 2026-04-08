@@ -164,7 +164,7 @@ MonoBehaviour:
     critKnockback: 0
     penetrationCount: 0
     penetrationDecay: 0.1
-    dealsTrueDamageToBoss: 0
+    dealsTrueDamageToBoss: 1
     shatterDamageBonus: 0
     shatterExplosionOnKill: 0
     shatterExplosionRadius: 2

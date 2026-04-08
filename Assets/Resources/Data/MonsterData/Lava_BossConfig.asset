@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f08c93735e3ebd468254b7f0b24e8d3, type: 3}
   m_Name: Lava_BossConfig
   m_EditorClassIdentifier: 
-  maxHealth: 260000
+  maxHealth: 430000
   spawnDuration: 2.5
   battleAnchorY: 3.5
   spawnShakeIntensity: 0.5
@@ -101,7 +101,7 @@ MonoBehaviour:
   controlDiminish2nd: 0.5
   controlDiminish3rd: 0.25
   unstoppableTriggerCount: 3
-  armorDamageReduction: 0.75
+  armorDamageReduction: 0.5
   blinkDuration: 0.75
   linkedBuffMaxStacks: 5
   linkedBuffDamageReductionPerStack: 0.1

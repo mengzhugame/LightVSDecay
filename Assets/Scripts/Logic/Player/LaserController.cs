@@ -170,8 +170,8 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private const float SUB_LASER_WIDTH_RATIO = 0.65f;
-        public const float MAIN_LASER_LENGTH_CAP = 29f;
-        public const float SUB_LASER_LENGTH_CAP  = 26f;
+        public const float MAIN_LASER_LENGTH_CAP = 26f;
+        public const float SUB_LASER_LENGTH_CAP  = 24f;
         private const float OVERFLOW_TO_DAMAGE_RATIO = 2f; // 1% 溢出长度 → 2% 额外伤害
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -776,6 +776,18 @@ namespace LightVsDecay.Logic.Player
                 }
             }
             
+            // 数据破碎（Shatter）对Boss加成
+            // 条件：TrueDamageToBoss 激活（Frost Lv5 或 Focus Lv5）且 Boss 处于减速状态
+            // 设计意图：冰冻流（Frost 持续减速 Boss）全程生效；暴击流（无 Frost，IsSlowed=false）不触发
+            if (penetrationHandler.TrueDamageToBoss && bossController.IsSlowed && SkillEffectManager.Instance != null)
+            {
+                float shatterBonus = SkillEffectManager.Instance.GetShatterDamageBonus();
+                if (shatterBonus > 0f)
+                {
+                    bossHealth.TakeTrueBodyDamage(damage * shatterBonus, collider.transform.position);
+                }
+            }
+
             // 推力处理
             if (bossController.IsPressing)
             {
@@ -787,7 +799,7 @@ namespace LightVsDecay.Logic.Player
                     bossController.ApplyLaserPushForce(pushMagnitude);
                 }
             }
-            
+
             // Frost效果
             ApplyBossFrostEffect(bossController);
             
@@ -969,7 +981,7 @@ namespace LightVsDecay.Logic.Player
     
             beam.SetLaserPivot(subLaserObj.transform);
 
-            float subLength = maxLaserLength * lengthMultiplier;
+            float subLength = GetSubLaserLength(lengthMultiplier);
             beam.SetMaxLength(subLength);
             beam.SetLaserWidth(CurrentSubLaserWidth);
 
@@ -1135,16 +1147,14 @@ namespace LightVsDecay.Logic.Player
 
             skillLengthMultiplier = newMultiplier;
 
-            if (mainLaserBeam != null)
-                mainLaserBeam.SetMaxLength(CurrentLaserLength);
+            RefreshAllLaserLengths();
 
             // 同步更新所有副激光长度（副激光有独立上限）
             foreach (var subLaser in subLasers)
             {
                 if (subLaser.beam != null)
                 {
-                    float rawSubLen = CurrentLaserLength * subLaser.lengthMultiplier;
-                    subLaser.beam.SetMaxLength(Mathf.Min(rawSubLen, SUB_LASER_LENGTH_CAP));
+                    subLaser.beam.SetMaxLength(GetSubLaserLength(subLaser.lengthMultiplier));
                 }
             }
 
@@ -1158,15 +1168,7 @@ namespace LightVsDecay.Logic.Player
             skillLengthMultiplier = 1f;
             reflexLengthBonusApplied = 0f;
     
-            if (mainLaserBeam != null)
-            {
-                mainLaserBeam.SetMaxLength(CurrentLaserLength);
-            }
-            foreach (var subLaser in subLasers)
-            {
-                if (subLaser.beam != null)
-                    subLaser.beam.SetMaxLength(CurrentLaserLength * subLaser.lengthMultiplier);
-            }
+            RefreshAllLaserLengths();
             if (showDebugInfo)
             {
                 GameLogger.Log("[LaserController] 空投加成已重置");
@@ -1187,6 +1189,27 @@ namespace LightVsDecay.Logic.Player
                     subLaser.beam.SetLaserWidth(CurrentSubLaserWidth);
                 }
             }
+        }
+
+        private void RefreshAllLaserLengths()
+        {
+            if (mainLaserBeam != null)
+            {
+                mainLaserBeam.SetMaxLength(CurrentLaserLength);
+            }
+
+            foreach (var subLaser in subLasers)
+            {
+                if (subLaser.beam != null)
+                {
+                    subLaser.beam.SetMaxLength(GetSubLaserLength(subLaser.lengthMultiplier));
+                }
+            }
+        }
+
+        private float GetSubLaserLength(float lengthMultiplier)
+        {
+            return Mathf.Min(CurrentLaserLength * lengthMultiplier, SUB_LASER_LENGTH_CAP);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
