@@ -306,7 +306,7 @@ MonoBehaviour:
   fireballSpreadRadius: 2.5
   fireballLaunchInterval: 0.5
   fireballArcHeight: 12
-  fireballTravelTime: 4
+  fireballTravelTime: 3
   desperatePressThreshold: 0.3
   desperatePressRounds: 3
   body02Renderer: {fileID: 585836121024178123}

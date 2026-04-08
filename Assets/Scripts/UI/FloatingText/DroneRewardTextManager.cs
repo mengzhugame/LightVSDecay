@@ -47,6 +47,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private bool isInitialized = false;
+        private Camera worldProjectionCamera;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
@@ -92,6 +93,8 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
                 GameLogger.LogError("[DroneRewardTextManager] 找不到 Canvas！");
                 return;
             }
+
+            worldProjectionCamera = Camera.main;
             
             isInitialized = true;
             
@@ -124,7 +127,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             Sprite icon = config.GetIcon(iconType);
             Color color = config.supplyTextColor;
             
-            text.PlaySingle(worldPosition, icon, displayText, color);
+            text.PlaySingle(worldPosition, icon, displayText, color, targetCanvas, GetWorldProjectionCamera());
             
             if (showDebugInfo)
             {
@@ -150,7 +153,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             Sprite icon = config.GetIcon(iconType);
             Color color = config.GetRewardColor(rewardType, isEpic);
             
-            text.PlaySingle(worldPosition, icon, displayText, color);
+            text.PlaySingle(worldPosition, icon, displayText, color, targetCanvas, GetWorldProjectionCamera());
             
             if (showDebugInfo)
             {
@@ -190,7 +193,8 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             text.PlayDual(
                 worldPosition,
                 costIcon, costText, costColor,
-                gainIcon, gainText, gainColor
+                gainIcon, gainText, gainColor,
+                targetCanvas, GetWorldProjectionCamera()
             );
             
             if (showDebugInfo)
@@ -279,7 +283,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             Sprite icon = config.GetIcon(RewardIconType.Coin);
             Color color = config.coinTextColor;
     
-            text.PlaySingle(worldPosition, icon, displayText, color);
+            text.PlaySingle(worldPosition, icon, displayText, color, targetCanvas, GetWorldProjectionCamera());
     
             if (showDebugInfo)
             {
@@ -312,12 +316,27 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             Sprite icon = config.GetIcon(RewardIconType.MonsterBuff);
             Color color = config.negativeColor;  // 怪物增强用红色
     
-            text.PlaySingle(worldPosition, icon, displayText, color);
+            text.PlaySingle(worldPosition, icon, displayText, color, targetCanvas, GetWorldProjectionCamera());
     
             if (showDebugInfo)
             {
                 GameLogger.Log($"[DroneRewardTextManager] 怪物增强飘字: {displayText}");
             }
+        }
+
+        private Camera GetWorldProjectionCamera()
+        {
+            if (worldProjectionCamera == null)
+            {
+                worldProjectionCamera = Camera.main;
+            }
+
+            if (worldProjectionCamera == null && targetCanvas != null)
+            {
+                worldProjectionCamera = targetCanvas.worldCamera;
+            }
+
+            return worldProjectionCamera;
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 调试

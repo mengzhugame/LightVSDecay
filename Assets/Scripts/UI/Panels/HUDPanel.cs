@@ -276,22 +276,25 @@ namespace LightVsDecay.UI.Panels
                 // 默认返回屏幕顶部中央
                 return Camera.main.ScreenToWorldPoint(new Vector3(Screen.width * 0.5f, Screen.height * 0.95f, 10f));
             }
-    
-            // 获取 UI 元素的屏幕坐标
-            Vector3[] corners = new Vector3[4];
-            target.GetWorldCorners(corners);
-    
-            // 计算中心点（Screen Space - Overlay 模式下 corners 就是屏幕坐标）
-            Vector3 screenPos = (corners[0] + corners[2]) * 0.5f;
-    
-            // 转换为世界坐标（z 值设为相机前方一定距离）
-            if (Camera.main != null)
+
+            Camera gameCamera = Camera.main;
+            if (gameCamera == null)
             {
-                screenPos.z = 10f; // 距离相机的深度
-                return Camera.main.ScreenToWorldPoint(screenPos);
+                return target.position;
             }
-    
-            return screenPos;
+
+            Canvas parentCanvas = target.GetComponentInParent<Canvas>();
+            Camera uiCamera = null;
+            if (parentCanvas != null && parentCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            {
+                uiCamera = parentCanvas.worldCamera;
+            }
+
+            Vector3 uiWorldCenter = target.TransformPoint(target.rect.center);
+            Vector3 screenPos = RectTransformUtility.WorldToScreenPoint(uiCamera, uiWorldCenter);
+            screenPos.z = Mathf.Abs(gameCamera.transform.position.z - transform.position.z);
+
+            return gameCamera.ScreenToWorldPoint(screenPos);
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件回调

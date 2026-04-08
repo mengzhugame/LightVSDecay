@@ -65,6 +65,12 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("射线检测最大长度（世界单位）")]
         [SerializeField] private float freezeRayLength = 20f;
 
+        [Tooltip("玩家激光与冰封射线角力时，将射线顶回的速度倍率")]
+        [SerializeField] private float freezeRayClashPushSpeed = 7.5f;
+
+        [Tooltip("玩家持续用激光压制时，打断冰封射线所需的累计角力值")]
+        [SerializeField] private float freezeRayClashBreakThreshold = 16f;
+
         [Header("冰封射线 · 视觉")]
         [Tooltip("Laser 节点上的 LineRenderer 组件（蓝色激光）")]
         [SerializeField] private LineRenderer laserLineRenderer;
@@ -152,6 +158,10 @@ namespace LightVsDecay.Logic.Boss
         private float freezeRayCooldownTimer = 0f;
         private bool freezeRayReady = false;
         private bool freezeRayHitThisCast = false;
+        private bool freezeRayActive = false;
+        private float freezeRayClashMeter = 0f;
+        private float freezeRayPlayerPressure = 0f;
+        private float freezeRayLastPressureTime = -999f;
 
         private float absoluteZeroCooldownTimer = 0f;
         private bool absoluteZeroTriggered = false;
@@ -360,6 +370,10 @@ namespace LightVsDecay.Logic.Boss
             if (showDebugInfo) GameLogger.Log("[GlacialBoss] 冰封射线开始！");
 
             freezeRayHitThisCast = false;
+            freezeRayActive = false;
+            freezeRayClashMeter = 0f;
+            freezeRayPlayerPressure = 0f;
+            freezeRayLastPressureTime = -999f;
 
             // === 蓄力阶段：顶部水晶闪烁 ===
             yield return StartCoroutine(Body03BlinkRoutine(freezeRayChargeUpDuration));
@@ -374,6 +388,7 @@ namespace LightVsDecay.Logic.Boss
             // 启用 LineRenderer 和末端特效
             if (laserLineRenderer != null) laserLineRenderer.enabled = true;
             if (laserEndVFX != null) laserEndVFX.gameObject.SetActive(true);
+            freezeRayActive = true;
 
             // === 射线阶段（freezeRayDuration 秒）===
             float elapsed = 0f;
@@ -381,32 +396,53 @@ namespace LightVsDecay.Logic.Boss
             {
                 elapsed += Time.deltaTime;
 
+                float timeSincePressure = Time.time - freezeRayLastPressureTime;
+                bool playerClashing = timeSincePressure <= 0.18f && freezeRayPlayerPressure > 0f;
+                if (playerClashing)
+                {
+                    freezeRayClashMeter += freezeRayPlayerPressure * freezeRayClashPushSpeed * Time.deltaTime;
+                }
+                else
+                {
+                    freezeRayClashMeter = Mathf.MoveTowards(freezeRayClashMeter, 0f, 6f * Time.deltaTime);
+                }
+
+                float clashRatio = Mathf.Clamp01(freezeRayClashMeter / freezeRayClashBreakThreshold);
+                float effectiveRayLength = Mathf.Lerp(freezeRayLength, 1.25f, clashRatio);
+
+                if (freezeRayClashMeter >= freezeRayClashBreakThreshold)
+                {
+                    if (showDebugInfo)
+                        GameLogger.Log("[GlacialBoss] 冰封射线被玩家激光顶回并打断");
+                    ShowStatusText(BossStatusTextType.Countered);
+                    break;
+                }
+
                 // Raycast：检测护盾层与塔本体层
-                var hit = Physics2D.Raycast(transform.position, rayDir, freezeRayLength, rayHitLayers);
-                Vector2 endPoint;
+                var hit = Physics2D.Raycast(transform.position, rayDir, effectiveRayLength, rayHitLayers);
+                Vector2 endPoint = (Vector2)transform.position + rayDir * effectiveRayLength;
 
                 if (hit.collider != null)
                 {
                     endPoint = hit.point;
 
-                    ShieldController sc = hit.collider.GetComponent<ShieldController>();
-                    if (sc != null)
+                    if (!playerClashing)
                     {
-                        // 命中护盾：每帧扣血，不冻结
-                        sc.TakeDamage(Mathf.RoundToInt(freezeRayShieldDamagePerSecond * Time.deltaTime));
+                        ShieldController sc = hit.collider.GetComponent<ShieldController>();
+                        if (sc != null)
+                        {
+                            // 命中护盾：每帧扣血，不冻结
+                            sc.TakeDamage(Mathf.RoundToInt(freezeRayShieldDamagePerSecond * Time.deltaTime));
+                        }
+                        else if (!freezeRayHitThisCast)
+                        {
+                            // 命中塔本体：触发冻结（本次施法只触发一次）
+                            freezeRayHitThisCast = true;
+                            ApplyTurretFreeze(freezeRayTurretFreezeDuration);
+                            if (showDebugInfo)
+                                GameLogger.Log($"[GlacialBoss] 冰封射线命中塔！冻结 {freezeRayTurretFreezeDuration}s");
+                        }
                     }
-                    else if (!freezeRayHitThisCast)
-                    {
-                        // 命中塔本体：触发冻结（本次施法只触发一次）
-                        freezeRayHitThisCast = true;
-                        ApplyTurretFreeze(freezeRayTurretFreezeDuration);
-                        if (showDebugInfo)
-                            GameLogger.Log($"[GlacialBoss] 冰封射线命中塔！冻结 {freezeRayTurretFreezeDuration}s");
-                    }
-                }
-                else
-                {
-                    endPoint = (Vector2)transform.position + rayDir * freezeRayLength;
                 }
 
                 // 更新 LineRenderer 端点
@@ -427,6 +463,7 @@ namespace LightVsDecay.Logic.Boss
             }
 
             // === 结束：关闭视觉 ===
+            freezeRayActive = false;
             if (laserLineRenderer != null) laserLineRenderer.enabled = false;
             if (laserEndVFX != null) laserEndVFX.gameObject.SetActive(false);
 
@@ -805,6 +842,15 @@ namespace LightVsDecay.Logic.Boss
         {
             if (turretController != null)
                 turretController.Freeze(duration);
+        }
+
+        public void NotifyFreezeRayLaserClash(float pressure)
+        {
+            if (!freezeRayActive || pressure <= 0f)
+                return;
+
+            freezeRayPlayerPressure = pressure;
+            freezeRayLastPressureTime = Time.time;
         }
 
         private Vector3 GetRandomIceWallPosition()

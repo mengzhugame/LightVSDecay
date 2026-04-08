@@ -164,6 +164,8 @@ namespace LightVsDecay.Logic.Player
         // Boss 冻结状态
         private TurretController turretController;
         private bool wasLaserFrozen = false;
+        private float laserFreezeVisualFactor = 1f;
+        private float targetLaserFreezeVisualFactor = 1f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 常量
@@ -173,6 +175,9 @@ namespace LightVsDecay.Logic.Player
         public const float MAIN_LASER_LENGTH_CAP = 26f;
         public const float SUB_LASER_LENGTH_CAP  = 24f;
         private const float OVERFLOW_TO_DAMAGE_RATIO = 2f; // 1% 溢出长度 → 2% 额外伤害
+        private const float LASER_FREEZE_SHRINK_SPEED = 9f;
+        private const float LASER_FREEZE_RECOVER_SPEED = 7f;
+        private const float MIN_ACTIVE_LASER_FACTOR = 0.02f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性（委托给子模块）
@@ -222,8 +227,10 @@ namespace LightVsDecay.Logic.Player
             if (isFrozen != wasLaserFrozen)
             {
                 wasLaserFrozen = isFrozen;
-                SetLasersActive(!isFrozen);
+                targetLaserFreezeVisualFactor = isFrozen ? 0f : 1f;
             }
+
+            UpdateFrozenLaserVisuals();
             if (isFrozen)
             {
                 audioHandler.ResetToIdle();
@@ -367,19 +374,18 @@ namespace LightVsDecay.Logic.Player
             ProcessChainLaserTracking();
         }
         
-        /// <summary>
-        /// 切换主激光和所有副激光的激活状态（用于 Boss 冻结效果）。
-        /// </summary>
-        private void SetLasersActive(bool active)
+        private void UpdateFrozenLaserVisuals()
         {
-            if (mainLaserBeam != null)
-                mainLaserBeam.gameObject.SetActive(active);
+            float speed = targetLaserFreezeVisualFactor < laserFreezeVisualFactor
+                ? LASER_FREEZE_SHRINK_SPEED
+                : LASER_FREEZE_RECOVER_SPEED;
 
-            foreach (var subLaser in subLasers)
-            {
-                if (subLaser.beam != null)
-                    subLaser.beam.gameObject.SetActive(active);
-            }
+            laserFreezeVisualFactor = Mathf.MoveTowards(
+                laserFreezeVisualFactor,
+                targetLaserFreezeVisualFactor,
+                speed * Time.deltaTime);
+
+            RefreshAllLaserLengths();
         }
 
         private void FinalizeBossPushForce()
@@ -719,6 +725,11 @@ namespace LightVsDecay.Logic.Player
                     bossController.ApplyLaserPushForce(pushMagnitude);
                 }
             }
+
+            if (bossController is GlacialBossController glacialBoss)
+            {
+                glacialBoss.NotifyFreezeRayLaserClash(bossDamage);
+            }
             
             // Frost效果
             ApplyBossFrostEffect(bossController);
@@ -798,6 +809,11 @@ namespace LightVsDecay.Logic.Player
                 {
                     bossController.ApplyLaserPushForce(pushMagnitude);
                 }
+            }
+
+            if (bossController is GlacialBossController glacialBoss)
+            {
+                glacialBoss.NotifyFreezeRayLaserClash(bossDamage);
             }
 
             // Frost效果
@@ -1193,16 +1209,18 @@ namespace LightVsDecay.Logic.Player
 
         private void RefreshAllLaserLengths()
         {
+            float visualFactor = Mathf.Max(MIN_ACTIVE_LASER_FACTOR, laserFreezeVisualFactor);
+
             if (mainLaserBeam != null)
             {
-                mainLaserBeam.SetMaxLength(CurrentLaserLength);
+                mainLaserBeam.SetMaxLength(CurrentLaserLength * visualFactor);
             }
 
             foreach (var subLaser in subLasers)
             {
                 if (subLaser.beam != null)
                 {
-                    subLaser.beam.SetMaxLength(GetSubLaserLength(subLaser.lengthMultiplier));
+                    subLaser.beam.SetMaxLength(GetSubLaserLength(subLaser.lengthMultiplier) * visualFactor);
                 }
             }
         }

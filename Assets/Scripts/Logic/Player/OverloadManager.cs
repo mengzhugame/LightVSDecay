@@ -11,8 +11,10 @@ using UnityEngine.UI;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Statistics;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -107,6 +109,7 @@ namespace LightVsDecay.Logic.Player
         private LayerMask enemyLayerMask;
         private RectTransform skillButtonRect;
         private Coroutine btnAnimCoroutine;
+        private SettingsPanel[] settingsPanels;
         
         // 自动瞄准缓存
         private Collider2D[] nearbyEnemies = new Collider2D[50];
@@ -195,7 +198,11 @@ namespace LightVsDecay.Logic.Player
         private void Update()
         {
             // 暂停时不更新
-            if (Time.timeScale == 0f) return;
+            if (Time.timeScale == 0f)
+            {
+                RefreshReadyVFXVisibility();
+                return;
+            }
             
             switch (currentState)
             {
@@ -214,6 +221,7 @@ namespace LightVsDecay.Logic.Player
             
             // 更新 UI（平滑动画）
             UpdateUI();
+            RefreshReadyVFXVisibility();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -236,6 +244,8 @@ namespace LightVsDecay.Logic.Player
             {
                 GameLogger.Log($"[OverloadManager] 组件缓存: TurretController={turretController != null}, LaserController={laserController != null}");
             }
+
+            settingsPanels = FindObjectsOfType<SettingsPanel>(true);
         }
         
         private void SetupUI()
@@ -243,6 +253,7 @@ namespace LightVsDecay.Logic.Player
             // 绑定按钮点击
             if (skillButton != null)
             {
+                skillButton.onClick.RemoveListener(OnSkillButtonClicked);
                 skillButton.onClick.AddListener(OnSkillButtonClicked);
                 skillButtonRect = skillButton.GetComponent<RectTransform>();
             }
@@ -303,7 +314,7 @@ namespace LightVsDecay.Logic.Player
         private void ShowReadyVFX()
         {
             ResolveReadyVFXReference();
-            if (readyVFX == null)
+            if (readyVFX == null || !ShouldShowReadyVFX())
             {
                 return;
             }
@@ -312,6 +323,53 @@ namespace LightVsDecay.Logic.Player
             readyVFX.Clear(true);
             readyVFX.Simulate(0f, true, true);
             readyVFX.Play(true);
+        }
+
+        private void RefreshReadyVFXVisibility()
+        {
+            if (ShouldShowReadyVFX())
+            {
+                if (readyVFX == null || !readyVFX.gameObject.activeSelf)
+                {
+                    ShowReadyVFX();
+                }
+                return;
+            }
+
+            HideReadyVFX();
+        }
+
+        private bool ShouldShowReadyVFX()
+        {
+            return currentState == OverloadState.Ready && !IsBlockingPanelVisible();
+        }
+
+        private bool IsBlockingPanelVisible()
+        {
+            if (UIManager.Instance != null && UIManager.Instance.IsAnyPanelActive())
+            {
+                return true;
+            }
+
+            if (settingsPanels == null || settingsPanels.Length == 0)
+            {
+                settingsPanels = FindObjectsOfType<SettingsPanel>(true);
+            }
+
+            if (settingsPanels == null)
+            {
+                return false;
+            }
+
+            foreach (SettingsPanel panel in settingsPanels)
+            {
+                if (panel != null && panel.gameObject.activeInHierarchy)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -356,7 +414,7 @@ namespace LightVsDecay.Logic.Player
             
             // 查找最近敌人
             Vector3 turretPos = turretController.transform.position;
-            Transform nearestEnemy = FindNearestEnemy(turretPos);
+            Transform nearestEnemy = FindNearestLockTarget(turretPos);
             
             // 计算目标角度
             float targetAngle;
@@ -422,6 +480,48 @@ namespace LightVsDecay.Logic.Player
         // 状态切换
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        private Transform FindNearestLockTarget(Vector3 position)
+        {
+            int hitCount = Physics2D.OverlapCircleNonAlloc(position, detectionRange, nearbyEnemies, enemyLayerMask);
+
+            Transform nearest = null;
+            float nearestDist = float.MaxValue;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                var collider = nearbyEnemies[i];
+                if (collider == null) continue;
+
+                Transform candidate = null;
+
+                var enemy = collider.GetComponentInParent<EnemyBlob>();
+                if (enemy != null)
+                {
+                    if (enemy.IsDead || enemy.IsStationary) continue;
+                    candidate = enemy.transform;
+                }
+                else
+                {
+                    var boss = collider.GetComponentInParent<BaseBossController>();
+                    if (boss == null) continue;
+
+                    var bossHealth = boss.GetComponent<BossHealth>();
+                    if (bossHealth != null && bossHealth.IsDead) continue;
+
+                    candidate = boss.transform;
+                }
+
+                float dist = Vector3.Distance(position, candidate.position);
+                if (dist < nearestDist)
+                {
+                    nearestDist = dist;
+                    nearest = candidate;
+                }
+            }
+
+            return nearest;
+        }
+
         private void ChangeState(OverloadState newState)
         {
             if (currentState == newState) return;
@@ -660,7 +760,39 @@ namespace LightVsDecay.Logic.Player
         {
             // 重新缓存组件（场景可能重新加载）
             CacheComponents();
+            SetupUI();
+
+            if (btnAnimCoroutine != null)
+            {
+                StopCoroutine(btnAnimCoroutine);
+                btnAnimCoroutine = null;
+            }
+
+            if (skillButtonRect != null)
+            {
+                skillButtonRect.localScale = Vector3.one;
+            }
+
+            Array.Clear(nearbyEnemies, 0, nearbyEnemies.Length);
+
+            if (turretController != null)
+            {
+                turretController.SetUltActive(false);
+                currentAutoAimAngle = turretController.GetCurrentAngle();
+            }
+            else
+            {
+                currentAutoAimAngle = defaultAngle;
+            }
+
+            if (laserController != null)
+            {
+                laserController.SetOverloadActive(false, 1f, 1f);
+            }
+
+            HideReadyVFX();
             ResetToCharging();
+            RefreshReadyVFXVisibility();
             
             if (showDebugInfo)
             {
@@ -671,6 +803,7 @@ namespace LightVsDecay.Logic.Player
         private void OnGamePaused()
         {
             // 暂停时 Update 中的 Time.timeScale 检查会自动停止更新
+            RefreshReadyVFXVisibility();
             if (showDebugInfo)
             {
                 GameLogger.Log("[OverloadManager] 游戏暂停，充能暂停");
@@ -679,6 +812,7 @@ namespace LightVsDecay.Logic.Player
         
         private void OnGameResumed()
         {
+            RefreshReadyVFXVisibility();
             if (showDebugInfo)
             {
                 GameLogger.Log("[OverloadManager] 游戏恢复，充能继续");
@@ -692,6 +826,18 @@ namespace LightVsDecay.Logic.Player
             {
                 DeactivateOverload();
             }
+
+            if (turretController != null)
+            {
+                turretController.SetUltActive(false);
+            }
+
+            if (laserController != null)
+            {
+                laserController.SetOverloadActive(false, 1f, 1f);
+            }
+
+            RefreshReadyVFXVisibility();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

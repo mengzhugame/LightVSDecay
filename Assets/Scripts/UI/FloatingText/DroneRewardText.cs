@@ -73,18 +73,24 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         
         [Tooltip("回弹时间")]
         [SerializeField] private float bounceDuration = 0.1f;
+
+        [Tooltip("弹出后停留时间")]
+        [SerializeField] private float holdDuration = 0.25f;
         
         [Tooltip("漂浮时间")]
-        [SerializeField] private float floatDuration = 0.6f;
+        [SerializeField] private float floatDuration = 0.9f;
         
         [Tooltip("漂浮距离（像素）")]
-        [SerializeField] private float floatDistance = 50f;
+        [SerializeField] private float floatDistance = 42f;
         
         [Tooltip("淡出开始时间（相对于漂浮开始）")]
-        [SerializeField] private float fadeStartDelay = 0.4f;
+        [SerializeField] private float fadeStartDelay = 0.2f;
         
         [Tooltip("淡出时间")]
-        [SerializeField] private float fadeDuration = 0.2f;
+        [SerializeField] private float fadeDuration = 0.45f;
+
+        [Tooltip("上浮结束时的缩放")]
+        [SerializeField] private float floatEndScale = 0.72f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
@@ -92,6 +98,8 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         
         private bool isPlaying = false;
         private Sequence animSequence;
+        private Canvas parentCanvas;
+        private Camera worldCamera;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
@@ -141,9 +149,13 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             Vector3 worldPosition,
             Sprite icon,
             string text,
-            Color textColor)
+            Color textColor,
+            Canvas targetCanvas,
+            Camera projectionCamera)
         {
             if (isPlaying) return;
+            parentCanvas = targetCanvas;
+            worldCamera = projectionCamera;
             
             // 隐藏双行组件
             SetDualRowActive(false);
@@ -191,9 +203,13 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             Color costColor,
             Sprite gainIcon,
             string gainText,
-            Color gainColor)
+            Color gainColor,
+            Canvas targetCanvas,
+            Camera projectionCamera)
         {
             if (isPlaying) return;
+            parentCanvas = targetCanvas;
+            worldCamera = projectionCamera;
             
             // 隐藏单行组件
             SetSingleRowActive(false);
@@ -241,9 +257,29 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
         /// </summary>
         private void SetupPosition(Vector3 worldPosition)
         {
-            if (Camera.main == null) return;
-            
-            Vector3 screenPos = Camera.main.WorldToScreenPoint(worldPosition);
+            Camera projectionCamera = worldCamera != null ? worldCamera : Camera.main;
+            Vector3 screenPos = projectionCamera != null
+                ? projectionCamera.WorldToScreenPoint(worldPosition)
+                : worldPosition;
+
+            if (parentCanvas == null)
+            {
+                rectTransform.position = screenPos;
+                return;
+            }
+
+            RectTransform canvasRect = parentCanvas.transform as RectTransform;
+            Camera uiCamera = parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay
+                ? null
+                : parentCanvas.worldCamera;
+
+            if (canvasRect != null &&
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, uiCamera, out Vector2 localPoint))
+            {
+                rectTransform.anchoredPosition = localPoint;
+                return;
+            }
+
             rectTransform.position = screenPos;
         }
         
@@ -260,6 +296,7 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
             canvasGroup.alpha = 1f;
             
             Vector3 startPos = rectTransform.position;
+            float floatStartTime = popDuration + bounceDuration + holdDuration;
             
             // 创建动画序列
             animSequence?.Kill();
@@ -276,17 +313,25 @@ namespace LightVsDecay.UI.FloatingText.TacticalDrop
                 rectTransform.DOScale(1f, bounceDuration)
                     .SetEase(Ease.OutQuad)
             );
+
+            animSequence.AppendInterval(holdDuration);
             
             // 阶段3：漂浮 (0.2s -> 0.8s) - Y轴 +50像素
             animSequence.Append(
                 rectTransform.DOMoveY(startPos.y + floatDistance, floatDuration)
                     .SetEase(Ease.OutQuad)
             );
+
+            animSequence.Insert(
+                floatStartTime,
+                rectTransform.DOScale(floatEndScale, floatDuration)
+                    .SetEase(Ease.InQuad)
+            );
             
             // 阶段4：消失 (0.6s -> 0.8s) - 在漂浮期间淡出
             // 淡出从漂浮开始后 fadeStartDelay 秒启动
             animSequence.Insert(
-                popDuration + bounceDuration + fadeStartDelay,
+                floatStartTime + fadeStartDelay,
                 canvasGroup.DOFade(0f, fadeDuration)
                     .SetEase(Ease.InQuad)
             );

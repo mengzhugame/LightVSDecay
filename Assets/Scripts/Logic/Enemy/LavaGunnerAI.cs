@@ -45,6 +45,8 @@ namespace LightVsDecay.Logic.Enemy
         private const float TARGET_MARGIN = 1.5f;
         private const float SCREEN_SAFE_MARGIN = 0.8f;
         private const float OFFSCREEN_RECOVERY_TIMEOUT = 1.0f;
+        private const float MOVEMENT_STUCK_TIMEOUT = 0.45f;
+        private const float MOVEMENT_PROGRESS_EPSILON = 0.02f;
         private const float REPOSITION_DESCEND_STEP = 0.85f;
         private const float MIN_DESCEND_SCREEN_RATIO = 0.5f;
 
@@ -70,6 +72,8 @@ namespace LightVsDecay.Logic.Enemy
         private bool isActive;
         private bool isFirstShot = true;
         private float offscreenTimer;
+        private float movementStuckTimer;
+        private float lastDistanceToTarget = float.MaxValue;
 
         private void Awake()
         {
@@ -189,6 +193,7 @@ namespace LightVsDecay.Logic.Enemy
             isActive = true;
             isFirstShot = true;
             offscreenTimer = 0f;
+            ResetMovementRecovery();
 
             ResetEffectGlow();
         }
@@ -203,23 +208,36 @@ namespace LightVsDecay.Logic.Enemy
                 rb.velocity = Vector2.zero;
             }
 
+            ResetMovementRecovery();
             ResetEffectGlow();
         }
 
         private void UpdateEntering()
         {
+            Vector2 targetPos = new Vector2(transform.position.x, targetWorldY);
             float dy = transform.position.y - targetWorldY;
             if (dy > SNAP_DIST)
             {
                 rb.velocity = Vector2.down * ENTRY_SPEED;
+
+                if (IsMovementStuck(targetPos))
+                {
+                    CompleteEntering();
+                }
                 return;
             }
 
+            CompleteEntering();
+        }
+
+        private void CompleteEntering()
+        {
             rb.velocity = Vector2.zero;
             Vector3 pos = transform.position;
             pos.y = targetWorldY;
             transform.position = pos;
             targetWorldX = pos.x;
+            ResetMovementRecovery();
 
             EnterCharging(isFirstShot ? firstShotDelay : shootInterval);
         }
@@ -230,6 +248,7 @@ namespace LightVsDecay.Logic.Enemy
             chargeTimer = 0f;
             chargeDuration = duration;
             rb.velocity = Vector2.zero;
+            ResetMovementRecovery();
             ResetEffectGlow();
         }
 
@@ -382,14 +401,25 @@ namespace LightVsDecay.Logic.Enemy
             if (delta.magnitude > SNAP_DIST)
             {
                 rb.velocity = delta.normalized * REPOSITION_SPEED;
+
+                if (IsMovementStuck(targetPos))
+                {
+                    CompleteReposition();
+                }
                 return;
             }
 
+            CompleteReposition();
+        }
+
+        private void CompleteReposition()
+        {
             rb.velocity = Vector2.zero;
             Vector3 pos = transform.position;
             pos.x = targetWorldX;
             pos.y = targetWorldY;
             transform.position = pos;
+            ResetMovementRecovery();
             EnterCharging(shootInterval);
         }
 
@@ -419,9 +449,31 @@ namespace LightVsDecay.Logic.Enemy
             targetWorldY = safePosition.y;
             state = GunnerState.Entering;
             chargeTimer = 0f;
+            ResetMovementRecovery();
             ResetEffectGlow();
 
             return true;
+        }
+
+        private bool IsMovementStuck(Vector2 targetPos)
+        {
+            float currentDistance = Vector2.Distance(transform.position, targetPos);
+            if (currentDistance + MOVEMENT_PROGRESS_EPSILON < lastDistanceToTarget)
+            {
+                lastDistanceToTarget = currentDistance;
+                movementStuckTimer = 0f;
+                return false;
+            }
+
+            movementStuckTimer += Time.fixedDeltaTime;
+            lastDistanceToTarget = currentDistance;
+            return movementStuckTimer >= MOVEMENT_STUCK_TIMEOUT;
+        }
+
+        private void ResetMovementRecovery()
+        {
+            movementStuckTimer = 0f;
+            lastDistanceToTarget = float.MaxValue;
         }
 
         private bool IsOutsideScreen()

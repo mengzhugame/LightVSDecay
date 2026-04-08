@@ -43,6 +43,7 @@ namespace LightVsDecay.UI.FloatingText
         private Transform poolContainer = null;
         private int totalCreated = 0;
         private bool isInitialized = false;
+        private Camera worldProjectionCamera;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
@@ -107,6 +108,8 @@ namespace LightVsDecay.UI.FloatingText
             }
             if(showDebugInfo)
                 GameLogger.Log($"[FloatingTextManager] 使用 Canvas: {targetCanvas.name}");
+
+            worldProjectionCamera = Camera.main;
             
             // 3. 创建池容器
             GameObject containerGO = new GameObject("[FloatingTextPool]");
@@ -329,7 +332,7 @@ namespace LightVsDecay.UI.FloatingText
             int priority = config.GetPriority(type);
             
             // 播放
-            ft.Play(text, worldPosition, type, style, priority, OnFloatingTextComplete);
+            ft.Play(text, worldPosition, type, style, priority, targetCanvas, GetWorldProjectionCamera(), OnFloatingTextComplete);
             activeTexts.Add(ft);
         }
         
@@ -485,6 +488,21 @@ namespace LightVsDecay.UI.FloatingText
                 typePools[type] = new Queue<FloatingText>();
             }
             typePools[type].Enqueue(ft);
+        }
+
+        private Camera GetWorldProjectionCamera()
+        {
+            if (worldProjectionCamera == null)
+            {
+                worldProjectionCamera = Camera.main;
+            }
+
+            if (worldProjectionCamera == null && targetCanvas != null)
+            {
+                worldProjectionCamera = targetCanvas.worldCamera;
+            }
+
+            return worldProjectionCamera;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

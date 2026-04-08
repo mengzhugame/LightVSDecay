@@ -1678,6 +1678,7 @@ namespace LightVsDecay.Logic.Enemy
         public void ApplyBerserk(float duration, float speedMult, float damageTakenMult)
         {
             if (isDead) return;
+            if (behaviorType == EnemyBehaviorType.Stationary || enemyType == EnemyType.IceWall) return;
             // 已暴走时忽略再次触发：倍率已是 replace 语义，跳过可防止协程重启导致的意外叠加
             if (isBerserking) return;
             if (berserkCoroutine != null) StopCoroutine(berserkCoroutine);
@@ -1732,17 +1733,24 @@ namespace LightVsDecay.Logic.Enemy
 
             LayerMask enemyMask = LayerMask.GetMask("Enemy", "BouncingEnemy");
             Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, catalystBurstRadius, enemyMask);
+            int affectedCount = 0;
             foreach (var col in nearby)
             {
                 if (col == null) continue;
                 var blob = col.GetComponent<EnemyBlob>();
                 if (blob != null && blob != this && !blob.IsDead)
                 {
+                    if (blob.behaviorType == EnemyBehaviorType.Stationary || blob.enemyType == EnemyType.IceWall)
+                    {
+                        continue;
+                    }
+
                     blob.ApplyBerserk(catalystBurstDuration, catalystSpeedMultiplier, catalystDamageTakenMultiplier);
+                    affectedCount++;
                 }
             }
             if (showDebugInfo)
-                GameLogger.Log($"[FrostCatalyst] 催化爆发！范围 {catalystBurstRadius}，命中 {nearby.Length} 个目标");
+                GameLogger.Log($"[FrostCatalyst] 催化爆发！范围 {catalystBurstRadius}，命中 {affectedCount} 个可催化目标");
         }
         /// <summary>
         /// 设置已完全进入屏幕（由 DrifterSpawnHelper 调用）

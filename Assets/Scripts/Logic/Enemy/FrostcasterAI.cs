@@ -43,6 +43,12 @@ namespace LightVsDecay.Logic.Enemy
         private const float WALL_SPAWN_MAX_Y_RATIO = 0.75f;
         private const float SCREEN_SAFE_MARGIN = 0.8f;
         private const float OFFSCREEN_RECOVERY_TIMEOUT = 1.0f;
+        private const float MOVEMENT_STUCK_TIMEOUT = 0.45f;
+        private const float MOVEMENT_PROGRESS_EPSILON = 0.02f;
+        private const float MIN_POST_CAST_CHARGE_TIME = 2.6f;
+        private const float MIN_HORIZONTAL_REPOSITION_STEP = 1.2f;
+        private const float REPOSITION_DESCEND_STEP = 0.9f;
+        private const float MAX_REPOSITION_SCREEN_RATIO = 0.58f;
 
         private EnemyBlob blob;
         private Rigidbody2D rb;
@@ -58,11 +64,14 @@ namespace LightVsDecay.Logic.Enemy
         private CasterState state = CasterState.Entering;
         private float targetWorldY;
         private float targetWorldX;
+        private float minRepositionWorldY;
         private float chargeTimer;
         private float chargeDuration = 2f;
         private bool isActive;
         private bool isFirstCast = true;
         private float offscreenTimer;
+        private float movementStuckTimer;
+        private float lastDistanceToTarget = float.MaxValue;
 
         private void Awake()
         {
@@ -139,10 +148,12 @@ namespace LightVsDecay.Logic.Enemy
                 float worldTop = cam.transform.position.y + cam.orthographicSize;
                 float worldBottom = cam.transform.position.y - cam.orthographicSize;
                 targetWorldY = Mathf.Lerp(worldTop, worldBottom, stopYPercent);
+                minRepositionWorldY = Mathf.Lerp(worldTop, worldBottom, MAX_REPOSITION_SCREEN_RATIO);
             }
             else
             {
                 targetWorldY = 3f;
+                minRepositionWorldY = 1.5f;
             }
 
             Transform tower = blob.TargetTower;
@@ -155,11 +166,17 @@ namespace LightVsDecay.Logic.Enemy
                 }
             }
 
+            if (targetWorldY < minRepositionWorldY)
+            {
+                targetWorldY = minRepositionWorldY;
+            }
+
             targetWorldX = transform.position.x;
             state = CasterState.Entering;
             isActive = true;
             isFirstCast = true;
             offscreenTimer = 0f;
+            ResetMovementRecovery();
 
             ResetEffectGlow();
         }
@@ -174,23 +191,36 @@ namespace LightVsDecay.Logic.Enemy
                 rb.velocity = Vector2.zero;
             }
 
+            ResetMovementRecovery();
             ResetEffectGlow();
         }
 
         private void UpdateEntering()
         {
+            Vector2 targetPos = new Vector2(transform.position.x, targetWorldY);
             float dy = transform.position.y - targetWorldY;
             if (dy > SNAP_DIST)
             {
                 rb.velocity = Vector2.down * ENTRY_SPEED;
+
+                if (IsMovementStuck(targetPos))
+                {
+                    CompleteEntering();
+                }
                 return;
             }
 
+            CompleteEntering();
+        }
+
+        private void CompleteEntering()
+        {
             rb.velocity = Vector2.zero;
             Vector3 pos = transform.position;
             pos.y = targetWorldY;
             transform.position = pos;
             targetWorldX = pos.x;
+            ResetMovementRecovery();
 
             EnterCharging(isFirstCast ? firstCastDelay : castInterval);
         }
@@ -201,6 +231,7 @@ namespace LightVsDecay.Logic.Enemy
             chargeTimer = 0f;
             chargeDuration = duration;
             rb.velocity = Vector2.zero;
+            ResetMovementRecovery();
             ResetEffectGlow();
         }
 
@@ -257,7 +288,7 @@ namespace LightVsDecay.Logic.Enemy
                 yield break;
             }
 
-            ChooseNewTargetX();
+            ChooseNextRepositionTarget();
             state = CasterState.Repositioning;
         }
 
@@ -283,7 +314,7 @@ namespace LightVsDecay.Logic.Enemy
             BattleStatistics.Instance?.RecordFrostcasterCast();
         }
 
-        private void ChooseNewTargetX()
+        private void ChooseNextRepositionTarget()
         {
             float minX;
             float maxX;
@@ -302,28 +333,69 @@ namespace LightVsDecay.Logic.Enemy
                 maxX = camX + halfWidth - TARGET_MARGIN;
             }
 
-            float candidateMin = Mathf.Max(minX, transform.position.x - repositionRange);
-            float candidateMax = Mathf.Min(maxX, transform.position.x + repositionRange);
+            float currentX = transform.position.x;
+            float maxStep = Mathf.Max(MIN_HORIZONTAL_REPOSITION_STEP, repositionRange);
+            float leftLimit = Mathf.Max(minX, currentX - repositionRange);
+            float rightLimit = Mathf.Min(maxX, currentX + repositionRange);
 
-            targetWorldX = candidateMin < candidateMax
-                ? Random.Range(candidateMin, candidateMax)
-                : Mathf.Clamp(transform.position.x, minX, maxX);
+            bool canMoveLeft = currentX - leftLimit >= MIN_HORIZONTAL_REPOSITION_STEP;
+            bool canMoveRight = rightLimit - currentX >= MIN_HORIZONTAL_REPOSITION_STEP;
+
+            if (canMoveLeft || canMoveRight)
+            {
+                bool moveLeft = canMoveLeft && canMoveRight
+                    ? Random.value < 0.5f
+                    : canMoveLeft;
+
+                if (moveLeft)
+                {
+                    float minTargetX = Mathf.Max(leftLimit, currentX - maxStep);
+                    float maxTargetX = currentX - MIN_HORIZONTAL_REPOSITION_STEP;
+                    targetWorldX = Random.Range(minTargetX, maxTargetX);
+                }
+                else
+                {
+                    float minTargetX = currentX + MIN_HORIZONTAL_REPOSITION_STEP;
+                    float maxTargetX = Mathf.Min(rightLimit, currentX + maxStep);
+                    targetWorldX = Random.Range(minTargetX, maxTargetX);
+                }
+            }
+            else
+            {
+                targetWorldX = Mathf.Clamp(currentX, minX, maxX);
+            }
+
+            targetWorldY = Mathf.Max(minRepositionWorldY, transform.position.y - REPOSITION_DESCEND_STEP);
         }
 
         private void UpdateRepositioning()
         {
-            float dx = targetWorldX - transform.position.x;
-            if (Mathf.Abs(dx) > SNAP_DIST)
+            Vector2 currentPos = transform.position;
+            Vector2 targetPos = new Vector2(targetWorldX, targetWorldY);
+            Vector2 delta = targetPos - currentPos;
+            if (delta.magnitude > SNAP_DIST)
             {
-                rb.velocity = new Vector2(Mathf.Sign(dx) * REPOSITION_SPEED, 0f);
+                rb.velocity = delta.normalized * REPOSITION_SPEED;
+
+                if (IsMovementStuck(targetPos))
+                {
+                    CompleteReposition();
+                }
                 return;
             }
 
+            CompleteReposition();
+        }
+
+        private void CompleteReposition()
+        {
             rb.velocity = Vector2.zero;
             Vector3 pos = transform.position;
             pos.x = targetWorldX;
+            pos.y = targetWorldY;
             transform.position = pos;
-            EnterCharging(castInterval);
+            ResetMovementRecovery();
+            EnterCharging(Mathf.Max(castInterval, MIN_POST_CAST_CHARGE_TIME));
         }
 
         private Vector3 GetRandomIceWallPosition()
@@ -407,9 +479,31 @@ namespace LightVsDecay.Logic.Enemy
             targetWorldY = safePosition.y;
             state = CasterState.Entering;
             chargeTimer = 0f;
+            ResetMovementRecovery();
             ResetEffectGlow();
 
             return true;
+        }
+
+        private bool IsMovementStuck(Vector2 targetPos)
+        {
+            float currentDistance = Vector2.Distance(transform.position, targetPos);
+            if (currentDistance + MOVEMENT_PROGRESS_EPSILON < lastDistanceToTarget)
+            {
+                lastDistanceToTarget = currentDistance;
+                movementStuckTimer = 0f;
+                return false;
+            }
+
+            movementStuckTimer += Time.fixedDeltaTime;
+            lastDistanceToTarget = currentDistance;
+            return movementStuckTimer >= MOVEMENT_STUCK_TIMEOUT;
+        }
+
+        private void ResetMovementRecovery()
+        {
+            movementStuckTimer = 0f;
+            lastDistanceToTarget = float.MaxValue;
         }
 
         private bool IsOutsideScreen()

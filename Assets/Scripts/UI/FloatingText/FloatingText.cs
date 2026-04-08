@@ -23,6 +23,8 @@ namespace LightVsDecay.UI.FloatingText
         private TextMeshProUGUI textMesh;
         private RectTransform rectTransform;
         private CanvasGroup canvasGroup;
+        private Canvas parentCanvas;
+        private Camera worldCamera;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
@@ -120,11 +122,15 @@ namespace LightVsDecay.UI.FloatingText
             FloatingTextType type,
             FloatingTextStyle style,
             int typePriority,
+            Canvas targetCanvas,
+            Camera projectionCamera,
             System.Action<FloatingText> completeCallback)
         {
             currentType = type;
             currentStyle = style;
             priority = typePriority;
+            parentCanvas = targetCanvas;
+            worldCamera = projectionCamera;
             onComplete = completeCallback;
             
             // 设置文本
@@ -194,8 +200,29 @@ namespace LightVsDecay.UI.FloatingText
         
         private void SetupPosition(Vector3 worldPosition)
         {
-            // 世界坐标转屏幕坐标
-            Vector3 screenPos = Camera.main.WorldToScreenPoint(worldPosition);
+            Camera projectionCamera = worldCamera != null ? worldCamera : Camera.main;
+            Vector3 screenPos = projectionCamera != null
+                ? projectionCamera.WorldToScreenPoint(worldPosition)
+                : worldPosition;
+
+            if (parentCanvas == null)
+            {
+                rectTransform.position = screenPos;
+                return;
+            }
+
+            RectTransform canvasRect = parentCanvas.transform as RectTransform;
+            Camera uiCamera = parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay
+                ? null
+                : parentCanvas.worldCamera;
+
+            if (canvasRect != null &&
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, uiCamera, out Vector2 localPoint))
+            {
+                rectTransform.anchoredPosition = localPoint;
+                return;
+            }
+
             rectTransform.position = screenPos;
         }
         

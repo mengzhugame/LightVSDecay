@@ -76,7 +76,7 @@ MonoBehaviour:
   catalystBurstDuration: 5
   catalystSpeedMultiplier: 2
   catalystDamageTakenMultiplier: 1.5
-  frostcasterIceWallCount: 1
+  frostcasterIceWallCount: 3
   frostcasterRandomWallCount: 1
   frostcasterIceWallType: 20
   hasIceShield: 0

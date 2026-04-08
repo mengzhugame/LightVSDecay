@@ -128,10 +128,10 @@ namespace LightVsDecay.Logic.Boss
         [SerializeField] private float fireballLaunchInterval = 0.35f;
 
         [Tooltip("贝塞尔弧顶高度（控制点相对起终点中点的额外Y偏移）")]
-        [SerializeField] private float fireballArcHeight = 6f;
+        [SerializeField] private float fireballArcHeight = 8.5f;
 
         [Tooltip("火球从喷口到落点的飞行时长（秒）")]
-        [SerializeField] private float fireballTravelTime = 1.4f;
+        [SerializeField] private float fireballTravelTime = 1.55f;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置 · 绝境碾压
@@ -631,9 +631,9 @@ namespace LightVsDecay.Logic.Boss
                 Vector2 spreadOff   = Quaternion.Euler(0f, 0f, spreadAngle) * Vector2.right * spreadDist;
                 Vector3 targetPos   = towerPos + (Vector3)spreadOff;
 
-                // 贝塞尔控制点：起终点中点 + 弧顶高度
-                // 控制点在发射点正上方，形成「垂直喷出→弯曲俯冲」的导弹轨迹
-                Vector3 controlPoint = spawnPos + Vector3.up * fireballArcHeight;
+                // 控制点向目标方向前探，再整体抬高，让轨迹更像锁定目标的导弹俯冲。
+                Vector3 midPoint = Vector3.Lerp(spawnPos, targetPos, 0.45f);
+                Vector3 controlPoint = midPoint + Vector3.up * fireballArcHeight;
 
                 GameObject go      = Instantiate(fireballPrefab, spawnPos, Quaternion.identity);
                 var        lavaPrj = go.GetComponent<LightVsDecay.Logic.Enemy.LavaProjectile>();
