@@ -472,7 +472,7 @@ namespace LightVsDecay.Logic.Player
                 // BossPollutionBall 层处理（污秽球 + 熔岩炮弹 + 陨石，不参与穿透）
                 if (colliderLayer == bossPollutionBallLayerIndex)
                 {
-                    BossPollutionProjectile ball = collider.GetComponent<BossPollutionProjectile>();
+                    BossPollutionProjectile ball = collider.GetComponentInParent<BossPollutionProjectile>();
                     if (ball != null && !ball.IsDestroyed)
                     {
                         Vector2 pushDir = segmentDir;
@@ -481,21 +481,21 @@ namespace LightVsDecay.Logic.Player
                         continue;
                     }
                     // 熔岩炮弹（LavaGunner 射出）
-                    LavaProjectile lavaProj = collider.GetComponent<LavaProjectile>();
+                    LavaProjectile lavaProj = collider.GetComponentInParent<LavaProjectile>();
                     if (lavaProj != null && !lavaProj.IsDestroyed)
                     {
                         lavaProj.TakeDamage(baseDamage);
                         continue;
                     }
                     // 陨石（VolcanoBoss 喷发，可被击落）
-                    VolcanoMeteor meteor = collider.GetComponent<VolcanoMeteor>();
+                    VolcanoMeteor meteor = collider.GetComponentInParent<VolcanoMeteor>();
                     if (meteor != null && !meteor.IsDestroyed)
                     {
                         meteor.TakeDamage(baseDamage);
                         continue;
                     }
                     // 冰刺（GlacialBoss 绝对零度，可被击落）
-                    IceSpikeProjectile iceSpike = collider.GetComponent<IceSpikeProjectile>();
+                    IceSpikeProjectile iceSpike = collider.GetComponentInParent<IceSpikeProjectile>();
                     if (iceSpike != null && !iceSpike.IsDestroyed)
                     {
                         iceSpike.TakeDamage(baseDamage);
@@ -600,7 +600,7 @@ namespace LightVsDecay.Logic.Player
                 // BossPollutionBall 层检测（污秽球 + 熔岩炮弹 + 陨石）
                 if (colliderLayer == bossPollutionBallLayerIndex)
                 {
-                    BossPollutionProjectile ball = collider.GetComponent<BossPollutionProjectile>();
+                    BossPollutionProjectile ball = collider.GetComponentInParent<BossPollutionProjectile>();
                     if (ball != null && !ball.IsDestroyed)
                     {
                         Vector2 pushDir = segmentDir;
@@ -608,20 +608,20 @@ namespace LightVsDecay.Logic.Player
                         ball.TakeDamage(damage, pushDir * pushMagnitude);
                         continue;
                     }
-                    LavaProjectile lavaProj = collider.GetComponent<LavaProjectile>();
+                    LavaProjectile lavaProj = collider.GetComponentInParent<LavaProjectile>();
                     if (lavaProj != null && !lavaProj.IsDestroyed)
                     {
                         lavaProj.TakeDamage(damage);
                         continue;
                     }
-                    VolcanoMeteor meteor = collider.GetComponent<VolcanoMeteor>();
+                    VolcanoMeteor meteor = collider.GetComponentInParent<VolcanoMeteor>();
                     if (meteor != null && !meteor.IsDestroyed)
                     {
                         meteor.TakeDamage(damage);
                         continue;
                     }
                     // 冰刺（GlacialBoss 绝对零度，可被击落）
-                    IceSpikeProjectile iceSpike = collider.GetComponent<IceSpikeProjectile>();
+                    IceSpikeProjectile iceSpike = collider.GetComponentInParent<IceSpikeProjectile>();
                     if (iceSpike != null && !iceSpike.IsDestroyed)
                     {
                         iceSpike.TakeDamage(damage);
@@ -1301,6 +1301,14 @@ namespace LightVsDecay.Logic.Player
         public void SetFocusPenetrationParams(int count, float decay, bool trueDamage)
         {
             penetrationHandler.SetPenetrationParams(count, decay, trueDamage);
+        }
+
+        /// <summary>
+        /// 独立设置 Boss 真实伤害标记（供 Frost 技能使用，不影响穿透参数）
+        /// </summary>
+        public void SetFrostTrueDamage(bool trueDamage)
+        {
+            penetrationHandler.SetTrueDamageToBossFlag(trueDamage);
         }
 
         public void SetCritLevelFromConfig(int level, float critRateBonus, float critDamageBonus, bool enableKnockback)

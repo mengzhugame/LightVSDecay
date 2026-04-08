@@ -71,13 +71,24 @@ namespace LightVsDecay.Logic.Player
         {
             penetrationCount = count;
             penetrationDecay = decay;
-            trueDamageToBoss = trueDamage;
-            
+            // Roguelike 中技能只增不减：任意来源激活后保持开启，防止低等级技能覆盖高等级已激活的标记
+            trueDamageToBoss |= trueDamage;
+
             if (showDebugInfo)
             {
                 string penetrationInfo = count == -1 ? "无限" : count.ToString();
                 GameLogger.Log($"[LaserPenetrationHandler] 穿透设置: 数量={penetrationInfo}, 衰减={decay:P0}, Boss真伤={trueDamage}");
             }
+        }
+
+        /// <summary>
+        /// 独立设置 Boss 真实伤害标记（由 Frost 技能调用，不影响穿透参数）
+        /// </summary>
+        public void SetTrueDamageToBossFlag(bool value)
+        {
+            trueDamageToBoss = value;
+            if (showDebugInfo)
+                GameLogger.Log($"[LaserPenetrationHandler] Boss真伤标记设置: {value}");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

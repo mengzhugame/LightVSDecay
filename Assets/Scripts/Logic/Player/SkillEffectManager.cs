@@ -463,12 +463,20 @@ namespace LightVsDecay.Logic.Player
             cachedFrostSlowDuration = levelData.slowDuration;
             cachedFrostFreezeThreshold = levelData.freezeThreshold;
             cachedFrostFreezeDuration = levelData.freezeDuration;
-    
+            bool frostTrueDamage = levelData.dealsTrueDamageToBoss;
+
+            // 将 Boss 真实伤害标记推送到 LaserController（Frost Lv5 激活）
+            if (laserController != null)
+            {
+                laserController.SetFrostTrueDamage(frostTrueDamage);
+            }
+
             if (showDebugInfo)
             {
+                string trueDamageInfo = frostTrueDamage ? ", Boss真实伤害" : "";
                 GameLogger.Log($"[SkillEffectManager] ✓ Frost Lv.{level} - " +
                           $"减速:{cachedFrostSlowPercent:P0}/{cachedFrostSlowDuration:F1}s, " +
-                          $"冰冻阈值:{cachedFrostFreezeThreshold:F1}s");
+                          $"冰冻阈值:{cachedFrostFreezeThreshold:F1}s{trueDamageInfo}");
             }
         }
         /// <summary>获取 Chain 等级</summary>
