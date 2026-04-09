@@ -65,6 +65,9 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("射线检测最大长度（世界单位）")]
         [SerializeField] private float freezeRayLength = 20f;
 
+        [Tooltip("射线从 Boss 中心延伸至满长度所需时长（秒），给玩家反应时间，延伸期无伤害")]
+        [SerializeField] private float freezeRayExtendDuration = 1.5f;
+
         [Tooltip("玩家激光与冰封射线角力时，将射线顶回的速度倍率")]
         [SerializeField] private float freezeRayClashPushSpeed = 7.5f;
 
@@ -385,12 +388,43 @@ namespace LightVsDecay.Logic.Boss
             else
                 rayDir = Vector2.down;
 
-            // 启用 LineRenderer 和末端特效
-            if (laserLineRenderer != null) laserLineRenderer.enabled = true;
-            if (laserEndVFX != null) laserEndVFX.gameObject.SetActive(true);
+            // 启用 LineRenderer 和末端特效（初始长度为 0）
+            if (laserLineRenderer != null)
+            {
+                laserLineRenderer.enabled = true;
+                laserLineRenderer.SetPosition(0, transform.position);
+                laserLineRenderer.SetPosition(1, transform.position);
+            }
+            if (laserEndVFX != null)
+            {
+                laserEndVFX.gameObject.SetActive(true);
+                laserEndVFX.position = transform.position;
+            }
+
+            // === 延伸阶段（freezeRayExtendDuration 秒）：射线从 0 缓慢延伸至满长度，无伤害 ===
+            float extendElapsed = 0f;
+            while (extendElapsed < freezeRayExtendDuration)
+            {
+                extendElapsed += Time.deltaTime;
+                float extendT  = Mathf.Clamp01(extendElapsed / freezeRayExtendDuration);
+                float curLength = Mathf.Lerp(0f, freezeRayLength, extendT);
+
+                Vector2 extendEnd = (Vector2)transform.position + rayDir * curLength;
+                if (laserLineRenderer != null)
+                {
+                    laserLineRenderer.SetPosition(0, transform.position);
+                    laserLineRenderer.SetPosition(1, extendEnd);
+                }
+                if (laserEndVFX != null)
+                    laserEndVFX.position = extendEnd;
+
+                if (rb != null) rb.velocity = Vector2.zero;
+                yield return null;
+            }
+
             freezeRayActive = true;
 
-            // === 射线阶段（freezeRayDuration 秒）===
+            // === 角力/伤害阶段（freezeRayDuration 秒）===
             float elapsed = 0f;
             while (elapsed < freezeRayDuration)
             {
