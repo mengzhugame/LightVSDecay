@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f08c93735e3ebd468254b7f0b24e8d3, type: 3}
   m_Name: Frost_BossConfig
   m_EditorClassIdentifier: 
-  maxHealth: 180000
+  maxHealth: 650000
   spawnDuration: 2.5
   battleAnchorY: 3.5
   spawnShakeIntensity: 0.5

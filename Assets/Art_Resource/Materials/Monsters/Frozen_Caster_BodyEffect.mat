@@ -42,11 +42,11 @@ Material:
     m_Ints: []
     m_Floats:
     - _Alpha: 1
-    - _Distortion_Strength: 0
-    - _Flow_Speed: 0
+    - _Distortion_Strength: 0.15
+    - _Flow_Speed: 0.1
     - _HitIntensity: 0
-    - _Noise_Scale: 0.2
-    - _SimpleNoiseScale: 50
+    - _Noise_Scale: 0.5
+    - _SimpleNoiseScale: 10
     m_Colors:
     - _Color: {r: 2.297397, g: 2.297397, b: 2.297397, a: 1}
     - _HitColor: {r: 1, g: 1, b: 1, a: 1}

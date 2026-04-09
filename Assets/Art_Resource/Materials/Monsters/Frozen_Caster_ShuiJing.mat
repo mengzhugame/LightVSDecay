@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Frozen_Caster_Body
+  m_Name: Frozen_Caster_ShuiJing
   m_Shader: {fileID: -6465566751694194690, guid: def5f24a4e28319428ceaa8037b041af, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -42,13 +42,13 @@ Material:
     m_Ints: []
     m_Floats:
     - _Alpha: 1
-    - _Distortion_Strength: 0.15
+    - _Distortion_Strength: 0.1
     - _Flow_Speed: 0
     - _HitIntensity: 0
     - _Noise_Scale: 0.5
-    - _SimpleNoiseScale: 10
+    - _SimpleNoiseScale: 1
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.80917853, g: 2.1994932, b: 2.3958921, a: 1}
     - _HitColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &6525933608244509770

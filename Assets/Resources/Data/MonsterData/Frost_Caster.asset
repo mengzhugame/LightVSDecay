@@ -61,10 +61,10 @@ MonoBehaviour:
   explosionAoeRadius: 3
   disableHitFlash: 0
   disableKnockback: 0
-  gunnerStopYPercent: 0.2
+  gunnerStopYPercent: 0.3
   gunnerMaxDistFromTower: 16.15
-  gunnerShootInterval: 4
-  gunnerRepositionRange: 2
+  gunnerShootInterval: 10
+  gunnerRepositionRange: 4
   gunnerProjectilePrefab: {fileID: 0}
   gunnerProjectileSpeed: 5
   gunnerProjectileDamage: 40
@@ -79,6 +79,8 @@ MonoBehaviour:
   frostcasterIceWallCount: 1
   frostcasterRandomWallCount: 0
   frostcasterIceWallType: 20
+  frostcasterChargeCount: 3
+  frostcasterRushSpeedMultiplier: 1.5
   hasIceShield: 0
   iceShieldMaxHP: 15000
   collisionBehavior: 1
