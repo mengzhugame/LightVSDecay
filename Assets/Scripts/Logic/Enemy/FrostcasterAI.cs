@@ -16,7 +16,8 @@ namespace LightVsDecay.Logic.Enemy
             Entering,
             Charging,
             Casting,
-            Repositioning
+            Repositioning,
+            Rush          // 施法次数耗尽后直扑光棱塔
         }
 
         [Header("Cast Effect")]
@@ -60,6 +61,10 @@ namespace LightVsDecay.Logic.Enemy
         private int iceWallCount = 1;
         private bool randomWallCount;
         private EnemyType iceWallType = EnemyType.IceWall;
+
+        private int totalCharges = 4;           // 最大施法次数（从 EnemyData 读取）
+        private int remainingCharges;           // 剩余施法次数
+        private float rushSpeedMultiplier = 1.5f; // 冲锋阶段速度倍率
 
         private CasterState state = CasterState.Entering;
         private float targetWorldY;
@@ -118,6 +123,9 @@ namespace LightVsDecay.Logic.Enemy
                 case CasterState.Repositioning:
                     UpdateRepositioning();
                     break;
+                case CasterState.Rush:
+                    UpdateRush();
+                    break;
                 default:
                     rb.velocity = Vector2.zero;
                     break;
@@ -141,6 +149,9 @@ namespace LightVsDecay.Logic.Enemy
             iceWallCount = data.frostcasterIceWallCount;
             randomWallCount = data.frostcasterRandomWallCount;
             iceWallType = data.frostcasterIceWallType;
+            totalCharges = data.frostcasterChargeCount;
+            remainingCharges = totalCharges;
+            rushSpeedMultiplier = data.frostcasterRushSpeedMultiplier;
 
             Camera cam = Camera.main;
             if (cam != null && cam.orthographic)
@@ -288,8 +299,17 @@ namespace LightVsDecay.Logic.Enemy
                 yield break;
             }
 
-            ChooseNextRepositionTarget();
-            state = CasterState.Repositioning;
+            remainingCharges--;
+            if (remainingCharges <= 0)
+            {
+                // 施法次数耗尽，进入冲锋阶段
+                state = CasterState.Rush;
+            }
+            else
+            {
+                ChooseNextRepositionTarget();
+                state = CasterState.Repositioning;
+            }
         }
 
         private void SpawnIceWalls()
@@ -305,6 +325,10 @@ namespace LightVsDecay.Logic.Enemy
 
             for (int i = 0; i < count; i++)
             {
+                // 超过全局冰墙上限时，先回收最旧的那面
+                if (IceWallTracker.ActiveCount >= IceWallTracker.MaxCount)
+                    IceWallTracker.DespawnOldest();
+
                 Vector3 spawnPos = GetRandomIceWallPosition();
                 EnemyPoolManager.Instance.Spawn(iceWallType, spawnPos);
                 VFXPoolManager.Instance?.PlayWinterImpact(spawnPos);
@@ -396,6 +420,19 @@ namespace LightVsDecay.Logic.Enemy
             transform.position = pos;
             ResetMovementRecovery();
             EnterCharging(Mathf.Max(castInterval, MIN_POST_CAST_CHARGE_TIME));
+        }
+
+        private void UpdateRush()
+        {
+            if (blob.TargetTower == null)
+            {
+                rb.velocity = Vector2.zero;
+                return;
+            }
+
+            float baseSpeed = blob.Data != null ? blob.Data.moveSpeed : 2f;
+            Vector2 dir = ((Vector2)(blob.TargetTower.position - transform.position)).normalized;
+            rb.velocity = dir * (baseSpeed * rushSpeedMultiplier);
         }
 
         private Vector3 GetRandomIceWallPosition()

@@ -307,6 +307,14 @@ namespace LightVsDecay.Data.SO
         [Tooltip("召唤的冰墙敌人类型")]
         public EnemyType frostcasterIceWallType = EnemyType.IceWall;
 
+        [Tooltip("施法总次数，用完后进入冲锋阶段直扑光棱塔（普通4~5，精英6~8）")]
+        [Min(1)]
+        public int frostcasterChargeCount = 4;
+
+        [Tooltip("冲锋阶段速度倍率（普通1.5，精英1.8）")]
+        [Min(1f)]
+        public float frostcasterRushSpeedMultiplier = 1.5f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 第三章：冰甲卫士前置冰盾（EliteIceShieldGuard 专用）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

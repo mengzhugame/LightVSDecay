@@ -340,6 +340,9 @@ namespace LightVsDecay.Logic.Enemy
                 stationaryTimer += Time.fixedDeltaTime;
                 if (stationaryTimer >= autoDestroyTime)
                 {
+                    // 冰墙自然消亡时孵化粘液（被激光打爆则走 Die() 普通路径，不会进这里）
+                    if (enemyType == EnemyType.IceWall)
+                        SpawnIceWallHatchling();
                     Die();
                     return;
                 }
@@ -515,6 +518,9 @@ namespace LightVsDecay.Logic.Enemy
                 foreach (var col in GetComponents<Collider2D>())
                     col.isTrigger = true;
             }
+            // Ch3：冰墙注册到全局上限追踪器
+            if (enemyType == EnemyType.IceWall)
+                IceWallTracker.Register(this);
             if (circleCollider != null)
             {
                 circleCollider.enabled = true;
@@ -639,6 +645,9 @@ namespace LightVsDecay.Logic.Enemy
                 rb.simulated = false;
             }
 
+            // Ch3：冰墙从全局上限追踪器注销
+            if (enemyType == EnemyType.IceWall)
+                IceWallTracker.Unregister(this);
             // 重置所有碰撞体的 isTrigger 状态（含 Stationary 设置过的）
             foreach (var col in GetComponents<Collider2D>())
                 col.isTrigger = false;
@@ -1194,9 +1203,18 @@ namespace LightVsDecay.Logic.Enemy
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 冰墙孵化（Ch3 专用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void SpawnIceWallHatchling()
+        {
+            EnemyPoolManager.Instance?.Spawn(EnemyType.FrostSlime, transform.position);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 死亡处理
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private void Die()
         {
             if (isDead) return;
