@@ -35,7 +35,8 @@ namespace LightVsDecay.Core.Pool
         Frostcaster,            // 霜冻施法者 - 停驻后定时召唤冰墙
         EliteIceShieldGuard,    // 精英冰甲卫士 - 前置冰盾，阻断激光
         EliteFrostcaster,       // 精英霜冻施法者 - 一次召唤3~5面冰墙
-        IceWall,                // 冰墙 - 静止地形障碍，5秒后自动消失
+        IceWall,                // 冰墙 - 静止地形障碍，孵化后消失
+        FrostGunner,            // 极寒炮手 - 远程发射冰刺，命中时减缓炮塔旋转
 
         // ── 第二章补充 ──
         LavaSlime = 21,         // 熔岩粘液 - 分裂者死亡时的分裂产物，仅视觉与第一章不同

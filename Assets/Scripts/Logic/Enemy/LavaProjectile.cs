@@ -57,6 +57,9 @@ namespace LightVsDecay.Logic.Enemy
         /// <summary>是否已销毁（供 LaserController 判断）</summary>
         public bool IsDestroyed => isDead;
 
+        // Ch3：冰刺专用标记——命中光棱塔时降低其旋转灵敏度
+        private bool enableRotationSlow = false;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 初始化
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -87,7 +90,7 @@ namespace LightVsDecay.Logic.Enemy
         /// <summary>
         /// 由 LavaGunnerAI 在射击时调用，设置方向、速度和属性。
         /// </summary>
-        public void Initialize(Vector2 direction, float speed, int damage, float hp, float lifetime = 8f)
+        public void Initialize(Vector2 direction, float speed, int damage, float hp, float lifetime = 8f, bool rotationSlow = false)
         {
             this.speed    = speed;
             this.damage   = damage;
@@ -97,6 +100,7 @@ namespace LightVsDecay.Logic.Enemy
             isDead        = false;
             lifetimeTimer = 0f;
             isBezierFlight = false;
+            enableRotationSlow = rotationSlow;
 
             // 根据飞行方向计算旋转，使 Sprite 朝向目标
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + rotationOffset;
@@ -273,6 +277,13 @@ namespace LightVsDecay.Logic.Enemy
                     BattleStatistics.Instance?.RecordPlayerDamage(damage, PlayerDamageSource.MobBullet);
                     turret.TakeDamage(damage);
                 }
+                // Ch3：冰刺命中塔时降低旋转灵敏度（FindObjectOfType 适用于一次性命中事件）
+                if (enableRotationSlow)
+                {
+                    BattleStatistics.Instance?.RecordIceSpikeHit();
+                    var turretCtrl = Object.FindObjectOfType<TurretController>();
+                    turretCtrl?.ApplyRotationSlow(2f);
+                }
                 DestroyProjectile();
                 return;
             }
@@ -298,6 +309,9 @@ namespace LightVsDecay.Logic.Enemy
                 // 贝塞尔模式（Boss火球）被激光拦截时记录
                 if (isBezierFlight)
                     BattleStatistics.Instance?.RecordBossFireballIntercepted();
+                // Ch3：冰刺被激光拦截时记录
+                else if (enableRotationSlow)
+                    BattleStatistics.Instance?.RecordIceSpikeIntercepted();
             }
 
             Destroy(gameObject);

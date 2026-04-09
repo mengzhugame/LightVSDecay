@@ -54,6 +54,8 @@ namespace LightVsDecay.Logic.Player
         private bool isFrozenByBoss = false;   // 是否被Boss冻结（禁止旋转和射击）
         private Coroutine freezeCoroutine;
         private int pendingFreezeTaps = 0;     // 冻结期间待处理的点击次数（QTE）
+        private float rotationSlowMultiplier = 1f; // Ch3：旋转减速倍率（冰刺命中时临时降低）
+        private Coroutine rotationSlowCoroutine;
 
         /// <summary>是否当前处于冻结状态（供 LaserController 查询以停止射击）</summary>
         public bool IsFrozen => isFrozenByBoss;
@@ -234,7 +236,7 @@ namespace LightVsDecay.Logic.Player
             // 计算角度变化
             // 手指向右滑动（deltaX > 0）→ 塔向右转 → 角度减小
             // 手指向左滑动（deltaX < 0）→ 塔向左转 → 角度增大
-            float angleDelta = -deltaX * rotationSensitivity;
+            float angleDelta = -deltaX * rotationSensitivity * rotationSlowMultiplier;
             
             // 更新目标角度
             targetAngle += angleDelta;
@@ -269,6 +271,24 @@ namespace LightVsDecay.Logic.Player
         // 公共接口
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
+        /// <summary>
+        /// 降低旋转灵敏度 duration 秒（Ch3 冰刺命中时调用）。
+        /// multiplier=0.3 → 只剩 30% 灵敏度，玩家还能操控但明显迟钝。
+        /// </summary>
+        public void ApplyRotationSlow(float duration, float multiplier = 0.3f)
+        {
+            if (rotationSlowCoroutine != null) StopCoroutine(rotationSlowCoroutine);
+            rotationSlowCoroutine = StartCoroutine(RotationSlowCoroutine(duration, multiplier));
+        }
+
+        private System.Collections.IEnumerator RotationSlowCoroutine(float duration, float multiplier)
+        {
+            rotationSlowMultiplier = multiplier;
+            yield return new WaitForSeconds(duration);
+            rotationSlowMultiplier = 1f;
+            rotationSlowCoroutine = null;
+        }
+
         /// <summary>
         /// 冻结光棱塔旋转和射击 N 秒（Boss 冰封技能调用）。
         /// </summary>

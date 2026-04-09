@@ -349,7 +349,8 @@ namespace LightVsDecay.Logic.Enemy
             LavaProjectile proj = go.GetComponent<LavaProjectile>();
             if (proj != null)
             {
-                proj.Initialize(dir, projectileSpeed, projectileDamage, projectileHP, projectileLifetime);
+                bool isFrostGunner = blob != null && blob.Type == EnemyType.FrostGunner;
+                proj.Initialize(dir, projectileSpeed, projectileDamage, projectileHP, projectileLifetime, isFrostGunner);
             }
 
             AudioManager.Instance?.PlayGunnerSpit();
