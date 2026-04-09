@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
@@ -25,6 +26,10 @@ namespace LightVsDecay.Logic.Enemy
         [SerializeField][ColorUsage(true, true)] private Color effectDimColor = new Color(0.35f, 0.80f, 1f, 0f);
         [SerializeField][ColorUsage(true, true)] private Color effectGlowColor = new Color(0.35f, 0.90f, 1f, 1f);
         [SerializeField] private float glowFadeoutDuration = 0.4f;
+
+        [Header("Charge Crystals")]
+        [Tooltip("充能冰晶列表（普通版3个，精英版7个），每次施法后按顺序隐藏")]
+        [SerializeField] private List<SpriteRenderer> crystals = new List<SpriteRenderer>();
 
         [Header("First Cast Delay")]
         [SerializeField] private float firstCastDelay = 1.5f;
@@ -135,6 +140,10 @@ namespace LightVsDecay.Logic.Enemy
         public void OnBlobSpawned()
         {
             StopAllCoroutines();
+
+            // 重置所有冰晶为可见（对象池复用时恢复初始状态）
+            foreach (var crystal in crystals)
+                if (crystal != null) crystal.gameObject.SetActive(true);
 
             var data = blob.Data;
             if (data == null)
@@ -300,6 +309,9 @@ namespace LightVsDecay.Logic.Enemy
             }
 
             remainingCharges--;
+            // 隐藏对应冰晶（从第0颗开始，每次施法消耗1颗）
+            ExpendCrystal(totalCharges - remainingCharges - 1);
+
             if (remainingCharges <= 0)
             {
                 // 施法次数耗尽，进入冲锋阶段
@@ -433,6 +445,33 @@ namespace LightVsDecay.Logic.Enemy
             float baseSpeed = blob.Data != null ? blob.Data.moveSpeed : 2f;
             Vector2 dir = ((Vector2)(blob.TargetTower.position - transform.position)).normalized;
             rb.velocity = dir * (baseSpeed * rushSpeedMultiplier);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 充能冰晶
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 消耗第 index 颗冰晶：隐藏 SpriteRenderer 并触发 VFX 接口。
+        /// index 从 0 开始，对应施法顺序（第1次施法 → index 0，第2次 → index 1 …）
+        /// </summary>
+        private void ExpendCrystal(int index)
+        {
+            if (index < 0 || index >= crystals.Count) return;
+            SpriteRenderer crystal = crystals[index];
+            if (crystal == null) return;
+
+            crystal.gameObject.SetActive(false);
+            OnCrystalExpended(crystal, index);
+        }
+
+        /// <summary>
+        /// 冰晶消耗特效预留接口（TA/程序后续在此接驳爆裂特效）。
+        /// 默认播放位置已通过 crystal.transform.position 传入。
+        /// </summary>
+        protected virtual void OnCrystalExpended(SpriteRenderer crystal, int index)
+        {
+            // TODO: VFXPoolManager.Instance?.PlayCrystalBurst(crystal.transform.position);
         }
 
         private Vector3 GetRandomIceWallPosition()

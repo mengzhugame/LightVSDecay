@@ -268,6 +268,13 @@ namespace LightVsDecay.Data.SO
         [Min(0f)]
         public float autoDestroyTime = 0f;
 
+        [Tooltip("IceWall专用：每隔N秒孵化一个小怪（0=不孵化）")]
+        [Min(0f)]
+        public float iceWallHatchInterval = 0f;
+
+        [Tooltip("IceWall专用：孵化的小怪类型（默认普通史莱姆）")]
+        public EnemyType iceWallHatchType = EnemyType.Slime;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 第三章：极寒催化者（FrostCatalyst 专用）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -307,9 +314,9 @@ namespace LightVsDecay.Data.SO
         [Tooltip("召唤的冰墙敌人类型")]
         public EnemyType frostcasterIceWallType = EnemyType.IceWall;
 
-        [Tooltip("施法总次数，用完后进入冲锋阶段直扑光棱塔（普通4~5，精英6~8）")]
+        [Tooltip("施法总次数，用完后进入冲锋阶段直扑光棱塔（普通3，精英7）")]
         [Min(1)]
-        public int frostcasterChargeCount = 4;
+        public int frostcasterChargeCount = 3;
 
         [Tooltip("冲锋阶段速度倍率（普通1.5，精英1.8）")]
         [Min(1f)]

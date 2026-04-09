@@ -131,9 +131,12 @@ namespace LightVsDecay.Logic.Enemy
         private float berserkDamageTakenMultiplier = 1f;
         private Coroutine berserkCoroutine;
 
-// Ch3 静止自动消失
+// Ch3 静止自动消失 + IceWall 周期性孵化
         private float autoDestroyTime = 0f;
         private float stationaryTimer = 0f;
+        private float iceWallHatchInterval = 0f;
+        private float iceWallHatchTimer = 0f;
+        private EnemyType iceWallHatchType = EnemyType.Slime;
 
 // Ch2 死亡特殊行为
         private bool splitOnDeath = false;
@@ -334,15 +337,24 @@ namespace LightVsDecay.Logic.Enemy
                     return;
                 }
             }
-            // Ch3：Stationary 单位自动消失计时
+            // Ch3：Stationary 单位自动消失计时 + IceWall 周期性孵化
             if (behaviorType == EnemyBehaviorType.Stationary && autoDestroyTime > 0f)
             {
                 stationaryTimer += Time.fixedDeltaTime;
+
+                // IceWall：周期性孵化（每 iceWallHatchInterval 秒生成一只小怪）
+                if (enemyType == EnemyType.IceWall && iceWallHatchInterval > 0f)
+                {
+                    iceWallHatchTimer += Time.fixedDeltaTime;
+                    if (iceWallHatchTimer >= iceWallHatchInterval)
+                    {
+                        iceWallHatchTimer -= iceWallHatchInterval; // 防止时间漂移
+                        SpawnIceWallHatchling();
+                    }
+                }
+
                 if (stationaryTimer >= autoDestroyTime)
                 {
-                    // 冰墙自然消亡时孵化粘液（被激光打爆则走 Die() 普通路径，不会进这里）
-                    if (enemyType == EnemyType.IceWall)
-                        SpawnIceWallHatchling();
                     Die();
                     return;
                 }
@@ -447,8 +459,10 @@ namespace LightVsDecay.Logic.Enemy
                 catalystBurstDuration = data.catalystBurstDuration;
                 catalystSpeedMultiplier = data.catalystSpeedMultiplier;
                 catalystDamageTakenMultiplier = data.catalystDamageTakenMultiplier;
-// Ch3 静止自动消失
+// Ch3 静止自动消失 + IceWall 周期性孵化
                 autoDestroyTime = data.autoDestroyTime;
+                iceWallHatchInterval = data.iceWallHatchInterval;
+                iceWallHatchType = data.iceWallHatchType;
             }
             // 否则使用默认值（已在字段声明时初始化）
         }
@@ -582,6 +596,7 @@ namespace LightVsDecay.Logic.Enemy
             berserkSpeedMultiplier = 1f;
             berserkDamageTakenMultiplier = 1f;
             stationaryTimer = 0f;
+            iceWallHatchTimer = 0f;
 
             // Ch3：霜冻施法者 AI 激活
             if (behaviorType == EnemyBehaviorType.FrostCaster && frostcasterAI != null)
@@ -1208,7 +1223,7 @@ namespace LightVsDecay.Logic.Enemy
 
         private void SpawnIceWallHatchling()
         {
-            EnemyPoolManager.Instance?.Spawn(EnemyType.FrostSlime, transform.position);
+            EnemyPoolManager.Instance?.Spawn(iceWallHatchType, transform.position);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
