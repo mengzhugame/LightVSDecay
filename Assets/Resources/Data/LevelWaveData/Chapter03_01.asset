@@ -126,7 +126,7 @@ MonoBehaviour:
       customInterval: -1
       spawnZone: 1
     - spawnTime: 12
-      enemyType: 21
+      enemyType: 22
       count: 3
       pattern: 0
       customInterval: -1
@@ -169,7 +169,7 @@ MonoBehaviour:
       customInterval: -1
       spawnZone: 1
     - spawnTime: 12
-      enemyType: 21
+      enemyType: 22
       count: 3
       pattern: 0
       customInterval: -1
@@ -212,7 +212,7 @@ MonoBehaviour:
       customInterval: -1
       spawnZone: 1
     - spawnTime: 10
-      enemyType: 21
+      enemyType: 22
       count: 4
       pattern: 0
       customInterval: -1
@@ -255,7 +255,7 @@ MonoBehaviour:
       customInterval: -1
       spawnZone: 1
     - spawnTime: 10
-      enemyType: 21
+      enemyType: 22
       count: 4
       pattern: 0
       customInterval: -1
@@ -298,7 +298,7 @@ MonoBehaviour:
       customInterval: -1
       spawnZone: 1
     - spawnTime: 10
-      enemyType: 21
+      enemyType: 22
       count: 3
       pattern: 0
       customInterval: -1
@@ -347,7 +347,7 @@ MonoBehaviour:
       customInterval: -1
       spawnZone: 1
     - spawnTime: 20
-      enemyType: 21
+      enemyType: 22
       count: 3
       pattern: 0
       customInterval: -1

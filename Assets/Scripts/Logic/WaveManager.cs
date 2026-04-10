@@ -150,8 +150,7 @@ namespace LightVsDecay.Logic
                 if (stuckCheckTimer >= STUCK_CHECK_INTERVAL)
                 {
                     stuckCheckTimer = 0f;
-                    int activeEnemies = EnemyPoolManager.Instance != null 
-                        ? EnemyPoolManager.Instance.TotalActiveEnemies : 0;
+                    int activeEnemies = GetBlockingEnemyCount();
                     
                     if (activeEnemies == 0 && enemiesKilled < totalEnemiesInWave)
                     {
@@ -691,7 +690,7 @@ namespace LightVsDecay.Logic
                 return;
             }
             // ★★★ 诊断日志 ★★★
-            int activeEnemies = EnemyPoolManager.Instance != null ? EnemyPoolManager.Instance.TotalActiveEnemies : -1;
+            int activeEnemies = GetBlockingEnemyCount();
             if (enemiesKilled < totalEnemiesInWave && activeEnemies == 0)
             {
                 GameLogger.LogError($"[DIAG] ⚠️ 波次卡死！击杀={enemiesKilled}/{totalEnemiesInWave}, " +
@@ -729,7 +728,7 @@ namespace LightVsDecay.Logic
                     yield break;
                 }
 
-                int active = EnemyPoolManager.Instance != null ? EnemyPoolManager.Instance.TotalActiveEnemies : 0;
+                int active = GetBlockingEnemyCount();
                 waitLog += Time.deltaTime;
                 if (waitLog >= 1f)
                 {
@@ -763,6 +762,18 @@ namespace LightVsDecay.Logic
             }
             
             StartWaveInterval();
+        }
+
+        /// <summary>
+        /// 获取会阻止波次结束的场景激活敌人数量。
+        /// 这里要把冰墙等 Stationary 单位也算进去，避免无人机在场上还有障碍/孵化怪时提前入场。
+        /// </summary>
+        private int GetBlockingEnemyCount()
+        {
+            if (EnemyPoolManager.Instance == null)
+                return 0;
+
+            return EnemyPoolManager.Instance.GetSceneEnemyCount();
         }
         
         /// <summary>

@@ -71,6 +71,8 @@ MonoBehaviour:
   gunnerProjectileHP: 20
   gunnerProjectileLifetime: 8
   autoDestroyTime: 0
+  iceWallHatchInterval: 0
+  iceWallHatchType: 0
   isCatalyst: 0
   catalystBurstRadius: 5
   catalystBurstDuration: 5
@@ -80,7 +82,7 @@ MonoBehaviour:
   frostcasterRandomWallCount: 0
   frostcasterIceWallType: 20
   frostcasterChargeCount: 7
-  frostcasterRushSpeedMultiplier: 1.8
+  frostcasterRushSpeedMultiplier: 3
   hasIceShield: 0
   iceShieldMaxHP: 15000
   collisionBehavior: 1

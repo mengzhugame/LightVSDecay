@@ -441,13 +441,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyDatabase: {fileID: 11400000, guid: 00b2847d82a36774ca9e7ebe18477ccf, type: 2}
-  enemyType: 21
+  enemyType: 22
   bodySprite: {fileID: 6057960750082201136}
   eyesController: {fileID: 2414065561829223081}
   extraEyes: []
   decorations:
   - {fileID: 1854897429666314099}
-  - {fileID: 5599398683099886668}
   - {fileID: 576402150995575896}
   - {fileID: 76549718167157867}
   hitFlashDuration: 0.15

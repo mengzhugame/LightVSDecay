@@ -5615,7 +5615,7 @@ MonoBehaviour:
   - {fileID: 8250218703455536349}
   - {fileID: 3668930546778612198}
   redBodyEffect: {fileID: 6266646557624206130}
-  showDebugInfo: 0
+  showDebugInfo: 1
   iceWallCountMin: 2
   iceWallCountMax: 3
   iceWallGlowFadeInDuration: 1.5
@@ -5626,6 +5626,9 @@ MonoBehaviour:
   freezeRayTurretFreezeDuration: 1.5
   freezeRayShieldDamagePerSecond: 500
   freezeRayLength: 20
+  freezeRayExtendDuration: 1.5
+  freezeRayClashPushSpeed: 7.5
+  freezeRayClashBreakThreshold: 16
   laserLineRenderer: {fileID: 925727755679066817}
   laserEndVFX: {fileID: 6259532919631549054}
   body03Crystal: {fileID: 5116898198659850092}

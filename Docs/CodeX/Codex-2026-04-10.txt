@@ -1,5 +1,66 @@
 
+为什么我在unity中设置D:\Project\LightVSDecay\Assets\Resources\Prefab\Monster\Frost_Gunner.prefab 里的EnemyBlob类型为FrostGunner，保存后，重新再选择这个预制体，预制体的类型会自动变道LavaSilme？协助我查找这个BUG问题。
+
+根因找到了：EnemyType 枚举里 FrostGunner 和 LavaSlime 用了同一个数值 21，所以 Unity 序列化时两者会串型。
+
+问题就在这里：
+EnemyPoolManager.cs
+
+关键片段实际是：
+
+FrostGunner 通过顺序枚举，值是 21
+LavaSlime = 21
+所以你在 Frost_Gunner.prefab (line 444) 里看到的是：
+
+enemyType: 21
+但 21 同时也被 Lava_Slime.asset (line 15) 和 Frost_Gunner.asset (line 15) 共用。
+这不是 Inspector 显示小问题，而是运行时也会有真实风险，因为很多资源现在都在用同一个枚举值 21。
+
+我还确认到这些地方都已经受影响：
+
+Frost_Gunner.prefab (line 444)
+Lava_Slime.prefab (line 317)
+Frost_Gunner.asset (line 15)
+Lava_Slime.asset (line 15)
+第三章波次配置里也有多处 enemyType: 21
+最直接的修复方向是：
+
+给 EnemyType 全部改成显式编号。
+让 LavaSlime 和 FrostGunner 拥有不同数值。
+同步修正所有已经写死为 21 的 prefab / asset / 波次配置。
+如果你愿意，我下一步可以直接帮你把这个枚举冲突完整修掉，并把受影响资源一并迁正。
 
 ------------------------------------------------------------------------------------------------------------------------
+
+修正这个问题，并把受影响的资源一起修正。
+
+问题已经修好，根因就是 EnemyType 枚举值冲突。
+
+FrostGunner 原本走的是隐式枚举值，实际也落到了 21，而 LavaSlime 又被显式写成了 21，所以 Unity 把序列化出来的 21 重新解释成了 LavaSlime。现在我把 FrostGunner 固定成了唯一值 22，位置在 EnemyPoolManager.cs (line 39)。
+
+受影响资源我也一起迁正了：
+
+Frost_Gunner.prefab (line 444)
+Frost_Gunner.asset (line 15)
+Chapter03_01.asset (line 129)
+GameScene.scene (line 1430)
+MainScene.scene (line 27539)
+第二章相关我保留不动：
+
+LavaSlime 继续是 21
+Lava_Slime prefab 和两个 Splitter 的 splitEnemyType: 21 都没改，避免把第二章分裂逻辑带坏
+我还跑了 dotnet build Assembly-CSharp.csproj，现在是 0 error，只有项目原本就有的 warning。
+另外我没有回退你工作区里这些 scene/prefab 原本已有的其它改动，只补了这次枚举冲突相关的值。
 ------------------------------------------------------------------------------------------------------------------------
+
+修改波次结束的判定，增加如果场景中有冰墙或者任意怪物都不能判定结束，现在游戏战斗中，存在冰墙生成小怪时，显示波次结束，然后无人机入场了。
+
+已经改好，波次结束现在不再只看“可战斗敌人数”，而是看“场景里实际还激活着的 EnemyBlob 数量”，所以冰墙和它孵化出来的小怪都会阻止波次完成，无人机不会再提前进场。
+
+核心改动有两处：
+
+在 EnemyPoolManager.cs (line 408) 增加了 GetSceneEnemyCount()，直接统计当前场景中激活的敌人实例，包含 Stationary 的冰墙。
+在 WaveManager.cs (line 153)、WaveManager.cs (line 694)、WaveManager.cs (line 732) 和 WaveManager.cs (line 771) 把卡死修复、波次完成检查、清场等待，全部切到这个“阻止结算数量”上。
+dotnet build Assembly-CSharp.csproj 已通过，0 error，只有项目原有 warning。
+你现在可以重点复测这个场景：第三章霜冻施法者留下冰墙并继续孵化小怪时，波次不应该再显示结束，也不应该触发无人机入场。
 ------------------------------------------------------------------------------------------------------------------------

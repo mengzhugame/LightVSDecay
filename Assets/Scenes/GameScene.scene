@@ -1427,7 +1427,7 @@ MonoBehaviour:
     maxCount: 30
     chapterIndex: 2
     usePool: 1
-  - type: 21
+  - type: 22
     prefab: {fileID: 3275768059124364913, guid: f012c5e9cb6f27a4ea7f82da77ed5545, type: 3}
     prewarmCount: 5
     maxCount: 30
@@ -5099,7 +5099,6 @@ GameObject:
   m_Component:
   - component: {fileID: 751334295}
   - component: {fileID: 751334292}
-  - component: {fileID: 751334294}
   - component: {fileID: 751334293}
   m_Layer: 0
   m_HasEditorInfo: 1
@@ -5206,14 +5205,6 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!81 &751334294
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 751334291}
-  m_Enabled: 1
 --- !u!4 &751334295
 Transform:
   m_ObjectHideFlags: 0

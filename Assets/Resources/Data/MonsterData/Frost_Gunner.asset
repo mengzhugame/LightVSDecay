@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c0cea1c11808f043b9e94ca58871371, type: 3}
   m_Name: Frost_Gunner
   m_EditorClassIdentifier: 
-  type: 21
+  type: 22
   displayName: "\u6781\u5BD2\u70AE\u624B"
   description: "\u6781\u5BD2\u8FDC\u7A0B\u602A\u7269\uFF0C\u53D1\u5C04\u51B0\u523A"
   maxHealth: 1100

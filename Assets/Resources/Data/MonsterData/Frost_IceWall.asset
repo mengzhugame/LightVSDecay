@@ -70,7 +70,7 @@ MonoBehaviour:
   gunnerProjectileDamage: 40
   gunnerProjectileHP: 20
   gunnerProjectileLifetime: 8
-  autoDestroyTime: 15
+  autoDestroyTime: 20
   iceWallHatchInterval: 2.5
   iceWallHatchType: 14
   isCatalyst: 0
