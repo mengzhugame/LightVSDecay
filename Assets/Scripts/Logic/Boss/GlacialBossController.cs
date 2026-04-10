@@ -74,6 +74,11 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("玩家持续用激光压制时，打断冰封射线所需的累计角力值")]
         [SerializeField] private float freezeRayClashBreakThreshold = 16f;
 
+        [Header("冰封射线 · 碰撞体（角力用）")]
+        [Tooltip("挂在 Frost_Boss 任意子节点上的 BoxCollider2D（Enemy 层），供玩家激光碰撞止点以实现角力。\n" +
+                 "若不赋值则运行时自动创建。")]
+        [SerializeField] private BoxCollider2D laserHitbox;
+
         [Header("冰封射线 · 视觉")]
         [Tooltip("Laser 节点上的 LineRenderer 组件（蓝色激光）")]
         [SerializeField] private LineRenderer laserLineRenderer;
@@ -92,8 +97,8 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("蓄力时长（秒）")]
         [SerializeField] private float absoluteZeroChannelDuration = 3f;
 
-        [Tooltip("打断所需累计伤害量")]
-        [SerializeField] private float absoluteZeroInterruptThreshold = 5000f;
+        [Tooltip("打断所需累计伤害量（建议设为 Boss 最大血量的 8~12%，约 60000~90000）")]
+        [SerializeField] private float absoluteZeroInterruptThreshold = 75000f;
 
         [Tooltip("打断失败时，光棱塔当前血量的百分比真实伤害")]
         [SerializeField] private float absoluteZeroTrueDamagePercent = 0.30f;
@@ -233,6 +238,18 @@ namespace LightVsDecay.Logic.Boss
                         bingCiOriginalLocalPositions[i] = bingCiTransforms[i].localPosition;
                 }
             }
+
+            // 初始化激光碰撞体（若 Inspector 未赋值则动态创建）
+            if (laserHitbox == null)
+            {
+                GameObject hitboxGO = new GameObject("_FreezeRayHitbox");
+                hitboxGO.transform.SetParent(transform, worldPositionStays: false);
+                hitboxGO.layer = LayerMask.NameToLayer(GameConstants.ENEMY_LAYER);
+                laserHitbox = hitboxGO.AddComponent<BoxCollider2D>();
+            }
+            laserHitbox.offset  = Vector2.zero;
+            laserHitbox.size    = new Vector2(1f, 0.15f);
+            laserHitbox.enabled = false;
         }
 
         // ── 阶段与冷却更新 ──────────────────────────────────
@@ -418,6 +435,8 @@ namespace LightVsDecay.Logic.Boss
                 if (laserEndVFX != null)
                     laserEndVFX.position = extendEnd;
 
+                UpdateLaserHitbox((Vector2)transform.position, extendEnd);
+
                 if (rb != null) rb.velocity = Vector2.zero;
                 yield return null;
             }
@@ -490,6 +509,8 @@ namespace LightVsDecay.Logic.Boss
                 if (laserEndVFX != null)
                     laserEndVFX.position = endPoint;
 
+                UpdateLaserHitbox((Vector2)transform.position, endPoint);
+
                 // 射线期间 Boss 保持静止
                 if (rb != null) rb.velocity = Vector2.zero;
 
@@ -498,6 +519,7 @@ namespace LightVsDecay.Logic.Boss
 
             // === 结束：关闭视觉 ===
             freezeRayActive = false;
+            if (laserHitbox != null) laserHitbox.enabled = false;
             if (laserLineRenderer != null) laserLineRenderer.enabled = false;
             if (laserEndVFX != null) laserEndVFX.gameObject.SetActive(false);
 
@@ -547,7 +569,7 @@ namespace LightVsDecay.Logic.Boss
                 absoluteZeroWarningEffect.SetActive(true);
 
             LightVsDecay.UI.FloatingText.FloatingTextManager.Instance?.ShowStatus(
-                transform.position, "绝对零度！打断需造成 5000 伤害！");
+                transform.position, $"绝对零度！打断需造成 {absoluteZeroInterruptThreshold:N0} 伤害！");
 
             float hpPercentAtStart = bossHealth.HealthPercent;
             float maxHP = config != null ? config.maxHealth : 750000f;
@@ -630,13 +652,17 @@ namespace LightVsDecay.Logic.Boss
 
                 // 生成投射体
                 Vector3 spawnPos = bingCiTransforms[i].position;
+                // 每枚冰刺从自身位置独立计算朝向塔的方向
+                Vector2 perFireDir = turretController != null
+                    ? ((Vector2)(turretController.transform.position - spawnPos)).normalized
+                    : dirToTurret;
                 GameObject spikeGO = Instantiate(iceSpikeProjectilePrefab, spawnPos, Quaternion.identity);
                 IceSpikeProjectile spike = spikeGO.GetComponent<IceSpikeProjectile>();
                 if (spike != null)
                 {
                     spike.OnReachedTower += () => { bingCiResolvedCount++; bingCiAnyHitTower = true; };
                     spike.OnDestroyedByLaser += () => { bingCiResolvedCount++; };
-                    spike.Launch(dirToTurret);
+                    spike.Launch(perFireDir);
                 }
                 else
                 {
@@ -738,19 +764,26 @@ namespace LightVsDecay.Logic.Boss
             }
         }
 
-        /// <summary>Step2：四枚冰刺错开 rotateStagger 依次旋转对准光棱塔（每枚 0.6s）</summary>
-        private IEnumerator BingCiRotateTowardTower(Vector2 dirToTurret)
+        /// <summary>Step2：四枚冰刺错开 rotateStagger 依次旋转对准光棱塔（每枚 0.6s）。
+        /// 每枚冰刺独立计算自身朝向光棱塔的方向，避免因与 Boss 中心偏移导致刺尖方向偏斜。</summary>
+        private IEnumerator BingCiRotateTowardTower(Vector2 dirToTurretFromBoss)
         {
             if (bingCiTransforms == null) yield break;
 
-            // 刺尖方向对准 dirToTurret：localRotation 0 时刺尖朝上，所以用 Atan2 + 90° 修正
-            float angle = Mathf.Atan2(dirToTurret.y, dirToTurret.x) * Mathf.Rad2Deg - 90f;
-            Quaternion targetRot = Quaternion.Euler(0f, 0f, angle);
-
             int n = bingCiTransforms.Length;
-            // 并发启动，各自延迟 i * stagger
+            // 并发启动，各自延迟 i * stagger；每枚冰刺从自身世界坐标计算方向
             for (int i = 0; i < n; i++)
+            {
+                if (bingCiTransforms[i] == null) continue;
+                // 各冰刺独立方向：从自身位置指向光棱塔
+                Vector2 perSpikeDir = turretController != null
+                    ? ((Vector2)(turretController.transform.position - bingCiTransforms[i].position)).normalized
+                    : dirToTurretFromBoss;
+                // 刺尖方向对准 perSpikeDir：localRotation 0 时刺尖朝上，所以用 Atan2 - 90° 修正
+                float angle = Mathf.Atan2(perSpikeDir.y, perSpikeDir.x) * Mathf.Rad2Deg - 90f;
+                Quaternion targetRot = Quaternion.Euler(0f, 0f, angle);
                 StartCoroutine(RotateSingleBingCi(i, targetRot, i * bingCiRotateStagger));
+            }
 
             // 等待最后一枚完成
             float totalWait = (n - 1) * bingCiRotateStagger + bingCiRotateDuration;
@@ -885,6 +918,32 @@ namespace LightVsDecay.Logic.Boss
 
             freezeRayPlayerPressure = pressure;
             freezeRayLastPressureTime = Time.time;
+        }
+
+        /// <summary>
+        /// 每帧更新激光碰撞体的位置、旋转和尺寸，使其覆盖当前激光线段。
+        /// 玩家激光命中该碰撞体时触发角力逻辑。
+        /// </summary>
+        private void UpdateLaserHitbox(Vector2 laserStart, Vector2 laserEnd)
+        {
+            if (laserHitbox == null) return;
+
+            Vector2 dir = laserEnd - laserStart;
+            float len = dir.magnitude;
+            if (len < 0.1f)
+            {
+                laserHitbox.enabled = false;
+                return;
+            }
+
+            Vector2 midPoint = (laserStart + laserEnd) * 0.5f;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            laserHitbox.transform.SetPositionAndRotation(
+                new Vector3(midPoint.x, midPoint.y, 0f),
+                Quaternion.Euler(0f, 0f, angle));
+            laserHitbox.size   = new Vector2(len, 0.15f);
+            laserHitbox.offset = Vector2.zero;
+            laserHitbox.enabled = true;
         }
 
         private Vector3 GetRandomIceWallPosition()
