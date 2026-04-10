@@ -124,6 +124,7 @@ namespace LightVsDecay.Logic.Enemy
         private float catalystBurstDuration = 5f;
         private float catalystSpeedMultiplier = 2f;
         private float catalystDamageTakenMultiplier = 1.5f;
+        private float catalystIceWallHatchSpeedMult = 2f;
 
 // Ch3 暴走状态
         private bool isBerserking = false;
@@ -459,6 +460,7 @@ namespace LightVsDecay.Logic.Enemy
                 catalystBurstDuration = data.catalystBurstDuration;
                 catalystSpeedMultiplier = data.catalystSpeedMultiplier;
                 catalystDamageTakenMultiplier = data.catalystDamageTakenMultiplier;
+                catalystIceWallHatchSpeedMult = data.catalystIceWallHatchSpeedMult;
 // Ch3 静止自动消失 + IceWall 周期性孵化
                 autoDestroyTime = data.autoDestroyTime;
                 iceWallHatchInterval = data.iceWallHatchInterval;
@@ -1223,7 +1225,15 @@ namespace LightVsDecay.Logic.Enemy
 
         private void SpawnIceWallHatchling()
         {
-            EnemyPoolManager.Instance?.Spawn(iceWallHatchType, transform.position);
+            var hatchling = EnemyPoolManager.Instance?.Spawn(iceWallHatchType, transform.position);
+            if (hatchling != null)
+            {
+                // 孵化怪给少量奖励：不同于正常刷出的同类型怪物（如 FrostSlime 20XP）
+                // 保留击杀反馈，但 XP 大幅降低以防止经验溢出
+                hatchling.SetXPReward(1);
+                hatchling.SetCoinReward(1);
+            }
+            BattleStatistics.Instance?.RecordIceWallHatch();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1716,6 +1726,7 @@ namespace LightVsDecay.Logic.Enemy
             if (isBerserking) return;
             if (berserkCoroutine != null) StopCoroutine(berserkCoroutine);
             berserkCoroutine = StartCoroutine(BerserkCoroutine(duration, speedMult, damageTakenMult));
+            BattleStatistics.Instance?.RecordBerserkApplied();
         }
 
         private IEnumerator BerserkCoroutine(float duration, float speedMult, float damageTakenMult)
@@ -1773,17 +1784,22 @@ namespace LightVsDecay.Logic.Enemy
                 var blob = col.GetComponent<EnemyBlob>();
                 if (blob != null && blob != this && !blob.IsDead)
                 {
-                    if (blob.behaviorType == EnemyBehaviorType.Stationary || blob.enemyType == EnemyType.IceWall)
+                    if (blob.enemyType == EnemyType.IceWall)
                     {
+                        // 冰墙：催化者死亡时加速其孵化速率而非施加暴走
+                        blob.AccelerateHatch(catalystIceWallHatchSpeedMult);
                         continue;
                     }
+
+                    if (blob.behaviorType == EnemyBehaviorType.Stationary) continue;
 
                     blob.ApplyBerserk(catalystBurstDuration, catalystSpeedMultiplier, catalystDamageTakenMultiplier);
                     affectedCount++;
                 }
             }
+            BattleStatistics.Instance?.RecordCatalystBurstAffectedCount(affectedCount);
             if (showDebugInfo)
-                GameLogger.Log($"[FrostCatalyst] 催化爆发！范围 {catalystBurstRadius}，命中 {affectedCount} 个可催化目标");
+                GameLogger.Log($"[FrostCatalyst] 催化爆发！范围 {catalystBurstRadius}，命中 {affectedCount} 个可催化目标，冰墙加速已处理");
         }
         /// <summary>
         /// 设置已完全进入屏幕（由 DrifterSpawnHelper 调用）
@@ -1968,5 +1984,32 @@ namespace LightVsDecay.Logic.Enemy
         /// 获取死亡时是否处于受损状态（用于漏洞扩散）
         /// </summary>
         public bool WasImpairedOnDeath => wasImpairedOnDeath;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Ch3 运行时奖励覆盖（供 IceWall 孵化使用）
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>覆盖该实例的经验奖励值（不影响 ScriptableObject 原始配置）</summary>
+        public void SetXPReward(int value) { xpReward = value; }
+
+        /// <summary>覆盖该实例的金币奖励值（不影响 ScriptableObject 原始配置）</summary>
+        public void SetCoinReward(int value) { coinReward = value; }
+
+        /// <summary>是否处于催化者暴走状态（供 AI 层查询以调整攻速）</summary>
+        public bool IsBerserking => isBerserking;
+
+        /// <summary>
+        /// 催化者死亡时调用：加速冰墙孵化速率。
+        /// speedMultiplier=2 表示孵化间隔减半（孵化速度翻倍）。
+        /// </summary>
+        public void AccelerateHatch(float speedMultiplier)
+        {
+            if (enemyType != EnemyType.IceWall || iceWallHatchInterval <= 0f) return;
+            iceWallHatchInterval /= speedMultiplier;
+            iceWallHatchInterval = Mathf.Max(iceWallHatchInterval, 0.5f); // 最快 0.5s/只
+            BattleStatistics.Instance?.RecordIceWallAccelerated();
+            if (showDebugInfo)
+                GameLogger.Log($"[IceWall] 被催化者加速！新孵化间隔 {iceWallHatchInterval:F2}s");
+        }
     }
 }

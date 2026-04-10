@@ -237,10 +237,19 @@ namespace LightVsDecay.Logic.Statistics
         public float iceShieldDmgAbsorbed = 0f;
 
         // 催化者机制
-        public int catalystBurstCount = 0;
+        public int catalystBurstCount         = 0;
+        public int catalystBurstAffectedCount = 0;  // 催化爆发影响的目标数（怪物+冰墙）
+        public int iceWallAcceleratedCount    = 0;  // 被催化加速的冰墙数
 
         // 霜冻施法者机制
-        public int frostcasterCastCount = 0;
+        public int frostcasterCastCount      = 0;
+        public int frostcasterWallCountTotal = 0;  // 施法者生成冰墙总数
+
+        // 冰墙孵化机制
+        public int iceWallHatchCount = 0;           // 冰墙孵化小怪总次数
+
+        // 暴走机制
+        public int berserkAppliedCount = 0;         // 怪物暴走状态应用次数
 
         // 光棱塔冻结
         public int   towerFreezeCount    = 0;
@@ -252,14 +261,19 @@ namespace LightVsDecay.Logic.Statistics
 
         public void Reset()
         {
-            iceShieldBrokenCount    = 0;
-            iceShieldDmgAbsorbed    = 0f;
-            catalystBurstCount      = 0;
-            frostcasterCastCount    = 0;
-            towerFreezeCount        = 0;
-            towerFreezeDuration     = 0f;
-            iceSpikeInterceptedCount = 0;
-            iceSpikeHitCount         = 0;
+            iceShieldBrokenCount      = 0;
+            iceShieldDmgAbsorbed      = 0f;
+            catalystBurstCount        = 0;
+            catalystBurstAffectedCount = 0;
+            iceWallAcceleratedCount   = 0;
+            frostcasterCastCount      = 0;
+            frostcasterWallCountTotal = 0;
+            iceWallHatchCount         = 0;
+            berserkAppliedCount       = 0;
+            towerFreezeCount          = 0;
+            towerFreezeDuration       = 0f;
+            iceSpikeInterceptedCount  = 0;
+            iceSpikeHitCount          = 0;
         }
     }
 
@@ -460,11 +474,20 @@ namespace LightVsDecay.Logic.Statistics
         public int   iceShieldBrokenCount;   // 本波破碎冰盾数量
         public float iceShieldDmgAbsorbed;   // 冰盾吸收的激光总伤害
 
-        // ═══ V6.0 催化者机制 (1) ═══
-        public int catalystBurstCount;       // 催化者死亡爆发触发次数
+        // ═══ V6.0 催化者机制 (1) + V6.1 扩展 (3) ═══
+        public int catalystBurstCount;            // 催化者死亡爆发触发次数
+        public int catalystBurstAffectedCount;    // 催化爆发命中的怪物总数
+        public int iceWallAcceleratedCount;       // 被催化加速孵化的冰墙数
 
-        // ═══ V6.0 霜冻施法者机制 (1) ═══
-        public int frostcasterCastCount;     // 霜冻施法者召唤冰墙次数
+        // ═══ V6.0 霜冻施法者机制 (1) + V6.1 扩展 (1) ═══
+        public int frostcasterCastCount;          // 霜冻施法者召唤冰墙次数
+        public int frostcasterWallCountTotal;     // 施法者生成冰墙总数
+
+        // ═══ V6.1 孵化机制 (1) ═══
+        public int iceWallHatchCount;             // 冰墙孵化小怪总次数
+
+        // ═══ V6.1 暴走机制 (1) ═══
+        public int berserkAppliedCount;           // 怪物暴走状态应用次数
 
         // ═══ V6.0 冰墙峰值 (1) ═══
         public int iceWallPeakCount;         // 场上冰墙峰值数量

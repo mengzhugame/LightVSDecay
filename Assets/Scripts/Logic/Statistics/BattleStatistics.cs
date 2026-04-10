@@ -666,9 +666,16 @@ namespace LightVsDecay.Logic.Statistics
                 iceShieldBrokenCount  = _waveCh3.iceShieldBrokenCount,
                 iceShieldDmgAbsorbed  = _waveCh3.iceShieldDmgAbsorbed,
 
-                // V6.0 催化者 / 施法者
-                catalystBurstCount    = _waveCh3.catalystBurstCount,
-                frostcasterCastCount  = _waveCh3.frostcasterCastCount,
+                // V6.0 催化者 / 施法者 + V6.1 扩展
+                catalystBurstCount         = _waveCh3.catalystBurstCount,
+                catalystBurstAffectedCount = _waveCh3.catalystBurstAffectedCount,
+                iceWallAcceleratedCount    = _waveCh3.iceWallAcceleratedCount,
+                frostcasterCastCount       = _waveCh3.frostcasterCastCount,
+                frostcasterWallCountTotal  = _waveCh3.frostcasterWallCountTotal,
+
+                // V6.1 孵化 / 暴走
+                iceWallHatchCount          = _waveCh3.iceWallHatchCount,
+                berserkAppliedCount        = _waveCh3.berserkAppliedCount,
 
                 // V6.0 冰墙 / 塔冻 / 冰刺
                 iceWallPeakCount          = _waveIceWallPeakCount,
@@ -1217,11 +1224,46 @@ namespace LightVsDecay.Logic.Statistics
             _waveCh3.catalystBurstCount++;
         }
 
+        /// <summary>催化爆发命中目标数（由 EnemyBlob.TriggerCatalystBurst 调用，传入影响的怪物数量）</summary>
+        public void RecordCatalystBurstAffectedCount(int count)
+        {
+            if (!CanRecord()) return;
+            _waveCh3.catalystBurstAffectedCount += count;
+        }
+
+        /// <summary>冰墙被催化者加速孵化（由 EnemyBlob.AccelerateHatch 调用）</summary>
+        public void RecordIceWallAccelerated()
+        {
+            if (!CanRecord()) return;
+            _waveCh3.iceWallAcceleratedCount++;
+        }
+
+        /// <summary>冰墙孵化一只小怪（由 EnemyBlob.SpawnIceWallHatchling 调用）</summary>
+        public void RecordIceWallHatch()
+        {
+            if (!CanRecord()) return;
+            _waveCh3.iceWallHatchCount++;
+        }
+
+        /// <summary>怪物进入暴走状态（由 EnemyBlob.ApplyBerserk 调用）</summary>
+        public void RecordBerserkApplied()
+        {
+            if (!CanRecord()) return;
+            _waveCh3.berserkAppliedCount++;
+        }
+
         /// <summary>霜冻施法者完成一次冰墙召唤（由 FrostcasterAI.SpawnIceWalls 调用）</summary>
         public void RecordFrostcasterCast()
         {
             if (!CanRecord()) return;
             _waveCh3.frostcasterCastCount++;
+        }
+
+        /// <summary>霜冻施法者单次生成的冰墙数量（由 FrostcasterAI.SpawnIceWalls 调用）</summary>
+        public void RecordFrostcasterWallCount(int count)
+        {
+            if (!CanRecord()) return;
+            _waveCh3.frostcasterWallCountTotal += count;
         }
 
         /// <summary>光棱塔被冻结（由 TurretController.FreezeCoroutine 调用，传入实际冻结时长）</summary>
@@ -1404,8 +1446,11 @@ namespace LightVsDecay.Logic.Statistics
                 "Spawn_FrostSlime,Spawn_FrostTank,Spawn_FrostCatalyst,Spawn_Frostcaster,Spawn_IceShieldGuard,Spawn_FrostcasterElite,Spawn_IceWall," +
                 // V6.0 冰盾 (2)
                 "IceShield_Broken_Count,IceShield_Dmg_Absorbed," +
-                // V6.0 催化者 / 施法者 (2)
-                "Catalyst_Burst_Count,Frostcaster_Cast_Count," +
+                // V6.0 催化者 / 施法者 (2) + V6.1 扩展 (5)
+                "Catalyst_Burst_Count,Catalyst_Burst_Affected_Count,IceWall_Accelerated_Count," +
+                "Frostcaster_Cast_Count,Frostcaster_Walls_Per_Cast_Total," +
+                // V6.1 孵化 / 暴走 (2)
+                "IceWall_Hatch_Count,Monster_Berserk_Applied_Count," +
                 // V6.0 冰墙峰值 (1)
                 "IceWall_Peak_Count," +
                 // V6.0 塔冻 (2)
@@ -1618,27 +1663,34 @@ namespace LightVsDecay.Logic.Statistics
                 d.iceShieldBrokenCount,     // 110
                 d.iceShieldDmgAbsorbed,     // 111
 
-                // 25. V6.0 催化者/施法者
-                d.catalystBurstCount,       // 112
-                d.frostcasterCastCount,     // 113
+                // 25. V6.0 催化者/施法者 + V6.1 扩展
+                d.catalystBurstCount,            // 112
+                d.catalystBurstAffectedCount,    // 113
+                d.iceWallAcceleratedCount,       // 114
+                d.frostcasterCastCount,          // 115
+                d.frostcasterWallCountTotal,     // 116
+
+                // 25.1 V6.1 孵化 / 暴走
+                d.iceWallHatchCount,             // 117
+                d.berserkAppliedCount,           // 118
 
                 // 26. V6.0 冰墙峰值
-                d.iceWallPeakCount,         // 114
+                d.iceWallPeakCount,              // 119
 
                 // 27. V6.0 塔冻
-                d.towerFreezeCount,         // 115
-                d.towerFreezeDuration,      // 116
+                d.towerFreezeCount,              // 120
+                d.towerFreezeDuration,           // 121
 
                 // 28. V6.0 冰刺
-                d.iceSpikeInterceptedCount, // 117
-                d.iceSpikeHitCount,         // 118
+                d.iceSpikeInterceptedCount,      // 122
+                d.iceSpikeHitCount,              // 123
 
                 // 29. V6.0 极寒之核 Boss
-                d.glacialIceWallBuildCount,         // 119
-                d.glacialFreezeRayCount,            // 120
-                d.glacialChargeCount,               // 121
-                d.glacialAbsoluteZeroCount,         // 122
-                d.glacialAbsoluteZeroInterrupted    // 123
+                d.glacialIceWallBuildCount,         // 124
+                d.glacialFreezeRayCount,            // 125
+                d.glacialChargeCount,               // 126
+                d.glacialAbsoluteZeroCount,         // 127
+                d.glacialAbsoluteZeroInterrupted    // 128
             );
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

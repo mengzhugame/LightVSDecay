@@ -257,7 +257,9 @@ namespace LightVsDecay.Logic.Enemy
 
         private void UpdateChargeGlow()
         {
-            chargeTimer += Time.deltaTime;
+            // 暴走状态时施法速度翻倍（蓄力时间按实际进度等效压缩）
+            float speedMult = (blob != null && blob.IsBerserking) ? 2f : 1f;
+            chargeTimer += Time.deltaTime * speedMult;
 
             float t = Mathf.Clamp01(chargeTimer / chargeDuration);
             if (effectSprite != null)
@@ -292,7 +294,7 @@ namespace LightVsDecay.Logic.Enemy
                 baseScale.z);
 
             yield return StartCoroutine(LerpScale(baseScale, compressScale, COMPRESS_DURATION));
-            SpawnIceWalls();
+            int wallsSpawned = SpawnIceWalls();
 
             Vector3 bounceScale = new Vector3(
                 baseScale.x * BOUNCE_X,
@@ -308,9 +310,13 @@ namespace LightVsDecay.Logic.Enemy
                 yield break;
             }
 
-            remainingCharges--;
+            remainingCharges -= wallsSpawned;
             // 隐藏对应冰晶（从第0颗开始，每次施法消耗1颗）
-            ExpendCrystal(totalCharges - remainingCharges - 1);
+            int consumedStartIndex = totalCharges - remainingCharges - wallsSpawned;
+            for (int i = 0; i < wallsSpawned; i++)
+            {
+                ExpendCrystal(consumedStartIndex + i);
+            }
 
             if (remainingCharges <= 0)
             {
@@ -324,16 +330,17 @@ namespace LightVsDecay.Logic.Enemy
             }
         }
 
-        private void SpawnIceWalls()
+        private int SpawnIceWalls()
         {
             if (EnemyPoolManager.Instance == null || IsOutsideScreen())
             {
-                return;
+                return 0;
             }
 
+            int maxWallsThisCast = Mathf.Max(1, iceWallCount);
             int count = randomWallCount
-                ? Random.Range(1, iceWallCount + 1)
-                : iceWallCount;
+                ? Random.Range(1, Mathf.Min(maxWallsThisCast, remainingCharges) + 1)
+                : Mathf.Min(maxWallsThisCast, remainingCharges);
 
             for (int i = 0; i < count; i++)
             {
@@ -348,6 +355,8 @@ namespace LightVsDecay.Logic.Enemy
 
             AudioManager.Instance?.PlayIceWallSpawn();
             BattleStatistics.Instance?.RecordFrostcasterCast();
+            BattleStatistics.Instance?.RecordFrostcasterWallCount(count);
+            return count;
         }
 
         private void ChooseNextRepositionTarget()

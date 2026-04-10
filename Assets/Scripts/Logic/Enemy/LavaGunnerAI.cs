@@ -254,7 +254,9 @@ namespace LightVsDecay.Logic.Enemy
 
         private void UpdateChargeGlow()
         {
-            chargeTimer += Time.deltaTime;
+            // 暴走状态时攻速翻倍（蓄力时间等效压缩）
+            float speedMult = (blob != null && blob.IsBerserking) ? 2f : 1f;
+            chargeTimer += Time.deltaTime * speedMult;
 
             float t = Mathf.Clamp01(chargeTimer / chargeDuration);
             if (effectSprite != null)

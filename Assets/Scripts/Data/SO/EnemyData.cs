@@ -299,6 +299,11 @@ namespace LightVsDecay.Data.SO
         [Min(1f)]
         public float catalystDamageTakenMultiplier = 1.5f;
 
+        [Header("催化者 · 冰墙加速")]
+        [Tooltip("催化者死亡时，附近冰墙孵化速率倍率（2 = 孵化间隔减半，孵化速度翻倍）")]
+        [Min(1f)]
+        public float catalystIceWallHatchSpeedMult = 2f;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 第三章：霜冻施法者（FrostCaster 专用）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
