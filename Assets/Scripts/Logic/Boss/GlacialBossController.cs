@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // GlacialBossController.cs
 // 文件位置: Assets/Scripts/Logic/Boss/GlacialBossController.cs
 // 用途：第三章 Boss ——《极寒之核 (The Glacial Core)》
@@ -11,7 +11,7 @@
 //   技能1 冰墙构建：RedBodyEffect发光蓄力 → 召唤2~3堵冰墙（30秒自动消失）
 //   技能2 冰封射线：固定朝向光棱塔射出蓝色激光3秒；命中护盾→扣护盾血；命中塔→冻结1.5秒
 //   技能3 极寒冲撞：霸体冲向塔，命中后冻结1.5秒
-//   技能4 绝对零度：3秒蓄力；5000伤害可打断；否则冰刺飞出→塔受真伤+冻结3秒+增援
+//   技能4 绝对零度：3秒蓄力后必定释放；玩家需击落冰刺以规避真伤、冻结和增援
 // ============================================================
 
 using UnityEngine;
@@ -74,10 +74,25 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("玩家持续用激光压制时，打断冰封射线所需的累计角力值")]
         [SerializeField] private float freezeRayClashBreakThreshold = 16f;
 
+        [Tooltip("Boss 施放冰封射线前回到中轴锚点所需时间（秒）")]
+        [SerializeField] private float freezeRayRepositionDuration = 0.3f;
+
+        [Tooltip("冰封射线相持的最大持续时间；超时后 Boss 会主动收束并后撤")]
+        [SerializeField] private float freezeRayStalemateTimeout = 2.5f;
+
+        [Tooltip("冰封射线结束后 Boss 快速后撤的距离")]
+        [SerializeField] private float freezeRayRetreatDistance = 1.2f;
+
+        [Tooltip("冰封射线结束后 Boss 快速后撤时长")]
+        [SerializeField] private float freezeRayRetreatDuration = 0.22f;
+
         [Header("冰封射线 · 碰撞体（角力用）")]
         [Tooltip("挂在 Frost_Boss 任意子节点上的 BoxCollider2D（Enemy 层），供玩家激光碰撞止点以实现角力。\n" +
                  "若不赋值则运行时自动创建。")]
         [SerializeField] private BoxCollider2D laserHitbox;
+
+        [Tooltip("冰封射线前端的角力点。建议使用 BossFreezeRayClashPoint 节点。")]
+        [SerializeField] private Transform freezeRayClashPoint;
 
         [Header("冰封射线 · 视觉")]
         [Tooltip("Laser 节点上的 LineRenderer 组件（蓝色激光）")]
@@ -170,6 +185,7 @@ namespace LightVsDecay.Logic.Boss
         private float freezeRayClashMeter = 0f;
         private float freezeRayPlayerPressure = 0f;
         private float freezeRayLastPressureTime = -999f;
+        private Collider2D freezeRayClashCollider;
 
         private float absoluteZeroCooldownTimer = 0f;
         private bool absoluteZeroTriggered = false;
@@ -183,6 +199,7 @@ namespace LightVsDecay.Logic.Boss
 
         // BingCi 原始局部坐标（用于拔出计算与再生复位）
         private Vector3[] bingCiOriginalLocalPositions;
+        private Quaternion[] bingCiOriginalLocalRotations;
 
         // 绝对零度冰刺结算（跨协程共享状态）
         private int bingCiResolvedCount;
@@ -232,24 +249,19 @@ namespace LightVsDecay.Logic.Boss
             if (bingCiTransforms != null)
             {
                 bingCiOriginalLocalPositions = new Vector3[bingCiTransforms.Length];
+                bingCiOriginalLocalRotations = new Quaternion[bingCiTransforms.Length];
                 for (int i = 0; i < bingCiTransforms.Length; i++)
                 {
                     if (bingCiTransforms[i] != null)
+                    {
                         bingCiOriginalLocalPositions[i] = bingCiTransforms[i].localPosition;
+                        bingCiOriginalLocalRotations[i] = bingCiTransforms[i].localRotation;
+                    }
                 }
             }
 
-            // 初始化激光碰撞体（若 Inspector 未赋值则动态创建）
-            if (laserHitbox == null)
-            {
-                GameObject hitboxGO = new GameObject("_FreezeRayHitbox");
-                hitboxGO.transform.SetParent(transform, worldPositionStays: false);
-                hitboxGO.layer = LayerMask.NameToLayer(GameConstants.ENEMY_LAYER);
-                laserHitbox = hitboxGO.AddComponent<BoxCollider2D>();
-            }
-            laserHitbox.offset  = Vector2.zero;
-            laserHitbox.size    = new Vector2(1f, 0.15f);
-            laserHitbox.enabled = false;
+            InitializeFreezeRayClashPoint();
+            DisableFreezeRayVisuals();
         }
 
         // ── 阶段与冷却更新 ──────────────────────────────────
@@ -395,6 +407,8 @@ namespace LightVsDecay.Logic.Boss
             freezeRayPlayerPressure = 0f;
             freezeRayLastPressureTime = -999f;
 
+            yield return StartCoroutine(MoveToFreezeRayAnchor());
+
             // === 蓄力阶段：顶部水晶闪烁 ===
             yield return StartCoroutine(Body03BlinkRoutine(freezeRayChargeUpDuration));
 
@@ -435,7 +449,7 @@ namespace LightVsDecay.Logic.Boss
                 if (laserEndVFX != null)
                     laserEndVFX.position = extendEnd;
 
-                UpdateLaserHitbox((Vector2)transform.position, extendEnd);
+                UpdateFreezeRayClashPoint(extendEnd);
 
                 if (rb != null) rb.velocity = Vector2.zero;
                 yield return null;
@@ -445,6 +459,8 @@ namespace LightVsDecay.Logic.Boss
 
             // === 角力/伤害阶段（freezeRayDuration 秒）===
             float elapsed = 0f;
+            bool wasCountered = false;
+            bool endedByStalemate = false;
             while (elapsed < freezeRayDuration)
             {
                 elapsed += Time.deltaTime;
@@ -468,6 +484,15 @@ namespace LightVsDecay.Logic.Boss
                     if (showDebugInfo)
                         GameLogger.Log("[GlacialBoss] 冰封射线被玩家激光顶回并打断");
                     ShowStatusText(BossStatusTextType.Countered);
+                    wasCountered = true;
+                    break;
+                }
+
+                if (elapsed >= freezeRayStalemateTimeout && playerClashing && freezeRayClashMeter > 0.01f)
+                {
+                    endedByStalemate = true;
+                    if (showDebugInfo)
+                        GameLogger.Log("[GlacialBoss] 冰封射线相持超时，主动收束后撤");
                     break;
                 }
 
@@ -509,7 +534,7 @@ namespace LightVsDecay.Logic.Boss
                 if (laserEndVFX != null)
                     laserEndVFX.position = endPoint;
 
-                UpdateLaserHitbox((Vector2)transform.position, endPoint);
+                UpdateFreezeRayClashPoint(endPoint);
 
                 // 射线期间 Boss 保持静止
                 if (rb != null) rb.velocity = Vector2.zero;
@@ -517,11 +542,13 @@ namespace LightVsDecay.Logic.Boss
                 yield return null;
             }
 
+            if (!wasCountered && endedByStalemate)
+            {
+                yield return StartCoroutine(FreezeRayRetreatRoutine());
+            }
+
             // === 结束：关闭视觉 ===
-            freezeRayActive = false;
-            if (laserHitbox != null) laserHitbox.enabled = false;
-            if (laserLineRenderer != null) laserLineRenderer.enabled = false;
-            if (laserEndVFX != null) laserEndVFX.gameObject.SetActive(false);
+            DisableFreezeRayVisuals();
 
             if (showDebugInfo) GameLogger.Log("[GlacialBoss] 冰封射线结束");
             ChangeState(BossState.Idle);
@@ -569,55 +596,29 @@ namespace LightVsDecay.Logic.Boss
                 absoluteZeroWarningEffect.SetActive(true);
 
             LightVsDecay.UI.FloatingText.FloatingTextManager.Instance?.ShowStatus(
-                transform.position, $"绝对零度！打断需造成 {absoluteZeroInterruptThreshold:N0} 伤害！");
-
-            float hpPercentAtStart = bossHealth.HealthPercent;
-            float maxHP = config != null ? config.maxHealth : 750000f;
+                transform.position, "绝对零度！击落冰刺以规避伤害！");
 
             float elapsed = 0f;
-            bool interrupted = false;
 
             while (elapsed < absoluteZeroChannelDuration)
             {
                 elapsed += Time.deltaTime;
                 rb.velocity = Vector2.zero;
-
-                float damageDealt = (hpPercentAtStart - bossHealth.HealthPercent) * maxHP;
-                if (damageDealt >= absoluteZeroInterruptThreshold)
-                {
-                    interrupted = true;
-                    break;
-                }
                 yield return null;
             }
 
             if (absoluteZeroWarningEffect != null)
                 absoluteZeroWarningEffect.SetActive(false);
 
-            if (interrupted)
-            {
-                BattleStatistics.Instance?.RecordGlacialBossAbsoluteZeroInterrupted();
-                if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度被打断！Boss 眩晕");
-                FloatingTextShowInterrupted();
-                absoluteZeroActive = false;
-                absoluteZeroCooldownTimer = currentPhase >= 3
-                    ? absoluteZeroCooldownPhase3
-                    : absoluteZeroCooldownPhase12;
-                absoluteZeroTriggered = false;
-                ForceStun();
-            }
-            else
-            {
-                if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度释放！");
-                yield return StartCoroutine(AbsoluteZeroDetonateRoutine());
+            if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度释放！");
+            yield return StartCoroutine(AbsoluteZeroDetonateRoutine());
 
-                absoluteZeroActive = false;
-                absoluteZeroCooldownTimer = currentPhase >= 3
-                    ? absoluteZeroCooldownPhase3
-                    : absoluteZeroCooldownPhase12;
-                absoluteZeroTriggered = false;
-                ChangeState(BossState.Idle);
-            }
+            absoluteZeroActive = false;
+            absoluteZeroCooldownTimer = currentPhase >= 3
+                ? absoluteZeroCooldownPhase3
+                : absoluteZeroCooldownPhase12;
+            absoluteZeroTriggered = false;
+            ChangeState(BossState.Idle);
         }
 
         private IEnumerator AbsoluteZeroDetonateRoutine()
@@ -734,7 +735,7 @@ namespace LightVsDecay.Logic.Boss
         /// <summary>Step1：冰刺拔出——各自向外位移 bingCiPullOutDistance（0.4s）</summary>
         private IEnumerator BingCiPullOut()
         {
-            if (bingCiTransforms == null || bingCiOriginalLocalPositions == null) yield break;
+            if (bingCiTransforms == null || bingCiOriginalLocalPositions == null || bingCiOriginalLocalRotations == null) yield break;
 
             int n = bingCiTransforms.Length;
             Vector3[] startPositions = new Vector3[n];
@@ -819,7 +820,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 if (bingCiTransforms[i] == null) continue;
                 bingCiTransforms[i].localPosition = bingCiOriginalLocalPositions[i];
-                bingCiTransforms[i].localRotation = Quaternion.identity;
+                bingCiTransforms[i].localRotation = bingCiOriginalLocalRotations[i];
             }
 
             // Alpha 淡入
@@ -920,30 +921,142 @@ namespace LightVsDecay.Logic.Boss
             freezeRayLastPressureTime = Time.time;
         }
 
-        /// <summary>
-        /// 每帧更新激光碰撞体的位置、旋转和尺寸，使其覆盖当前激光线段。
-        /// 玩家激光命中该碰撞体时触发角力逻辑。
-        /// </summary>
-        private void UpdateLaserHitbox(Vector2 laserStart, Vector2 laserEnd)
+        protected override void ExitState(BossState state)
         {
-            if (laserHitbox == null) return;
+            DisableFreezeRayVisuals();
+            base.ExitState(state);
+        }
 
-            Vector2 dir = laserEnd - laserStart;
-            float len = dir.magnitude;
-            if (len < 0.1f)
+        private void OnDisable()
+        {
+            DisableFreezeRayVisuals();
+        }
+
+        private void InitializeFreezeRayClashPoint()
+        {
+            if (freezeRayClashPoint == null)
             {
-                laserHitbox.enabled = false;
-                return;
+                freezeRayClashPoint = FindChildRecursive(transform, "BossFreezeRayClashPoint");
             }
 
-            Vector2 midPoint = (laserStart + laserEnd) * 0.5f;
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            laserHitbox.transform.SetPositionAndRotation(
-                new Vector3(midPoint.x, midPoint.y, 0f),
-                Quaternion.Euler(0f, 0f, angle));
-            laserHitbox.size   = new Vector2(len, 0.15f);
-            laserHitbox.offset = Vector2.zero;
-            laserHitbox.enabled = true;
+            if (freezeRayClashPoint == null)
+            {
+                GameObject clashPointGO = new GameObject("BossFreezeRayClashPoint");
+                clashPointGO.transform.SetParent(transform, false);
+                freezeRayClashPoint = clashPointGO.transform;
+            }
+
+            freezeRayClashPoint.gameObject.layer = LayerMask.NameToLayer(GameConstants.ENEMY_LAYER);
+
+            freezeRayClashCollider = freezeRayClashPoint.GetComponent<Collider2D>();
+            if (freezeRayClashCollider == null)
+            {
+                CircleCollider2D clashCircle = freezeRayClashPoint.gameObject.AddComponent<CircleCollider2D>();
+                clashCircle.radius = 0.22f;
+                freezeRayClashCollider = clashCircle;
+            }
+
+            if (freezeRayClashPoint.GetComponent<FreezeRayClashPoint>() == null)
+            {
+                freezeRayClashPoint.gameObject.AddComponent<FreezeRayClashPoint>();
+            }
+
+            if (laserHitbox != null)
+            {
+                laserHitbox.enabled = false;
+            }
+
+            if (freezeRayClashCollider != null)
+            {
+                freezeRayClashCollider.enabled = false;
+            }
+        }
+
+        private void DisableFreezeRayVisuals()
+        {
+            freezeRayActive = false;
+
+            if (laserHitbox != null)
+                laserHitbox.enabled = false;
+
+            if (freezeRayClashCollider != null)
+                freezeRayClashCollider.enabled = false;
+
+            if (laserLineRenderer != null)
+                laserLineRenderer.enabled = false;
+
+            if (laserEndVFX != null)
+                laserEndVFX.gameObject.SetActive(false);
+        }
+
+        private void UpdateFreezeRayClashPoint(Vector2 position)
+        {
+            if (freezeRayClashPoint == null)
+                return;
+
+            freezeRayClashPoint.position = new Vector3(position.x, position.y, freezeRayClashPoint.position.z);
+
+            if (freezeRayClashCollider != null)
+                freezeRayClashCollider.enabled = true;
+        }
+
+        private IEnumerator MoveToFreezeRayAnchor()
+        {
+            Vector3 start = transform.position;
+            Vector3 target = battleAnchorPosition;
+            target.x = 0f;
+
+            float duration = Mathf.Max(0.01f, freezeRayRepositionDuration);
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                transform.position = Vector3.Lerp(start, target, t);
+                if (rb != null) rb.velocity = Vector2.zero;
+                yield return null;
+            }
+
+            transform.position = target;
+        }
+
+        private IEnumerator FreezeRayRetreatRoutine()
+        {
+            Vector3 start = transform.position;
+            Vector3 target = battleAnchorPosition + Vector3.up * freezeRayRetreatDistance;
+            float duration = Mathf.Max(0.01f, freezeRayRetreatDuration);
+            float elapsed = 0f;
+
+            DisableFreezeRayVisuals();
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                transform.position = Vector3.Lerp(start, target, t);
+                if (rb != null) rb.velocity = Vector2.zero;
+                yield return null;
+            }
+
+            transform.position = target;
+        }
+
+        private Transform FindChildRecursive(Transform root, string childName)
+        {
+            if (root == null)
+                return null;
+
+            if (root.name == childName)
+                return root;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindChildRecursive(root.GetChild(i), childName);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
         }
 
         private Vector3 GetRandomIceWallPosition()
@@ -1002,5 +1115,14 @@ namespace LightVsDecay.Logic.Boss
             GUILayout.EndArea();
         }
 #endif
+    }
+
+    /// <summary>
+    /// Marks the front clash point of the Glacial Boss freeze ray so player
+    /// lasers can visually collide with it without treating it as a normal
+    /// boss-body hit.
+    /// </summary>
+    public class FreezeRayClashPoint : MonoBehaviour
+    {
     }
 }

@@ -474,6 +474,12 @@ namespace LightVsDecay.Logic.Player
                 if (collider == null) continue;
                 
                 int colliderLayer = collider.gameObject.layer;
+                FreezeRayClashPoint clashPoint = collider.GetComponentInParent<FreezeRayClashPoint>();
+                if (clashPoint != null)
+                {
+                    ProcessFreezeRayClashPointHit(clashPoint, baseDamage);
+                    continue;
+                }
                 
                 // BossPollutionBall 层处理（污秽球 + 熔岩炮弹 + 陨石，不参与穿透）
                 if (colliderLayer == bossPollutionBallLayerIndex)
@@ -602,6 +608,12 @@ namespace LightVsDecay.Logic.Player
                 if (collider == null) continue;
                 
                 int colliderLayer = collider.gameObject.layer;
+                FreezeRayClashPoint clashPoint = collider.GetComponentInParent<FreezeRayClashPoint>();
+                if (clashPoint != null)
+                {
+                    ProcessFreezeRayClashPointHit(clashPoint, damage);
+                    continue;
+                }
                 
                 // BossPollutionBall 层检测（污秽球 + 熔岩炮弹 + 陨石）
                 if (colliderLayer == bossPollutionBallLayerIndex)
@@ -821,6 +833,19 @@ namespace LightVsDecay.Logic.Player
             
             audioHandler.UpdateFrameHitType(LaserHitType.Burn);
             penetratedCount++;
+        }
+
+        private void ProcessFreezeRayClashPointHit(FreezeRayClashPoint clashPoint, float damage)
+        {
+            if (clashPoint == null)
+                return;
+
+            GlacialBossController glacialBoss = clashPoint.GetComponentInParent<GlacialBossController>();
+            if (glacialBoss == null)
+                return;
+
+            glacialBoss.NotifyFreezeRayLaserClash(damage);
+            audioHandler.UpdateFrameHitType(LaserHitType.Metal);
         }
         
         private void ProcessEnemyHit(EnemyBlob enemy, LaserSegment segment, float damage, float knockbackMultiplier, bool isMainLaser, int penetratedCount)

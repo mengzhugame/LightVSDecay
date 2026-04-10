@@ -5523,6 +5523,7 @@ Transform:
   - {fileID: 2661767340631970747}
   - {fileID: 660768401787217308}
   - {fileID: 8792781191664569542}
+  - {fileID: 2942684459006356195}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!50 &4853969746647132540
@@ -5641,7 +5642,7 @@ MonoBehaviour:
   absoluteZeroSummonCount: 15
   absoluteZeroCooldownPhase12: 30
   absoluteZeroCooldownPhase3: 12
-  absoluteZeroWarningEffect: {fileID: 112270018726337301, guid: d1c8bbf7b1cc7c9429c21ab34c7659f3, type: 3}
+  absoluteZeroWarningEffect: {fileID: 1015045838383309280, guid: b9e446413fb4a0c4bb02e9bafe4ad0ad, type: 3}
   bingCiTransforms:
   - {fileID: 6051209882962071039}
   - {fileID: 7588614840702755016}
@@ -10937,3 +10938,35 @@ Transform:
   - {fileID: 3207766415763606021}
   m_Father: {fileID: 8792781191664569542}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!1 &8980065452601119196
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 2942684459006356195}
+  m_Layer: 6
+  m_HasEditorInfo: 1
+  m_Name: BossFreezeRayClashPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2942684459006356195
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8980065452601119196}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 713578897887398448}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

@@ -7,7 +7,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 using LightVsDecay.Core;
+using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
+using LightVsDecay.Logic.TacticalDrop;
 
 namespace LightVsDecay.Logic.Player
 {
@@ -68,6 +70,7 @@ namespace LightVsDecay.Logic.Player
         [Tooltip("敌人检测层")]
         [SerializeField] private LayerMask enemyLayer;
         [SerializeField] private LayerMask shieldLayer;
+        [SerializeField] private LayerMask uiLayer;
         
         [Header("VFX 缩放")]
         [Tooltip("基础宽度（对应VFX缩放为1）")]
@@ -135,14 +138,13 @@ namespace LightVsDecay.Logic.Player
             {
                 wallLayer = LayerMask.GetMask(GameConstants.WALL_LAYER);
             }
-            if (enemyLayer == 0)
-            {
-                enemyLayer = LayerMask.GetMask(GameConstants.ENEMY_LAYER, GameConstants.BOUNCING_ENEMY_LAYER);
-            }
-            if (shieldLayer == 0)
-            {
-                shieldLayer = LayerMask.GetMask("Shield");
-            }
+            enemyLayer |= LayerMask.GetMask(
+                GameConstants.ENEMY_LAYER,
+                GameConstants.BOUNCING_ENEMY_LAYER,
+                "EnemyBody",
+                "EnemyEyes");
+            shieldLayer |= LayerMask.GetMask("Shield", "IceShield");
+            uiLayer |= LayerMask.GetMask("UI");
             // 初始化材质属性块
             laserPropertyBlock = new MaterialPropertyBlock();
             // 缓存原始材质颜色
@@ -226,7 +228,7 @@ namespace LightVsDecay.Logic.Player
 
             for (int i = 0; i < maxIterations && remainingLength > 0.1f; i++)
             {
-                LayerMask visualHitLayer = enemyLayer | shieldLayer;
+                LayerMask visualHitLayer = enemyLayer | shieldLayer | uiLayer;
                 RaycastHit2D enemyHit = FindVisualHit(currentOrigin, currentDir, remainingLength, visualHitLayer);
                 RaycastHit2D wallHit  = reflectionEnabled && isFirstSegment
                     ? Physics2D.Raycast(currentOrigin, currentDir, remainingLength, wallLayer)
@@ -513,6 +515,7 @@ namespace LightVsDecay.Logic.Player
             RaycastHit2D[] hits = Physics2D.RaycastAll(origin, direction, distance, layerMask);
             RaycastHit2D closestValidHit = default;
             float closestDistance = float.MaxValue;
+            int closestPriority = int.MaxValue;
 
             foreach (var hit in hits)
             {
@@ -522,21 +525,53 @@ namespace LightVsDecay.Logic.Player
                 if (hit.collider.GetComponentInParent<ShieldController>() != null)
                     continue;
 
+                FreezeRayClashPoint clashPoint = hit.collider.GetComponentInParent<FreezeRayClashPoint>();
+                TacticalCrate tacticalCrate = hit.collider.GetComponentInParent<TacticalCrate>();
                 bool isEnemyShield = hit.collider.GetComponentInParent<IceShieldController>() != null;
                 bool isEnemyBody = hit.collider.GetComponentInParent<EnemyBlob>() != null;
                 bool isBossBody = hit.collider.GetComponentInParent<LightVsDecay.Logic.Boss.BaseBossController>() != null;
 
-                if (!isEnemyShield && !isEnemyBody && !isBossBody)
+                if (clashPoint == null && tacticalCrate == null && !isEnemyShield && !isEnemyBody && !isBossBody)
                     continue;
 
-                if (hit.distance < closestDistance)
+                int hitPriority = GetVisualHitPriority(clashPoint, tacticalCrate, isEnemyShield, hit.collider);
+                if (hitPriority < 0)
+                    continue;
+
+                if (hitPriority < closestPriority || (hitPriority == closestPriority && hit.distance < closestDistance))
                 {
+                    closestPriority = hitPriority;
                     closestDistance = hit.distance;
                     closestValidHit = hit;
                 }
             }
 
             return closestValidHit;
+        }
+
+        private int GetVisualHitPriority(
+            FreezeRayClashPoint clashPoint,
+            TacticalCrate tacticalCrate,
+            bool isEnemyShield,
+            Collider2D collider)
+        {
+            if (clashPoint != null) return 0;
+            if (isEnemyShield) return 1;
+            if (tacticalCrate != null) return 2;
+
+            if (collider == null)
+                return -1;
+
+            if (collider.gameObject.layer == LayerMask.NameToLayer("EnemyEyes"))
+                return 3;
+            if (collider.gameObject.layer == LayerMask.NameToLayer("EnemyBody"))
+                return 4;
+            if (collider.GetComponentInParent<LightVsDecay.Logic.Boss.BaseBossController>() != null)
+                return 5;
+            if (collider.GetComponentInParent<EnemyBlob>() != null)
+                return 6;
+
+            return -1;
         }
         /// <summary>
         /// 重置激光颜色为原始材质颜色

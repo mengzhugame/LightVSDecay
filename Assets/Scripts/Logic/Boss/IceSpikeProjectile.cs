@@ -21,6 +21,7 @@ namespace LightVsDecay.Logic.Boss
     {
         [SerializeField] private float moveSpeed = 16f;
         [SerializeField] private float maxLifetime = 10f;
+        [SerializeField] private float defaultHP = 15f;
 
         private float currentHP;
         private bool isResolved;
@@ -51,10 +52,10 @@ namespace LightVsDecay.Logic.Boss
         }
 
         /// <summary>初始化并发射</summary>
-        public void Launch(Vector2 direction, float hp = 5000f)
+        public void Launch(Vector2 direction, float hp = -1f)
         {
             moveDirection = direction.normalized;
-            currentHP = hp;
+            currentHP = hp > 0f ? hp : defaultHP;
             isResolved = false;
             elapsed = 0f;
             audioPausedByOverlay = false;

@@ -6,6 +6,7 @@
 
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Audio;
@@ -136,8 +137,10 @@ namespace LightVsDecay.Logic.Enemy
         private float autoDestroyTime = 0f;
         private float stationaryTimer = 0f;
         private float iceWallHatchInterval = 0f;
+        private float baseIceWallHatchInterval = 0f;
         private float iceWallHatchTimer = 0f;
         private EnemyType iceWallHatchType = EnemyType.Slime;
+        private Coroutine hatchAccelerationCoroutine;
 
 // Ch2 死亡特殊行为
         private bool splitOnDeath = false;
@@ -463,7 +466,8 @@ namespace LightVsDecay.Logic.Enemy
                 catalystIceWallHatchSpeedMult = data.catalystIceWallHatchSpeedMult;
 // Ch3 静止自动消失 + IceWall 周期性孵化
                 autoDestroyTime = data.autoDestroyTime;
-                iceWallHatchInterval = data.iceWallHatchInterval;
+                baseIceWallHatchInterval = data.iceWallHatchInterval;
+                iceWallHatchInterval = baseIceWallHatchInterval;
                 iceWallHatchType = data.iceWallHatchType;
             }
             // 否则使用默认值（已在字段声明时初始化）
@@ -526,6 +530,7 @@ namespace LightVsDecay.Logic.Enemy
             currentHealth = maxHealth;
             transform.localScale = originalScale;
             speedMultiplier = 1f;
+            iceWallHatchInterval = baseIceWallHatchInterval;
             
             // Stationary 障碍物（熔浆液用 PolygonCollider2D，冰墙等）全部设为 Trigger
             // 效果：怪物可穿越（无物理响应），Raycast 仍能检测到（queriesHitTriggers=true），激光依然被阻挡
@@ -594,6 +599,11 @@ namespace LightVsDecay.Logic.Enemy
                 StopCoroutine(berserkCoroutine);
                 berserkCoroutine = null;
             }
+            if (hatchAccelerationCoroutine != null)
+            {
+                StopCoroutine(hatchAccelerationCoroutine);
+                hatchAccelerationCoroutine = null;
+            }
             isBerserking = false;
             berserkSpeedMultiplier = 1f;
             berserkDamageTakenMultiplier = 1f;
@@ -652,6 +662,16 @@ namespace LightVsDecay.Logic.Enemy
                 StopCoroutine(deathCoroutine);
                 deathCoroutine = null;
             }
+            if (berserkCoroutine != null)
+            {
+                StopCoroutine(berserkCoroutine);
+                berserkCoroutine = null;
+            }
+            if (hatchAccelerationCoroutine != null)
+            {
+                StopCoroutine(hatchAccelerationCoroutine);
+                hatchAccelerationCoroutine = null;
+            }
             
             ForEachEye(e => e.StopBlink());
             
@@ -689,6 +709,8 @@ namespace LightVsDecay.Logic.Enemy
             isBerserking = false;
             berserkSpeedMultiplier = 1f;
             berserkDamageTakenMultiplier = 1f;
+            iceWallHatchInterval = baseIceWallHatchInterval;
+            iceWallHatchTimer = 0f;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1778,16 +1800,21 @@ namespace LightVsDecay.Logic.Enemy
             LayerMask enemyMask = LayerMask.GetMask("Enemy", "BouncingEnemy");
             Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, catalystBurstRadius, enemyMask);
             int affectedCount = 0;
+            HashSet<int> processedBlobIds = new HashSet<int>();
             foreach (var col in nearby)
             {
                 if (col == null) continue;
-                var blob = col.GetComponent<EnemyBlob>();
+                var blob = col.GetComponentInParent<EnemyBlob>() ?? col.GetComponent<EnemyBlob>();
                 if (blob != null && blob != this && !blob.IsDead)
                 {
+                    int blobId = blob.GetInstanceID();
+                    if (processedBlobIds.Contains(blobId)) continue;
+                    processedBlobIds.Add(blobId);
+
                     if (blob.enemyType == EnemyType.IceWall)
                     {
                         // 冰墙：催化者死亡时加速其孵化速率而非施加暴走
-                        blob.AccelerateHatch(catalystIceWallHatchSpeedMult);
+                        blob.AccelerateHatch(catalystBurstDuration, catalystIceWallHatchSpeedMult);
                         continue;
                     }
 
@@ -2002,14 +2029,46 @@ namespace LightVsDecay.Logic.Enemy
         /// 催化者死亡时调用：加速冰墙孵化速率。
         /// speedMultiplier=2 表示孵化间隔减半（孵化速度翻倍）。
         /// </summary>
-        public void AccelerateHatch(float speedMultiplier)
+        public void AccelerateHatch(float duration, float speedMultiplier)
         {
-            if (enemyType != EnemyType.IceWall || iceWallHatchInterval <= 0f) return;
-            iceWallHatchInterval /= speedMultiplier;
-            iceWallHatchInterval = Mathf.Max(iceWallHatchInterval, 0.5f); // 最快 0.5s/只
+            if (enemyType != EnemyType.IceWall || baseIceWallHatchInterval <= 0f || speedMultiplier <= 0f || duration <= 0f)
+                return;
+
+            if (hatchAccelerationCoroutine != null)
+            {
+                StopCoroutine(hatchAccelerationCoroutine);
+            }
+
+            hatchAccelerationCoroutine = StartCoroutine(HatchAccelerationCoroutine(duration, speedMultiplier));
             BattleStatistics.Instance?.RecordIceWallAccelerated();
             if (showDebugInfo)
-                GameLogger.Log($"[IceWall] 被催化者加速！新孵化间隔 {iceWallHatchInterval:F2}s");
+                GameLogger.Log($"[IceWall] 被催化者加速 {duration:F1}s，孵化间隔 {baseIceWallHatchInterval:F2}s -> {Mathf.Max(baseIceWallHatchInterval / speedMultiplier, 0.5f):F2}s");
+        }
+
+        private IEnumerator HatchAccelerationCoroutine(float duration, float speedMultiplier)
+        {
+            iceWallHatchInterval = Mathf.Max(baseIceWallHatchInterval / speedMultiplier, 0.5f);
+
+            if (iceWallHatchTimer > iceWallHatchInterval)
+            {
+                iceWallHatchTimer = iceWallHatchInterval;
+            }
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                if (isDead)
+                {
+                    hatchAccelerationCoroutine = null;
+                    yield break;
+                }
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            iceWallHatchInterval = baseIceWallHatchInterval;
+            hatchAccelerationCoroutine = null;
         }
     }
 }

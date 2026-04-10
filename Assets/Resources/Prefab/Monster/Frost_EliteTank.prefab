@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 2633412439152642198}
   - component: {fileID: 6354833682641992787}
   - component: {fileID: 9073713190969359123}
-  m_Layer: 8
+  m_Layer: 15
   m_HasEditorInfo: 1
   m_Name: IceShield
   m_TagString: Untagged
