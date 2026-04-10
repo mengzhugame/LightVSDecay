@@ -102,10 +102,10 @@ namespace LightVsDecay.UI.Panels
         {
             // 面板显示时确保 Time.timeScale = 0
             Time.timeScale = 0f;
-            // 【新增】停止激光循环音效
+            // 弹出三选一时暂停战斗音效（含火球等场景 AudioSource）
             if (AudioManager.Instance != null)
             {
-                AudioManager.Instance.StopLaserLoop();
+                AudioManager.Instance.PauseBattleAudioForOverlay();
             }
         }
         
@@ -464,10 +464,10 @@ namespace LightVsDecay.UI.Panels
 
             // 恢复游戏
             Time.timeScale = 1f;
-            // 【修复】直接重启激光音效（不依赖事件系统）
+            // 关闭三选一后恢复战斗音效
             if (AudioManager.Instance != null)
             {
-                AudioManager.Instance.StartLaserLoop();
+                AudioManager.Instance.ResumeBattleAudioForOverlay();
             }
             // 触发升级选择完成事件
             GameEvents.TriggerLevelUpChoiceComplete();

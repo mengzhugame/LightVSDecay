@@ -134,9 +134,9 @@ namespace LightVsDecay.UI
         }
         private void OnLevelUpShowSkillPanel(int level)
         {
-            // 停止激光音效
+            // 暂停战斗音效，避免火球/飞行音效在三选一界面继续播放
             if (AudioManager.Instance != null)
-                AudioManager.Instance.StopLaserLoop();
+                AudioManager.Instance.PauseBattleAudioForOverlay();
 
             // 暂停游戏时间
             Time.timeScale = 0f;
@@ -217,6 +217,11 @@ namespace LightVsDecay.UI
                 GameLogger.LogWarning("[UIManager] revivePanel 未设置！");
                 return;
             }
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PauseBattleAudioForOverlay();
+            }
             
             revivePanel.SetActive(true);
             currentActivePanel = revivePanel;
@@ -240,6 +245,11 @@ namespace LightVsDecay.UI
                 {
                     currentActivePanel = null;
                 }
+            }
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.ResumeBattleAudioForOverlay();
             }
         }
         

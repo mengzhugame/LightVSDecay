@@ -191,7 +191,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3f6542fbb7dbdf4a9e3dd63a5198a98, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableLookAt: 1
+  enableLookAt: 0
   lookAtSmoothness: 5
   enableBlink: 1
   blinkIntervalMin: 2

@@ -49,7 +49,7 @@ Material:
     - _SimpleNoiseScale: 1
     m_Colors:
     - _Color: {r: 0.80917853, g: 2.1994932, b: 2.3958921, a: 1}
-    - _HitColor: {r: 1, g: 1, b: 1, a: 1}
+    - _HitColor: {r: 0.38825914, g: 0.8884438, b: 0.93962264, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &6525933608244509770
 MonoBehaviour:

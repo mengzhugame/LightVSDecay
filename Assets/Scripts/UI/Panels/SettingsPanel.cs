@@ -125,6 +125,11 @@ namespace LightVsDecay.UI
                 {
                     GameManager.Instance.PauseGame();
                 }
+
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PauseBattleAudioForOverlay();
+                }
                 
                 // 更新重新开始按钮状态
                 UpdateRestartButtonState();
@@ -405,11 +410,11 @@ namespace LightVsDecay.UI
                 {
                     GameManager.Instance.ResumeGame();
                 }
-                
-                // 重启激光音效
+
+                // 恢复战斗音效
                 if (AudioManager.Instance != null)
                 {
-                    AudioManager.Instance.StartLaserLoop();
+                    AudioManager.Instance.ResumeBattleAudioForOverlay();
                 }
             }
             

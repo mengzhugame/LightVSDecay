@@ -5629,6 +5629,7 @@ MonoBehaviour:
   freezeRayExtendDuration: 1.5
   freezeRayClashPushSpeed: 7.5
   freezeRayClashBreakThreshold: 16
+  laserHitbox: {fileID: 0}
   laserLineRenderer: {fileID: 925727755679066817}
   laserEndVFX: {fileID: 6259532919631549054}
   body03Crystal: {fileID: 5116898198659850092}

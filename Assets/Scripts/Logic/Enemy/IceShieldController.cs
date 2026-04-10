@@ -43,6 +43,7 @@ namespace LightVsDecay.Logic.Enemy
         private float maxHP;
         private float currentHP;
         private bool isActive = false;
+        private Collider2D[] shieldColliders;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
@@ -53,6 +54,12 @@ namespace LightVsDecay.Logic.Enemy
 
         /// <summary>当前 HP 百分比（0~1）</summary>
         public float HPPercent => maxHP > 0f ? Mathf.Clamp01(currentHP / maxHP) : 0f;
+
+        private void Awake()
+        {
+            shieldColliders = GetComponents<Collider2D>();
+            SetVisual(false);
+        }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 接口
@@ -126,6 +133,14 @@ namespace LightVsDecay.Logic.Enemy
         {
             if (shieldSprite != null)
                 shieldSprite.enabled = visible;
+
+            if (shieldColliders != null)
+            {
+                foreach (var col in shieldColliders)
+                {
+                    if (col != null) col.enabled = visible;
+                }
+            }
 
             // 同步子级所有 Renderer
             foreach (var rend in GetComponentsInChildren<Renderer>(true))

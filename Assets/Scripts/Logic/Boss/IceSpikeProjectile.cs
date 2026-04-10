@@ -27,6 +27,8 @@ namespace LightVsDecay.Logic.Boss
         private Vector2 moveDirection;
         private float elapsed;
         private Rigidbody2D rb;
+        private AudioSource flightAudioSource;
+        private bool audioPausedByOverlay;
 
         public bool IsDestroyed => isResolved;
 
@@ -39,6 +41,13 @@ namespace LightVsDecay.Logic.Boss
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
+            flightAudioSource = GetComponent<AudioSource>();
+
+            if (flightAudioSource != null)
+            {
+                flightAudioSource.playOnAwake = false;
+                flightAudioSource.loop = true;
+            }
         }
 
         /// <summary>初始化并发射</summary>
@@ -48,15 +57,19 @@ namespace LightVsDecay.Logic.Boss
             currentHP = hp;
             isResolved = false;
             elapsed = 0f;
+            audioPausedByOverlay = false;
 
             if (rb != null)
                 rb.velocity = moveDirection * moveSpeed;
+
+            StartFlightAudio();
         }
 
         private void Update()
         {
             if (isResolved) return;
 
+            UpdateFlightAudioPauseState();
             elapsed += Time.deltaTime;
             if (elapsed >= maxLifetime)
                 Resolve(hitTower: true);
@@ -82,6 +95,7 @@ namespace LightVsDecay.Logic.Boss
         {
             if (isResolved) return;
             isResolved = true;
+            StopFlightAudio();
 
             if (rb != null) rb.velocity = Vector2.zero;
 
@@ -98,6 +112,47 @@ namespace LightVsDecay.Logic.Boss
             }
 
             gameObject.SetActive(false);
+        }
+
+        private void StartFlightAudio()
+        {
+            if (flightAudioSource == null || flightAudioSource.clip == null)
+                return;
+
+            if (!flightAudioSource.isPlaying)
+                flightAudioSource.Play();
+        }
+
+        private void StopFlightAudio()
+        {
+            if (flightAudioSource == null)
+                return;
+
+            audioPausedByOverlay = false;
+            if (flightAudioSource.isPlaying)
+                flightAudioSource.Stop();
+        }
+
+        private void UpdateFlightAudioPauseState()
+        {
+            if (flightAudioSource == null || isResolved)
+                return;
+
+            if (Time.timeScale <= 0f)
+            {
+                if (flightAudioSource.isPlaying)
+                {
+                    flightAudioSource.Pause();
+                    audioPausedByOverlay = true;
+                }
+                return;
+            }
+
+            if (audioPausedByOverlay)
+            {
+                flightAudioSource.UnPause();
+                audioPausedByOverlay = false;
+            }
         }
     }
 }

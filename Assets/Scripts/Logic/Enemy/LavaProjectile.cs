@@ -40,6 +40,7 @@ namespace LightVsDecay.Logic.Enemy
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         private Rigidbody2D rb;
+        private AudioSource flightAudioSource;
         private float speed;
         private int   damage;
         private float maxHP;
@@ -47,6 +48,7 @@ namespace LightVsDecay.Logic.Enemy
         private bool  isDead        = false;
         private float lifetime      = 8f;
         private float lifetimeTimer = 0f;
+        private bool  audioPausedByOverlay = false;
 
         // 贝塞尔飞行期间禁用普通碰撞检测，落地由协程手动处理
         private bool isBezierFlight = false;
@@ -68,6 +70,7 @@ namespace LightVsDecay.Logic.Enemy
         {
             rb = GetComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
+            flightAudioSource = GetComponent<AudioSource>();
 
             shieldLayer = LayerMask.GetMask("Shield");
             towerLayer  = LayerMask.GetMask("Tower");
@@ -81,6 +84,12 @@ namespace LightVsDecay.Logic.Enemy
             var col = GetComponent<Collider2D>();
             if (col != null)
                 col.isTrigger = true;
+
+            if (flightAudioSource != null)
+            {
+                flightAudioSource.playOnAwake = false;
+                flightAudioSource.loop = true;
+            }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -101,6 +110,7 @@ namespace LightVsDecay.Logic.Enemy
             lifetimeTimer = 0f;
             isBezierFlight = false;
             enableRotationSlow = rotationSlow;
+            audioPausedByOverlay = false;
 
             // 根据飞行方向计算旋转，使 Sprite 朝向目标
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + rotationOffset;
@@ -111,6 +121,8 @@ namespace LightVsDecay.Logic.Enemy
                 rb.isKinematic = false;
                 rb.velocity = direction.normalized * speed;
             }
+
+            StartFlightAudio();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -134,6 +146,7 @@ namespace LightVsDecay.Logic.Enemy
             lifetimeTimer = 0f;
             lifetime      = travelTime + 5f; // 给足够余量，由协程负责销毁
             isBezierFlight = true;
+            audioPausedByOverlay = false;
 
             if (rb != null)
             {
@@ -142,6 +155,7 @@ namespace LightVsDecay.Logic.Enemy
             }
 
             transform.position = p0;
+            StartFlightAudio();
             StartCoroutine(BezierRoutine(p0, p1, p2, travelTime));
         }
 
@@ -220,6 +234,7 @@ namespace LightVsDecay.Logic.Enemy
         private void Update()
         {
             if (isDead) return;
+            UpdateFlightAudioPauseState();
             lifetimeTimer += Time.deltaTime;
             if (lifetimeTimer >= lifetime)
                 DestroyProjectile();
@@ -300,6 +315,7 @@ namespace LightVsDecay.Logic.Enemy
         {
             if (isDead) return;
             isDead = true;
+            StopFlightAudio();
 
             if (byLaser)
             {
@@ -315,6 +331,47 @@ namespace LightVsDecay.Logic.Enemy
             }
 
             Destroy(gameObject);
+        }
+
+        private void StartFlightAudio()
+        {
+            if (flightAudioSource == null || flightAudioSource.clip == null)
+                return;
+
+            if (!flightAudioSource.isPlaying)
+                flightAudioSource.Play();
+        }
+
+        private void StopFlightAudio()
+        {
+            if (flightAudioSource == null)
+                return;
+
+            audioPausedByOverlay = false;
+            if (flightAudioSource.isPlaying)
+                flightAudioSource.Stop();
+        }
+
+        private void UpdateFlightAudioPauseState()
+        {
+            if (flightAudioSource == null || isDead)
+                return;
+
+            if (Time.timeScale <= 0f)
+            {
+                if (flightAudioSource.isPlaying)
+                {
+                    flightAudioSource.Pause();
+                    audioPausedByOverlay = true;
+                }
+                return;
+            }
+
+            if (audioPausedByOverlay)
+            {
+                flightAudioSource.UnPause();
+                audioPausedByOverlay = false;
+            }
         }
     }
 }

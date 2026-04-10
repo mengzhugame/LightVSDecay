@@ -5,6 +5,7 @@
 // ============================================================
 
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using LightVsDecay.Core;
@@ -74,6 +75,8 @@ namespace LightVsDecay.Audio
         private AudioSource laserSource;      // 激光循环音效专用
         private AudioSource bossLoopSource;   // Boss 循环音效专用
         private bool battleSfxMuted = false;
+        private int battleOverlayMuteCount = 0;
+        private readonly List<AudioSource> pausedBattleSources = new List<AudioSource>();
         private float lastEnemyExplodeTime = -1f;
         private const float EnemyExplodeDedupWindow = 0.05f;
         
@@ -1186,6 +1189,45 @@ namespace LightVsDecay.Audio
             battleSfxMuted = false;
         }
 
+        /// <summary>
+        /// 战斗中弹出覆盖界面时暂停战斗音效。
+        /// 使用计数器避免多个界面叠加时被提前恢复。
+        /// </summary>
+        public void PauseBattleAudioForOverlay()
+        {
+            battleOverlayMuteCount++;
+            if (battleOverlayMuteCount > 1)
+                return;
+
+            PauseTrackedBattleAudioSource(laserSource);
+            PauseTrackedBattleAudioSource(bossLoopSource);
+            PauseSceneBattleAudioSources();
+        }
+
+        /// <summary>
+        /// 战斗中关闭覆盖界面后恢复战斗音效。
+        /// </summary>
+        public void ResumeBattleAudioForOverlay()
+        {
+            if (battleOverlayMuteCount <= 0)
+                return;
+
+            battleOverlayMuteCount--;
+            if (battleOverlayMuteCount > 0)
+                return;
+
+            for (int i = pausedBattleSources.Count - 1; i >= 0; i--)
+            {
+                AudioSource source = pausedBattleSources[i];
+                if (source == null)
+                    continue;
+
+                source.UnPause();
+            }
+
+            pausedBattleSources.Clear();
+        }
+
         private void StopSceneBattleAudioSources()
         {
             AudioSource[] allSources = FindObjectsOfType<AudioSource>(true);
@@ -1197,6 +1239,30 @@ namespace LightVsDecay.Audio
 
                 source.Stop();
             }
+        }
+
+        private void PauseSceneBattleAudioSources()
+        {
+            AudioSource[] allSources = FindObjectsOfType<AudioSource>(true);
+            foreach (AudioSource source in allSources)
+            {
+                if (source == null)
+                    continue;
+
+                if (source == bgmSource || source == sfxSource)
+                    continue;
+
+                PauseTrackedBattleAudioSource(source);
+            }
+        }
+
+        private void PauseTrackedBattleAudioSource(AudioSource source)
+        {
+            if (source == null || !source.isPlaying || pausedBattleSources.Contains(source))
+                return;
+
+            source.Pause();
+            pausedBattleSources.Add(source);
         }
     }
 }
