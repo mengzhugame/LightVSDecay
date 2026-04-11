@@ -645,21 +645,23 @@ namespace LightVsDecay.Logic.Statistics
                 // V5.0 P3
                 puddlePeakCount = _wavePuddlePeakCount,
 
-                // V6.0 Ch3 击杀
+                // V6.0 Ch3 击杀 + V6.2 FrostGunner
                 killFrostSlime        = _waveKills.frostSlime,
                 killFrostTank         = _waveKills.frostTank,
                 killFrostCatalyst     = _waveKills.frostCatalyst,
                 killFrostcaster       = _waveKills.frostcaster,
                 killIceShieldGuard    = _waveKills.iceShieldGuard,
                 killFrostcasterElite  = _waveKills.frostcasterElite,
+                killFrostGunner       = _waveKills.frostGunner,
 
-                // V6.0 Ch3 生成
+                // V6.0 Ch3 生成 + V6.2 FrostGunner
                 spawnFrostSlime        = _waveSpawns.frostSlime,
                 spawnFrostTank         = _waveSpawns.frostTank,
                 spawnFrostCatalyst     = _waveSpawns.frostCatalyst,
                 spawnFrostcaster       = _waveSpawns.frostcaster,
                 spawnIceShieldGuard    = _waveSpawns.iceShieldGuard,
                 spawnFrostcasterElite  = _waveSpawns.frostcasterElite,
+                spawnFrostGunner       = _waveSpawns.frostGunner,
                 spawnIceWall           = _waveSpawns.iceWall,
 
                 // V6.0 冰盾
@@ -1440,10 +1442,10 @@ namespace LightVsDecay.Logic.Statistics
                 "Boss_Fireball_Burst_Count,Boss_Fireball_Intercepted_Count," +
                 // V5.0 P3 水坑峰值 (1)
                 "Puddle_Peak_Count," +
-                // V6.0 Ch3 击杀统计 (6)
-                "Kill_FrostSlime,Kill_FrostTank,Kill_FrostCatalyst,Kill_Frostcaster,Kill_IceShieldGuard,Kill_FrostcasterElite," +
-                // V6.0 Ch3 生成统计 (7)
-                "Spawn_FrostSlime,Spawn_FrostTank,Spawn_FrostCatalyst,Spawn_Frostcaster,Spawn_IceShieldGuard,Spawn_FrostcasterElite,Spawn_IceWall," +
+                // V6.0 Ch3 击杀统计 (6) + V6.2 FrostGunner (1)
+                "Kill_FrostSlime,Kill_FrostTank,Kill_FrostCatalyst,Kill_Frostcaster,Kill_IceShieldGuard,Kill_FrostcasterElite,Kill_FrostGunner," +
+                // V6.0 Ch3 生成统计 (7) + V6.2 FrostGunner (1)
+                "Spawn_FrostSlime,Spawn_FrostTank,Spawn_FrostCatalyst,Spawn_Frostcaster,Spawn_IceShieldGuard,Spawn_FrostcasterElite,Spawn_FrostGunner,Spawn_IceWall," +
                 // V6.0 冰盾 (2)
                 "IceShield_Broken_Count,IceShield_Dmg_Absorbed," +
                 // V6.0 催化者 / 施法者 (2) + V6.1 扩展 (5)
@@ -1642,22 +1644,24 @@ namespace LightVsDecay.Logic.Statistics
                 // 21. V5.0 P3
                 d.puddlePeakCount,          // 96
 
-                // 22. V6.0 Ch3 击杀
+                // 22. V6.0 Ch3 击杀 + V6.2 FrostGunner
                 d.killFrostSlime,           // 97
                 d.killFrostTank,            // 98
                 d.killFrostCatalyst,        // 99
                 d.killFrostcaster,          // 100
                 d.killIceShieldGuard,       // 101
                 d.killFrostcasterElite,     // 102
+                d.killFrostGunner,          // 103 V6.2
 
-                // 23. V6.0 Ch3 生成
-                d.spawnFrostSlime,          // 103
-                d.spawnFrostTank,           // 104
-                d.spawnFrostCatalyst,       // 105
-                d.spawnFrostcaster,         // 106
-                d.spawnIceShieldGuard,      // 107
-                d.spawnFrostcasterElite,    // 108
-                d.spawnIceWall,             // 109
+                // 23. V6.0 Ch3 生成 + V6.2 FrostGunner
+                d.spawnFrostSlime,          // 104
+                d.spawnFrostTank,           // 105
+                d.spawnFrostCatalyst,       // 106
+                d.spawnFrostcaster,         // 107
+                d.spawnIceShieldGuard,      // 108
+                d.spawnFrostcasterElite,    // 109
+                d.spawnFrostGunner,         // 110 V6.2
+                d.spawnIceWall,             // 111
 
                 // 24. V6.0 冰盾
                 d.iceShieldBrokenCount,     // 110

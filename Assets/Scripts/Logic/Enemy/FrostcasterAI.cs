@@ -350,6 +350,7 @@ namespace LightVsDecay.Logic.Enemy
 
                 Vector3 spawnPos = GetRandomIceWallPosition();
                 EnemyPoolManager.Instance.Spawn(iceWallType, spawnPos);
+                BattleStatistics.Instance?.RecordEnemySpawn(iceWallType, 0f);   // 冰墙 HP 不计入敌人总血量
                 VFXPoolManager.Instance?.PlayWinterImpact(spawnPos);
             }
 

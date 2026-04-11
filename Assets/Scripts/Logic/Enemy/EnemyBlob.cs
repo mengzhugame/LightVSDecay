@@ -1252,7 +1252,7 @@ namespace LightVsDecay.Logic.Enemy
             {
                 // 孵化怪给少量奖励：不同于正常刷出的同类型怪物（如 FrostSlime 20XP）
                 // 保留击杀反馈，但 XP 大幅降低以防止经验溢出
-                hatchling.SetXPReward(1);
+                hatchling.SetXPReward(5);   // 孵化怪少量经验（原为 20，避免 XP 溢出；1 过少导致等级不足）
                 hatchling.SetCoinReward(1);
             }
             BattleStatistics.Instance?.RecordIceWallHatch();

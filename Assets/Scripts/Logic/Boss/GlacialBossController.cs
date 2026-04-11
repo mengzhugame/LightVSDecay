@@ -112,10 +112,7 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("蓄力时长（秒）")]
         [SerializeField] private float absoluteZeroChannelDuration = 3f;
 
-        [Tooltip("打断所需累计伤害量（建议设为 Boss 最大血量的 8~12%，约 60000~90000）")]
-        [SerializeField] private float absoluteZeroInterruptThreshold = 75000f;
-
-        [Tooltip("打断失败时，光棱塔当前血量的百分比真实伤害")]
+        [Tooltip("绝对零度释放后，光棱塔当前血量的百分比真实伤害")]
         [SerializeField] private float absoluteZeroTrueDamagePercent = 0.30f;
 
         [Tooltip("打断失败时，光棱塔冻结时长（秒）")]

@@ -75,17 +75,18 @@ namespace LightVsDecay.Logic.Statistics
         public int frostcaster = 0;
         public int iceShieldGuard = 0;
         public int frostcasterElite = 0;
+        public int frostGunner = 0;
         public int iceWall = 0;             // 地形障碍，不计入战斗 Total
 
         public int Total => slime + rusher + tank + drifter + elite
                           + lavaExploder + lavaSplitter + lavaGunner + lavaTank + lavaElite
-                          + frostSlime + frostTank + frostCatalyst + frostcaster + iceShieldGuard + frostcasterElite;
+                          + frostSlime + frostTank + frostCatalyst + frostcaster + iceShieldGuard + frostcasterElite + frostGunner;
 
         public void Reset()
         {
             slime = rusher = tank = drifter = elite = 0;
             lavaExploder = lavaSplitter = lavaGunner = lavaTank = lavaElite = lavaPuddle = 0;
-            frostSlime = frostTank = frostCatalyst = frostcaster = iceShieldGuard = frostcasterElite = iceWall = 0;
+            frostSlime = frostTank = frostCatalyst = frostcaster = iceShieldGuard = frostcasterElite = frostGunner = iceWall = 0;
         }
 
         public void Add(EnemyType type)
@@ -114,6 +115,7 @@ namespace LightVsDecay.Logic.Statistics
                 case EnemyType.Frostcaster:         frostcaster++;      break;
                 case EnemyType.EliteIceShieldGuard: iceShieldGuard++;   break;
                 case EnemyType.EliteFrostcaster:    frostcasterElite++; break;
+                case EnemyType.FrostGunner:         frostGunner++;      break;
                 case EnemyType.IceWall:             iceWall++;          break;
             }
         }
@@ -146,17 +148,18 @@ namespace LightVsDecay.Logic.Statistics
         public int frostcaster = 0;
         public int iceShieldGuard = 0;
         public int frostcasterElite = 0;
+        public int frostGunner = 0;
         // 注：IceWall 不可击杀，不计入 KillCounter
 
         public int Total => slime + rusher + tank + drifter + elite
                           + lavaExploder + lavaSplitter + lavaGunner + lavaTank + lavaElite
-                          + frostSlime + frostTank + frostCatalyst + frostcaster + iceShieldGuard + frostcasterElite;
+                          + frostSlime + frostTank + frostCatalyst + frostcaster + iceShieldGuard + frostcasterElite + frostGunner;
 
         public void Reset()
         {
             slime = rusher = tank = drifter = elite = 0;
             lavaExploder = lavaSplitter = lavaGunner = lavaTank = lavaElite = 0;
-            frostSlime = frostTank = frostCatalyst = frostcaster = iceShieldGuard = frostcasterElite = 0;
+            frostSlime = frostTank = frostCatalyst = frostcaster = iceShieldGuard = frostcasterElite = frostGunner = 0;
         }
 
         public void Add(EnemyType type)
@@ -184,6 +187,7 @@ namespace LightVsDecay.Logic.Statistics
                 case EnemyType.Frostcaster:         frostcaster++;      break;
                 case EnemyType.EliteIceShieldGuard: iceShieldGuard++;   break;
                 case EnemyType.EliteFrostcaster:    frostcasterElite++; break;
+                case EnemyType.FrostGunner:         frostGunner++;      break;
             }
         }
     }
@@ -453,21 +457,23 @@ namespace LightVsDecay.Logic.Statistics
         public int bossFireballBurstCount;          // 火球喷发触发次数（每次 FireballBurstRoutine 计1）
         public int bossFireballInterceptedCount;    // 被激光拦截击落的火球数量
 
-        // ═══ V6.0 Ch3 击杀统计 (6) ═══
+        // ═══ V6.0 Ch3 击杀统计 (6) + V6.2 FrostGunner (1) ═══
         public int killFrostSlime;
         public int killFrostTank;
         public int killFrostCatalyst;
         public int killFrostcaster;
         public int killIceShieldGuard;
         public int killFrostcasterElite;
+        public int killFrostGunner;          // V6.2
 
-        // ═══ V6.0 Ch3 生成统计 (7) ═══
+        // ═══ V6.0 Ch3 生成统计 (7) + V6.2 FrostGunner (1) ═══
         public int spawnFrostSlime;
         public int spawnFrostTank;
         public int spawnFrostCatalyst;
         public int spawnFrostcaster;
         public int spawnIceShieldGuard;
         public int spawnFrostcasterElite;
+        public int spawnFrostGunner;         // V6.2
         public int spawnIceWall;             // 冰墙生成总数（施法者+Boss）
 
         // ═══ V6.0 冰盾机制 (2) ═══
