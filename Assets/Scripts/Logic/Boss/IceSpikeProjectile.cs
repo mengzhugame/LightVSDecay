@@ -11,6 +11,7 @@ using UnityEngine;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
+using LightVsDecay.Logic.Player;
 
 namespace LightVsDecay.Logic.Boss
 {
@@ -88,7 +89,11 @@ namespace LightVsDecay.Logic.Boss
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (isResolved) return;
-            if (other.CompareTag("Tower") || other.CompareTag("Shield"))
+
+            ShieldController shieldController = other.GetComponent<ShieldController>() ?? other.GetComponentInParent<ShieldController>();
+            TurretHealth turret = other.GetComponent<TurretHealth>() ?? other.GetComponentInParent<TurretHealth>();
+
+            if (shieldController != null || turret != null || other.CompareTag("Tower"))
                 Resolve(hitTower: true);
         }
 

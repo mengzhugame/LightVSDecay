@@ -16,6 +16,7 @@
 
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
 using LightVsDecay.Logic.Player;
@@ -71,8 +72,17 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("玩家激光与冰封射线角力时，将射线顶回的速度倍率")]
         [SerializeField] private float freezeRayClashPushSpeed = 7.5f;
 
+        [Tooltip("冰封射线角力时，Boss 将接触点向玩家推进的基础速度")]
+        [SerializeField] private float freezeRayBossAdvanceSpeed = 4.5f;
+
+        [Tooltip("玩家角力压力换算为接触点推进速度时的系数")]
+        [SerializeField] private float freezeRayPlayerPressureScale = 0.03f;
+
         [Tooltip("玩家持续用激光压制时，打断冰封射线所需的累计角力值")]
         [SerializeField] private float freezeRayClashBreakThreshold = 16f;
+
+        [Tooltip("冰封射线完成蓄力后，初始接触点位于防线距离的比例")]
+        [SerializeField] [Range(0.2f, 0.9f)] private float freezeRayInitialClashRatio = 0.58f;
 
         [Tooltip("Boss 施放冰封射线前回到中轴锚点所需时间（秒）")]
         [SerializeField] private float freezeRayRepositionDuration = 0.3f;
@@ -192,6 +202,7 @@ namespace LightVsDecay.Logic.Boss
 
         private TurretController turretController;
         private TurretHealth turretHealth;
+        private ShieldController shieldController;
         private LayerMask rayHitLayers;
 
         // BingCi 原始局部坐标（用于拔出计算与再生复位）
@@ -242,6 +253,8 @@ namespace LightVsDecay.Logic.Boss
 
             if (absoluteZeroWarningEffect != null)
                 absoluteZeroWarningEffect.SetActive(false);
+
+            ExcludeBingCiFromSharedBodyRenderers();
 
             // 缓存 BingCi 原始局部坐标
             if (bingCiTransforms != null)
@@ -418,6 +431,10 @@ namespace LightVsDecay.Logic.Boss
             else
                 rayDir = Vector2.down;
 
+            float initialDefenseDistance = GetFreezeRayDefenseDistance(rayDir, out _, out _);
+            float minClashDistance = 1.25f;
+            float initialClashDistance = Mathf.Clamp(initialDefenseDistance * freezeRayInitialClashRatio, minClashDistance, initialDefenseDistance);
+
             // 启用 LineRenderer 和末端特效（初始长度为 0）
             if (laserLineRenderer != null)
             {
@@ -437,7 +454,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 extendElapsed += Time.deltaTime;
                 float extendT  = Mathf.Clamp01(extendElapsed / freezeRayExtendDuration);
-                float curLength = Mathf.Lerp(0f, freezeRayLength, extendT);
+                float curLength = Mathf.Lerp(0f, initialClashDistance, extendT);
 
                 Vector2 extendEnd = (Vector2)transform.position + rayDir * curLength;
                 if (laserLineRenderer != null)
@@ -455,6 +472,7 @@ namespace LightVsDecay.Logic.Boss
             }
 
             freezeRayActive = true;
+            float clashDistance = initialClashDistance;
 
             // === 角力/伤害阶段（freezeRayDuration 秒）===
             float elapsed = 0f;
@@ -475,10 +493,19 @@ namespace LightVsDecay.Logic.Boss
                     freezeRayClashMeter = Mathf.MoveTowards(freezeRayClashMeter, 0f, 6f * Time.deltaTime);
                 }
 
-                float clashRatio = Mathf.Clamp01(freezeRayClashMeter / freezeRayClashBreakThreshold);
-                float effectiveRayLength = Mathf.Lerp(freezeRayLength, 1.25f, clashRatio);
+                float defenseDistance = GetFreezeRayDefenseDistance(rayDir, out RaycastHit2D defenseHit, out ShieldController shieldHit);
+                float playerPushSpeed = playerClashing
+                    ? freezeRayPlayerPressure * freezeRayPlayerPressureScale * freezeRayClashPushSpeed
+                    : 0f;
+                float netAdvanceSpeed = freezeRayBossAdvanceSpeed - playerPushSpeed;
 
-                if (freezeRayClashMeter >= freezeRayClashBreakThreshold)
+                clashDistance = Mathf.Clamp(clashDistance + netAdvanceSpeed * Time.deltaTime, minClashDistance, defenseDistance);
+                float clashRatio = defenseDistance > minClashDistance
+                    ? Mathf.Clamp01((defenseDistance - clashDistance) / (defenseDistance - minClashDistance))
+                    : 1f;
+                freezeRayClashMeter = clashRatio * freezeRayClashBreakThreshold;
+
+                if (clashDistance <= minClashDistance + 0.01f)
                 {
                     if (showDebugInfo)
                         GameLogger.Log("[GlacialBoss] 冰封射线被玩家激光顶回并打断");
@@ -487,7 +514,8 @@ namespace LightVsDecay.Logic.Boss
                     break;
                 }
 
-                if (elapsed >= freezeRayStalemateTimeout && playerClashing && freezeRayClashMeter > 0.01f)
+                bool clashPointInMidfield = clashDistance > minClashDistance + 0.15f && clashDistance < defenseDistance - 0.15f;
+                if (elapsed >= freezeRayStalemateTimeout && playerClashing && clashPointInMidfield)
                 {
                     endedByStalemate = true;
                     if (showDebugInfo)
@@ -495,29 +523,25 @@ namespace LightVsDecay.Logic.Boss
                     break;
                 }
 
-                // Raycast：检测护盾层与塔本体层
-                var hit = Physics2D.Raycast(transform.position, rayDir, effectiveRayLength, rayHitLayers);
-                Vector2 endPoint = (Vector2)transform.position + rayDir * effectiveRayLength;
-
-                if (hit.collider != null)
+                Vector2 endPoint = (Vector2)transform.position + rayDir * clashDistance;
+                bool clashReachedDefense = defenseHit.collider != null && clashDistance >= defenseDistance - 0.02f;
+                if (clashReachedDefense)
                 {
-                    endPoint = hit.point;
+                    endPoint = defenseHit.point;
 
-                    if (!playerClashing)
+                    if (shieldHit != null)
                     {
-                        ShieldController sc = hit.collider.GetComponent<ShieldController>();
-                        if (sc != null)
+                        // 命中护盾：接触点被推到护盾表面后开始持续扣血
+                        shieldHit.TakeDamage(Mathf.RoundToInt(freezeRayShieldDamagePerSecond * Time.deltaTime));
+                    }
+                    else if (!freezeRayHitThisCast)
+                    {
+                        // 护盾破碎后，接触点继续推进到光棱塔本体才触发冻结
+                        freezeRayHitThisCast = true;
+                        ApplyTurretFreeze(freezeRayTurretFreezeDuration);
+                        if (showDebugInfo)
                         {
-                            // 命中护盾：每帧扣血，不冻结
-                            sc.TakeDamage(Mathf.RoundToInt(freezeRayShieldDamagePerSecond * Time.deltaTime));
-                        }
-                        else if (!freezeRayHitThisCast)
-                        {
-                            // 命中塔本体：触发冻结（本次施法只触发一次）
-                            freezeRayHitThisCast = true;
-                            ApplyTurretFreeze(freezeRayTurretFreezeDuration);
-                            if (showDebugInfo)
-                                GameLogger.Log($"[GlacialBoss] 冰封射线命中塔！冻结 {freezeRayTurretFreezeDuration}s");
+                            GameLogger.Log($"[GlacialBoss] 冰封射线接触点推进至塔体！冻结 {freezeRayTurretFreezeDuration}s");
                         }
                     }
                 }
@@ -676,6 +700,18 @@ namespace LightVsDecay.Logic.Boss
                     Color c = bingCiRenderers[i].color;
                     c.a = 0f;
                     bingCiRenderers[i].color = c;
+                }
+
+                // 发射完成后，立即把节点复位到“嵌在身体上的初始姿态”。
+                // 这样即使其它通用颜色逻辑误把 alpha 刷回，也不会出现反向冰刺闪一下。
+                if (bingCiOriginalLocalPositions != null && i < bingCiOriginalLocalPositions.Length)
+                {
+                    bingCiTransforms[i].localPosition = bingCiOriginalLocalPositions[i];
+                }
+
+                if (bingCiOriginalLocalRotations != null && i < bingCiOriginalLocalRotations.Length)
+                {
+                    bingCiTransforms[i].localRotation = bingCiOriginalLocalRotations[i];
                 }
             }
 
@@ -879,6 +915,44 @@ namespace LightVsDecay.Logic.Boss
             }
         }
 
+        private void ExcludeBingCiFromSharedBodyRenderers()
+        {
+            if (bodyRenderers == null || bodyRenderers.Length == 0 || bingCiRenderers == null || bingCiRenderers.Length == 0)
+                return;
+
+            HashSet<SpriteRenderer> bingCiRendererSet = new HashSet<SpriteRenderer>();
+            for (int i = 0; i < bingCiRenderers.Length; i++)
+            {
+                if (bingCiRenderers[i] != null)
+                    bingCiRendererSet.Add(bingCiRenderers[i]);
+            }
+
+            if (bingCiRendererSet.Count == 0)
+                return;
+
+            List<SpriteRenderer> filteredRenderers = new List<SpriteRenderer>(bodyRenderers.Length);
+            for (int i = 0; i < bodyRenderers.Length; i++)
+            {
+                if (bodyRenderers[i] == null || bingCiRendererSet.Contains(bodyRenderers[i]))
+                    continue;
+
+                filteredRenderers.Add(bodyRenderers[i]);
+            }
+
+            if (filteredRenderers.Count == bodyRenderers.Length)
+                return;
+
+            bodyRenderers = filteredRenderers.ToArray();
+            originalColors = new Color[bodyRenderers.Length];
+            for (int i = 0; i < bodyRenderers.Length; i++)
+            {
+                if (bodyRenderers[i] != null)
+                    originalColors[i] = bodyRenderers[i].color;
+            }
+
+            frostDebuff?.SetTargetRenderers(bodyRenderers);
+        }
+
         // ── 通用视觉辅助 ─────────────────────────────────────
 
         /// <summary>顶部水晶蓄力闪烁协程（duration 秒）</summary>
@@ -934,11 +1008,13 @@ namespace LightVsDecay.Logic.Boss
         {
             turretController = FindObjectOfType<TurretController>();
             turretHealth     = FindObjectOfType<TurretHealth>();
+            shieldController = FindObjectOfType<ShieldController>();
 
             if (showDebugInfo)
             {
                 if (turretController == null) GameLogger.LogWarning("[GlacialBoss] 未找到 TurretController！");
                 if (turretHealth     == null) GameLogger.LogWarning("[GlacialBoss] 未找到 TurretHealth！");
+                if (shieldController == null) GameLogger.LogWarning("[GlacialBoss] 未找到 ShieldController！");
             }
         }
 
@@ -955,6 +1031,30 @@ namespace LightVsDecay.Logic.Boss
 
             freezeRayPlayerPressure = pressure;
             freezeRayLastPressureTime = Time.time;
+        }
+
+        private float GetFreezeRayDefenseDistance(Vector2 rayDir, out RaycastHit2D defenseHit, out ShieldController shieldHit)
+        {
+            defenseHit = Physics2D.Raycast(transform.position, rayDir, freezeRayLength, rayHitLayers);
+            shieldHit = null;
+
+            if (defenseHit.collider != null)
+            {
+                shieldHit = defenseHit.collider.GetComponent<ShieldController>() ?? defenseHit.collider.GetComponentInParent<ShieldController>();
+                return defenseHit.distance;
+            }
+
+            if (shieldController != null && shieldController.IsShieldActive)
+            {
+                return Vector2.Distance(transform.position, shieldController.transform.position);
+            }
+
+            if (turretController != null)
+            {
+                return Mathf.Min(freezeRayLength, Vector2.Distance(transform.position, turretController.transform.position));
+            }
+
+            return freezeRayLength;
         }
 
         protected override void ExitState(BossState state)

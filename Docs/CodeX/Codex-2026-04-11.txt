@@ -68,7 +68,336 @@ dotnet build Assembly-CSharp.csproj 已通过，0 error。
 
 ------------------------------------------------------------------------------------------------------------------------
 
+关于极寒BOSS的绝对零度技能显示问题，BOSS再释放冰刺特效，身体四周又显示反向的冰刺图片 BingCi01，BingCi02，BingCi03，BingCi04. 你一直没有告诉我 为什么显示的这4张冰刺图片会是反向的？不要反向的，我需要显示的4张冰刺图片是正向的。查找极寒BOSS的释放绝对零度技能相关的动画展示脚本，整理告诉我现在释放绝对零度技能的流程是什么？例如：冰刺先从身体拔出向四周扩散，然后旋转冰刺瞄准玩家，然后再射出冰刺（这时候原冰刺图片隐藏，特效显示射出），然后射出2S后BOSS身体冰刺从0-1显示（这时候一定是没有旋转值的，也就是最初始的位置值的冰刺）。 先找出问题的原因，然后根据我上面描述的动画过程进行核对。等我确认后，再开始代码修改。
 
+问题原因我已经查清了，核心不是“还有别的隐藏动画在把它们翻转”，而是 绝对零度现在复用的就是这 4 个 BingCi01~04 节点本身，而代码里把“再生后的初始朝向”直接当成了它们当前 prefab 的 localRotation。现在这 4 个节点在 prefab 里都是 identity 旋转，也就是 0,0,0，所以再生时它们一定会回到这个零旋转状态。
+
+关键点在 GlacialBossController.cs (line 246)：
+
+初始化时缓存 bingCiOriginalLocalPositions
+初始化时缓存 bingCiOriginalLocalRotations
+再生时在 GlacialBossController.cs (line 823)：
+
+直接把每根冰刺恢复到 bingCiOriginalLocalPositions[i]
+直接把每根冰刺恢复到 bingCiOriginalLocalRotations[i]
+然后做 alpha 0 -> 1 淡入
+而我核对了 Frost_Boss.prefab 里这 4 个节点，BingCi01~04 当前绑定顺序是正确的：
+
+左上 BingCi01
+左下 BingCi02
+右上 BingCi03
+右下 BingCi04
+但它们的 Transform.m_LocalRotation 现在都是 identity。这就意味着：
+
+代码并没有为“嵌在 Boss 身体上的正向冰刺”单独定义一套静止朝向。
+再生时显示出来的，实际上就是“这 4 个可发射冰刺节点”恢复到 prefab 里的零旋转姿态。
+如果这 4 张 sprite 图本身在零旋转下看起来是“朝外/反向”的，那它们再生出来就会是你现在看到的反向效果。
+也就是说，现在的系统没有“身体嵌入态”和“可发射态”两套独立展示姿态，只有一套节点在反复复用。
+
+你要求的理想流程，我和当前代码对过了：
+
+你想要的流程
+
+冰刺初始是嵌在身体上的正向图。
+释放时先从身体拔出，向四周扩散。
+然后旋转瞄准玩家。
+再射出冰刺，原图隐藏，投射体飞出去。
+2 秒后身体上的冰刺从 0 -> 1 淡入。
+这时冰刺一定是“最初始的位置和最初始的正向朝向”，不能带任何旋转残留。
+当前代码流程
+
+3 秒蓄力，见 GlacialBossController.cs (line 587)
+BingCiPullOut() 向外拔出 0.4 单位，见 GlacialBossController.cs (line 734)
+BingCiRotateTowardTower() 依次旋转瞄准玩家，见 GlacialBossController.cs (line 770)
+生成投射体并把原 BingCi 图 alpha 设为 0，见 GlacialBossController.cs (line 644)
+等待结算后再等 2 秒，见 GlacialBossController.cs (line 691)
+BingCiRegen() 把同一批 BingCi 节点恢复到 prefab 缓存的原始位置和原始旋转，再淡入，见 GlacialBossController.cs (line 823)
+所以现在和你预期唯一没有对齐的关键点就是：
+
+“最初始的正向朝向”并没有被正确定义
+代码恢复的是 prefab 当前零旋转，不是你想要的“贴合 Boss 身体的正向朝向”
+我对原因的结论是：
+
+不是绑定顺序错了
+不是还有别的动画组件在偷偷翻转
+不是这次协程回收修复没生效
+而是 BingCi01~04 的静止展示姿态本身就不是你要的那套正向姿态，代码又严格恢复到了这套姿态
+如果你确认，下一步我建议按这两个方向里选一个来修：
+
+直接把 Frost_Boss.prefab 里 BingCi01~04 的初始本地旋转改成你要的“嵌入身体正向”，脚本继续缓存并恢复这套值。
+更稳一点，拆成“身体嵌入显示节点”和“发射用节点”两套，发射和再生不再复用同一批 sprite。
+如果你想先少改，我建议先走第 1 种。
+
+------------------------------------------------------------------------------------------------------------------------
+
+我最初的正向朝向也就是极寒BOSS预制体中4个冰刺的朝向图片是正向朝向，没有任何旋转的。所以你找错了问题原因。现在遇到的实际情况是，再游戏中，极寒BOSS拔出冰刺释放完冰刺特效后（这一段正常），冰刺的BingCi01~04 节点本身 左边有-165和右边有176的旋转值。然后过了几秒后，冰刺的BingCi01~04 节点本身消失（这一段不正常，冰刺拔出发射特效，冰刺应该消失的，为什么会显示出来，而且还是反向的。），然后才衔接了冰刺的再生动画（这一段是正常的）。还有一个问题BOSS释放冰刺报错，报错日志：Tag: Shield is not defined.  但是我unity中有shield这个层级，这是什么问题？
+
+这次原因已经对上了，问题不是“初始朝向缓存错了”，而是这两件事叠在一起：
+
+发射后 BingCi01~04 只是被设成 alpha = 0 隐藏了，并没有立刻把旋转值复位。
+所以它们会保留刚刚瞄准玩家时的角度，比如你看到的左侧 -165、右侧 176。这在 GlacialBossController.cs (line 644) 很明确，发射后只做了隐藏，没有复位旋转。
+
+这 4 个冰刺 SpriteRenderer 又被挂进了 Boss 的通用 bodyRenderers 列表。
+而 Boss 的通用颜色系统会把它们的颜色恢复成原始颜色，等价于把 alpha 又刷回 1，于是它们会在“再生开始前”被重新显示出来。因为这时旋转还保留着发射瞄准时的角度，所以你看到的就是“反向的冰刺图突然冒出来”。
+这个链路在：
+
+Frost_Boss.prefab (line 5608)
+这里 bodyRenderers 里包含了 BingCi 的 renderer
+BaseBossController.cs (line 598)
+会缓存 bodyRenderers 的 originalColors
+BaseBossController.cs (line 1194)
+SetBodyDarken() 会直接把颜色恢复成 originalColors[i]
+FrostDebuff.cs (line 331) 和 FrostDebuff.cs (line 419)
+也会按 originalColors 去回写颜色
+所以现在实际现象就是：
+
+冰刺发射后，本该隐藏
+但由于它们还属于 Boss 通用 body renderer 集合，被通用颜色系统重新显示
+而旋转值又没先复位，所以会以 -165 / 176 这种“瞄准后的反向姿态”短暂显示
+之后等真正进入 BingCiRegen() (line 823)，才把位置和旋转恢复，并开始正常再生淡入
+你要的绝对零度展示流程，按当前代码实际是这样：
+
+TriggerAbsoluteZero() 启动绝对零度
+位置在 GlacialBossController.cs (line 575)
+
+AbsoluteZeroRoutine() 先蓄力 3 秒
+位置在 GlacialBossController.cs (line 587)
+
+AbsoluteZeroDetonateRoutine() 开始展示段
+位置在 GlacialBossController.cs (line 621)
+
+BingCiPullOut()
+冰刺从身体向四周拔出约 0.4 单位，持续 0.4s
+位置在 GlacialBossController.cs (line 734)
+
+BingCiRotateTowardTower()
+四枚冰刺依次旋转，对准玩家，单枚旋转 0.6s，错开 0.1s
+位置在 GlacialBossController.cs (line 770)
+
+发射冰刺投射体
+按间隔 0.15s 逐枚生成投射体，并把原 BingCi 图设为透明
+位置在 GlacialBossController.cs (line 644)
+
+等待所有冰刺结算
+最多等 10s
+位置在 GlacialBossController.cs (line 679)
+
+再等 2s
+bingCiRegenDelay = 2f
+位置在 GlacialBossController.cs (line 691)
+
+BingCiRegen()
+这时才正式把冰刺节点恢复到初始位置和初始旋转，并从 alpha 0 -> 1 淡入
+位置在 GlacialBossController.cs (line 823)
+
+所以和你预期不一致的地方很明确：
+
+你要的是：发射后一直隐藏，直到再生开始才重新出现
+现在实际是：发射后先隐藏，但中间被 Boss 通用颜色系统又刷出来了一次，而且还是“发射瞄准后的残留旋转”
+至于这个报错：
+
+Tag: Shield is not defined
+
+根因也找到了，在 IceSpikeProjectile.cs (line 91)
+
+现在代码写的是：
+
+if (other.CompareTag("Tower") || other.CompareTag("Shield"))
+这里查的是 Tag，不是 Layer。
+你 Unity 里有的是 Shield 层级，但如果没有同名的 Tag，CompareTag("Shield") 就会直接报这个错。也就是说：
+
+Shield Layer 存在，不代表 Shield Tag 也存在
+这个报错和 Layer 没关系，是 Tag 没定义
+我建议下一步修法是这两件一起做：
+
+让 BingCi01~04 不再参与 Boss 通用 bodyRenderers 的颜色恢复
+或者给绝对零度加一套“冰刺隐藏锁”，避免中途被全局颜色逻辑刷回可见
+
+冰刺发射后立即把节点旋转也复位，或者至少在隐藏阶段锁死不可见
+这样即使别的逻辑误改颜色，也不会再显示出反向瞄准姿态
+
+把 IceSpikeProjectile.cs (line 91) 的 CompareTag("Shield") 改成正确的层级/组件检测，别再混用 Tag 和 Layer
+
+如果你确认，我下一步就直接按这三个点开始修。
+------------------------------------------------------------------------------------------------------------------------
+
+确认，开始修复。是否需要我添加shield的 tag?
+
+不需要你加 Shield Tag，我已经直接修成不依赖 Tag 了。
+
+这次改了两处关键点。
+
+第一，绝对零度发射后那 4 张 BingCi01~04 不会再被 Boss 通用颜色系统重新刷出来。
+我在 GlacialBossController.cs 里把 BingCi 的 renderer 从共享 bodyRenderers 里排除了，并且在每枚冰刺发射后，立刻把对应节点恢复到初始位置和初始旋转，再保持隐藏。这样就算中途有别的通用颜色逻辑触发，也不会再出现“发射完又短暂冒出一张反向冰刺图”的问题。
+
+第二，Tag: Shield is not defined 也一起修掉了。
+在 IceSpikeProjectile.cs 里，我把原来 CompareTag("Shield") 的判断改成了直接检测 ShieldController 和 TurretHealth 组件，所以现在只看实际对象组件，不再要求 Unity 里必须存在 Shield 这个 Tag。
+
+dotnet build Assembly-CSharp.csproj 已通过，0 error。
+你现在可以重点复测两项：
+
+极寒 Boss 发射完冰刺后，到再生开始前，这 4 张 BingCi 不应该再短暂反向冒出来
+绝对零度冰刺命中护盾时，不应该再报 Tag: Shield is not defined
+------------------------------------------------------------------------------------------------------------------------
+
+关于极寒BOSS的冰封射线技能的问题，玩家的激光无法把BOSS的激光顶回去。即使我的击退模块（加击退力）的已经加到满级了，依然是BOSS会比较快速的延伸自己的激光，然后压缩玩家的激光。不能行成和玩家进行角力。查找极寒boss释放冰封射线技能相关的脚本，整理告诉我现在释放冰封射线的流程是什么？（例如：BOSS先回归中心位置，然后从身体延伸激光和玩家激光对撞，多少时间？）先分析并找出原因。等我确认后，再开始修改代码。
+
+
+我把现在极寒 Boss 的冰封射线流程完整梳出来了，问题核心也基本找到了。
+
+当前冰封射线流程
+代码主入口在 GlacialBossController.cs (line 391)。
+
+现在实际流程是：
+
+Boss 选技能时，如果冰封射线冷却好了，并且随机命中概率，就调用 StartFreezeRay()
+位置在 GlacialBossController.cs (line 344)
+
+StartFreezeRay() 先把 Boss 切到 Stun 状态，然后启动 FreezeRayRoutine()
+位置在 GlacialBossController.cs (line 391)
+
+Boss 先回到中轴锚点
+MoveToFreezeRayAnchor() 会把 Boss 拉回 battleAnchorPosition.x = 0
+持续时间是 freezeRayRepositionDuration = 0.3s
+位置在 GlacialBossController.cs (line 1094)
+
+然后蓄力
+Body03BlinkRoutine(freezeRayChargeUpDuration)
+当前蓄力时间是 freezeRayChargeUpDuration = 1s
+位置在 GlacialBossController.cs (line 420)
+
+确定射线方向
+方向只计算一次，是“Boss 当前中心点 -> 光棱塔”的固定方向，整个技能期间不扫射
+位置在 GlacialBossController.cs (line 423)
+
+激光延伸阶段
+激光从 Boss 身体长度 0 慢慢长到 freezeRayLength = 20
+这一段持续 freezeRayExtendDuration = 1.5s
+并且这段代码写的是“无伤害”
+位置在 GlacialBossController.cs (line 443)
+
+进入角力/伤害阶段
+freezeRayActive = true 后，进入持续 freezeRayDuration = 3s 的阶段
+位置在 GlacialBossController.cs (line 464)
+
+玩家激光如果命中 BossFreezeRayClashPoint，会调用 NotifyFreezeRayLaserClash(damage)
+也就是把“玩家这一 tick 的激光伤害值”当成角力压力传给 Boss
+位置在：
+
+LaserController.cs (line 838)
+GlacialBossController.cs (line 1004)
+Boss 每帧根据这个压力累加 freezeRayClashMeter
+公式是：
+
+freezeRayClashMeter += freezeRayPlayerPressure * freezeRayClashPushSpeed * Time.deltaTime
+当前 freezeRayClashPushSpeed = 7.5
+当前打断阈值 freezeRayClashBreakThreshold = 16
+位置在 GlacialBossController.cs (line 474)
+角力并不是直接推动“共享碰撞点”
+而是只通过 clashRatio 去缩短 Boss 激光的理论长度：
+
+从 freezeRayLength = 20
+缩到最短 1.25
+位置在 GlacialBossController.cs (line 485)
+但最终显示终点不是这个“理论长度末端”，而是先做一次 Physics2D.Raycast
+如果射线打到护盾/塔，终点直接改成 hit.point
+位置在 GlacialBossController.cs (line 501)
+
+BossFreezeRayClashPoint 也被放到这个 endPoint 上
+位置在 GlacialBossController.cs (line 539)
+
+为什么你现在几乎感受不到“玩家把 Boss 激光顶回去”
+我判断现在至少有两个核心原因。
+
+原因 1：角力只是在缩 Boss 激光“理论长度”，但视觉终点大多数时候被护盾/塔命中点锁死了
+这是最大的问题。
+
+现在逻辑是：
+
+先算 effectiveRayLength
+再拿它做射线检测
+只要这条射线还能碰到玩家护盾或塔，endPoint 就直接是护盾/塔表面 hit.point
+这意味着：
+
+即使你已经在累积角力值
+只要 Boss 激光的理论长度还足够打到护盾
+视觉上激光头就会一直停在护盾上
+BossFreezeRayClashPoint 也会一直停在护盾上
+所以玩家看到的就不是“在半空中把 Boss 激光往回顶”，而是：
+
+Boss 激光一路伸到玩家盾前
+对撞点几乎钉死在玩家这边
+只有当 Boss 激光长度被压到比“Boss 到护盾的距离”还短时，才会突然开始后退
+这会让人感觉“根本顶不回去”。
+
+原因 2：当前角力输入用的是激光伤害值，不是击退值
+你说“击退模块已经加满了，还是顶不回去”，这和当前代码是一致的。
+
+因为现在传给 Boss 的不是 CurrentKnockbackForce，而是 damage：
+
+LaserController.cs (line 847)
+也就是说：
+
+你加满击退，不会提升冰封射线角力
+现在真正影响角力的是玩家激光伤害，不是击退属性
+所以从设计体验上就会很违和：
+
+玩家以为“击退越强，越能顶回 Boss 激光”
+但代码里这件事根本没挂钩
+补充问题
+还有一个次要问题是：
+
+当前 Boss 激光在延伸完 1.5s 之后，才真正进入角力期
+真正可角力时间只有 3s
+而且相持超时 2.5s 就会触发主动收束判断
+这些时间配合现在“终点先钉在护盾上”的写法，会进一步放大“Boss 一直在压，玩家没什么推进感”。
+结论
+现在这套实现和你想要的“两个激光顶点在中途对撞，谁强谁把接触点往对方推”还差一层关键逻辑：
+
+目前不是“共享接触点驱动两边激光”
+目前是“Boss 激光先正常射到护盾，再用角力值慢慢缩短理论长度”
+所以它更像“Boss 光束在压线，玩家只能延缓”，而不是“真正对波角力”。
+
+如果你确认，我下一步建议这样改：
+
+冰封射线角力改成真正的“共享 clash 点”
+Boss 激光终点不再优先锁到护盾 hit.point
+玩家激光和 Boss 激光都以这个 clash 点为共同终点
+角力推进值改为至少部分吃 CurrentKnockbackForce，而不是只吃伤害
+护盾/塔伤害只在 clash 点被推到玩家护盾/塔时才开始生效
+这样才会真正出现你想要的：
+
+Boss 回中
+激光从身体伸出
+两束激光在半空中顶住
+玩家强时把 Boss 激光推回去
+Boss 强时把接触点推到玩家护盾上
+------------------------------------------------------------------------------------------------------------------------
+
+补充一下，当玩家护盾破碎后，接触点应该推到玩家的光棱塔上。
+
+已经把这次冰封射线角力逻辑改成你要的方向了，核心修改在 GlacialBossController.cs 和 LaserController.cs。
+
+现在流程是这样的：
+
+极寒 Boss 先回到中轴位置
+蓄力后从身体中心把冰封射线缓慢延伸到“中途接触点”
+玩家激光打到 BossFreezeRayClashPoint 后，双方围绕这个共享接触点角力
+Boss 占优时，接触点会一路往玩家侧推进
+玩家护盾存在时，先被推进到护盾表面
+护盾破碎后，接触点会继续推进到光棱塔本体
+玩家占优时，则会把接触点往 Boss 方向推回去，推到极限会触发 Boss 收束反制结束
+这次顺手也把“击退模块加满却没用”的根因修了。之前角力只吃激光伤害，不吃击退；现在玩家的 CurrentKnockbackForce 也会参与角力压力计算，所以击退升级终于会真实影响对波结果，改动在 LaserController.cs。
+
+我已经跑过 dotnet build Assembly-CSharp.csproj，结果是 0 error。
+你现在可以重点复测 3 个点：
+
+对波时，接触点是否先在半空形成，而不是直接钉到护盾上
+护盾破碎后，接触点是否继续推进到光棱塔
+击退模块升高后，是否明显更容易把 Boss 激光顶回去
+如果你测下来觉得“现在能角力了，但 Boss 还是偏强/偏弱”，我下一步可以继续帮你微调这 3 个值：Boss 推进速度、玩家压力系数、初始接触点位置。
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------

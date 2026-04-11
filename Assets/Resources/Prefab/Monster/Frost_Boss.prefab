@@ -5267,7 +5267,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3f6542fbb7dbdf4a9e3dd63a5198a98, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableLookAt: 1
+  enableLookAt: 0
   lookAtSmoothness: 5
   enableBlink: 1
   blinkIntervalMin: 2
@@ -5629,7 +5629,10 @@ MonoBehaviour:
   freezeRayLength: 20
   freezeRayExtendDuration: 1.5
   freezeRayClashPushSpeed: 7.5
+  freezeRayBossAdvanceSpeed: 4.5
+  freezeRayPlayerPressureScale: 0.03
   freezeRayClashBreakThreshold: 16
+  freezeRayInitialClashRatio: 0.58
   freezeRayRepositionDuration: 0.3
   freezeRayStalemateTimeout: 2.5
   freezeRayRetreatDistance: 1.2

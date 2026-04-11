@@ -847,7 +847,8 @@ namespace LightVsDecay.Logic.Player
             if (glacialBoss == null)
                 return;
 
-            glacialBoss.NotifyFreezeRayLaserClash(damage);
+            float clashPressure = damage + CurrentKnockbackForce * 1.25f;
+            glacialBoss.NotifyFreezeRayLaserClash(clashPressure);
             audioHandler.UpdateFrameHitType(LaserHitType.Metal);
         }
         
