@@ -5630,13 +5630,17 @@ MonoBehaviour:
   freezeRayExtendDuration: 1.5
   freezeRayClashPushSpeed: 7.5
   freezeRayClashBreakThreshold: 16
+  freezeRayRepositionDuration: 0.3
+  freezeRayStalemateTimeout: 2.5
+  freezeRayRetreatDistance: 1.2
+  freezeRayRetreatDuration: 0.22
   laserHitbox: {fileID: 0}
+  freezeRayClashPoint: {fileID: 0}
   laserLineRenderer: {fileID: 925727755679066817}
   laserEndVFX: {fileID: 6259532919631549054}
   body03Crystal: {fileID: 5116898198659850092}
   chargeTurretFreezeDuration: 1.5
   absoluteZeroChannelDuration: 3
-  absoluteZeroInterruptThreshold: 5000
   absoluteZeroTrueDamagePercent: 0.3
   absoluteZeroTurretFreezeDuration: 3
   absoluteZeroSummonCount: 15
@@ -10664,8 +10668,8 @@ Transform:
   m_GameObject: {fileID: 6460651440627032946}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.1, y: 1.91, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -0.04, y: 1.92, z: 0}
+  m_LocalScale: {x: 1.2390532, y: 1.2390532, z: 1.2390532}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 713578897887398448}
@@ -10842,7 +10846,7 @@ Transform:
   m_GameObject: {fileID: 7003409585274317939}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.43, y: 1.05, z: 0}
+  m_LocalPosition: {x: -1.408, y: 1.297, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

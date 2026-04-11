@@ -306,9 +306,12 @@ namespace LightVsDecay.Logic.Player
                 firePoint = mainLaserBeam.transform;
             }
             
-            // 合并检测层
+            // 合并检测层。需要和 LaserBeam 的可视命中层尽量保持一致，
+            // 否则会出现“激光看起来打到冰盾了，但伤害层没检测到”的错位。
             LayerMask pollutionBallLayer = 1 << LayerMask.NameToLayer("BossPollutionBall");
-            combinedDetectionLayer = enemyLayer | bouncingEnemyLayer | pollutionBallLayer;
+            LayerMask enemyEyesLayerMask = 1 << LayerMask.NameToLayer("EnemyEyes");
+            LayerMask iceShieldLayerMask = 1 << LayerMask.NameToLayer("IceShield");
+            combinedDetectionLayer = enemyLayer | bouncingEnemyLayer | pollutionBallLayer | enemyEyesLayerMask | iceShieldLayerMask;
             
             // 缓存 Layer 索引
             enemyLayerIndex = LayerMask.NameToLayer("Enemy");

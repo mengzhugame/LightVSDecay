@@ -197,6 +197,7 @@ namespace LightVsDecay.Logic.Boss
         // BingCi 原始局部坐标（用于拔出计算与再生复位）
         private Vector3[] bingCiOriginalLocalPositions;
         private Quaternion[] bingCiOriginalLocalRotations;
+        private Coroutine[] bingCiRotateCoroutines;
 
         // 绝对零度冰刺结算（跨协程共享状态）
         private int bingCiResolvedCount;
@@ -247,6 +248,7 @@ namespace LightVsDecay.Logic.Boss
             {
                 bingCiOriginalLocalPositions = new Vector3[bingCiTransforms.Length];
                 bingCiOriginalLocalRotations = new Quaternion[bingCiTransforms.Length];
+                bingCiRotateCoroutines = new Coroutine[bingCiTransforms.Length];
                 for (int i = 0; i < bingCiTransforms.Length; i++)
                 {
                     if (bingCiTransforms[i] != null)
@@ -578,6 +580,7 @@ namespace LightVsDecay.Logic.Boss
             absoluteZeroActive = true;
             if (showDebugInfo) GameLogger.Log("[GlacialBoss] 绝对零度启动！");
 
+            CancelBingCiRotationCoroutines();
             InterruptCharge();
             ChangeState(BossState.Stun);
             if (stateCoroutine != null) StopCoroutine(stateCoroutine);
@@ -769,6 +772,8 @@ namespace LightVsDecay.Logic.Boss
             if (bingCiTransforms == null) yield break;
 
             int n = bingCiTransforms.Length;
+            CancelBingCiRotationCoroutines();
+
             // 并发启动，各自延迟 i * stagger；每枚冰刺从自身世界坐标计算方向
             for (int i = 0; i < n; i++)
             {
@@ -780,7 +785,7 @@ namespace LightVsDecay.Logic.Boss
                 // 刺尖方向对准 perSpikeDir：localRotation 0 时刺尖朝上，所以用 Atan2 - 90° 修正
                 float angle = Mathf.Atan2(perSpikeDir.y, perSpikeDir.x) * Mathf.Rad2Deg - 90f;
                 Quaternion targetRot = Quaternion.Euler(0f, 0f, angle);
-                StartCoroutine(RotateSingleBingCi(i, targetRot, i * bingCiRotateStagger));
+                bingCiRotateCoroutines[i] = StartCoroutine(RotateSingleBingCi(i, targetRot, i * bingCiRotateStagger));
             }
 
             // 等待最后一枚完成
@@ -803,6 +808,16 @@ namespace LightVsDecay.Logic.Boss
                 bingCiTransforms[index].localRotation = Quaternion.Slerp(startRot, targetRot, t);
                 yield return null;
             }
+
+            if (bingCiTransforms != null && index < bingCiTransforms.Length && bingCiTransforms[index] != null)
+            {
+                bingCiTransforms[index].localRotation = targetRot;
+            }
+
+            if (bingCiRotateCoroutines != null && index < bingCiRotateCoroutines.Length)
+            {
+                bingCiRotateCoroutines[index] = null;
+            }
         }
 
         /// <summary>再生：复位 BingCi 位置/旋转，alpha 0→1（0.5s）</summary>
@@ -810,6 +825,7 @@ namespace LightVsDecay.Logic.Boss
         {
             if (bingCiTransforms == null || bingCiOriginalLocalPositions == null) yield break;
 
+            CancelBingCiRotationCoroutines();
             int n = bingCiTransforms.Length;
 
             // 复位变换
@@ -837,6 +853,29 @@ namespace LightVsDecay.Logic.Boss
                     }
                 }
                 yield return null;
+            }
+
+            if (bingCiRenderers != null)
+            {
+                for (int i = 0; i < bingCiRenderers.Length; i++)
+                {
+                    if (bingCiRenderers[i] == null) continue;
+                    Color c = bingCiRenderers[i].color;
+                    c.a = 1f;
+                    bingCiRenderers[i].color = c;
+                }
+            }
+        }
+
+        private void CancelBingCiRotationCoroutines()
+        {
+            if (bingCiRotateCoroutines == null) return;
+
+            for (int i = 0; i < bingCiRotateCoroutines.Length; i++)
+            {
+                if (bingCiRotateCoroutines[i] == null) continue;
+                StopCoroutine(bingCiRotateCoroutines[i]);
+                bingCiRotateCoroutines[i] = null;
             }
         }
 
@@ -920,12 +959,14 @@ namespace LightVsDecay.Logic.Boss
 
         protected override void ExitState(BossState state)
         {
+            CancelBingCiRotationCoroutines();
             DisableFreezeRayVisuals();
             base.ExitState(state);
         }
 
         private void OnDisable()
         {
+            CancelBingCiRotationCoroutines();
             DisableFreezeRayVisuals();
         }
 
