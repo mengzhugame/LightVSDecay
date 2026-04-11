@@ -1,0 +1,610 @@
+刚测试对战一局，极寒BOSS召唤的冰墙如果在屏幕上方，然后孵化的小怪如果很多的情况，会压着极寒BOSS往下，导致会贴着玩家的光棱塔，然后又不会对光棱塔造成任何伤害，看着会很怪异。给我推荐几种方案，例如小怪可以直接穿过BOSS？又例如BOSS的召唤的冰墙可以在屏幕中下部生成？或者有其它更好的方案吗？然后给我推荐一下。先确定方案，等我确认后，再开始修改代码。
+
+
+这个问题本质上不是“Boss 不会打塔”，而是 **第三章场上单位挤压把 Boss 当成了可推动的大体积目标**。结果就是：
+
+- 冰墙在上方持续孵化
+- 小怪大量向下寻路
+- 物理/位移挤压把极寒 Boss 一路顶到塔脸上
+- 但 Boss 当前近身状态又没有贴塔伤害逻辑
+- 于是出现“Boss 贴着塔发呆”的怪异表现
+
+我建议优先从下面 4 个方案里选，按稳妥程度排序。
+
+**方案 A：Boss 不再被小怪挤压推动**
+这是我最推荐的，也是最稳的。
+
+做法：
+- 小怪仍然正常移动
+- 但 Boss 和普通敌人之间不再发生实体挤压推进
+- 可以是完全无碰撞，或者“有检测无位移推挤”
+
+效果：
+- Boss 会保持自己的战斗站位
+- 不会被孵化怪群一路顶到塔脸上
+- 不会改第三章冰墙的玩法核心
+
+优点：
+- 改动集中
+- 风险最小
+- 不会影响你现在已经做好的 Boss 技能节奏
+
+风险：
+- 如果处理不好，视觉上可能出现“小怪穿过 Boss”的轻微穿模感
+
+适合方式：
+- 我建议做成“普通小怪对 Boss 不产生推挤”，但不一定要完全穿模，可以只关掉物理解算上的相互推动
+
+**方案 B：冰墙只允许在屏幕中上部生成，不允许靠近 Boss 下压路径**
+这是第二推荐。
+
+做法：
+- 限制极寒 Boss 召唤的冰墙生成区域
+- 不再允许冰墙出现在太靠中下部、或正对 Boss 下压路线的位置
+- 更进一步，可以让冰墙生成点避开 Boss 当前 X/Y 邻域
+
+效果：
+- 孵化小怪还是有
+- 但怪潮不容易直接从 Boss 正后方持续堆压
+
+优点：
+- 保留冰墙和孵化机制
+- 玩家更容易读场面
+- 视觉上合理
+
+风险：
+- 只能缓解，不能彻底杜绝“怪群推 Boss”
+- 如果上方空间仍然密集，后期还是可能发生
+
+**方案 C：Boss 增加“最小安全距离”，靠近塔时自动回弹/悬停**
+这是偏保底机制的方案。
+
+做法：
+- 给极寒 Boss 增加一个与光棱塔的最小距离
+- 一旦被挤到这个距离内：
+  - 自动回弹到安全位
+  - 或直接锁定在安全半径外
+  - 或短暂无视外部位移推挤
+
+效果：
+- 即使怪群把 Boss 往下推，Boss 也不会贴到塔脸上
+
+优点：
+- 能兜底所有异常场面
+- 对玩家观感改善明显
+
+风险：
+- 如果只做这个，不处理挤压根因，会出现“Boss 被推到边界后弹一下”的机械感
+
+所以我更建议把它作为 A 的补充，而不是单独使用。
+
+**方案 D：Boss 贴塔后直接造成接触伤害**
+这个我不推荐作为首选。
+
+做法：
+- Boss 被挤到塔附近时，直接视作近身攻击或持续接触伤害
+
+问题：
+- 这是在把 bug 表现合理化，不是在解决 bug
+- 玩家会觉得莫名其妙被 Boss 贴脸蹭死
+- 也会让第三章难度失控
+
+所以这条最多只能当兜底，不适合做主方案。
+
+**我最推荐的定稿组合**
+如果要我给一个最稳、最好实现、体验也最自然的组合，我建议：
+
+1. **主方案用 A**
+Boss 不再被普通小怪产生推挤位移
+
+2. **补一个 C**
+给 Boss 加最小安全距离，防止极端情况下仍贴塔
+
+3. **如果你还想进一步优化场面**
+再叠一个 B，把冰墙生成区域限制在中上部安全区
+
+这样效果最好：
+- 根因解决了
+- 极端情况也有兜底
+- 不需要重做第三章冰墙机制
+- 不会引入“Boss 贴塔却不打人”的怪场面
+
+**我不建议单独用“小怪直接穿过 Boss”这句表述落地**
+这个方向本身没错，但如果直接做成完全穿模，会比较突兀。  
+更好的实现语义应该是：
+
+- `Boss 不参与小怪的实体推挤`
+而不是
+- `小怪明显穿过 Boss`
+
+也就是说，底层是去掉推挤，不一定非要把视觉做成彻底重叠穿过去。
+
+**我的建议结论**
+推荐你选这个：
+
+- `方案 A + 方案 C`
+如果你想再顺一点，再加：
+- `方案 B`
+
+也就是：
+- 小怪不再把 Boss 往下顶
+- Boss 靠近光棱塔时有安全距离限制
+- 冰墙生成区域尽量避开中下部和 Boss 正下压路径
+
+如果你确认，我下一步就按这个组合开始改。
+
+------------------------------------------------------------------------------------------------------------------------
+
+关于你提到的组合方案，我有几个疑问，如果去掉小怪的推挤，没有重叠穿过去，那就会发生小怪会堆积到极寒BOSS的头顶？如果没有BOSS的推挤，应该也不会制作BOSS靠近光棱塔的安全距离限制，因为如果没有小怪的推挤，那BOSS还去靠近光棱塔，应该是技能或者BOSS机制会让BOSS贴近，所以不不要添加安全距离限制。对于冰墙生成区域尽量避开中下部和BOSS下压路径，这个建议也不好，有时候BOSS生成的冰墙会随机到玩家塔面前，给玩家增加难度，所以还是不显示冰墙产生的位置。综上所述，感觉只有去掉小怪推挤BOSS，并且小怪可以穿过BOSS，好像才能解决推挤BOSS这个问题。你觉得如何？还是有更好的方案建议？
+
+你的判断是对的，这里确实要把问题想完整一点。
+
+如果只是“去掉小怪对 Boss 的推挤”，但又不允许小怪穿过 Boss，那结果大概率就是你说的另一种怪现象：
+- 小怪会堆在 Boss 头顶或身后
+- 路径被 Boss 卡住
+- 场面会变成一大坨怪堵在 Boss 附近
+
+这样虽然不再把 Boss 顶下去，但视觉和手感也不会好。
+
+所以按你现在的目标，我同意把方案收敛成这句更准确的话：
+
+**普通小怪对极寒 Boss 不产生阻挡，也不产生推挤，允许穿过 Boss。**
+
+我觉得这是目前最干净的方案，而且比我刚才提的 `A + C` 更适合你这个场景。原因是：
+
+1. 它直接解决根因  
+不是缓解，不是绕开，而是直接消除“小怪群把 Boss 当实体去顶”的问题。
+
+2. 不会引入“怪堆在 Boss 头顶”的新问题  
+因为既然允许穿过，就不会堵住。
+
+3. 不需要额外加 Boss 安全距离  
+这一点我认同你。  
+如果 Boss 之后还会靠近光棱塔，那就应该是技能逻辑或状态机的问题，不应该靠一个“空气墙式安全距离”去兜底。
+
+4. 不影响冰墙的随机压迫感  
+你也说得对，冰墙有时候刷到塔前本来就是第三章压力来源之一，这个不该为了修 Boss 挤压问题被削掉。
+
+**我对落地方式的建议**
+不过我建议实现上不要写成“所有东西都能穿过 Boss”，而是更精确一点：
+
+- `普通敌人 / 冰墙孵化怪` 可以穿过极寒 Boss
+- `玩家激光 / Boss 技能 / 玩家塔` 这些交互不受影响
+- Boss 仍然保留自己的碰撞和受击逻辑，只是对友方小怪不参与实体阻挡与推挤
+
+也就是说，本质上是：
+- 关闭 `Boss <-> 友方敌人` 的实体碰撞/分离
+- 保留 `Boss <-> 玩家系统` 的正常交互
+
+这样最稳。
+
+**我现在的推荐**
+我建议就定这个单一方案，不再叠别的：
+
+1. 极寒 Boss 与友方普通小怪之间不再发生碰撞阻挡
+2. 小怪可直接穿过 Boss
+3. 不改冰墙生成区域
+4. 不加 Boss 安全距离限制
+
+这是我现在最推荐的版本。  
+如果你确认，我下一步就按这个方向去查项目里敌我/同阵营碰撞和移动分离的实现点，然后直接改代码。
+------------------------------------------------------------------------------------------------------------------------
+
+确认这个方案。开始做代码修改。
+
+已经按你确认的方案改好了：现在极寒 Boss 和友方普通小怪之间不再产生实体推挤，而且后续新刷出来的小怪也会直接穿过 Boss，不会再把 Boss 一路顶到光棱塔脸上。
+
+核心改动在 [GlacialBossController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Boss/GlacialBossController.cs#L32) 和 [EnemyPoolManager.cs](D:/Project/LightVSDecay/Assets/Scripts/Core/Pool/EnemyPoolManager.cs#L270)。我做的是这套：
+- 极寒 Boss 激活时，缓存自己的全部碰撞体，并立刻给场上已有的非静止敌人关闭与 Boss 的碰撞
+- 后续任何新生成的敌人，包括冰墙孵化的小怪，都会在生成入口自动套上同样的“可穿过 Boss”设置
+- 冰墙本体这种静止障碍我没改，避免把地形表现一起带偏
+
+这样场面会变成：
+- 小怪仍然会正常往下压塔
+- 但不会再把 Boss 当成实体去顶
+- 也不会卡在 Boss 头顶堆成一团
+- Boss 的贴塔行为如果以后还出现，就会是技能/状态逻辑本身的问题，不再是怪群挤压造成的假象
+
+`dotnet build Assembly-CSharp.csproj` 已通过，`0 error`。  
+你现在可以重点复测第三章这两个场景：
+- 屏幕上方冰墙连续孵化大量小怪时，Boss 是否还能稳定保持自己的站位
+- 小怪穿过 Boss 时，是否只影响 Boss 这条友方碰撞，不影响玩家激光、Boss 技能和塔的交互
+------------------------------------------------------------------------------------------------------------------------
+
+关于极寒BOSS的冰封射线技能问题，为什么玩家的激光碰到BOSS的激光，boss激光就自动会缩回去？为什么没有和玩家激光产生时间较长的角力？而且我也只点了一次击退模块技能（击退值x1.5）。所以玩家的击退值应该也不高。这是什么原因？是因为BOSS的角力值不高吗？还是哪个数值参数不正确导致的吗？应该如何修改这个问题？先分析原因，制定出修改方案，然后等我确认后，再开始修改。
+
+原因已经比较明确了，而且不是你感觉错了，当前这套角力公式确实会让玩家激光一碰到 Boss 激光，就天然占上风，所以 Boss 激光会很快缩回去。
+
+**现在为什么会“自动缩回去”**
+关键在 [GlacialBossController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Boss/GlacialBossController.cs#L497) 和 [LaserController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/LaserController.cs#L850)。
+
+现在玩家传给 Boss 的角力压力是：
+
+```csharp
+clashPressure = damage + CurrentKnockbackForce * 1.25f
+```
+
+然后 Boss 把它换算成玩家推进速度：
+
+```csharp
+playerPushSpeed = clashPressure * freezeRayPlayerPressureScale * freezeRayClashPushSpeed
+```
+
+你现在的默认数值大概是：
+
+- `damage` 约等于 `10` 每 tick
+- 你点了 1 次击退后，`CurrentKnockbackForce` 大概是 `15`
+- 所以 `clashPressure ≈ 10 + 15 * 1.25 = 28.75`
+
+再代入当前 Boss 参数：
+
+- `freezeRayPlayerPressureScale = 0.03`
+- `freezeRayClashPushSpeed = 7.5`
+- 所以 `playerPushSpeed ≈ 28.75 * 0.03 * 7.5 = 6.47`
+
+而 Boss 自己的推进速度现在只有：
+
+- `freezeRayBossAdvanceSpeed = 4.5`
+
+也就是说，**玩家只要一接触，推进速度就是 6.47，Boss 只有 4.5，净结果就是接触点每秒向 Boss 方向退约 1.97 单位**。  
+所以你看到的不是“角力”，而是“玩家一碰上去 Boss 就开始后退”。
+
+而且更关键的是：**就算你不点那 1 次击退，也依然偏强。**
+
+因为不点时：
+
+- `damage = 10`
+- `knockback = 10`
+- `clashPressure = 10 + 10 * 1.25 = 22.5`
+- `playerPushSpeed = 22.5 * 0.03 * 7.5 = 5.06`
+
+这依然大于 Boss 的 `4.5`。  
+所以当前不是“你这局点高了”，而是**基础公式本身就让玩家天然压过 Boss**。
+
+**还有一个隐藏问题**
+现在的 `freezeRayClashMeter` 基本已经不是真正的角力驱动值了。
+
+在 [GlacialBossController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Boss/GlacialBossController.cs#L486) 附近，代码先累加了 `freezeRayClashMeter`，但后面又立刻用：
+
+```csharp
+freezeRayClashMeter = clashRatio * freezeRayClashBreakThreshold;
+```
+
+把它重写掉了。
+
+这意味着：
+- 现在真正驱动前后推进的是 `clashDistance`
+- `freezeRayClashMeter` 更像显示/状态量
+- `freezeRayClashBreakThreshold` 也几乎不再是一个独立可调的真实“打断阈值”
+
+所以如果只调“角力值阈值”，效果不会解决根因。
+
+**我建议的修改方向**
+我建议这次不要只调一个数，而是一起做 3 个修正。这样才能真正得到“先相持，再分胜负”。
+
+**方案 1：降低玩家压力换算**
+这是必须改的。
+
+把现在的：
+
+- `damage + knockback * 1.25`
+
+改成更保守的形式，例如：
+
+- `damage * 0.25 + knockback * 0.35`
+
+或者至少：
+- 大幅降低 `freezeRayPlayerPressureScale`
+
+原因：
+- 现在伤害和击退都直接线性吃满，量太大
+- 击退模块应该有用，但不该“一点就压过 Boss”
+
+**方案 2：提高 Boss 基础推进，形成前期压制**
+也建议改。
+
+现在 Boss 推进只有 `4.5`，太容易被玩家基础压力反超。  
+建议改成：
+- 前 0.4~0.6 秒 Boss 有明显推进优势
+- 玩家持续照住后，才逐渐扳平
+
+也就是说 Boss 需要有一个更高的基础推进，或者有一个短暂“开场压制期”。
+
+这样体验会更像：
+- Boss 先把射线顶出来
+- 玩家转过去接住
+- 然后才开始相持
+
+**方案 3：给玩家角力加“持续累积”而不是“碰到就满功率”**
+这是最关键的手感修正。
+
+现在玩家一接触就按满压力推。  
+建议改成：
+- 玩家角力压力从 0 开始爬升
+- 持续照射 0.4~0.8 秒后才到满值
+- 中断照射则快速衰减
+
+这样效果会变成：
+- 刚碰上时不会瞬间把 Boss 顶回去
+- 会先进入一段真正的相持
+- 持续稳定输出和击退 build 才能逐渐把 Boss 推回去
+
+这会比单纯调小数值更自然。
+
+**我的推荐定稿**
+如果要我给一个最稳的修改方案，我建议这样：
+
+1. 玩家角力压力不再直接用 `damage + knockback * 1.25`
+2. 改成更低权重的组合，且击退权重大于伤害，但两者都降很多
+3. 玩家角力压力增加“爬升时间”，不是瞬间满值
+4. Boss 基础推进略提高，保证开场先压住一小段
+5. 保留你现在的共享接触点逻辑，不推翻现有结构
+
+这样修改后，预期会变成：
+- 玩家刚碰到 Boss 激光时，不会立刻把它顶回去
+- 双方会有一段更长的对波相持
+- 击退 build 高时，后半段才更容易压回 Boss
+- 低击退时，Boss 更容易继续推进到护盾/塔
+
+**我建议这次不要走的方向**
+不建议只改一个参数，比如只改：
+- `freezeRayBossAdvanceSpeed`
+或只改
+- `freezeRayPlayerPressureScale`
+
+因为现在问题是“公式结构 + 数值”双重失衡。  
+只改单个数，容易变成：
+- 要么还是秒退
+- 要么直接又完全推不动
+
+如果你确认，我下一步就按这个思路改：
+- 加玩家角力压力爬升
+- 降低压力换算
+- 提高 Boss 开场推进优势
+- 保留现有共享 clash 点逻辑不动
+
+------------------------------------------------------------------------------------------------------------------------
+
+确认，开始修改相关代码和参数，如果需要我在unity中的操作，需要告诉我。
+
+已经改好了，这次的目标就是把“碰一下就自动顶回去”修成“先相持，再分胜负”。
+
+核心改动在 [GlacialBossController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Boss/GlacialBossController.cs) 和 [LaserController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/LaserController.cs)。我做了 3 件事：
+
+- 把玩家角力压力从原来过强的 `damage + knockback * 1.25`，改成了更保守的权重换算
+- 给玩家角力加了“缓升”和“脱离后快速衰减”，不再是一接触就满功率输出
+- 给 Boss 冰封射线加了开场压制窗口，前半段会更容易把接触点往玩家侧推进，不会刚碰上就立刻缩回去
+
+现在预期效果会更接近你要的：
+- 刚接触时会先有一段较明显的对波相持
+- 持续照射后，玩家才逐渐把接触点往 Boss 侧压回去
+- 只点 1 次击退时，不应该再出现“轻轻一碰 Boss 激光就自己缩回”的情况
+
+`dotnet build Assembly-CSharp.csproj` 已通过，`0 error`。  
+这次不需要你在 Unity 里额外挂组件或手动操作。你现在可以重点复测 2 点：
+
+- 只点 1 次击退时，Boss 激光是否会先和玩家形成较长时间角力，而不是立刻缩回
+- 高击退 build 下，玩家是否仍然能在后半段逐步压回 Boss 激光
+
+如果你测下来觉得“现在相持有了，但 Boss 还是偏强/偏弱”，我下一步可以继续帮你微调这 4 个值：
+- Boss 开场压制时长
+- Boss 开场压制倍率
+- 玩家压力缓升时长
+- 玩家伤害/击退权重
+------------------------------------------------------------------------------------------------------------------------
+
+我刚才又打了一局对战，发现BOSS的冰封射线技能还是偏弱，修改那些参数可以让BOSS的压制增大一些？
+
+可以，当前这套里最直接影响“Boss 压制感”的就是这 4 个参数，位置都在 [GlacialBossController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Boss/GlacialBossController.cs)。
+
+**优先调这 3 个**
+1. `freezeRayBossAdvanceSpeed`
+作用：Boss 持续把接触点往玩家侧推进的基础速度  
+现在如果觉得整体偏弱，这是最优先加的。  
+建议先从 `4.5` 提到 `5.2 ~ 5.8`
+
+2. `freezeRayOpeningAdvantageMultiplier`
+作用：冰封射线开场压制期的强度  
+它会决定“刚对波时 Boss 有没有明显先手压迫”。  
+建议从 `1.45` 提到 `1.65 ~ 1.9`
+
+3. `freezeRayOpeningAdvantageDuration`
+作用：Boss 开场强势期持续多久  
+如果你想让玩家更晚一点才能扳回来，就加这个。  
+建议从 `0.55` 提到 `0.75 ~ 1.0`
+
+**第二层再调这 2 个**
+4. `freezeRayPlayerPressureScale`
+作用：玩家角力压力换算成推进速度的总系数  
+如果这个太高，玩家还是容易推回 Boss。  
+想增强 Boss，就略微下调。  
+建议从 `0.03` 降到 `0.024 ~ 0.028`
+
+5. `freezeRayKnockbackPressureWeight`
+作用：玩家击退属性对角力的贡献  
+如果你希望“点了击退也有用，但别太夸张”，可以调低一点。  
+建议从 `0.35` 降到 `0.25 ~ 0.3`
+
+**我推荐你先用这组**
+如果你想先来一版“明显增强，但不至于失控”的数值，我推荐：
+
+- `freezeRayBossAdvanceSpeed = 5.5`
+- `freezeRayOpeningAdvantageMultiplier = 1.75`
+- `freezeRayOpeningAdvantageDuration = 0.85`
+- `freezeRayPlayerPressureScale = 0.026`
+- `freezeRayKnockbackPressureWeight = 0.3`
+
+这组会带来：
+- Boss 开场明显更能把接触点往下压
+- 玩家不会一接触就顶回去
+- 持续稳定输出后，玩家仍然有机会反压
+
+**如果你只想改最少**
+那就只先改这两个：
+- `freezeRayBossAdvanceSpeed`
+- `freezeRayOpeningAdvantageMultiplier`
+
+这是最小改动、最容易看到效果的一组。
+
+如果你确认，我可以直接帮你把上面这组推荐值写进代码。
+------------------------------------------------------------------------------------------------------------------------
+
+关于极寒炮手和霜冻施法者偶尔会出现压扁（感觉是Y轴有不正常的缩放）的问题，然后被攻击一次后，身体又还原了。查找是什么原因导致的问题，等我确认后，再进行修复。
+
+原因找到了，而且这次链路很清楚。
+
+问题不是预制体本身缩放错了，而是 **极寒炮手和霜冻施法者的攻击动画会直接改 `transform.localScale` 做“压缩/回弹”演出；一旦协程中途被打断，就可能卡在非等比缩放状态**，所以你会看到像是 Y 轴被压扁。之后被玩家打一下，[EnemyBlob.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/EnemyBlob.cs#L972) 又会用统一等比缩放重置体型，于是身体看起来又恢复正常了。
+
+核心证据有 3 处：
+
+1. 这两个怪的攻击动画都在直接改本体缩放  
+- [FrostcasterAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/FrostcasterAI.cs#L290) 到 [FrostcasterAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/FrostcasterAI.cs#L305)  
+- [LavaGunnerAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/LavaGunnerAI.cs#L287) 到 [LavaGunnerAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/LavaGunnerAI.cs#L304)
+
+它们都会先压扁：
+- `COMPRESS_Y = 0.60f`
+再回弹：
+- `BOUNCE_Y = 1.28f / 1.30f`
+最后才恢复到 `baseScale`
+
+2. 这两个 AI 都有“中途直接 `StopAllCoroutines()`”的逻辑  
+- [FrostcasterAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/FrostcasterAI.cs#L98)  
+- [FrostcasterAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/FrostcasterAI.cs#L546)  
+- [LavaGunnerAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/LavaGunnerAI.cs#L125)  
+- [LavaGunnerAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/LavaGunnerAI.cs#L421)
+
+尤其是 `RecoverIfOutsideScreen()` 里，一旦判定“暂时出屏/越界恢复”，就会：
+- `StopAllCoroutines()`
+- 改位置
+- 重置状态和发光
+- **但不会把 `transform.localScale` 复位**
+
+这样如果它恰好在压缩动画中被打断，就会把“压扁状态”带到后续正常战斗里。
+
+3. 被打一发后会恢复，是因为受击逻辑会强制重设等比缩放  
+在 [EnemyBlob.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/EnemyBlob.cs#L972)：
+- `transform.localScale = originalScale * newScale;`
+
+这一步是按血量比例统一缩放 X/Y，所以会把之前卡住的“非等比压扁”冲掉。  
+这和你看到的现象完全一致：
+- 平时偶发压扁
+- 挨打一发后恢复正常
+
+**所以我的结论是**
+根因是：
+- `FrostcasterAI` 和 `LavaGunnerAI` 的施法/开火缩放动画
+- 遇到 `StopAllCoroutines()` 中断时没有复位本体缩放
+- 后续继续运行时就带着错误缩放战斗
+
+而且 `FrostGunner` 本质上走的是 [LavaGunnerAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/LavaGunnerAI.cs) 这套逻辑，所以你看到“极寒炮手和霜冻施法者都偶发压扁”是合理的，它们正好共享同类问题。
+
+如果你确认，我下一步会直接这样修：
+1. 给 `FrostcasterAI` 和 `LavaGunnerAI` 增加“缩放基准缓存”
+2. 在所有 `StopAllCoroutines()` 前后统一恢复 `transform.localScale`
+3. 在 `RecoverIfOutsideScreen()`、`OnBlobDeactivated()`、重新进入 `Charging` 前都补一次缩放复位
+
+这样能把这类“协程中断残留缩放”一次性收干净。
+------------------------------------------------------------------------------------------------------------------------
+
+确认，可以进行修复
+
+已经修掉了。根因确实就是这两个怪的施法/开火动画在中途被 `StopAllCoroutines()` 打断后，残留了一个非等比的 `localScale`，于是看起来像被压扁；之后一受击，[EnemyBlob.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/EnemyBlob.cs#L239) 新增的 `RestoreCurrentUniformScale()` 和原本受击缩放逻辑会把它拉回正常比例，所以才会出现“挨打一发又恢复”的现象。
+
+这次我在 3 处补了统一复位：
+- [EnemyBlob.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/EnemyBlob.cs#L239) 增加 `RestoreCurrentUniformScale()`
+- [FrostcasterAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/FrostcasterAI.cs) 在 `OnBlobSpawned()`、`OnBlobDeactivated()`、`RecoverIfOutsideScreen()` 里，中断协程后立刻恢复当前应有体型
+- [LavaGunnerAI.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/LavaGunnerAI.cs) 同样补了这 3 个时机，所以极寒炮手也一起修到了
+
+现在不需要你在 Unity 里手动做额外操作。`dotnet build Assembly-CSharp.csproj` 已通过，`0 error`。  
+你可以重点复测两类场景：
+- 极寒炮手/霜冻施法者施法或开火途中，被越界恢复、切状态、对象池回收再刷出时，是否还会偶发压扁
+- 不受击的情况下，它们是否也能自己保持正常体型，不再靠“被打一发”才恢复
+
+------------------------------------------------------------------------------------------------------------------------
+
+关于光与朽游戏的性能问题，扫描光与朽工程的全部代码，分析并查找那些代码可能导致战斗卡顿的问题？或者渲染导致手机性能卡顿的问题？如果需要我给出unity profiler性能分析器的数据，告诉我如何操作，我如何给你提供相应的数据进行分析。或者哪里需要打日志进行查询等等。先分析查找定位相关性能存在的问题，并制定出相应的修改方案，等我确认后，再开始做代码修改。
+
+我先把工程代码层面可能导致“战斗卡顿 / 手机渲染卡顿”的高风险点扫了一遍。结论先说：这不是单一问题，当前更像是“战斗期 CPU 热点 + 移动端渲染配置偏重 + UI/特效对象数量堆积”叠加导致的卡顿。按风险优先级看，最值得先处理的是激光系统、连锁闪电、敌人材质实例化、AOE 物理查询、飘字/经验球、日志开销，以及移动端 URP/后处理配置。
+
+**高风险问题**
+1. 激光系统很可能是战斗卡顿的头号嫌疑。  
+[LaserController.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/LaserController.cs:344) 在伤害检测时会强制主激光和子激光重新计算路径，而 [LaserBeam.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/LaserBeam.cs:159) 自己在 `LateUpdate` 里也会算一次路径。也就是说，同一帧/同一 tick 里可能重复做路径计算、射线检测、命中判定。再叠加 `OverlapBoxNonAlloc` 和大量 `GetComponent/GetComponentInParent`，敌人一多就很容易出现主线程抖动。
+
+2. 连锁闪电系统有明显的持续 CPU 开销。  
+[ChainLightningManager.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/ChainLightningManager.cs:140) 每帧更新所有链路组，还会周期性扩链、刷新渲染器、做附近目标搜索。这里面也有物理查询和组件查找，链条一多时会放大开销。战斗中如果激光和连锁闪电同时存在，卡顿风险会明显上升。
+
+3. 敌人材质实例化会拖慢移动端，且破坏批处理。  
+[EnemyBlob.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/EnemyBlob.cs:268) 里直接访问了 `sr.material`，这会给每个敌人拷贝材质实例。后续受击闪白、抖动又频繁改 shader 参数。敌人多的时候，这对 CPU、内存、渲染批次都不友好，手机上尤其容易掉帧。
+
+4. AOE 爆炸/催化技能用了分配型物理查询。  
+[EnemyBlob.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/EnemyBlob.cs:1618) 和 [EnemyBlob.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/EnemyBlob.cs:1792) 使用了 `Physics2D.OverlapCircleAll`。这类 API 会分配数组，战斗里高频触发时容易制造 GC spike，表现就是“偶发一顿”。
+
+5. 飘字和经验球都属于“对象数量一上来就容易卡”的系统。  
+[FloatingText.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/FloatingText/FloatingText.cs:88) 每个飘字都自己 `Update`， [XPOrb.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/XP/XPOrb.cs:97) 每个经验球也自己 `Update`。如果后期波次怪多、掉落多、伤害频繁，几十上百个对象一起更新，CPU 和 Canvas/UI 刷新都会吃不消。
+
+6. 日志开关现在是常开的，正式战斗中不应该这样。  
+[GameLogger.cs](/D:/Project/LightVSDecay/Assets/Scripts/Core/GameLogger.cs:17) 里 `ENABLE_LOG = true`。项目里不少系统日志很多，真机上会额外放大 CPU 和 IO 压力，尤其是 Development Build 或连接调试时更明显。
+
+**中高风险渲染问题**
+1. 当前移动端渲染配置偏重。  
+[UniversalRP.asset](/D:/Project/LightVSDecay/Assets/Settings/UniversalRP.asset:1) 里看到启用了 HDR、阴影、Additional Lights。  
+[QualitySettings.asset](/D:/Project/LightVSDecay/ProjectSettings/QualitySettings.asset:1) 看起来安卓/iPhone 默认质量档不是特别轻。对 2D 手游来说，这套配置在中低端手机上可能已经偏重了。
+
+2. `Metaballs` 方案额外引入了相机和 RenderTexture。  
+[MetaballsManager.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/MetaballsManager.cs:1) 会单独渲染到 RT，再做材质阈值处理。这个效果视觉上不错，但在怪物多、屏幕占比大时，手机 GPU 压力会明显增加。
+
+3. 低血量屏幕特效是“后处理 + 全屏 UI”双叠加。  
+[ScreenEffectController.cs](/D:/Project/LightVSDecay/Assets/Scripts/VFX/PostProcess/ScreenEffectController.cs:1) 同时驱动 Vignette 和全屏 Image 脉冲。它未必是主因，但在低端机上会加重 overdraw 和后处理成本。
+
+**建议的修改方案**
+1. 第一阶段，先做 CPU 热点治理。  
+激光系统合并路径计算，避免 `LateUpdate` 和伤害检测重复算；命中对象改成缓存型组件访问；AOE 查询改成 `NonAlloc`；关闭非编辑器/非开发环境日志。这一阶段最有机会直接消掉战斗卡顿。
+
+2. 第二阶段，处理“数量型对象”系统。  
+连锁闪电降低刷新频率或改为集中更新；飘字做合并/限流；经验球做聚合或减少每帧独立更新对象数；敌人数量统计不要再通过全场扫描去算。
+
+3. 第三阶段，处理移动端渲染。  
+把敌人材质改成 `MaterialPropertyBlock`；拆出移动端专用 URP/Quality 档，关闭 HDR、阴影、额外灯光；低端机可关闭或降级 `Metaballs`、低血量后处理、部分全屏特效。
+
+4. 第四阶段，做设备分级。  
+增加“低配机模式”开关，按机型或帧率动态降级渲染特性、特效密度、飘字数量、经验球数量、链条数量。
+
+**你现在最值得给我的数据**
+如果你愿意，我建议先给我一份真机 Profiler 数据，这样我可以把“怀疑点”进一步收敛成“明确瓶颈”。
+
+采集方式：
+1. 用 `Development Build` 勾上 `Autoconnect Profiler`，`Deep Profile` 不要开。
+2. 真机进入最容易卡的战斗场景，录 20 到 30 秒。
+3. 重点录 3 段：
+   - 普通波次前期
+   - 后期怪物很多的时候
+   - Boss/激光/连锁闪电明显出现的时候
+4. 在 Profiler 里至少打开这些模块：
+   - `CPU Usage`
+   - `Rendering`
+   - `GPU Usage`（如果设备支持）
+   - `Memory`
+   - `Physics 2D`
+   - `UI Details`
+5. 把以下任意一种给我：
+   - Profiler 导出的 `.data` 文件
+   - 最卡那一帧的 `CPU Timeline` 和 `Hierarchy` 截图
+   - `Rendering` / `GPU` / `Memory` 的截图
+
+**如果你暂时不方便跑 Profiler**
+我也可以先指导你打一版“轻量性能日志”，每秒采样一次即可，不要逐事件打印。建议采样这些值：
+- 当前敌人数
+- 当前阻挡怪数量
+- 当前激光段数 / 每 tick 命中数
+- 当前连锁闪电组数 / 线段数
+- 当前飘字数量
+- 当前经验球数量
+- 当前活动 VFX 数量
+- 平均帧时长与最大帧时长
+
+你确认后，我下一步可以做两件事之一：
+1. 先根据上面的方案，给你出一份更细的“分阶段改造清单”。  
+2. 你把 Profiler 数据或截图发我，我直接帮你对照代码定位最优先修改点。
+------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------

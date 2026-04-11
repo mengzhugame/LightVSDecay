@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
 
 namespace LightVsDecay.Core.Pool
@@ -266,6 +267,8 @@ namespace LightVsDecay.Core.Pool
 
             if (enemy != null)
             {
+                GlacialBossController.ActiveInstance?.ConfigureFriendlyEnemyPassThrough(enemy);
+
                 // Stationary 障碍物不计入战斗敌人数
                 if (enemy.Data == null || !enemy.Data.IsStationary)
                     totalActiveEnemies++;

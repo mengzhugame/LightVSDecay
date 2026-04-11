@@ -29,6 +29,8 @@ namespace LightVsDecay.Logic.Boss
     /// </summary>
     public class GlacialBossController : BaseBossController
     {
+        public static GlacialBossController ActiveInstance { get; private set; }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置（Ch3 专属）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -77,6 +79,24 @@ namespace LightVsDecay.Logic.Boss
 
         [Tooltip("玩家角力压力换算为接触点推进速度时的系数")]
         [SerializeField] private float freezeRayPlayerPressureScale = 0.03f;
+
+        [Tooltip("玩家激光角力压力需要爬升到满值的时间（秒）")]
+        [SerializeField] private float freezeRayPlayerPressureRampUpDuration = 0.6f;
+
+        [Tooltip("玩家停止照射后，角力压力衰减到 0 的时间（秒）")]
+        [SerializeField] private float freezeRayPlayerPressureDecayDuration = 0.2f;
+
+        [Tooltip("玩家激光伤害换算为角力压力时的权重")]
+        [SerializeField] private float freezeRayDamagePressureWeight = 0.2f;
+
+        [Tooltip("玩家激光击退换算为角力压力时的权重")]
+        [SerializeField] private float freezeRayKnockbackPressureWeight = 0.35f;
+
+        [Tooltip("冰封射线开场压制阶段时长（秒）；期间 Boss 推进更强")]
+        [SerializeField] private float freezeRayOpeningAdvantageDuration = 0.55f;
+
+        [Tooltip("冰封射线开场压制阶段的 Boss 推进倍率")]
+        [SerializeField] private float freezeRayOpeningAdvantageMultiplier = 1.45f;
 
         [Tooltip("玩家持续用激光压制时，打断冰封射线所需的累计角力值")]
         [SerializeField] private float freezeRayClashBreakThreshold = 16f;
@@ -191,6 +211,7 @@ namespace LightVsDecay.Logic.Boss
         private bool freezeRayActive = false;
         private float freezeRayClashMeter = 0f;
         private float freezeRayPlayerPressure = 0f;
+        private float freezeRayPlayerPressureNormalized = 0f;
         private float freezeRayLastPressureTime = -999f;
         private Collider2D freezeRayClashCollider;
 
@@ -204,6 +225,7 @@ namespace LightVsDecay.Logic.Boss
         private TurretHealth turretHealth;
         private ShieldController shieldController;
         private LayerMask rayHitLayers;
+        private Collider2D[] bossColliders;
 
         // BingCi 原始局部坐标（用于拔出计算与再生复位）
         private Vector3[] bingCiOriginalLocalPositions;
@@ -220,6 +242,7 @@ namespace LightVsDecay.Logic.Boss
 
         protected override void OnBossInitialized()
         {
+            ActiveInstance = this;
             currentPhase = 1;
             absoluteZeroActive = false;
             absoluteZeroTriggered = false;
@@ -273,6 +296,8 @@ namespace LightVsDecay.Logic.Boss
             }
 
             InitializeFreezeRayClashPoint();
+            CacheBossColliders();
+            ApplyFriendlyEnemyPassThroughToActiveEnemies();
             DisableFreezeRayVisuals();
         }
 
@@ -417,6 +442,7 @@ namespace LightVsDecay.Logic.Boss
             freezeRayActive = false;
             freezeRayClashMeter = 0f;
             freezeRayPlayerPressure = 0f;
+            freezeRayPlayerPressureNormalized = 0f;
             freezeRayLastPressureTime = -999f;
 
             yield return StartCoroutine(MoveToFreezeRayAnchor());
@@ -484,20 +510,39 @@ namespace LightVsDecay.Logic.Boss
 
                 float timeSincePressure = Time.time - freezeRayLastPressureTime;
                 bool playerClashing = timeSincePressure <= 0.18f && freezeRayPlayerPressure > 0f;
+                float rampUpRate = freezeRayPlayerPressureRampUpDuration > 0.01f
+                    ? 1f / freezeRayPlayerPressureRampUpDuration
+                    : 999f;
+                float decayRate = freezeRayPlayerPressureDecayDuration > 0.01f
+                    ? 1f / freezeRayPlayerPressureDecayDuration
+                    : 999f;
+
                 if (playerClashing)
                 {
-                    freezeRayClashMeter += freezeRayPlayerPressure * freezeRayClashPushSpeed * Time.deltaTime;
+                    freezeRayPlayerPressureNormalized = Mathf.MoveTowards(
+                        freezeRayPlayerPressureNormalized,
+                        1f,
+                        rampUpRate * Time.deltaTime);
                 }
                 else
                 {
-                    freezeRayClashMeter = Mathf.MoveTowards(freezeRayClashMeter, 0f, 6f * Time.deltaTime);
+                    freezeRayPlayerPressureNormalized = Mathf.MoveTowards(
+                        freezeRayPlayerPressureNormalized,
+                        0f,
+                        decayRate * Time.deltaTime);
                 }
 
                 float defenseDistance = GetFreezeRayDefenseDistance(rayDir, out RaycastHit2D defenseHit, out ShieldController shieldHit);
                 float playerPushSpeed = playerClashing
-                    ? freezeRayPlayerPressure * freezeRayPlayerPressureScale * freezeRayClashPushSpeed
+                    ? freezeRayPlayerPressure * freezeRayPlayerPressureNormalized * freezeRayPlayerPressureScale * freezeRayClashPushSpeed
                     : 0f;
-                float netAdvanceSpeed = freezeRayBossAdvanceSpeed - playerPushSpeed;
+                float bossAdvanceSpeed = freezeRayBossAdvanceSpeed;
+                if (elapsed <= freezeRayOpeningAdvantageDuration)
+                {
+                    bossAdvanceSpeed *= freezeRayOpeningAdvantageMultiplier;
+                }
+
+                float netAdvanceSpeed = bossAdvanceSpeed - playerPushSpeed;
 
                 clashDistance = Mathf.Clamp(clashDistance + netAdvanceSpeed * Time.deltaTime, minClashDistance, defenseDistance);
                 float clashRatio = defenseDistance > minClashDistance
@@ -1029,9 +1074,12 @@ namespace LightVsDecay.Logic.Boss
             if (!freezeRayActive || pressure <= 0f)
                 return;
 
-            freezeRayPlayerPressure = pressure;
+            freezeRayPlayerPressure = Mathf.Max(freezeRayPlayerPressure, pressure);
             freezeRayLastPressureTime = Time.time;
         }
+
+        public float GetFreezeRayDamagePressureWeight() => freezeRayDamagePressureWeight;
+        public float GetFreezeRayKnockbackPressureWeight() => freezeRayKnockbackPressureWeight;
 
         private float GetFreezeRayDefenseDistance(Vector2 rayDir, out RaycastHit2D defenseHit, out ShieldController shieldHit)
         {
@@ -1066,8 +1114,55 @@ namespace LightVsDecay.Logic.Boss
 
         private void OnDisable()
         {
+            if (ActiveInstance == this)
+                ActiveInstance = null;
             CancelBingCiRotationCoroutines();
             DisableFreezeRayVisuals();
+        }
+
+        private void CacheBossColliders()
+        {
+            bossColliders = GetComponentsInChildren<Collider2D>(true);
+        }
+
+        private void ApplyFriendlyEnemyPassThroughToActiveEnemies()
+        {
+            Enemy.EnemyBlob[] activeEnemies = FindObjectsByType<Enemy.EnemyBlob>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            if (activeEnemies == null)
+                return;
+
+            foreach (Enemy.EnemyBlob enemy in activeEnemies)
+                ConfigureFriendlyEnemyPassThrough(enemy);
+        }
+
+        public void ConfigureFriendlyEnemyPassThrough(Enemy.EnemyBlob enemy)
+        {
+            if (enemy == null || enemy.IsDead || enemy.IsStationary)
+                return;
+
+            if (bossColliders == null || bossColliders.Length == 0)
+                CacheBossColliders();
+
+            Collider2D[] enemyColliders = enemy.GetComponentsInChildren<Collider2D>(true);
+            if (enemyColliders == null || enemyColliders.Length == 0 || bossColliders == null)
+                return;
+
+            foreach (Collider2D bossCollider in bossColliders)
+            {
+                if (bossCollider == null)
+                    continue;
+
+                foreach (Collider2D enemyCollider in enemyColliders)
+                {
+                    if (enemyCollider == null)
+                        continue;
+
+                    Physics2D.IgnoreCollision(enemyCollider, bossCollider, true);
+                }
+            }
         }
 
         private void InitializeFreezeRayClashPoint()

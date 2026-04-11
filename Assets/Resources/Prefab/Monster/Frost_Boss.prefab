@@ -5622,19 +5622,25 @@ MonoBehaviour:
   iceWallGlowFadeInDuration: 1.5
   iceWallGlowFadeOutDuration: 1
   freezeRayChargeUpDuration: 1
-  freezeRayDuration: 3
+  freezeRayDuration: 6
   freezeRayCooldownTime: 15
   freezeRayTurretFreezeDuration: 1.5
   freezeRayShieldDamagePerSecond: 500
   freezeRayLength: 20
   freezeRayExtendDuration: 1.5
   freezeRayClashPushSpeed: 7.5
-  freezeRayBossAdvanceSpeed: 4.5
+  freezeRayBossAdvanceSpeed: 5.8
   freezeRayPlayerPressureScale: 0.03
+  freezeRayPlayerPressureRampUpDuration: 0.6
+  freezeRayPlayerPressureDecayDuration: 0.2
+  freezeRayDamagePressureWeight: 0.2
+  freezeRayKnockbackPressureWeight: 0.35
+  freezeRayOpeningAdvantageDuration: 1
+  freezeRayOpeningAdvantageMultiplier: 1.9
   freezeRayClashBreakThreshold: 16
   freezeRayInitialClashRatio: 0.58
   freezeRayRepositionDuration: 0.3
-  freezeRayStalemateTimeout: 2.5
+  freezeRayStalemateTimeout: 5
   freezeRayRetreatDistance: 1.2
   freezeRayRetreatDuration: 0.22
   laserHitbox: {fileID: 0}
@@ -5649,7 +5655,7 @@ MonoBehaviour:
   absoluteZeroSummonCount: 15
   absoluteZeroCooldownPhase12: 30
   absoluteZeroCooldownPhase3: 12
-  absoluteZeroWarningEffect: {fileID: 1015045838383309280, guid: b9e446413fb4a0c4bb02e9bafe4ad0ad, type: 3}
+  absoluteZeroWarningEffect: {fileID: 8775720239184918657, guid: faa38aa0a1d215b439d8abdfd7639072, type: 3}
   bingCiTransforms:
   - {fileID: 6051209882962071039}
   - {fileID: 7588614840702755016}

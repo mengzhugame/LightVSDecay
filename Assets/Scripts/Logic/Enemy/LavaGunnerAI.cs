@@ -141,6 +141,7 @@ namespace LightVsDecay.Logic.Enemy
         public void OnBlobSpawned()
         {
             StopAllCoroutines();
+            RestoreBlobScale();
 
             EnemyData data = blob.Data;
             if (data == null)
@@ -202,6 +203,7 @@ namespace LightVsDecay.Logic.Enemy
         {
             isActive = false;
             StopAllCoroutines();
+            RestoreBlobScale();
 
             if (rb != null)
             {
@@ -443,6 +445,7 @@ namespace LightVsDecay.Logic.Enemy
             }
 
             StopAllCoroutines();
+            RestoreBlobScale();
             rb.velocity = Vector2.zero;
 
             Vector2 safePosition = GetClampedScreenPosition();
@@ -477,6 +480,11 @@ namespace LightVsDecay.Logic.Enemy
         {
             movementStuckTimer = 0f;
             lastDistanceToTarget = float.MaxValue;
+        }
+
+        private void RestoreBlobScale()
+        {
+            blob?.RestoreCurrentUniformScale();
         }
 
         private bool IsOutsideScreen()

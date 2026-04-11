@@ -140,6 +140,7 @@ namespace LightVsDecay.Logic.Enemy
         public void OnBlobSpawned()
         {
             StopAllCoroutines();
+            RestoreBlobScale();
 
             // 重置所有冰晶为可见（对象池复用时恢复初始状态）
             foreach (var crystal in crystals)
@@ -205,6 +206,7 @@ namespace LightVsDecay.Logic.Enemy
         {
             isActive = false;
             StopAllCoroutines();
+            RestoreBlobScale();
 
             if (rb != null)
             {
@@ -556,6 +558,7 @@ namespace LightVsDecay.Logic.Enemy
             }
 
             StopAllCoroutines();
+            RestoreBlobScale();
             rb.velocity = Vector2.zero;
 
             Vector2 safePosition = GetClampedScreenPosition();
@@ -590,6 +593,11 @@ namespace LightVsDecay.Logic.Enemy
         {
             movementStuckTimer = 0f;
             lastDistanceToTarget = float.MaxValue;
+        }
+
+        private void RestoreBlobScale()
+        {
+            blob?.RestoreCurrentUniformScale();
         }
 
         private bool IsOutsideScreen()

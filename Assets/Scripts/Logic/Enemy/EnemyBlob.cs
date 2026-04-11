@@ -236,6 +236,19 @@ namespace LightVsDecay.Logic.Enemy
 
         /// <summary>是否拥有存活的前置冰盾（精英冰甲卫士专用，用于激光穿透阻断）</summary>
         public bool HasActiveIceShield => iceShield != null && iceShield.IsActive;
+
+        public void RestoreCurrentUniformScale()
+        {
+            if (maxHealth <= 0f)
+            {
+                transform.localScale = originalScale;
+                return;
+            }
+
+            float healthRatio = Mathf.Clamp01(currentHealth / maxHealth);
+            float uniformScale = Mathf.Lerp(minScale, 1f, healthRatio);
+            transform.localScale = originalScale * uniformScale;
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Layer 切换（弹跳怪入境签证）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
