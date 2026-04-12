@@ -108,6 +108,7 @@ namespace LightVsDecay.UI.Panels
 // Boss血条缓冲效果
         private float bossCurrentHP = 1f;
         private float bossBufferHP = 1f;
+        private float bossWaveProgress = 0f;
         private Coroutine bossBufferCoroutine;
         private BossHealth cachedBossHealth;  // 缓存 BossHealth 引用
         private bool isBufferWaiting = false;   // 正在等待0.5秒延迟
@@ -130,6 +131,12 @@ namespace LightVsDecay.UI.Panels
             // 设置按钮回调
             SetupButtons();
             RegisterExpBarTarget();
+            RefreshWaveProgressFromRuntime();
+        }
+
+        private void Update()
+        {
+            RefreshWaveProgressFromRuntime();
         }
         
         private void OnDestroy()
@@ -163,7 +170,7 @@ namespace LightVsDecay.UI.Panels
                 comboCanvasGroup.alpha = 0f;
             }
             // 波次进度（初始化为第1波）
-            UpdateWaveProgress(1, 12);
+            UpdateWaveProgressDisplay(0f, 1, 1);
             
             // 玩家血量
             healthCurrentPercent = 1f;
@@ -179,6 +186,7 @@ namespace LightVsDecay.UI.Panels
             // ═══ 新增：初始化 Boss 血条状态 ═══
             bossCurrentHP = 1f;
             bossBufferHP = 1f;
+            bossWaveProgress = 0f;
             isBufferWaiting = false;
             isBufferChasing = false;
             // Boss血条（初始隐藏）
@@ -341,15 +349,18 @@ namespace LightVsDecay.UI.Panels
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         /// <summary>更新波次进度显示</summary>
-        private void UpdateWaveProgress(int currentWave, int totalWaves)
+        private void UpdateWaveProgressDisplay(float progress, int currentWave, int totalWaves)
         {
             // 更新进度条（显示已完成的波次比例）
+            progress = Mathf.Clamp01(progress);
+            currentWave = Mathf.Max(currentWave, 1);
+            totalWaves = Mathf.Max(totalWaves, 1);
+
             if (waveProgressBar != null)
             {
                 // 进度 = (当前波次 - 1) / 总波次
                 // 例如：第3波时进度为 2/12 = 16.7%
-                float progress = totalWaves > 0 ? (float)(currentWave - 1) / totalWaves : 0f;
-                waveProgressBar.value = progress;
+                waveProgressBar.value = Mathf.Clamp01(progress);
             }
             
             // 更新波次文本
@@ -360,15 +371,55 @@ namespace LightVsDecay.UI.Panels
         }
         
         /// <summary>波次进度更新回调</summary>
+        /// <summary>鏍规嵁褰撳墠娉㈡鍜屾尝鍐呰繘搴﹀埛鏂版€绘尝娆¤繘搴︽潯</summary>
+        private void RefreshWaveProgressFromRuntime()
+        {
+            WaveManager waveManager = WaveManager.Instance;
+            if (waveManager == null)
+            {
+                return;
+            }
+
+            int totalWaves = Mathf.Max(waveManager.TotalWaves, 1);
+            int currentWave = waveManager.CurrentWaveNumber;
+
+            if (currentWave <= 0)
+            {
+                UpdateWaveProgressDisplay(0f, 1, totalWaves);
+                return;
+            }
+
+            currentWave = Mathf.Clamp(currentWave, 1, totalWaves);
+
+            float intraWaveProgress = 0f;
+            switch (waveManager.CurrentState)
+            {
+                case WaveState.Spawning:
+                case WaveState.Battle:
+                    intraWaveProgress = Mathf.Clamp01(waveManager.WaveProgress);
+                    break;
+                case WaveState.Complete:
+                case WaveState.Victory:
+                    intraWaveProgress = 1f;
+                    break;
+                case WaveState.BossFight:
+                    intraWaveProgress = Mathf.Clamp01(bossWaveProgress);
+                    break;
+            }
+
+            float overallProgress = ((currentWave - 1) + intraWaveProgress) / totalWaves;
+            UpdateWaveProgressDisplay(overallProgress, currentWave, totalWaves);
+        }
+
         private void OnWaveProgressUpdated(int currentWave, int totalWaves)
         {
-            UpdateWaveProgress(currentWave, totalWaves);
+            RefreshWaveProgressFromRuntime();
         }
         
         /// <summary>波次开始回调</summary>
         private void OnWaveStart(int currentWave, int totalWaves)
         {
-            UpdateWaveProgress(currentWave, totalWaves);
+            RefreshWaveProgressFromRuntime();
             
             // TODO: 可以在这里显示波次开始的提示动画
             // 例如：闪烁波次文本、播放音效等
@@ -378,11 +429,7 @@ namespace LightVsDecay.UI.Panels
         private void OnWaveComplete(int completedWave, int totalWaves)
         {
             // 波次完成时，进度条填满到当前波次
-            if (waveProgressBar != null)
-            {
-                float progress = totalWaves > 0 ? (float)completedWave / totalWaves : 0f;
-                waveProgressBar.value = progress;
-            }
+            RefreshWaveProgressFromRuntime();
             
             // TODO: 可以在这里显示波次完成的庆祝动画
             // 例如：进度条闪光、播放音效等
@@ -393,6 +440,8 @@ namespace LightVsDecay.UI.Panels
         {
             // 查找并缓存 BossHealth
             cachedBossHealth = FindObjectOfType<BossHealth>();
+            bossWaveProgress = 0f;
+            RefreshWaveProgressFromRuntime();
     
             int maxHealth = cachedBossHealth != null ? (int)cachedBossHealth.MaxHealth : 50000;
             ShowBossHealthBar("THE CORRUPTOR", maxHealth);
@@ -402,6 +451,8 @@ namespace LightVsDecay.UI.Panels
         private void OnBossHealthChanged(float healthPercent)
         {
             // 从缓存的 BossHealth 获取当前血量
+            bossWaveProgress = Mathf.Clamp01(1f - healthPercent);
+            RefreshWaveProgressFromRuntime();
             int currentHealth = 0;
             if (cachedBossHealth != null)
             {
@@ -416,6 +467,8 @@ namespace LightVsDecay.UI.Panels
         {
             //HideBossHealthBar();
             cachedBossHealth = null;
+            bossWaveProgress = 1f;
+            RefreshWaveProgressFromRuntime();
             // 启动死亡处理协程
             StartCoroutine(BossDeathSequence());
         }

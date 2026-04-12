@@ -607,4 +607,90 @@ freezeRayClashMeter = clashRatio * freezeRayClashBreakThreshold;
 2. 你把 Profiler 数据或截图发我，我直接帮你对照代码定位最优先修改点。
 ------------------------------------------------------------------------------------------------------------------------
 
+关于战斗中，我的波次进度栏不匹配的问题，需修复 HUDPanel.cs脚本中，WaveProgressBar 的相关进度条，需要和当前10波的波次进度相匹配，分析并查找问题原因，等我确定后，再开始修改。
+
+我先把问题原因整理出来，暂时还没改代码。
+
+**结论**
+`WaveProgressBar` 现在不匹配“当前 10 波”主要有 3 个原因，其中前 2 个是已确认的直接原因：
+
+1. `HUDPanel` 初始化时把波次写死成了 `1/12`
+   位置：[HUDPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/HUDPanel.cs:166)
+   这里一开始直接调用 `UpdateWaveProgress(1, 12)`，而你当前章节资源实际是 10 波。
+   例如：[Chapter01_01.asset](/D:/Project/LightVSDecay/Assets/Resources/Data/LevelWaveData/Chapter01_01.asset:13) 明确是 `totalWaves: 10`，并且资源里有 10 个 `waveNumber` 条目。
+   所以 HUD 刚出现时，先被错误初始化成了 12 波逻辑。
+
+2. HUD 里“开始波次”和“完成波次”用的是两套不同口径
+   位置：
+   [HUDPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/HUDPanel.cs:344)
+   [HUDPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/HUDPanel.cs:378)
+
+   现在逻辑是：
+   - 波次开始时：`(currentWave - 1) / totalWaves`
+   - 波次完成时：`completedWave / totalWaves`
+
+   这意味着进度条本质上显示的是“已完成波数比例”，不是“当前波次所在进度”或“实时战斗进度”。  
+   例如 10 波关卡里，第 3 波开始时会显示 `2/10 = 20%`，只有第 3 波打完才变成 `30%`。  
+   如果你的预期是“进入第 3 波时就应该明显处在第 3 格/第 3 段”，那现在看起来就会像慢一拍。
+
+3. `OnWaveProgressUpdated` 这个名字像“实时进度”，但实际上只在波次开始时顺带触发
+   位置：
+   [GameEvents.cs](/D:/Project/LightVSDecay/Assets/Scripts/Core/GameEvents.cs:239)
+   [WaveManager.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/WaveManager.cs:317)
+
+   `TriggerWaveStart()` 内部会同时触发 `OnWaveStart` 和 `OnWaveProgressUpdated`，但战斗过程中并没有基于击杀数或波内进度持续更新这个事件。
+   也就是说：
+   - 现在没有“实时波内进度”
+   - 只有“波开始”和“波完成”两个跳点
+
+**补充观察**
+`WaveManager.TotalWaves` 取的是 `waveConfig.WaveCount`，不是 `waveConfig.totalWaves`。
+位置：[WaveManager.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/WaveManager.cs:107)
+
+这在你当前资源里暂时不是主因，因为 `Chapter01_01/02/03.asset` 都是 `totalWaves: 10`，同时也确实有 10 个波次条目；但这属于一个潜在隐患，如果以后资源里“配置字段”和“列表数量”不一致，HUD 还会继续出问题。
+
+**我建议的修复方向**
+等你确认后，我再动手改。优先级我建议这样：
+
+1. 去掉 `HUDPanel` 里的 `1/12` 写死初始化，改成从 `WaveManager` 当前配置读取。
+2. 统一 `WaveProgressBar` 的显示口径。
+3. 如果你的目标是“和当前 10 波战斗进度严格匹配”，需要再确认你要哪一种：
+   - 方案 A：显示“已完成波数进度”
+   - 方案 B：显示“当前处于第几波的总进度”
+   - 方案 C：显示“10 波总进度 + 当前波内实时进度”
+
+如果你确认你想要的是哪一种，我下一步就直接按那个口径改 `HUDPanel.cs`。
+
+------------------------------------------------------------------------------------------------------------------------
+
+选择方案C并开始修改相关代码？如果有需要我unity中修改和制作的，需要告诉我。
+
+已按方案 C 改完，核心改动都在 [HUDPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/HUDPanel.cs)。
+
+现在 `WaveProgressBar` 的逻辑是：
+`总进度 = ((当前波次 - 1) + 当前波内进度) / 总波次`
+也就是会按当前真实的 10 波配置推进，不再写死成 `12`，并且普通波会根据 `WaveManager.WaveProgress` 实时前进；如果最后一波是 Boss 波，还会根据 Boss 血量把第 10 波从 90% 推到 100%。
+
+这次代码上做了几件事：
+- 去掉初始化时写死的 `UpdateWaveProgress(1, 12)`，改为运行时同步真实波次。
+- 新增持续刷新逻辑，让 HUD 每帧从 `WaveManager` 读取当前总波数、当前波次、波内进度。
+- Boss 战阶段接入 `OnBossHealthChanged`，把 Boss 血量映射为该波的波内进度。
+
+你在 Unity 里通常不需要额外制作内容；只需要确认两点：
+- `HUDPanel` 物体上的 `waveProgressBar` 和 `waveText` 引用本来就是连好的。
+- 运行时章节确实使用的是你现在这套 10 波 `WaveConfig` 资源。
+
+我这边没法直接跑 Unity 编译和场景验证，所以建议你进 Play 模式重点看这 4 个点：
+- 开局显示是否直接是 `WAVE: 1/10`
+- 第 1 波中途进度条是否会缓慢增长，而不是等打完才跳
+- 切到第 2 波时是否从约 `10%` 接着往上走
+- 第 10 波 Boss 战时，进度条是否会随 Boss 掉血继续推进到 `100%`
+
+如果你愿意，我下一步可以继续帮你把 [HUDPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/HUDPanel.cs) 里那段乱码注释顺手清一遍，方便后续维护。
+------------------------------------------------------------------------------------------------------------------------
+
+关于光与朽战斗内金币掉落的表现效果方案，请读取D:\Project\GamePlanningDoc\20_项目\02_光与朽项目\01_策划文档\战斗金币掉落方案.txt  文件，先检查这个文件描述的金币掉落方案是否符合光与朽2D视角游戏，然后我想要的效果是，击杀怪物后会掉落经验球（已有，可作为掉落金币的参考），掉落金币（数量根据怪物击杀奖励配置来获取，可能是1-100），会有一个掉落动画，并再原地展示（1s-2s左右）,金币会自己旋转（已有2x2的序列贴图，需要做一个帧序列shader），展示完会自动吸附到上方UI的金币栏，然后金币栏的数字会逐渐增加。大概是这样的一个效果，如果哪里没有表述清楚，你可以询问我。也可以提供一些更好的方案或者建议。例如，如果从性能考虑，分为1个，5个金币和20个，三种。根据掉落金币的数量，自动规划播放那一种？ 使用文档方案的那种更好？还是用粒子特效分为三档做更好？ 需要你跟我一个完美的方案和建议。先等我确定好方案和制作步骤，再开始制作代码。
+
+
+------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------

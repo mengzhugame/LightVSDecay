@@ -5630,11 +5630,11 @@ MonoBehaviour:
   freezeRayExtendDuration: 1.5
   freezeRayClashPushSpeed: 7.5
   freezeRayBossAdvanceSpeed: 5.8
-  freezeRayPlayerPressureScale: 0.03
+  freezeRayPlayerPressureScale: 0.02
   freezeRayPlayerPressureRampUpDuration: 0.6
   freezeRayPlayerPressureDecayDuration: 0.2
   freezeRayDamagePressureWeight: 0.2
-  freezeRayKnockbackPressureWeight: 0.35
+  freezeRayKnockbackPressureWeight: 0.25
   freezeRayOpeningAdvantageDuration: 1
   freezeRayOpeningAdvantageMultiplier: 1.9
   freezeRayClashBreakThreshold: 16
