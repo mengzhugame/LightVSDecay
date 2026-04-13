@@ -143,7 +143,7 @@ namespace LightVsDecay.Logic.Boss
         [SerializeField] private float absoluteZeroChannelDuration = 3f;
 
         [Tooltip("绝对零度释放后，光棱塔当前血量的百分比真实伤害")]
-        [SerializeField] private float absoluteZeroTrueDamagePercent = 0.30f;
+        [SerializeField] private float absoluteZeroTrueDamagePercent = 0.20f;
 
         [Tooltip("打断失败时，光棱塔冻结时长（秒）")]
         [SerializeField] private float absoluteZeroTurretFreezeDuration = 3f;
@@ -569,15 +569,31 @@ namespace LightVsDecay.Logic.Boss
                 }
 
                 Vector2 endPoint = (Vector2)transform.position + rayDir * clashDistance;
-                bool clashReachedDefense = defenseHit.collider != null && clashDistance >= defenseDistance - 0.02f;
+                bool shieldStillActive = shieldController != null && shieldController.IsShieldActive;
+                bool clashReachedDefense = clashDistance >= defenseDistance - 0.02f;
                 if (clashReachedDefense)
                 {
-                    endPoint = defenseHit.point;
+                    if (defenseHit.collider != null)
+                    {
+                        endPoint = defenseHit.point;
+                    }
+                    else if (shieldStillActive && shieldController != null)
+                    {
+                        endPoint = shieldController.transform.position;
+                    }
+                    else if (turretController != null)
+                    {
+                        endPoint = turretController.transform.position;
+                    }
 
-                    if (shieldHit != null)
+                    ShieldController resolvedShield = shieldHit != null
+                        ? shieldHit
+                        : (shieldStillActive ? shieldController : null);
+
+                    if (resolvedShield != null)
                     {
                         // 命中护盾：接触点被推到护盾表面后开始持续扣血
-                        shieldHit.TakeDamage(Mathf.RoundToInt(freezeRayShieldDamagePerSecond * Time.deltaTime));
+                        resolvedShield.TakeBossDamage(Mathf.RoundToInt(freezeRayShieldDamagePerSecond * Time.deltaTime));
                     }
                     else if (!freezeRayHitThisCast)
                     {
@@ -785,7 +801,7 @@ namespace LightVsDecay.Logic.Boss
 
         private void ApplyAbsoluteZeroPenalty()
         {
-            // 真实伤害：光棱塔当前血量的 30%
+            // 真实伤害：光棱塔当前血量的 20%
             if (turretHealth != null)
             {
                 int trueDamage = Mathf.RoundToInt(turretHealth.CurrentHullHP * absoluteZeroTrueDamagePercent);

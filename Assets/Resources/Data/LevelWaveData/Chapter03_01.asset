@@ -254,7 +254,7 @@ MonoBehaviour:
       pattern: 0
       customInterval: -1
       spawnZone: 2
-    - spawnTime: 30
+    - spawnTime: 35
       enemyType: 19
       count: 1
       pattern: 5
@@ -362,5 +362,5 @@ MonoBehaviour:
     difficultyMultiplier: 3
     isBossWave: 1
     hintText: "\u6781\u5BD2\u4E4B\u6838 The Glacial Core \u964D\u4E34\uFF01"
-  bossHealth: 750000
+  bossHealth: 650000
   bossMoveSpeed: 0.15
