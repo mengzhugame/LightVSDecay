@@ -32,7 +32,10 @@
       "Bash(wc -l \"/d/Project/GamePlanningDoc/20_项目/02_光与朽项目/01_策划文档\"/*.md)",
       "Bash(sort -t_ -k2)",
       "Bash(node:*)",
-      "Bash(find D:\\\\Project\\\\LightVSDecay\\\\Assets\\\\Scripts:*)"
+      "Bash(find D:\\\\Project\\\\LightVSDecay\\\\Assets\\\\Scripts:*)",
+      "Bash(find D:\\\\Project\\\\LightVSDecay\\\\Assets\\\\Scripts\\\\Data\\\\Runtime:*)",
+      "WebFetch(domain:zhuanlan.zhihu.com)",
+      "WebFetch(domain:developers.weixin.qq.com)"
     ]
   }
 }

@@ -33,11 +33,15 @@ using LightVsDecay.Logic;
 using LightVsDecay.Logic.TechTree;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
+using System;
 
 namespace LightVsDecay.UI.TechTree
 {
     public class TechTreeNodeDetailPanel : MonoBehaviour
     {
+        public static event Action<TechTreeNodeData> DetailShown;
+        public static event Action<TechTreeNodeData> DetailClosed;
+        public static event Action<TechTreeNodeData, int> NodeUpgraded;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -95,6 +99,9 @@ namespace LightVsDecay.UI.TechTree
         private TechTreePanel    _parent;
         private Coroutine        _longPressCoroutine;
         private Image            _buttonImage;
+        public RectTransform UpgradeButtonRect => upgradeButton != null ? upgradeButton.GetComponent<RectTransform>() : null;
+        public RectTransform CloseButtonRect => closeButton != null ? closeButton.GetComponent<RectTransform>() : null;
+        public TechTreeNodeData CurrentNodeData => _data;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 生命周期
@@ -128,11 +135,13 @@ namespace LightVsDecay.UI.TechTree
             _parent = parent;
             gameObject.SetActive(true);
             Refresh();
+            DetailShown?.Invoke(_data);
         }
 
         public void Close()
         {
             OnUpgradeUp();
+            DetailClosed?.Invoke(_data);
             gameObject.SetActive(false);
             _parent?.OnDetailPanelClosed();
         }
@@ -381,9 +390,11 @@ namespace LightVsDecay.UI.TechTree
                 if (AudioManager.Instance != null)
                     AudioManager.Instance.PlayButtonClick();
 
+                int newLevel = TechTreeManager.Instance.GetNodeLevel(_data.nodeId);
                 Refresh();
                 _parent?.RefreshAll();
                 TopAreaController.RefreshIfExists();   // ★ 刷新顶部金币显示
+                NodeUpgraded?.Invoke(_data, newLevel);
                 return true;
             }
 

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using LightVsDecay.Ads;
 using LightVsDecay.Core;
 using LightVsDecay.Logic;
 using LightVsDecay.Data.SO;
@@ -24,11 +25,14 @@ namespace LightVsDecay.UI.Panels
         [Header("卡片按钮和背景")]
         public Button cardButton;
         public Image cardBackground;
+        public Image glowFrame;
         
         [Header("技能信息")]
         public Image skillIcon;
         public TextMeshProUGUI skillNameText;
         public TextMeshProUGUI skillDescText;
+        public Image laneBadge;
+        public TextMeshProUGUI laneText;
         
         [Header("NewTag 标签")]
         public GameObject newTagObj;
@@ -51,6 +55,7 @@ namespace LightVsDecay.UI.Panels
         
         [Header("标题")]
         [SerializeField] private TextMeshProUGUI titleText;
+        [SerializeField] private TextMeshProUGUI tipsBannerText;
         
         [Header("技能数据库")]
         [SerializeField] private SkillDatabase skillDatabase;
@@ -80,6 +85,11 @@ namespace LightVsDecay.UI.Panels
         
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
+
+        private static readonly Color FrostColor = new Color(0.35f, 0.78f, 1f, 1f);
+        private static readonly Color FocusColor = new Color(1f, 0.72f, 0.24f, 1f);
+        private static readonly Color PrismColor = new Color(0.96f, 0.44f, 0.78f, 1f);
+        private static readonly Color ImpactColor = new Color(0.98f, 0.88f, 0.3f, 1f);
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
@@ -148,6 +158,10 @@ namespace LightVsDecay.UI.Panels
             if (titleText != null)
             {
                 titleText.text = "请选择一个技能";
+            }
+            if (tipsBannerText != null)
+            {
+                tipsBannerText.text = "首次推荐从极寒 / 聚能 / 分裂中选择一个流派，后续同流派技能会更容易形成联动。";
             }
             
             // 更新重掷按钮状态
@@ -299,6 +313,7 @@ namespace LightVsDecay.UI.Panels
             
             // ========== 6. 设置 Upgrade 菱形 ==========
             SetupUpgradeDiamonds(card, nextLv);
+            SetupLaneDecor(card, skill, currentLevels);
             
             if (showDebugInfo)
             {
@@ -401,17 +416,118 @@ namespace LightVsDecay.UI.Panels
         
         private void OnRetryClicked()
         {
-            if (retryCountRemaining <= 0) return;
-            
-            retryCountRemaining--;
-            UpdateRetryButton();
-            
-            // 重新生成选项
-            GenerateAndDisplayChoices();
-            
-            if (showDebugInfo)
+            if (retryCountRemaining > 0)
             {
-                GameLogger.Log($"[SkillChooseOnePanel] 重掷，剩余次数: {retryCountRemaining}");
+                retryCountRemaining--;
+                UpdateRetryButton();
+                GenerateAndDisplayChoices();
+
+                if (showDebugInfo)
+                {
+                    GameLogger.Log($"[SkillChooseOnePanel] 重掷，剩余次数: {retryCountRemaining}");
+                }
+
+                return;
+            }
+
+            AdManager.Instance.ShowRewardedAd(AdType.SkillReroll,
+                onSuccess: () =>
+                {
+                    GenerateAndDisplayChoices();
+                    UpdateRetryButton();
+                },
+                onFail: UpdateRetryButton);
+        }
+
+        private void SetupLaneDecor(SkillCardUI card, SkillData skill, Dictionary<SkillType, int> currentLevels)
+        {
+            string lane = GetLaneName(skill.type);
+            Color laneColor = GetLaneColor(skill.type);
+            bool hasSynergy = HasOwnedLane(currentLevels, lane);
+
+            if (card.laneBadge != null)
+            {
+                card.laneBadge.gameObject.SetActive(!string.IsNullOrEmpty(lane));
+                card.laneBadge.color = laneColor;
+            }
+
+            if (card.laneText != null)
+            {
+                card.laneText.gameObject.SetActive(!string.IsNullOrEmpty(lane));
+                card.laneText.text = string.IsNullOrEmpty(lane) ? string.Empty : $"{lane}流派";
+                card.laneText.color = hasSynergy ? laneColor : Color.white;
+            }
+
+            if (card.glowFrame != null)
+            {
+                card.glowFrame.gameObject.SetActive(hasSynergy);
+                card.glowFrame.color = laneColor;
+            }
+        }
+
+        private static bool HasOwnedLane(Dictionary<SkillType, int> currentLevels, string lane)
+        {
+            if (string.IsNullOrEmpty(lane))
+            {
+                return false;
+            }
+
+            foreach (var pair in currentLevels)
+            {
+                if (pair.Value > 0 && GetLaneName(pair.Key) == lane)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string GetLaneName(SkillType type)
+        {
+            switch (type)
+            {
+                case SkillType.Frost:
+                case SkillType.FrostSpread:
+                    return "极寒";
+                case SkillType.Focus:
+                case SkillType.Power:
+                case SkillType.Crit:
+                case SkillType.Shatter:
+                    return "聚能";
+                case SkillType.Prism:
+                case SkillType.Wide:
+                case SkillType.Chain:
+                case SkillType.Reflex:
+                    return "分裂";
+                case SkillType.Impact:
+                    return "冲击";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static Color GetLaneColor(SkillType type)
+        {
+            switch (type)
+            {
+                case SkillType.Frost:
+                case SkillType.FrostSpread:
+                    return FrostColor;
+                case SkillType.Focus:
+                case SkillType.Power:
+                case SkillType.Crit:
+                case SkillType.Shatter:
+                    return FocusColor;
+                case SkillType.Prism:
+                case SkillType.Wide:
+                case SkillType.Chain:
+                case SkillType.Reflex:
+                    return PrismColor;
+                case SkillType.Impact:
+                    return ImpactColor;
+                default:
+                    return Color.white;
             }
         }
         
@@ -419,13 +535,25 @@ namespace LightVsDecay.UI.Panels
         {
             if (retryButton != null)
             {
-                retryButton.interactable = retryCountRemaining > 0;
-                
-                // 更新按钮文本（如果有）
+                bool hasFreeRetry = retryCountRemaining > 0;
+                bool canWatchAd = AdManager.Instance.CanWatchAd(AdType.SkillReroll);
+                retryButton.interactable = hasFreeRetry || canWatchAd;
+
                 var buttonText = retryButton.GetComponentInChildren<TextMeshProUGUI>();
                 if (buttonText != null)
                 {
-                    buttonText.text = $"重掷 ({retryCountRemaining})";
+                    if (hasFreeRetry)
+                    {
+                        buttonText.text = $"重掷 ({retryCountRemaining})";
+                    }
+                    else if (canWatchAd)
+                    {
+                        buttonText.text = "看视频再抽一次";
+                    }
+                    else
+                    {
+                        buttonText.text = "今日已达上限";
+                    }
                 }
             }
         }
@@ -457,6 +585,11 @@ namespace LightVsDecay.UI.Panels
             if (ProgressManager.Instance != null)
             {
                 ProgressManager.Instance.ApplySkill(selectedSkill.type);
+                if (!ProgressManager.Instance.Meta.hasSeenSkillTutorial)
+                {
+                    ProgressManager.Instance.Meta.hasSeenSkillTutorial = true;
+                    ProgressManager.Instance.Meta.Save();
+                }
             }
             
             // 隐藏面板

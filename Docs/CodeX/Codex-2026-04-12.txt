@@ -522,6 +522,26 @@ freezeRayClashMeter = clashRatio * freezeRayClashBreakThreshold;
 
 ------------------------------------------------------------------------------------------------------------------------
 
+刚才经过测试，极寒BOSS的冰封射线，没有对玩家造成任何伤害（再显示上，极寒BOSS的激光已经碰到光棱塔了，但是未对玩家产生任何伤害）。协助我查找这是什么原因，并修复这个问题。
+
+原因找到了，是我前面重做冰封射线共享接触点时引入的一条结算漏洞。
+
+问题在 [GlacialBossController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Boss/GlacialBossController.cs#L572)。之前冰封射线只有在 `Physics2D.Raycast` 这一帧真打到 `Shield/Tower` 碰撞体时，才会触发后续结算；但现在接触点有时是靠“防线距离回退”推进到玩家护盾或光棱塔附近的，画面上已经碰到了，代码却因为 `defenseHit.collider == null` 没进结算分支，于是就出现了“看起来碰到了，但没有扣盾/没有塔体结算”的情况。
+
+我已经把这条修掉了。现在逻辑变成：
+- 只要接触点推进到防线，不管这一帧是直接命中 collider，还是走回退距离
+- 都会触发对应结算
+- 护盾存在时会稳定持续掉血
+- 护盾破碎后，接触点推进到塔时会稳定触发塔体结算，不会再出现视觉接触但无效
+
+同时我把护盾结算改成了统一走 `TakeBossDamage()`，和其它 Boss 技能入口保持一致。修改都在 [GlacialBossController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Boss/GlacialBossController.cs#L572)。
+
+`dotnet build Assembly-CSharp.csproj` 已通过，`0 error`。  
+你现在可以重点复测两种情况：
+- 护盾存在时，Boss 冰封射线压到护盾表面，护盾血是否稳定下降
+- 护盾破后，接触点推进到光棱塔时，是否稳定触发塔体结算，不再出现“碰到了但没反应”
+------------------------------------------------------------------------------------------------------------------------
+
 关于光与朽游戏的性能问题，扫描光与朽工程的全部代码，分析并查找那些代码可能导致战斗卡顿的问题？或者渲染导致手机性能卡顿的问题？如果需要我给出unity profiler性能分析器的数据，告诉我如何操作，我如何给你提供相应的数据进行分析。或者哪里需要打日志进行查询等等。先分析查找定位相关性能存在的问题，并制定出相应的修改方案，等我确认后，再开始做代码修改。
 
 我先把工程代码层面可能导致“战斗卡顿 / 手机渲染卡顿”的高风险点扫了一遍。结论先说：这不是单一问题，当前更像是“战斗期 CPU 热点 + 移动端渲染配置偏重 + UI/特效对象数量堆积”叠加导致的卡顿。按风险优先级看，最值得先处理的是激光系统、连锁闪电、敌人材质实例化、AOE 物理查询、飘字/经验球、日志开销，以及移动端 URP/后处理配置。
@@ -689,8 +709,527 @@ freezeRayClashMeter = clashRatio * freezeRayClashBreakThreshold;
 如果你愿意，我下一步可以继续帮你把 [HUDPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/HUDPanel.cs) 里那段乱码注释顺手清一遍，方便后续维护。
 ------------------------------------------------------------------------------------------------------------------------
 
+刚经过运行测试，需要修改波次进度条算法，进度条去掉第10波和BOSS血量的计算相关代码，这个进度条0-1，对应的波次应该是第一波开始到第九波结束的进度，因为第10波是BOSS，所以就没必要再显示进度了。
+
+已经按你的新规则改了 [HUDPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/HUDPanel.cs)。
+
+现在进度条算法变成：
+- `0 -> 1` 只对应第 `1` 波开始到第 `9` 波结束
+- 第 `10` 波是 Boss 波，进度条进入后直接保持满格
+- Boss 血量不再参与 `WaveProgressBar` 计算
+
+这次实际调整点：
+- 去掉了 `bossWaveProgress` 相关状态。
+- `RefreshWaveProgressFromRuntime()` 里把分母改成 `totalWaves - 1`。
+- 当进入最后一波 Boss 时，直接把进度视为 `1f`，不再跟随 Boss 掉血变化。
+- Boss 事件仍然保留给 Boss 血条本身使用，但不再驱动波次进度条。
+
+你这边不需要在 Unity 里额外制作或连新引用。建议再跑一遍确认这 3 个观察点：
+- 第 1 波开始时进度条是 `0`
+- 第 5 波中途时进度条大约在前 9 波区间内持续增长
+- 第 9 波结束时进度条到满，第 10 波 Boss 开始后仍保持满格不动
+
+如果你愿意，我下一步可以继续帮你把 `waveText` 的显示口径也一起统一一下，比如在 Boss 波显示成 `BOSS` 而不是 `WAVE: 10/10`。
+------------------------------------------------------------------------------------------------------------------------
+
 关于光与朽战斗内金币掉落的表现效果方案，请读取D:\Project\GamePlanningDoc\20_项目\02_光与朽项目\01_策划文档\战斗金币掉落方案.txt  文件，先检查这个文件描述的金币掉落方案是否符合光与朽2D视角游戏，然后我想要的效果是，击杀怪物后会掉落经验球（已有，可作为掉落金币的参考），掉落金币（数量根据怪物击杀奖励配置来获取，可能是1-100），会有一个掉落动画，并再原地展示（1s-2s左右）,金币会自己旋转（已有2x2的序列贴图，需要做一个帧序列shader），展示完会自动吸附到上方UI的金币栏，然后金币栏的数字会逐渐增加。大概是这样的一个效果，如果哪里没有表述清楚，你可以询问我。也可以提供一些更好的方案或者建议。例如，如果从性能考虑，分为1个，5个金币和20个，三种。根据掉落金币的数量，自动规划播放那一种？ 使用文档方案的那种更好？还是用粒子特效分为三档做更好？ 需要你跟我一个完美的方案和建议。先等我确定好方案和制作步骤，再开始制作代码。
 
+我先给结论：文档里的大方向是对的，`对象池 + 代码控制 + 假物理散射 + 停留 + 吸附UI`，非常适合《光与朽》这种 2D 战斗视角；但文档里有几处还不够贴合你们当前项目，直接照抄不是最优。
+
+不够贴合的点主要有这些：
+1. 文档把它当成“超休闲满屏爆金币”来设计，强调 50-100 个真实金币同时出现，这对你们当前战斗节奏和 2D 俯视/平视读屏不一定最好，容易脏画面。
+2. 文档建议“每个金币都飞到 UI 后再加数字”，爽感是有，但你们项目里现在金币是在敌人死亡时就进 `session.coins` 的，和现有 `HUDPanel.coinText` 更新链路不一致。
+3. 纯粒子方案确实不适合做“精准吸附到指定 UI + 数字递增 + 可控表现”，这点文档判断是对的。
+4. `ScreenToWorldPoint(ui.position)` 这个思路能用，但你们项目里经验球已经有一套更稳的“UI目标转世界坐标”做法，金币最好直接复用同类结构，不要另起一套。
+
+我推荐你的“最终方案”是：**主表现用“对象池金币Sprite”，辅表现加少量粒子，不做纯粒子金币。**
+也就是：
+1. 怪物死亡时，先根据配置拿到金币奖励值。
+2. 系统根据奖励值“压缩成有限个表现金币”，不是 1 金币=1 个物体。
+3. 这些表现金币播放三段式动画：
+   - `散射`：0.18s-0.28s
+   - `原地展示/旋转`：0.8s-1.2s
+   - `吸附到顶部金币栏`：0.35s-0.55s，带轻微错峰
+4. 金币本体持续播放你现有 `2x2` 序列贴图旋转，用帧序列 shader。
+5. UI 数字不是瞬间跳，而是“追目标值”平滑增长。
+6. 额外加一个很轻的 burst 粒子，只负责“爆开时的金粉感”，不负责计数和吸附逻辑。
+
+我不建议直接做“1个、5个、20个三种整档播放”那种死规则；更好的做法是：**三种面额权重 + 表现数量压缩**。  
+也就是逻辑奖励还是 1-100，但视觉上拆成少量 token，例如面额 `1 / 5 / 20`，再限制单次最多显示 `6-8` 个金币物体。这样既有“数量感”，又不会炸性能和画面。
+
+推荐拆分规则：
+1. `1-4`：显示 `1-4` 个小金币，保留细腻感。
+2. `5-14`：压成 `3-5` 个金币，优先用 `5面额`。
+3. `15-39`：压成 `4-6` 个金币，混合 `5 / 20面额`。
+4. `40-100`：压成 `5-8` 个金币，优先 `20面额`，剩余再补 `5/1`。
+
+比如：
+- 7 金币 -> `5 + 1 + 1`
+- 18 金币 -> `5 + 5 + 5 + 1 + 1 + 1`
+- 47 金币 -> `20 + 20 + 5 + 1 + 1`
+- 100 金币 -> `20 + 20 + 20 + 20 + 20`
+
+这样比“按三档只播一种”更好，因为：
+1. 玩家会感觉奖励值和视觉是有关联的。
+2. 你仍然能严格控住单次生成数量。
+3. 后面要调爽感时，只改压缩规则，不用推翻整套系统。
+
+我对你们当前工程的建议是再往前走一步，不要让“真实数据变更”完全依赖金币飞到 UI 才触发。最稳的方案是：
+1. 逻辑层金币仍然在击杀时记账到本局数据。
+2. HUD 层单独维护一个“显示中的金币值”，让它慢慢追到真实值。
+3. 金币吸附到 UI 时只负责推进这个显示节奏、播放 punch 和音效。
+
+这样有两个好处：
+1. 不会因为中途切场景、暂停、结算导致金币丢失。
+2. 表现层和数据层解耦，更稳。
+
+制作方案我建议分 5 步走：
+1. 先做 `CoinPickupSpawner + CoinPickup`，完全参考经验球的对象池结构。
+2. 再做金币目标点注册，目标是战斗 HUD 的 `coinText/coinIcon`，不是局外 `TopAreaController`。
+3. 再做 `2x2` 序列贴图 shader，让金币待机和飞行时都能转。
+4. 再做 HUD 数字缓增、图标 punch、吸附音效节奏。
+5. 最后再补金粉粒子、拖尾、不同奖励档位参数。
+
+如果你认可，我下一步就按这个方向给你出一版“正式制作步骤清单 + 类职责拆分 + 数据字段设计”，然后你确认后我再开始写代码。
+
+我这里先只确认一个关键点：  
+**你说的“上方 UI 金币栏”，我先默认是战斗场景里的 `HUDPanel.coinText`，不是主界面的 `TopAreaController` 局外金币栏。这个理解对吗？**
+------------------------------------------------------------------------------------------------------------------------
+
+我认可这个方案，是战斗场景GameScene.scene里的Canvas节点下的GoldCoinBar 节点。是你认为的HUDPanel.coinText，你的理解是对的。因为金币图标较小，就不用做5面额，20面额的贴图的，直接通过金币大小来表现面额，或者就统一大小，因为金币表现效果也很快，玩家也感知不到是多少。只要最后金币栏的数字是正确的就好。你先出一个“正式制作步骤清单 + 类职责拆分 + 数据字段设计” ，我确认后，再开始代码编写。
+
+下面这版我按“能直接进入制作”的粒度来拆。
+
+**最终方案**
+采用 `对象池金币Sprite + 轻量假物理散射 + 停留旋转 + 吸附 GoldCoinBar + HUD 数字缓增`。  
+不做 `5/20` 面额贴图，也不强依赖金币尺寸区分面额。视觉金币统一资源即可，核心是“掉落数量压缩 + 数字正确增长 + 吸附节奏好看”。
+
+**制作步骤**
+1. 确认 `GameScene.scene` 的 `Canvas/GoldCoinBar` 结构，并给它提供一个可获取吸附目标世界坐标的入口。
+2. 新建金币预制体 `CoinPickup`。
+3. 给金币预制体接入 `2x2` 序列帧 Shader，保证待机和飞行时都在旋转。
+4. 新建 `CoinPickupSpawner`，监听敌人死亡事件，负责对象池、数量压缩、生成金币。
+5. 新建 `CoinPickup` 控制脚本，负责单个金币的三阶段动画：
+   - 散射
+   - 原地停留/旋转
+   - 吸附到 GoldCoinBar
+6. 新建战斗金币 HUD 表现控制器，负责：
+   - 获取 `GoldCoinBar` 的吸附目标点
+   - 金币栏数字平滑递增
+   - 图标/文本 punch
+   - 可选的吸附音效节奏
+7. 调整 `ProgressManager` 的金币入账时机与 HUD 表现关系：
+   - 逻辑金币仍在击杀时入账
+   - HUD 只做“显示值追真实值”
+8. 加一层掉落数量压缩规则，避免高奖励时生成过多金币物体。
+9. 联调参数，验证：
+   - 普通怪、精英、宝箱怪
+   - 连续大量击杀
+   - 暂停、结算、场景切换
+10. 最后补轻量粒子和音效，不先把系统复杂化。
+
+**类职责拆分**
+1. `CoinPickupSpawner`
+职责：
+- 监听 `GameEvents.OnEnemyDied`
+- 根据 `coin` 值决定要不要生成金币表现
+- 计算“表现金币数量”
+- 从对象池取金币并初始化
+- 管理回收
+
+建议接口：
+- `SetTargetPositionGetter(Func<Vector3> getter)`
+- `SpawnCoins(Vector3 position, int coinAmount)`
+- `ReturnCoin(CoinPickup coin)`
+- `ReturnAllCoins()`
+
+2. `CoinPickup`
+职责：
+- 单个金币的动画状态机
+- 执行散射、停留、吸附
+- 到达 UI 后回调 Spawner / HUD
+- 管理 SpriteRenderer / Trail / 序列帧材质参数
+
+建议接口：
+- `Initialize(CoinPickupInitData data, Func<Vector3> targetGetter, Action<CoinPickup> onArrive, Action<CoinPickup> onRecycle)`
+- `ResetState()`
+
+3. `BattleCoinPresentationController`
+职责：
+- 战斗内金币 UI 表现总控
+- 提供 `GoldCoinBar` 目标点世界坐标
+- 维护 `displayCoinValue`
+- 平滑追到真实 `session.coins`
+- 金币到达时做 punch 和音效
+
+建议接口：
+- `GetGoldCoinBarWorldPosition()`
+- `NotifyCoinArrived(int visualValue)`
+- `RefreshFromRuntime()`
+
+4. `HUDPanel`
+职责：
+- 继续持有战斗 HUD 基础引用
+- 可以作为 `BattleCoinPresentationController` 的宿主，或者继续只做原始 HUD 容器
+- 如果你想少加脚本，也可以把战斗金币表现直接并进 `HUDPanel`
+
+我的建议：
+- 如果想结构清晰，单独做 `BattleCoinPresentationController`
+- 如果想改动少，直接扩展 `HUDPanel`
+
+5. `CoinPickupCountPlanner`
+职责：
+- 纯规则类，不挂场景
+- 输入奖励值，输出要生成多少个表现金币
+
+建议：
+- 做成静态工具类最简单
+
+**数据字段设计**
+建议新建一个配置类或直接序列化在 `CoinPickupSpawner` 上。
+
+1. `CoinPickupSpawner` 字段
+- `CoinPickup coinPrefab`
+- `int prewarmCount = 24`
+- `int maxCount = 80`
+- `bool showDebugInfo = false`
+
+数量压缩：
+- `int maxVisualCoinCount = 8`
+- `int minVisualCoinCount = 1`
+- `AnimationCurve rewardToVisualCountCurve`
+或者先简单做：
+- `int smallRewardThreshold = 4`
+- `int mediumRewardThreshold = 15`
+- `int largeRewardThreshold = 40`
+
+生成分布：
+- `float spawnRadiusMin = 0.25f`
+- `float spawnRadiusMax = 0.8f`
+- `float angleJitter = 25f`
+
+2. `CoinPickup` 字段
+散射阶段：
+- `float scatterDuration = 0.22f`
+- `float scatterDistanceMin = 0.35f`
+- `float scatterDistanceMax = 0.9f`
+- `float scatterHeight = 0.2f`
+
+停留阶段：
+- `float hoverDurationMin = 0.85f`
+- `float hoverDurationMax = 1.15f`
+- `float hoverAmplitude = 0.06f`
+- `float hoverFrequency = 5f`
+
+吸附阶段：
+- `float absorbDelayMin = 0f`
+- `float absorbDelayMax = 0.18f`
+- `float absorbDurationMin = 0.32f`
+- `float absorbDurationMax = 0.48f`
+- `float absorbArcHeight = 0.8f`
+- `float arriveThreshold = 0.15f`
+
+视觉：
+- `SpriteRenderer spriteRenderer`
+- `TrailRenderer trailRenderer`
+- `Material sequenceFrameMaterial`
+- `Vector3 scaleMin`
+- `Vector3 scaleMax`
+
+值表现：
+- `int visualValue = 1`
+说明：
+- 这个值不一定等于真实金币 1
+- 只是“这个飞到 UI 时，推进多少显示值”
+- 最后一枚金币负责补齐余数，确保总显示正确
+
+3. `BattleCoinPresentationController` 字段
+UI 引用：
+- `RectTransform goldCoinBarTarget`
+- `RectTransform goldCoinBarIcon`
+- `TextMeshProUGUI coinText`
+
+数字滚动：
+- `float numberLerpSpeed = 18f`
+- `float minStepPerSecond = 20f`
+- `bool useUnscaledTime = false`
+
+表现缓存：
+- `int displayedCoins`
+- `int targetCoins`
+- `int queuedVisualCoins`
+
+UI 动画：
+- `float punchScale = 1.12f`
+- `float punchDuration = 0.12f`
+
+音效：
+- `AudioClip coinArriveSfx`
+- `float pitchStart = 1f`
+- `float pitchStep = 0.03f`
+- `float pitchResetDelay = 0.2f`
+
+4. `CoinPickupInitData`
+建议做成 struct，初始化时一次传清楚：
+- `Vector3 startPosition`
+- `int visualValue`
+- `float scaleMultiplier`
+- `float scatterAngleOffset`
+- `float absorbDelay`
+
+**数量压缩规则**
+我建议先上一个稳定、好调的版本，不要一开始搞复杂曲线。
+
+规则：
+1. `coinAmount <= 0`：不生成
+2. `1-4`：生成同等数量
+3. `5-12`：生成 `4`
+4. `13-24`：生成 `5`
+5. `25-49`：生成 `6`
+6. `50-79`：生成 `7`
+7. `80+`：生成 `8`
+
+分配方式：
+- 先算 `baseValue = coinAmount / visualCount`
+- 余数给最后几个金币补齐
+- 保证所有 `visualValue` 之和严格等于真实掉落值
+
+例如：
+- 7 金币 -> 4 枚，分配 `2,2,2,1`
+- 18 金币 -> 5 枚，分配 `4,4,4,3,3`
+- 47 金币 -> 6 枚，分配 `8,8,8,8,8,7`
+
+这样实现最稳，玩家也完全感知不到中间拆法。
+
+**事件与数据流**
+推荐流程：
+1. `EnemyBlob` 死亡 -> 触发 `GameEvents.OnEnemyDied(type, pos, xp, coin)`
+2. `ProgressManager` 继续立即执行 `AddCoins(coin)`，保证逻辑数据先正确
+3. `CoinPickupSpawner` 同时监听该事件，调用 `SpawnCoins(pos, coin)`
+4. 每个金币飞到 `GoldCoinBar` 后调用 `BattleCoinPresentationController.NotifyCoinArrived(visualValue)`
+5. `BattleCoinPresentationController` 让 `displayedCoins` 逐步追向真实值，并做 punch/音效
+6. 如果有极端情况导致表现少到达，HUD 最终仍应追到 `ProgressManager.SessionCoins`
+
+这样即使：
+- 暂停
+- 跳结算
+- 某个金币被提前回收
+也不会影响真实金币。
+
+**场景节点建议**
+你已经确认目标是 `Canvas/GoldCoinBar`，那我建议：
+1. `GoldCoinBar` 下单独放一个子节点 `AbsorbTarget`
+2. 吸附终点优先取 `AbsorbTarget`
+3. 没有时回退到 `GoldCoinBar` 中心点
+
+这样后面改 UI 位置时不用改代码。
+
+**我建议的首版取舍**
+首版先做这些：
+1. 金币统一大小，或只做微弱随机缩放
+2. 不做 5/20 面额贴图
+3. 不做复杂拖尾
+4. 不做地面碰撞
+5. 不做纯粒子金币
+6. 先不做“受击掉金币”，只做“击杀掉金币”
+
+首版就会已经很好看，而且风险最低。
+
+如果你认可，我下一步就开始按这个设计落代码。  
+我会优先做最小闭环版本：`Spawner + CoinPickup + HUD目标点 + 数字缓增`，然后再补 punch、音效、shader 接口。
+------------------------------------------------------------------------------------------------------------------------
+
+我认可，你可以继续下一步。 我已新建AbsorbTarget节点。后续有任何需要我在unity中操作的，需要给我列出。
+
+代码已经补好了，这一版把金币表现直接接进了现有战斗链路：
+
+- 新增 [CoinPickup.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Coin/CoinPickup.cs) 和 [CoinPickupSpawner.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Coin/CoinPickupSpawner.cs)，负责对象池、数量压缩、单金币三阶段动画。
+- 新增 [CoinFlipbook.shader](D:/Project/LightVSDecay/Assets/Shaders/CoinFlipbook.shader)，给你的 `2x2` 金币序列贴图做循环播放。
+- 扩展了 [HUDPanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/HUDPanel.cs)，现在它会：
+  - 注册 `GoldCoinBar/AbsorbTarget` 作为吸附目标
+  - 让战斗内金币数字平滑递增
+  - 在金币到达时做 punch
+  - 用“到达推进显示，超时兜底同步”的方式，避免数字比飞币更早跳
+- 扩展了 [AudioConfig.cs](D:/Project/LightVSDecay/Assets/Scripts/Audio/AudioConfig.cs) 和 [AudioManager.cs](D:/Project/LightVSDecay/Assets/Scripts/Audio/AudioManager.cs)，加了可选的金币吸附音效接口。
+
+你现在需要在 Unity 里做这些操作：
+1. 在 `GameScene.scene` 里创建一个场景对象，比如 `[CoinPickupSpawner]`，挂上 `CoinPickupSpawner`。
+2. 做一个金币预制体，挂 `CoinPickup`，至少要有 `SpriteRenderer`，可选加 `TrailRenderer`。
+3. 给金币预制体的 `SpriteRenderer` 新建一个材质，Shader 选 `LightVsDecay/CoinFlipbook`，贴上你的 `2x2` 金币序列图。
+4. 把这个金币预制体拖到 `CoinPickupSpawner.coinPrefab`。
+5. 在 `HUDPanel` 上把 `goldCoinBarTarget` 拖到你新建的 `GoldCoinBar/AbsorbTarget`。
+6. 在 `HUDPanel` 上把 `goldCoinBarPunchRoot` 拖到你希望做轻微缩放的节点，建议直接拖 `GoldCoinBar` 根节点。
+7. 如果想要金币吸附音效，在 `AudioConfig` 里给 `coinCollect` 指定一个音效；不配也能正常运行。
+
+我这边没法把 Unity 场景引用直接替你挂好，而且本地 `dotnet build` 目前会被旧的 `Assembly-CSharp.csproj` 卡住，因为它还没刷新到新脚本；这个通常在 Unity 回到编辑器、重新编译后就会更新。  
+你先按上面 7 步挂好，如果你愿意，我下一步可以继续帮你做两件事中的任意一个：
+
+1. 继续把 `GameScene.scene` 和 prefab 需要挂哪些字段，按更细的 Inspector 清单逐项写给你。
+2. 等你在 Unity 挂完后，把报错或运行效果截图/现象告诉我，我继续把参数和细节调顺。
+------------------------------------------------------------------------------------------------------------------------
+
+你这个shader，我使用后，显示错误，应该是UV的计算的问题，现在显示是4瓣，应该是按照我上传的图片（2x2序列图），应该是只显示一个硬币，然后播放序列图帧动画。
+
+这张图看起来，问题大概率不是“帧索引算错”，而是 `SpriteRenderer` 用的 `Sprite UV` 不是整张 2x2 图集的 `0..1`，所以 shader 被喂进了错误的 UV 范围，才会出现你截图里这种“四瓣切片”的效果。
+
+这个 shader 的前提是：
+
+1. `SpriteRenderer` 使用的是整张 `coins 1.png`。
+2. 这张图作为一个完整 sprite 来渲染。
+3. 贴图导入必须是 `Full Rect`，不能是 `Tight`。
+4. 不能直接拿切好的某一帧小 sprite 去跑这个 shader。
+
+你先在 Unity 里这样改：
+
+**`coins 1.png` 的 Import Settings**
+1. `Texture Type` 设为 `Sprite (2D and UI)`
+2. `Sprite Mode` 设为 `Single`
+3. `Mesh Type` 设为 `Full Rect`
+4. `Wrap Mode` 设为 `Clamp`
+5. `Apply`
+
+**Prefab 上的 SpriteRenderer**
+1. `Sprite` 直接指定整张 `coins 1.png`
+2. 不要指定切出来的四个子 sprite 之一
+3. 材质用 `CoinFlipbook`
+4. 参数设：
+   - `Columns = 2`
+   - `Rows = 2`
+   - `FPS = 8`
+
+你现在这个现象，最像是用了：
+- `Multiple + 子Sprite`
+或
+- `Single 但是 Mesh Type = Tight`
+
+这两种都会把 UV/网格裁坏，shader 再分帧时就会变成你看到的样子。
+
+如果你愿意，我下一步可以继续做两件事里的一个：
+1. 我直接把 shader 再改成更稳一点的版本，尽量减少 Sprite 导入设置踩坑。
+2. 你先按上面把 `coins 1.png` 改成 `Single + Full Rect`，如果还有问题，把修改后的 Inspector 截图给我，我继续精确定位。
+------------------------------------------------------------------------------------------------------------------------
+
+解决金币预制体挂载CoinPickup脚本报错问题，报错日志：UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'CoinPickup'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <b2d8a6cbf6b2487d82a43bdd714ada17>:0)
+LightVsDecay.Logic.Coin.CoinPickup..ctor () (at Assets/Scripts/Logic/Coin/CoinPickup.cs:43)
+UnityEngine.GUIUtility:ProcessEvent(Int32, IntPtr, Boolean&)
+
+已经修掉了，问题就在 CoinPickup.cs。
+
+我把：
+
+MaterialPropertyBlock 的字段初始化
+改成了：
+在 Awake() 里创建
+并且补了使用时的空值保护，所以现在把 CoinPickup 挂到预制体上不应该再报这个 CreateImpl is not allowed... 错误了。
+
+你现在回到 Unity 让它重新编译一次，再重新挂载试试。
+如果还有新报错，把新日志继续发我，我直接接着修。
+------------------------------------------------------------------------------------------------------------------------
+
+关于战斗内金币BUG，1.首先金币显示太大了（我已经缩放了预制体0.5，是否可以？），2. 需要告诉我金币悬空时间停留的参数在哪里修改（现在悬空停留时间有点长），3.然后金币飞到金币栏后，金币栏无限在放大，已经超出屏幕了，就是一个金币飞一下，然后金边放大一下。最后金币导致战斗卡死。 需要解决这些问题。
+
+这 3 个问题我已经先处理了一版，重点是把“金币栏无限放大”这个致命 bug 修掉了。
+
+1. 金币太大
+你把金币预制体缩放到 `0.5` 是可以的，这种做法没问题。  
+当前金币最终显示大小由两层共同决定：
+
+- 预制体自身 `Transform.localScale`
+- [CoinPickup.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Coin/CoinPickup.cs) 里的 `scaleRange`
+
+现在 `scaleRange` 还是：
+```csharp
+[SerializeField] private Vector2 scaleRange = new Vector2(0.9f, 1.08f);
+```
+
+意思是“在预制体基础缩放上再乘一个随机倍率”。  
+所以如果你已经把 prefab 缩到 `0.5`，这是完全成立的。
+
+如果你还想再小一点，有两种调法：
+1. 继续缩 prefab，比如 `0.35 ~ 0.45`
+2. 把 `scaleRange` 改小，比如：
+```csharp
+new Vector2(0.75f, 0.9f)
+```
+
+2. 金币悬空停留时间参数
+我已经把默认值从偏长改短了。你要调的是 [CoinPickup.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Coin/CoinPickup.cs) 里的这两个字段：
+
+```csharp
+[SerializeField] private float hoverDurationMin = 0.45f;
+[SerializeField] private float hoverDurationMax = 0.7f;
+```
+
+说明：
+- `hoverDurationMin`：最短停留时间
+- `hoverDurationMax`：最长停留时间
+
+如果你想更快吸走，可以改成：
+```csharp
+0.25f ~ 0.45f
+```
+
+3. 金币栏无限放大、最后卡死
+这个问题我已经修了，原因是之前每次 punch 动画都拿“当前缩放值”当基准，导致下一次在放大的基础上再放大，越滚越大。
+
+我现在改成了：
+- 只记录一次 `GoldCoinBar` 的原始缩放
+- 每次 punch 都从固定原始缩放开始
+- 如果上一次 punch 没结束，会先恢复原始缩放再开始下一次
+- `OnDisable/OnDestroy` 时也会强制恢复原始缩放
+
+修复点在 [HUDPanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/HUDPanel.cs)。
+
+你现在需要做的事很简单：
+1. 回 Unity 等它重新编译
+2. 运行后重点验证：
+   - 金币栏是否还会无限放大
+   - 是否还会在连杀后卡死
+   - 悬停时间是否符合你的手感
+
+如果你想，我下一步可以继续帮你做两件事里的一个：
+1. 我直接再把金币默认尺寸也一起调小一版，给你一组更稳的默认参数
+2. 你先测一次，把“现在的体感问题”告诉我，我继续精调散射、停留、吸附速度这三组参数
+------------------------------------------------------------------------------------------------------------------------
+
+解决unity打包微信小程序BUG问题，日志：Assets\Scripts\Logic\Statistics\BattleStatistics.cs(701,17): error CS0103: The name 'PrintWaveStats' does not exist in the current context
+
+已修复这个打包报错，在 [BattleStatistics.cs](D:\Project\LightVSDecay\Assets\Scripts\Logic\Statistics\BattleStatistics.cs:699) 把 `PrintWaveStats(data)` 的调用也加上了 `#if UNITY_EDITOR` 条件编译。
+
+原因是：
+`PrintWaveStats` 方法本身定义在 `#if UNITY_EDITOR` 里，只在编辑器环境存在；微信小程序构建属于非 Editor 平台，方法会被裁掉，但原来的调用还在，所以编译时报 “does not exist in the current context”。
+
+现在效果是：
+编辑器里 `logToConsole` 仍然能打印波次统计；
+微信小程序/其他发布平台不会再编译到这个调用。
+
+建议你现在重新执行一次 Unity 打包；如果还有下一条编译错误，继续把日志发我，我可以顺着一起清掉。
 
 ------------------------------------------------------------------------------------------------------------------------
+
+解决unity打包微信小程序BUG，关于shader的，日志：Shader error in 'Shader Graphs/Fx_Shoot&HitVol2_Modeling': 'SAMPLE_DEPTH_TEXTURE': Too few arguments to a macro call. at /Program Files/Tuanjie/Hub/Editor/2022.3.61t1/Editor/Data/CGIncludes/AutoLight.cginc(29)
+Shader error in 'Shader Graphs/Fx_Shoot&HitVol2_Modeling': 'SAMPLE_DEPTH_TEXTURE': Too few arguments to a macro call. at /Program Files/Tuanjie/Hub/Editor/2022.3.61t1/Editor/Data/CGIncludes/UnityShadowLibrary.cginc(48)
+Shader error in 'Shader Graphs/Fx_Shoot&HitVol2_Modeling': invalid subscript 'vec' at /Project/LightVSDecay/Library/PackageCache/com.unity.shadergraph@14.1.0/Editor/Generation/Targets/BuiltIn/Editor/ShaderGraph/Includes/ShadowCasterPass.hlsl(15) (on gles)
+Shader error in 'Shader Graphs/Fx_Shoot&HitVol2_Modeling': undeclared identifier 'SAMPLE_DEPTH_TEXTURE_PROJ' at Files/Tuanjie/Hub/Editor/2022.3.61t1/Editor/Data/CGIncludes/UnityShadowLibrary.cginc(79) (on gles)
+PPtr cast failed when dereferencing! Casting from Shader to Texture2D!
+UnityEditor.BuildPipeline:BuildPlayer (string[],string,UnityEditor.BuildTarget,UnityEditor.BuildOptions)
+WeChatWASM.WXConvertCore:Build () (at ./Library/PackageCache/com.qq.weixin.minigame@4443e5a9bc/Editor/WXConvertCore.cs:651)
+WeChatWASM.WXConvertCore:DoExport (bool) (at ./Library/PackageCache/com.qq.weixin.minigame@4443e5a9bc/Editor/WXConvertCore.cs:149)
+WeChatWASM.WXSettingsHelper:OnBuildButtonGUI (UnityEditor.EditorWindow) (at ./Library/PackageCache/com.qq.weixin.minigame@4443e5a9bc/Editor/WXEditorSettingHelper.cs:305)
+WeChatWASM.WXEditorWin:OnGUI () (at ./Library/PackageCache/com.qq.weixin.minigame@4443e5a9bc/Editor/WXEditorWindow.cs:43)
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+
+已处理这个微信小程序打包里的 Shader Graph 问题，修改了 [Fx_Shoot&HitVol2_Modeling.shadergraph](D:\Project\LightVSDecay\Assets\VFX_Klaus\Shaders\Fx_Shoot&HitVol2_Modeling.shadergraph:543) 和 [Fx_Shoot&HitVol2_Modeling.shadergraph](D:\Project\LightVSDecay\Assets\VFX_Klaus\Shaders\Fx_Shoot&HitVol2_Modeling.shadergraph:3111)。
+
+我做了两件事：
+1. 只保留 `Universal` 作为 active target，移除了这个图里同时挂着的 `BuiltIn` 和 `HD` target。
+2. 关闭了 `Cast Shadows` 和 `Receive Shadows`，避免这类粒子 mesh 特效继续走微信 `gles` 上容易报错的深度/ShadowCaster 编译路径。
+
+这次报错里最关键的线索是它在编 `AutoLight.cginc`、`UnityShadowLibrary.cginc` 和 `ShadowCasterPass.hlsl`，说明问题不是贴图资源本身，而是这个 Shader Graph 被编进了不适合微信小程序的阴影/深度宏分支。这个修法通常是最稳的。
+
+你现在可以回到 Unity 里让这个 Shader Graph 重新导入一次，然后重新打包微信小程序。  
+如果还报 shader 相关错误，把新的第一条报错继续发我，我会接着清。
 ------------------------------------------------------------------------------------------------------------------------

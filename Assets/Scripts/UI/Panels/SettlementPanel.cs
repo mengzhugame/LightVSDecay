@@ -16,6 +16,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 using System.Collections.Generic;
+using LightVsDecay.Ads;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.BattleReward;
 using LightVsDecay.Logic.Equipment;
@@ -122,6 +123,16 @@ namespace LightVsDecay.UI.Panels
             Time.timeScale = 0f;
             if (ScreenEffectController.Instance != null)
                 ScreenEffectController.Instance.StopAllEffects();
+
+            AdManager.Instance.ShowBanner("Settlement");
+        }
+
+        private void OnDisable()
+        {
+            if (AdManager.HasInstance)
+            {
+                AdManager.Instance.HideBanner("Settlement");
+            }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -380,8 +391,13 @@ namespace LightVsDecay.UI.Panels
                 doubleReceivedButton.onClick.RemoveAllListeners();
                 doubleReceivedButton.onClick.AddListener(() =>
                 {
-                    ApplyRewardsToManagers(true);
-                    ReturnToMainMenu();
+                    AdManager.Instance.ShowRewardedAd(AdType.SettlementDouble,
+                        onSuccess: () =>
+                        {
+                            ApplyRewardsToManagers(true);
+                            ReturnToMainMenu();
+                        },
+                        onFail: RefreshDoubleButtonState);
                 });
             }
             if (returnButton != null)
@@ -393,6 +409,19 @@ namespace LightVsDecay.UI.Panels
                     ReturnToMainMenu();
                 });
             }
+
+            RefreshDoubleButtonState();
+        }
+
+        private void RefreshDoubleButtonState()
+        {
+            if (doubleReceivedButton == null)
+            {
+                return;
+            }
+
+            bool canUseDoubleReward = isVictory && !_rewardsApplied && AdManager.Instance.CanWatchAd(AdType.SettlementDouble);
+            doubleReceivedButton.interactable = canUseDoubleReward;
         }
 
         private void ReturnToMainMenu()

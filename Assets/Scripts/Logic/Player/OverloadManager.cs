@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using LightVsDecay.Core.Pool;
@@ -77,6 +78,11 @@ namespace LightVsDecay.Logic.Player
         
         [Tooltip("充满特效粒子")]
         [SerializeField] private ParticleSystem readyVFX;
+
+        [Header("首次提示气泡")]
+        [SerializeField] private GameObject readyBubbleRoot;
+        [SerializeField] private TextMeshProUGUI readyBubbleText;
+        [SerializeField] private string readyBubbleMessage = "大招已就绪，点击立即释放！";
         
         [Header("UI 动画")]
         [Tooltip("进度条平滑速度")]
@@ -309,6 +315,31 @@ namespace LightVsDecay.Logic.Player
             readyVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             readyVFX.Clear(true);
             readyVFX.gameObject.SetActive(false);
+        }
+
+        private void ShowReadyBubble()
+        {
+            if (readyBubbleRoot == null || ProgressManager.Instance == null || ProgressManager.Instance.Meta.hasSeenOverloadTutorial)
+            {
+                return;
+            }
+
+            if (readyBubbleText != null)
+            {
+                readyBubbleText.text = readyBubbleMessage;
+            }
+
+            readyBubbleRoot.SetActive(true);
+            ProgressManager.Instance.Meta.hasSeenOverloadTutorial = true;
+            ProgressManager.Instance.Meta.Save();
+        }
+
+        private void HideReadyBubble()
+        {
+            if (readyBubbleRoot != null)
+            {
+                readyBubbleRoot.SetActive(false);
+            }
         }
 
         private void ShowReadyVFX()
@@ -564,6 +595,7 @@ namespace LightVsDecay.Logic.Player
         {
             // 显示就绪特效
             ShowReadyVFX();
+            ShowReadyBubble();
             
             if (showDebugInfo)
             {
@@ -612,6 +644,7 @@ namespace LightVsDecay.Logic.Player
         
         private void DeactivateOverload()
         {
+            HideReadyBubble();
             // 通知 TurretController 退出大招模式
             if (turretController != null)
             {

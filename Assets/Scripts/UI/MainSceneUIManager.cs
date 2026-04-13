@@ -14,6 +14,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 using LightVsDecay.Audio;
 using LightVsDecay.Logic;
 using LightVsDecay.Core;
@@ -33,6 +34,7 @@ namespace LightVsDecay.UI
         // 单例
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+        public static event Action<MainSceneState> OnStateChanged;
         public static MainSceneUIManager Instance { get; private set; }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -280,6 +282,7 @@ namespace LightVsDecay.UI
                 case MainSceneState.KeJi:       ApplyKeJiState();      break;
                 case MainSceneState.ZhuangBei:  ApplyZhuangBeiState(); break;
             }
+            OnStateChanged?.Invoke(newState);
             if (showDebugInfo) GameLogger.Log($"[MainSceneUIManager] 切换状态: {newState}");
         }
 

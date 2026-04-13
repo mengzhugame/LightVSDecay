@@ -56,6 +56,9 @@ namespace LightVsDecay.UI.Equipment
 
         private InventoryStack                 _stack;
         private Action<InventoryStack>         _onClickCallback;
+        public InventoryStack Stack => _stack;
+        public RectTransform RectTransform => transform as RectTransform;
+        public Button Button => itemButton;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 公开方法

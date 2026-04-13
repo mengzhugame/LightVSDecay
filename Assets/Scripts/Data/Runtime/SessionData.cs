@@ -201,6 +201,14 @@ namespace LightVsDecay.Data.Runtime
         
         /// <summary>当前查看的章节索引（UI状态，非进度）</summary>
         public int currentViewChapterIndex = 0;
+
+        public bool isFirstPlay = true;
+        public bool hasSeenLaserTutorial = false;
+        public bool hasSeenSkillTutorial = false;
+        public bool hasSeenOverloadTutorial = false;
+        public bool hasSeenDroneTutorial = false;
+        public bool hasViewedTechTreeTutorial = false;
+        public bool hasViewedEquipmentTutorial = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 存档键
@@ -216,6 +224,13 @@ namespace LightVsDecay.Data.Runtime
         private const string KEY_AD_RESET_DATE  = "StaminaAdResetDate";
         private const string KEY_AD_GOLD_COUNT      = "AdGoldWatchCount";
         private const string KEY_AD_BLUEPRINT_COUNT = "AdBlueprintWatchCount";
+        private const string KEY_FIRST_PLAY = "Tutorial_IsFirstPlay";
+        private const string KEY_SEEN_LASER_TUTORIAL = "Tutorial_HasSeenLaser";
+        private const string KEY_SEEN_SKILL_TUTORIAL = "Tutorial_HasSeenSkill";
+        private const string KEY_SEEN_OVERLOAD_TUTORIAL = "Tutorial_HasSeenOverload";
+        private const string KEY_SEEN_DRONE_TUTORIAL = "Tutorial_HasSeenDrone";
+        private const string KEY_VIEWED_TECH_TREE_TUTORIAL = "Tutorial_HasViewedTechTree";
+        private const string KEY_VIEWED_EQUIPMENT_TUTORIAL = "Tutorial_HasViewedEquipment";
         // 默认章节数量
         private const int DEFAULT_CHAPTER_COUNT = 3;
         
@@ -353,6 +368,13 @@ namespace LightVsDecay.Data.Runtime
             adLastResetDate    = PlayerPrefs.GetString(KEY_AD_RESET_DATE,  "");
             adGoldWatchCountToday      = PlayerPrefs.GetInt(KEY_AD_GOLD_COUNT,      0);
             adBlueprintWatchCountToday = PlayerPrefs.GetInt(KEY_AD_BLUEPRINT_COUNT, 0);
+            isFirstPlay = PlayerPrefs.GetInt(KEY_FIRST_PLAY, 1) == 1;
+            hasSeenLaserTutorial = PlayerPrefs.GetInt(KEY_SEEN_LASER_TUTORIAL, 0) == 1;
+            hasSeenSkillTutorial = PlayerPrefs.GetInt(KEY_SEEN_SKILL_TUTORIAL, 0) == 1;
+            hasSeenOverloadTutorial = PlayerPrefs.GetInt(KEY_SEEN_OVERLOAD_TUTORIAL, 0) == 1;
+            hasSeenDroneTutorial = PlayerPrefs.GetInt(KEY_SEEN_DRONE_TUTORIAL, 0) == 1;
+            hasViewedTechTreeTutorial = PlayerPrefs.GetInt(KEY_VIEWED_TECH_TREE_TUTORIAL, 0) == 1;
+            hasViewedEquipmentTutorial = PlayerPrefs.GetInt(KEY_VIEWED_EQUIPMENT_TUTORIAL, 0) == 1;
             // 加载章节进度
             LoadChapterProgress(chapterCount);
             
@@ -452,6 +474,13 @@ namespace LightVsDecay.Data.Runtime
             PlayerPrefs.SetString(KEY_AD_RESET_DATE,  adLastResetDate);
             PlayerPrefs.SetInt(KEY_AD_GOLD_COUNT,      adGoldWatchCountToday);
             PlayerPrefs.SetInt(KEY_AD_BLUEPRINT_COUNT, adBlueprintWatchCountToday);
+            PlayerPrefs.SetInt(KEY_FIRST_PLAY, isFirstPlay ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_SEEN_LASER_TUTORIAL, hasSeenLaserTutorial ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_SEEN_SKILL_TUTORIAL, hasSeenSkillTutorial ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_SEEN_OVERLOAD_TUTORIAL, hasSeenOverloadTutorial ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_SEEN_DRONE_TUTORIAL, hasSeenDroneTutorial ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_VIEWED_TECH_TREE_TUTORIAL, hasViewedTechTreeTutorial ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_VIEWED_EQUIPMENT_TUTORIAL, hasViewedEquipmentTutorial ? 1 : 0);
             // 保存章节进度（JSON格式）
             SaveChapterProgress();
             
@@ -488,6 +517,13 @@ namespace LightVsDecay.Data.Runtime
             adGoldWatchCountToday      = 0;
             adBlueprintWatchCountToday = 0;
             adLastResetDate            = "";
+            isFirstPlay = true;
+            hasSeenLaserTutorial = false;
+            hasSeenSkillTutorial = false;
+            hasSeenOverloadTutorial = false;
+            hasSeenDroneTutorial = false;
+            hasViewedTechTreeTutorial = false;
+            hasViewedEquipmentTutorial = false;
             // 重置章节进度
             InitializeDefaultChapterProgress(chapterCount);
             

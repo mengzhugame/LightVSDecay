@@ -488,8 +488,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   firePoint: {fileID: 2733193374505285138}
   effectSprite: {fileID: 4305644797347660783}
-  effectDimColor: {r: 0, g: 0.4030826, b: 1, a: 0.15}
-  effectGlowColor: {r: 0.10196078, g: 0.6713087, b: 1, a: 1}
+  effectDimColor: {r: 0.4592879, g: 0.6654993, b: 0.96981126, a: 0.15}
+  effectGlowColor: {r: 1, g: 1, b: 1, a: 1}
   firstShotDelay: 1.2
 --- !u!1 &7440274969995015450
 GameObject:

@@ -29,6 +29,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using LightVsDecay.Ads;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Equipment;
 using LightVsDecay.Core;
@@ -209,12 +210,13 @@ namespace LightVsDecay.UI.Panels
         private void RefreshEnergyMode()
         {
             var pm = ProgressManager.Instance;
+            var adManager = AdManager.Instance;
 
             SetTitle(energyTitle);
             SetAdIcon(energyIcon);
 
             bool isFull   = pm == null || pm.IsEnergyFull;
-            bool canWatch = pm != null && pm.CanWatchAdForEnergy;
+            bool canWatch = pm != null && adManager.CanWatchAd(AdType.EnergyTopUp);
 
             // 倒计时：满载或次数耗尽时隐藏
             SetCountdownGroupVisible(!isFull && canWatch);
@@ -232,6 +234,7 @@ namespace LightVsDecay.UI.Panels
             RefreshCountdown();
 
             SetAdButton(canWatch, $"+{pm?.AdEnergyReward ?? 2}", adExhaustedInfo);
+            SetAdCount(adManager.GetDailyCount(AdType.EnergyTopUp), adManager.GetDailyLimit(AdType.EnergyTopUp));
         }
 
         private void RefreshCountdown()
@@ -255,17 +258,19 @@ namespace LightVsDecay.UI.Panels
         private void RefreshGoldMode()
         {
             var pm = ProgressManager.Instance;
+            var adManager = AdManager.Instance;
 
             SetTitle(goldTitle);
             SetAdIcon(goldIcon);
             SetCountdownGroupVisible(false);
 
-            bool canWatch = pm != null && pm.CanWatchAdForGold;
+            bool canWatch = pm != null && adManager.CanWatchAd(AdType.GoldTopUp);
 
             if (infoMainText != null && canWatch)
                 infoMainText.text = goldInfo;
 
             SetAdButton(canWatch, $"+{pm?.AdGoldReward ?? 500}", adExhaustedInfo);
+            SetAdCount(adManager.GetDailyCount(AdType.GoldTopUp), adManager.GetDailyLimit(AdType.GoldTopUp));
         }
 
         // ── 图纸模式 ──────────────────────────────────────────
@@ -273,17 +278,19 @@ namespace LightVsDecay.UI.Panels
         private void RefreshBlueprintMode()
         {
             var pm = ProgressManager.Instance;
+            var adManager = AdManager.Instance;
 
             SetTitle(blueprintTitle);
             SetAdIcon(blueprintIcon);
             SetCountdownGroupVisible(false);
 
-            bool canWatch = pm != null && pm.CanWatchAdForBlueprint;
+            bool canWatch = pm != null && adManager.CanWatchAd(AdType.BlueprintTopUp);
 
             if (infoMainText != null && canWatch)
                 infoMainText.text = blueprintInfo;
 
             SetAdButton(canWatch, $"+{pm?.AdBlueprintReward ?? 3}", adExhaustedInfo);
+            SetAdCount(adManager.GetDailyCount(AdType.BlueprintTopUp), adManager.GetDailyLimit(AdType.BlueprintTopUp));
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -327,6 +334,12 @@ namespace LightVsDecay.UI.Panels
                 infoMainText.text = exhaustedInfoText;
         }
 
+        private void SetAdCount(int current, int total)
+        {
+            if (adCountText != null)
+                adCountText.text = $"今日已观看 {current}/{total} 次";
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 广告按钮点击
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -336,26 +349,36 @@ namespace LightVsDecay.UI.Panels
             var pm = ProgressManager.Instance;
             if (pm == null) return;
 
-            bool success = false;
             switch (_currentMode)
             {
-                case TopBarResourceType.Energy:    success = pm.WatchAdForEnergy();    break;
-                case TopBarResourceType.Gold:      success = pm.WatchAdForGold();      break;
-                case TopBarResourceType.Blueprint: success = pm.WatchAdForBlueprint(); break;
+                case TopBarResourceType.Energy:
+                    AdManager.Instance.ShowRewardedAd(AdType.EnergyTopUp,
+                        onSuccess: () =>
+                        {
+                            pm.GrantAdEnergyReward();
+                            Hide();
+                        },
+                        onFail: RefreshAll);
+                    break;
+                case TopBarResourceType.Gold:
+                    AdManager.Instance.ShowRewardedAd(AdType.GoldTopUp,
+                        onSuccess: () =>
+                        {
+                            pm.GrantAdGoldReward();
+                            Hide();
+                        },
+                        onFail: RefreshAll);
+                    break;
+                case TopBarResourceType.Blueprint:
+                    AdManager.Instance.ShowRewardedAd(AdType.BlueprintTopUp,
+                        onSuccess: () =>
+                        {
+                            pm.GrantAdBlueprintReward();
+                            Hide();
+                        },
+                        onFail: RefreshAll);
+                    break;
             }
-
-            if (showDebugInfo)
-                GameLogger.Log($"[TopBarTipsPanel] 广告({_currentMode}) 结果: {success}");
-
-            // ★ 广告成功后关闭面板
-            if (success)
-            {
-                Hide();
-                return;
-            }
-
-            // 失败（次数已耗尽）→ 刷新显示
-            RefreshAll();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

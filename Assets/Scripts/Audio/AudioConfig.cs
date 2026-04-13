@@ -191,6 +191,16 @@ namespace LightVsDecay.Audio
 
         [Tooltip("经验球收集音效冷却时间（秒）")]
         public float xpOrbCollectCooldown = 0.1f;
+
+        [Tooltip("金币收集（飞入金币栏）")]
+        public AudioClip coinCollect;
+
+        [Tooltip("金币收集音量")]
+        [Range(0f, 1f)]
+        public float coinCollectVolume = 0.45f;
+
+        [Tooltip("金币收集音效冷却时间（秒）")]
+        public float coinCollectCooldown = 0.04f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 空投音效
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

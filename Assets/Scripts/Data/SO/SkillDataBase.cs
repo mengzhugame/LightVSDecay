@@ -8,6 +8,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using LightVsDecay.Core;
+using LightVsDecay.Logic;
+using LightVsDecay.Data.Runtime;
 
 namespace LightVsDecay.Data.SO
 {
@@ -132,6 +134,11 @@ namespace LightVsDecay.Data.SO
         /// <returns>可选择的技能列表（最多3个）</returns>
         public List<SkillData> GenerateChoices(Dictionary<SkillType, int> currentSkillLevels)
         {
+            if (ShouldUseFirstSkillTutorialChoices(currentSkillLevels))
+            {
+                return BuildFirstSkillTutorialChoices();
+            }
+
             List<SkillData> choices = new List<SkillData>();
             
             if (showDebugInfo)
@@ -225,11 +232,23 @@ namespace LightVsDecay.Data.SO
         private List<SkillData> BuildMainPool(Dictionary<SkillType, int> currentSkillLevels)
         {
             List<SkillData> pool = new List<SkillData>();
+            bool hasFocus = currentSkillLevels.GetValueOrDefault(SkillType.Focus, 0) > 0;
+            bool hasFrost = currentSkillLevels.GetValueOrDefault(SkillType.Frost, 0) > 0;
             
             // 添加未满级的主动技能
             foreach (var skill in activeSkills)
             {
                 if (skill == null) continue;
+
+                if ((skill.type == SkillType.Focus && hasFrost) ||
+                    (skill.type == SkillType.Frost && hasFocus))
+                {
+                    if (showDebugInfo)
+                    {
+                        GameLogger.Log($"[SkillDatabase] 互斥技能已解锁，跳过: {skill.displayName}");
+                    }
+                    continue;
+                }
                 
                 int currentLevel = currentSkillLevels.GetValueOrDefault(skill.type, 0);
                 
@@ -369,6 +388,39 @@ namespace LightVsDecay.Data.SO
         /// <summary>
         /// 简化版三选一（纯随机，用于测试）
         /// </summary>
+        private bool ShouldUseFirstSkillTutorialChoices(Dictionary<SkillType, int> currentSkillLevels)
+        {
+            if (currentSkillLevels == null || currentSkillLevels.Count > 0)
+            {
+                return false;
+            }
+
+            MetaData meta = ProgressManager.Instance?.Meta;
+            return meta != null && !meta.hasSeenSkillTutorial;
+        }
+
+        private List<SkillData> BuildFirstSkillTutorialChoices()
+        {
+            List<SkillData> choices = new List<SkillData>(3);
+            TryAddFixedChoice(choices, SkillType.Frost);
+            TryAddFixedChoice(choices, SkillType.Focus);
+            TryAddFixedChoice(choices, SkillType.Prism);
+            return choices;
+        }
+
+        private void TryAddFixedChoice(List<SkillData> choices, SkillType type)
+        {
+            SkillData data = GetData(type);
+            if (data != null)
+            {
+                choices.Add(data);
+            }
+            else
+            {
+                GameLogger.LogWarning($"[SkillDatabase] 首次固定技能缺失: {type}");
+            }
+        }
+
         public List<SkillData> GenerateRandomChoices()
         {
             return GenerateChoices(new Dictionary<SkillType, int>());

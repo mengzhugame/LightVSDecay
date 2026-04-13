@@ -114,6 +114,8 @@ namespace LightVsDecay.UI.TechTree
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         public TechTreeNodeData NodeData => nodeData;
+        public RectTransform RectTransform => transform as RectTransform;
+        public Button Button => button;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 内部

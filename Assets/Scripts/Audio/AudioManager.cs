@@ -95,6 +95,7 @@ namespace LightVsDecay.Audio
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private float lastXpOrbCollectTime = -1f;
+        private float lastCoinCollectTime = -1f;
         
         public float BGMVolume
         {
@@ -1000,6 +1001,21 @@ namespace LightVsDecay.Audio
     
             lastXpOrbCollectTime = Time.time;
             PlaySFX(config.xpOrbCollect, config.xpOrbVolume);
+        }
+
+        /// <summary>
+        /// Plays the battle coin collect sound when a coin reaches the HUD.
+        /// </summary>
+        public void PlayCoinCollect()
+        {
+            if (config == null || config.coinCollect == null) return;
+            if (battleSfxMuted) return;
+
+            float cooldown = config.coinCollectCooldown;
+            if (Time.time - lastCoinCollectTime < cooldown) return;
+
+            lastCoinCollectTime = Time.time;
+            PlaySFX(config.coinCollect, config.coinCollectVolume);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

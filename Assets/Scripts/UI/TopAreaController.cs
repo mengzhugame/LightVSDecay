@@ -29,6 +29,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 using LightVsDecay.Audio;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Equipment;
@@ -39,11 +40,14 @@ namespace LightVsDecay.UI
 {
     public class TopAreaController : MonoBehaviour
     {
+        public static event Action BackClicked;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 单例
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         public static TopAreaController Instance { get; private set; }
+        public RectTransform BackButtonRect => backButton != null ? backButton.GetComponent<RectTransform>() : null;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector — 资源文字
@@ -182,6 +186,7 @@ namespace LightVsDecay.UI
             PlayButtonSound();
 
             MainSceneUIManager.Instance?.BackToMain();
+            BackClicked?.Invoke();
 
             if (showDebugInfo)
                 GameLogger.Log("[TopAreaController] 返回主界面");

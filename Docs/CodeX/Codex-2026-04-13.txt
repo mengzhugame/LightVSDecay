@@ -1,0 +1,430 @@
+关于光与朽项目的IAA广告系统功能制作， 请读取D:\Project\GamePlanningDoc\20_项目\02_光与朽项目\01_策划文档\光与朽_IAA广告接入系统文档_V2.0.md 文档，先整理分析需求，如遇到不确定的问题，先询问我，再开始制作相关代码。
+
+**需求分析**
+
+我已经读完文档，并结合当前工程代码做了对照。结论是：这次不是“把几个按钮接上广告”这么简单，而是要补一套统一的 IAA 基础设施，然后把现有几个 UI 面板逐步接进去。
+
+当前项目现状和文档目标的关系大致是这样：
+
+1. 文档目标明确要有统一 `AdManager`
+   负责广告位枚举、每日频控、场次内频控、预加载、展示、失败降级、奖励回调，以及后续微信小游戏 SDK 接入。
+
+2. 现有工程里还没有真正的 `AdManager`
+   我没有找到广告总控类，也没有找到微信激励视频 / Banner 的桥接代码。现在只有 `ProgressManager` 里几组“Mock 广告奖励”方法：
+   - `WatchAdForEnergy() / GrantAdEnergyReward()`
+   - `WatchAdForGold() / GrantAdGoldReward()`
+   - `WatchAdForBlueprint() / GrantAdBlueprintReward()`
+
+3. 现有 UI 已经有几个接点，但逻辑还是本地直发奖励
+   - [Assets/Scripts/UI/Panels/TopBarTipsPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/TopBarTipsPanel.cs)
+     已直接调用 `ProgressManager.WatchAdForEnergy/Gold/Blueprint()`
+   - [Assets/Scripts/UI/Panels/SettlementPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/SettlementPanel.cs)
+     `doubleReceivedButton` 已存在，但目前点击后直接 `ApplyRewardsToManagers(true)`，没有广告流程
+   - [Assets/Scripts/UI/Panels/SkillChooseOnePanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/SkillChooseOnePanel.cs)
+     当前只有 1 次免费重掷，`retryButton` 用完就不可点；还没有“看广告再抽一次”
+   - [Assets/Scripts/UI/UIManager.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/UIManager.cs)
+     目前 `OnGameDefeat()` 是直接 `ShowSettlementPanel(false)`，没有先弹 `RevivePanel`
+   - 工程里我没搜到 `RevivePanel` 对应脚本，只有 `UIManager.ShowRevivePanel()` 这个入口
+
+**按文档拆分的功能范围**
+
+如果按文档完整落地，代码会分成 4 块：
+
+1. 广告底层
+   - `AdType` 枚举
+   - `AdManager` 单例
+   - 频控存储：每日总上限、资源广告单独上限、场次内复活限制、每次升级仅 1 次广告重掷
+   - 预加载接口
+   - 广告结果回调：成功 / 失败 / 中断
+   - 后续接微信小游戏 SDK 的桥接层
+
+2. 业务接入
+   - `SettlementPanel`：双倍领取改为“先看广告，再双倍发奖”
+   - `SkillChooseOnePanel`：免费重掷用完后，切换为广告重掷入口
+   - `TopBarTipsPanel`：从 `ProgressManager` Mock 改为统一走 `AdManager`
+   - `UIManager` 或失败流程：死亡时先判断是否弹 `RevivePanel`
+
+3. 复活系统
+   - 需要真正的 `RevivePanel` 控制逻辑
+   - 波次门槛判断：`wave >= 4`
+   - 每局限 1 次
+   - 复活奖励：满血、护盾 50%、继续当前波次
+   - 放弃则进入失败结算
+
+4. Banner
+   - `MainMenuPanel` 显示 B1
+   - `SettlementPanel` 显示 B2
+   - 进入/退出界面时创建与销毁
+
+**我已经确认的差距 / 风险点**
+
+1. 文档写的是 `#1/#2/#3` 共享每日 10 次总上限，但当前 `ProgressManager` 的广告计数模型不是这个结构。
+   现在更像“体力一个总次数、金币一个次数、蓝图一个次数”，而且金币/蓝图还是共用 `MaxDailyAdWatches`，与文档的 `5/3/3/10` 不一致。
+
+2. 复活链路当前并未接入。
+   `UIManager.OnGameDefeat()` 直接进结算，说明复活面板逻辑要新补，且会碰到战斗失败流程、玩家状态恢复、波次恢复这些游戏内逻辑。
+
+3. 文档要求微信小游戏 SDK，但当前工程是 Unity 项目，且我还没看到你们现有的微信桥接封装。
+   这决定了我要不要先做“平台无关的 `AdManager + Mock Provider`”，还是直接写微信实现。
+
+4. 文档里有“RevivePanel 显示当前波次 + BOSS/精英怪剩余 HP 百分比”，但当前我还没定位到统一的“当前关键怪剩余血量”接口。
+   这块可能需要额外查战斗系统。
+
+**开始制作前，需要你确认 4 个关键问题**
+
+1. 这次开发范围，你希望我做哪一种？
+   - 方案 A：先做 P0/P1 的完整基础版，只接 `#2 #3 #4 #5 #6 + Banner`，`#1 技能广告重掷` 先不做
+   - 方案 B：按文档一次性全做 `#1~#6 + B1/B2`
+   - 方案 C：先只做 P0，优先 `复活 + 结算双倍`
+
+2. 微信广告接入方式，当前项目里是否已经有可复用的桥接层或 JS 调用规范？
+   如果有，请告诉我相关脚本路径；如果没有，我会默认先做：
+   - Unity 侧统一 `AdManager`
+   - 一个 `MockAdProvider`
+   - 预留 `WeChatAdProvider` 接口，不直接写死平台实现
+
+3. `RevivePanel` 现在是否已经有场景里的 UI 预制和按钮绑定，只是还没写脚本？
+   如果有，请告诉我是哪个 prefab / 脚本；如果没有，我会默认本次先补控制脚本与逻辑接口，不大改 UI 结构。
+
+4. 复活效果里的“满血 + 护盾恢复 50% + 继续当前波次”，你们现在是否已有现成接口？
+   比如类似：
+   - `PlayerHealth.RestoreFullHealth()`
+   - `Shield.RestorePercent(0.5f)`
+   - `GameManager.ResumeAfterRevive()`
+   如果没有，我下一步会先去战斗/玩家系统里查可用恢复入口，再给你一个最小侵入实现方案。
+
+你回复这 4 点后，我就开始正式拆代码并落地。
+------------------------------------------------------------------------------------------------------------------------
+
+1.方案B。当然需要你先做评估，可以分步骤来制作。2.需要你查找现在项目的工程代码，来确认是否有可复用的桥接层。我已经给unity光与朽项目工程安装了微信的SDK插件，并且也打包小游戏测试，都没有问题，文件夹在D:\Project\LightVSDecay\Assets\WX-WASM-SDK-V2 和 D:\Project\LightVSDecay\Library\PackageCache\com.qq.weixin.minigame@4443e5a9bc 这个，我不确定现在是使用的那一个SDK的文件夹。需要你分析后告诉我。 3.RevivePanel复活面板，已经在GameScene战斗场景中搭建好UI了，只是还没有写脚本。
+预制体结构：
+RevivePanel （父级节点）
+-Background （半透明背景）
+-ContentArea（屏幕中部的卡片背景图）
+--TitleText（卡片顶部的标题：濒死状态）
+--InfoGroup
+---InfoText（卡片内的文字描述：<color=#DF1D1D>光棱塔被击破，</color><color=#00BFFF>核心完整性至关重要，必须进行重建！</color>）
+-BottomArea
+--QuitButton(放弃按钮)
+--ReviveButton（复活按钮）
+4.复活效果里的“满血 + 护盾恢复 50% + 继续当前波次”，没有现成接口。
+
+
+当前项目实际生效的微信小游戏 SDK 主体是 Packages/manifest.json 里通过 UPM 引入的：
+
+com.qq.weixin.minigame: https://gitee.com/wechat-minigame/minigame-tuanjie-transform-sdk.git#v0.1.18
+因此，运行时和 API 主入口实际来自：
+
+Packages/manifest.json
+Library/PackageCache/com.qq.weixin.minigame@4443e5a9bc/Runtime/WXBase.cs
+我已经确认这个 SDK 里直接提供了你这次需要的广告接口：
+
+WX.CreateRewardedVideoAd(...)
+WX.CreateBannerAd(...)
+WX.CreateFixedBottomMiddleBannerAd(...)
+而 Assets/WX-WASM-SDK-V2 更像是项目里保留下来的资源/配置落点，不是当前唯一的实际代码来源。你现在项目里并没有现成广告业务封装，所以这次我建议基于 com.qq.weixin.minigame 再补你们自己的 AdManager 和平台桥接层。
+
+另外，复活实现这块也确认可行了，现成接口有：
+
+Assets/Scripts/Logic/Player/TurretHealth.cs
+有 RestoreHealthPercent(float percent)、ResetHealth()
+Assets/Scripts/Logic/Player/ShieldController.cs
+有 RestoreShieldPercent(float percent)、ResetShield()
+所以“满血 + 护盾恢复 50%”能直接做。真正要改的是失败流程：现在 TurretHealth.OnDeath() 会立刻 GameEvents.TriggerGameDefeat()，UIManager 也会立刻进结算，这条链需要改成“先判断是否能复活，再决定是否真正失败”。
+
+我建议的制作顺序
+
+先补广告基础设施
+
+AdType
+AdManager
+微信 WeChatAdProvider
+编辑器/非微信环境 MockAdProvider
+每日频控与场次频控
+广告配置入口
+接 P0/P1 主链路
+
+SettlementPanel 双倍领取
+TopBarTipsPanel 三类资源广告
+RevivePanel + 失败拦截
+MainMenuPanel / SettlementPanel 的 Banner
+最后接 P2
+
+SkillChooseOnePanel 的广告重掷
+开始写代码前，还需要你确认 2 个关键参数
+
+广告位 ID 你准备怎么配？
+需要你告诉我：
+
+是否 6 个激励视频位 共用一个 rewardedVideo adUnitId
+还是每个广告位单独一个 adUnitId
+B1/B2 Banner 是否共用一个 banner adUnitId
+RevivePanel 里的文案增强你希望做到哪一版？
+你给的现有 UI 结构里只有一个 InfoText，所以我可以这样做：
+
+默认版：显示当前波次 + 固定复活说明
+增强版：如果当前是 Boss 战，就在 InfoText 里追加 Boss 剩余 HP xx%
+如果你同意，我建议默认按下面规则做：
+
+激励视频：先支持“每类广告位独立 adUnitId”，配置为空时按钮隐藏
+Banner：两个位置可分别配置，也允许共用
+RevivePanel：先做“波次 + Boss HP（仅 Boss 存在时显示）”，精英怪血量先不强做
+你回复这两点后，我就开始正式改代码。
+
+------------------------------------------------------------------------------------------------------------------------
+
+1.广告位ID我现在没有，因为我没开通流量主，所以全部预留IAA广告接口，目前阶段，玩家点击广告按钮，即可实现功能。等后期广告位开通后，再接入点击广告看视频的功能。
+2.RevivePanel 选择增强版。
+
+本轮已经把“占位式 IAA 广告系统”的主链路接起来了，当前效果是：玩家点击广告按钮就直接生效，但代码层已经预留了后续接真实微信广告的位置。
+
+这次落下去的核心点：
+- 新增统一广告入口：[Assets/Scripts/Ads/AdManager.cs](/D:/Project/LightVSDecay/Assets/Scripts/Ads/AdManager.cs) 和 [Assets/Scripts/Ads/AdType.cs](/D:/Project/LightVSDecay/Assets/Scripts/Ads/AdType.cs)
+- 新增复活面板脚本：[Assets/Scripts/UI/Panels/RevivePanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/RevivePanel.cs)
+- 死亡流程改成“先请求复活，再决定是否真正失败”： [Assets/Scripts/Core/GameEvents.cs](/D:/Project/LightVSDecay/Assets/Scripts/Core/GameEvents.cs), [Assets/Scripts/Logic/Player/Turrethealth.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/Turrethealth.cs), [Assets/Scripts/UI/UIManager.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/UIManager.cs)
+- 业务接入已补到：
+  - 结算双倍：[Assets/Scripts/UI/Panels/SettlementPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/SettlementPanel.cs)
+  - 资源广告补给：[Assets/Scripts/UI/Panels/TopBarTipsPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/TopBarTipsPanel.cs)
+  - 技能广告重掷：[Assets/Scripts/UI/Panels/SkillChooseOnePanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/SkillChooseOnePanel.cs)
+  - MainMenu / Settlement Banner 入口：[Assets/Scripts/UI/Panels/MainMenuPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/MainMenuPanel.cs), [Assets/Scripts/UI/Panels/SettlementPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/SettlementPanel.cs)
+
+当前规则也已经按你的要求做了：
+- 没有广告位 ID 时，广告按钮点击即成功
+- RevivePanel 用增强版，会显示当前波次；场上存在 Boss 时会追加 Boss 剩余 HP
+- 复活限制、结算双倍限制、技能广告重掷限制和资源类每日次数都统一走 `AdManager`
+
+关于微信 SDK，我确认当前项目实际接入主干还是 `com.qq.weixin.minigame` 这个包，不是 `Assets/WX-WASM-SDK-V2` 单独在跑。后面接真实广告时，最合适的入口就是继续扩展 [Assets/Scripts/Ads/AdManager.cs](/D:/Project/LightVSDecay/Assets/Scripts/Ads/AdManager.cs)，把现在的占位成功逻辑替换成 `CreateRewardedVideoAd` / `CreateBannerAd` 调用。
+
+验证上有一个注意点：
+`dotnet build` 这边的 `Assembly-CSharp.csproj` 还是旧的自动生成文件，没把新建的 `Ads` 脚本列进去，所以它报了“找不到 `LightVsDecay.Ads`”；这不代表源码本身有问题，更像是 Tuanjie/Unity 的工程文件还没刷新。你接下来在编辑器里回到工程后，让它刷新编译一次最稳。另一个需要你在场景里做的实际接线是：把新建的 `RevivePanel` 脚本挂到现有 `RevivePanel` 节点，并把 `QuitButton`、`ReviveButton`、`TitleText`、`InfoText` 这些引用绑上。
+
+如果你愿意，我下一步可以直接继续做两件事中的一件：
+1. 帮你把 `RevivePanel`、`UIManager`、相关按钮在场景/预制体上的挂载点再梳理一遍。
+2. 继续把 `AdManager` 升级成“占位实现 + 微信真实实现接口分层”的版本，方便你后面开通流量主后直接填 adUnitId。
+------------------------------------------------------------------------------------------------------------------------
+
+关于光与朽项目的新手引导功能制作， 请读取D:\Project\GamePlanningDoc\20_项目\02_光与朽项目\01_策划文档\光与朽_新手引导系统设计文档_V1.0.md 文档，先整理分析需求，如遇到不确定的问题，先询问我，再开始制作相关代码。
+
+我先把需求和现状对齐了一遍，结论是这套新手引导可以接进现有项目，但目前有 3 个关键点需要你拍板，不然我一开工就容易做偏。
+
+当前我确认到的情况：
+- `MetaData` 已经在 [`Assets/Scripts/Data/Runtime/SessionData.cs`](D:/Project/LightVSDecay/Assets/Scripts/Data/Runtime/SessionData.cs) 里，由 `ProgressManager.Meta` 统一持久化，适合直接加新手引导标记。
+- 主菜单、结算、技能三选一、科技树、装备面板、无人机波次系统都已经有现成入口，能挂引导逻辑。
+- 但项目里目前没有现成的“新手引导/高亮/遮罩/箭头”通用框架，说明这次如果按文档完整落地，会涉及一套新的 Tutorial UI 管理层，而不只是补几个 if。
+
+我发现的主要差异：
+- 现有 `SystemUnlockManager` 规则是“第一章打完第1波解锁科技树、第二章打完第1波解锁装备”，而文档要改成“第一局结算解锁科技树、通关第二章·难度1解锁装备”。
+- 文档里装备解锁示例写的是 `CompleteChapterDifficulty(chapter=1, difficulty=0)`，但你项目里的难度实际是 `1-5`，这里和代码体系冲突。
+- 首次启动“跳过主菜单直接进战斗”在技术上可做，但现有正常开始游戏流程还会做一件事：扣 1 点体力。这个首次引导是否也要扣体力，文档里没写。
+
+需要你确认这 3 点：
+1. 装备系统解锁条件，最终是否按“第 2 章 难度 1 通关”执行，也就是代码口径 `chapterIndex = 1, difficulty = 1`？
+2. 首次启动自动进入战斗时，是否要和正常开始游戏完全一致，扣除 1 点体力？
+3. 这一轮你希望我先做哪种版本：
+   1. 功能版：先把引导状态机、触发条件、断点续引导、技能流派标签/协同提示接通，UI 先用现有面板+简化提示。
+   2. 完整版：连同引导遮罩、高亮、箭头、首局结算解锁演出、科技树/装备分步引导 UI 一起做。
+
+你回复这 3 点后，我就开始正式落代码。
+
+------------------------------------------------------------------------------------------------------------------------
+
+1.科技树系统和装备系统的几所条件修改为 “第一局结算解锁科技树、通关第二章·难度1解锁装备”。
+2.首次启动自动进入战斗时，不需要扣除1点体力。
+3.你分析一下是否可以制作完整版？是否现需要制作相关美术资源才可以制作完整版？
+先回答我上面问题，然后记得最后功能制作完后，输出一份新手引导功能的Untiy接入文档（也就是需要我在unity里需要配置的资源，配置文件和相关参数等）。
+
+可以，结论先给你：
+
+1. 我会按你确认后的规则实现：
+- 科技树系统：第一局结算即解锁
+- 装备系统：通关第二章·难度1解锁
+
+2. 首次启动自动进入战斗时：
+- 不扣体力
+- 我会把这条逻辑做成“仅首次引导直进战斗例外”，不影响正常开始游戏流程
+
+3. 关于“是否可以制作完整版”：
+- 可以做完整版
+- 但分成两层来看：
+
+第一层是“功能完整版”，我可以直接做：
+- 引导状态追踪与断点续引导
+- 首次启动跳过主菜单直进战斗
+- 战场四步引导触发
+- 科技树/装备系统解锁条件改造
+- 科技树引导与装备引导流程
+- 技能三选一的流派标签、协同高亮、首次控池
+- 结算页解锁提示逻辑
+- 最终给你一份 Unity 接入文档
+
+第二层是“表现完整版”，要看你对视觉品质的要求：
+- 如果接受“用现有 TMP 文本、Image、按钮高亮、半透明遮罩、简单脉冲/浮动动画”来完成，那么我可以直接落地，不额外依赖新美术资源
+- 如果你希望做到文档里那种更精致的手指滑动图、专属箭头、定制气泡框、分支聚焦动效、金色流光框、红点/脉冲特效统一风格，那最好补一批美术资源，做出来会更完整
+
+我对美术资源的判断是：
+- 不做新资源也能完成可上线的完整版功能
+- 但以下资源如果没有，最终效果会偏“程序化”而不是“正式版本”
+- 建议补的资源包括：
+  - 手指滑动引导图
+  - 通用引导箭头/弧线箭头
+  - 通用引导气泡底板
+  - 通用半透明遮罩或聚焦遮罩样式
+  - 技能流派标签底图或角标
+  - 协同高亮的流光边框素材
+  - 科技树/装备系统解锁提示条样式
+  - 无人机三类说明卡底图与小图标统一稿
+
+建议实施方式：
+- 我先按“完整版功能 + 可用占位表现”制作
+- 结构、触发、数据、接口、场景挂载都先做完整
+- 美术资源位我会预留成可配置字段
+- 你后续把正式素材补进 Unity 后，只需要替换 Sprite/Prefab/参数，不需要重写代码
+
+这样风险最低，也最适合当前项目推进。
+
+如果你同意，我下一步就开始按这个方案制作：
+- 先完成完整功能链路
+- 表现层先用现有 UI 能力 + 可替换资源位实现
+- 收尾时输出一份新手引导功能的 Unity 接入文档，列清楚你需要在 Unity 里配置的对象、预制体、图片、脚本引用和参数。
+------------------------------------------------------------------------------------------------------------------------
+
+1.首先确认需要的美术资源，手指图片，左右弧形箭头，设计技能三选一界面的Tips提示横幅和修改技能三选一的颜色卡和流光或特效发光边框。大招按钮上方显示文字气泡半透明背景框。设计无人机三选一界面的Tips提示横幅和文字气泡框或浮动说明背景框。
+2.去掉技能三选一引导功能，把UI的Tips提示和协同发光常驻技能三选一界面。
+3.去掉大招按钮的金色光圈向外扩散动画（因为已有大招就绪的粒子特效），只用一个文字气泡提示。
+4.去掉无人机引导功能，把UI的文字描述和顶部Tips常驻无人机三选一界面。
+5.修改科技树解锁引导，去掉结算界面新增内容。当玩家结算完后，回到主菜单，会弹出TipsPanal 面板，显示文字 科技树系统已解锁！永久强化你的战力！ （功能已有）。然后有红点显示，不用再高金色亮脉冲提示了，因为有红点和提示面板提示了。
+6.去掉科技树引导的Step1 分支介绍，直接在屏幕下方或者顶部常驻一个tip横幅，每隔2秒，更换一套提示词，例如（红色分支：提升激光伤害与大招效果）（绿色分支：提升基地血量与护盾上限）（黄色分支：增加金币收益与掉落率）（蓝色分支：加快大招充能与击退效果）
+7.修改科技树引导的step2，箭头改为手指和光圈图片。玩家点击节点后会弹出升级面板，手指再指向升级按钮，等待玩家点击升级。
+8.修改科技树引导的step3，当玩家点击升级按钮后，手指再指向关闭按钮，显示科技树一级界面后，手指再指向上面返回按钮，引导玩家回到主页面。这就算一次科技树引导完成。
+9.修改装备系统引导，去掉结算界面新增内容。当玩家结算完后，回到主菜单，会弹出TipsPanal 面板，显示文字 装备系统已解锁！强化你的光棱塔！（功能已有）。
+10.去掉装备系统引导的step1 槽位说明，玩家第一次进入装备界面后，用手指和光圈直接指向背包的中第一个装备，这时候会弹出二级信息界面，手指和光圈指向装备按钮，当玩家点击装备按钮后，会有信息面板Info的gongjili_text文字UI 互动 (UI Punch)：UI 上的数字要 “弹一下” (Scale 1.0 -> 1.2 -> 1.0)。数字滚动 (Rolling Number)：UI 上的数字不要瞬间 +50。要用代码让它在 0.5秒 内从 100 滚到 150。
+11.去掉step3 属性对比 和合成预告。直接手指引导玩家点击顶部返回按钮。完成引导。
+12.考虑是否添加UI扣洞功能？可以压暗UI界面的其它物体和UI，只突出当前需要显示的物体和UI按钮，而且需要保证可以穿透，玩家通过扣洞显示的按钮，可以点击到。
+先分析并回复我已上需要修改的流程问题，如果有任何问题都可以询问我。等我确认后，再开始制作相关功能和 Unity 接入文档。如果你有更好的建议也可以跟我说。
+
+你的这版调整我已经理解了，整体方向很清晰，而且比最初文档更适合当前项目落地。结论是：可以做，而且会更稳，因为你把“战场内一次性引导”大幅收敛成了“主界面/功能界面的指引 + 常驻提示”，这对实现复杂度、测试成本和美术依赖都更友好。
+
+我先把我对新流程的理解复述一遍，确认我们一致。
+
+**我理解后的目标版本**
+- 保留首次启动直进战斗，不扣体力。
+- 去掉战场内的技能三选一引导步骤。
+- 去掉战场内无人机引导步骤。
+- 大招引导保留，但只做按钮上方文字气泡，不再做额外金色扩散动画。
+- 技能三选一界面改为常驻优化：
+  - 常驻 Tips 横幅
+  - 常驻流派颜色卡
+  - 常驻协同发光/边框特效
+- 无人机三选一界面改为常驻优化：
+  - 常驻顶部 Tips
+  - 常驻每个无人机的文字说明/浮动说明背景
+- 科技树解锁不改结算界面，只使用返回主菜单后的现有 `TipsPanal` 提示 + 红点。
+- 科技树首次引导改为：
+  - 进入科技树界面后，顶部或底部常驻轮播 Tips
+  - 手指+光圈引导点击第一个节点
+  - 再引导点击升级弹窗里的升级按钮
+  - 再引导点击关闭按钮
+  - 回到一级界面后，引导点击顶部返回按钮
+  - 至此完成科技树引导
+- 装备系统解锁不改结算界面，只使用返回主菜单后的现有 `TipsPanal` 提示。
+- 装备系统首次引导改为：
+  - 进入装备界面后，手指+光圈指向背包中第一个装备
+  - 打开二级信息面板后，指向“装备”按钮
+  - 点击装备后，让属性文本做 `Punch + Rolling Number`
+  - 然后引导点击顶部返回按钮
+  - 至此完成装备引导
+
+**关于你提的第 12 点：UI 扣洞功能**
+这个我建议加，而且我认为值得做。
+
+原因：
+- 你的科技树和装备引导现在已经从“文案提示”变成“明确引导点击某个 UI 控件”，如果没有扣洞，用户视线会被整个界面分散。
+- 扣洞 + 压暗其他区域，能把“现在该点哪里”表达得非常直接。
+- 你要求“扣洞区域按钮仍可点击”，这个在 Unity UI 里是可以做的，但需要专门实现一个引导遮罩层，而不是普通半透明 Image。
+
+我建议的实现方式：
+- 做一个通用 `TutorialOverlay`：
+  - 全屏半透明遮罩
+  - 指定一个或多个高亮目标 RectTransform
+  - 对目标区域做扣洞
+  - 允许扣洞区域点击穿透
+  - 非扣洞区域拦截点击
+- 配合一个通用 `TutorialPointerView`：
+  - 手指图
+  - 光圈图
+  - 轻微循环缩放/浮动
+- 这样科技树和装备引导都能复用，不会写两套
+
+这套方案是可做的，但有一个实现提醒：
+- 如果你的某些目标按钮在 `ScrollRect`、动态布局、弹窗层级切换里会移动，我们要让遮罩每帧跟随目标刷新位置
+- 这不难，但属于正式系统实现，不是小补丁
+
+**我建议保留和补充的点**
+我有 4 个建议，供你拍板：
+
+1. 技能三选一的首次控池是否还保留
+你这次说“去掉技能三选一引导功能”，我理解是去掉首次战场内引导步骤。
+但文档里另一个点是“首次三选一保证三张牌来自三个不同流派”，这其实不属于引导 UI，而是新手体验规则。
+我建议保留。
+原因：
+- 这样玩家第一次看到流派色卡时，理解会更完整
+- 成本不高，收益很大
+
+2. 无人机说明建议做成“常驻顶部 Tips + 每个无人机上方小说明卡”
+不要只留顶部一句话。
+原因：
+- 三个选项同时出现时，局部说明更直观
+- 玩家不用来回对照
+
+3. 科技树轮播 Tips 建议不是自动无限轮播，而是“4 条循环播放，但引导完成后停止”
+原因：
+- 首次进入时有用
+- 一直轮播容易干扰玩家正常浏览
+
+4. 装备属性动画建议做成通用能力
+不要只写死在 `gongjili_text`
+建议支持：
+- 指定 TMP 文本
+- 指定起始值和目标值
+- 指定 Punch 动画参数
+这样后面血量、护盾、暴击、充能都能复用
+
+**当前我这里唯一需要你确认的点**
+正式开做前，我建议你确认下面 6 点，这样我就能直接实现，不会中途返工：
+
+1. 技能三选一“首次控池”是否保留？
+我的建议：保留。
+
+2. 科技树轮播 Tips 放顶部还是底部？
+我的建议：顶部，避免和节点/升级区域抢视线。
+
+3. 科技树首次引导锁定的“第一个节点”是否就是火力分支第一个节点？
+我的建议：固定为你文档里的第一个火力节点。
+
+4. 装备引导中，“背包第一个装备”是指：
+- 当前背包列表排序后的第一个可见装备
+还是
+- 品质最高的可装备物品
+我的建议：优先“品质最高且可装备”的第一件，不要单纯取列表第一个。
+
+5. 装备后属性动画，你是否只要求 `gongjili_text` 做演出，还是右侧总属性里所有受影响字段都做？
+我的建议：先做所有发生变化的字段，更统一。
+
+6. 扣洞遮罩是否只用于科技树和装备引导？
+我的建议：先只用于这两处，技能三选一和无人机常驻说明不需要遮罩。
+
+如果你确认这 6 点，我下一步就开始制作功能，并在完成后附上完整的 Unity 接入文档。
+
+------------------------------------------------------------------------------------------------------------------------
+
+装备系统结算，也需要现有TipsPanal 提示 + 红点。
+的确需要修改玩家进入战斗后第一次看到技能三选一，直接会首先弹出固定的3个（极寒光束，聚能透镜，分裂棱镜）技能，这样就表示玩家可以固定选择一个流派进行。然后顺便把 选择了极寒光束技能，技能池就去掉聚能透镜技能，选择了聚能透镜技能就去掉极寒光束技能，这样不会导致激光染色的问题。
+1.首次控池保留。
+2。科技树轮播tips放顶部。
+3.固定为你文档里的第一个火力节点。
+4.品质最高的可装备物品
+5.装备后属性动画。先做所有发生变化的字段，更统一。
+6.扣洞遮罩 先只用于这两处，技能三选一和无人机常驻说明不需要遮罩。
+
+
+------------------------------------------------------------------------------------------------------------------------

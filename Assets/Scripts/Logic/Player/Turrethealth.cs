@@ -290,7 +290,7 @@ namespace LightVsDecay.Logic.Player
             }
             
             // 触发游戏失败事件
-            GameEvents.TriggerGameDefeat();
+            GameEvents.TriggerPlayerDeathRequested();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

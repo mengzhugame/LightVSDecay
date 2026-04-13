@@ -1,0 +1,294 @@
+using System;
+using UnityEngine;
+using LightVsDecay.Core;
+
+namespace LightVsDecay.Ads
+{
+    public sealed class AdManager : MonoBehaviour
+    {
+        private const string SharedDailyTotalKey = "ad_shared_total_{0}";
+        private const string DailyCountKey = "ad_daily_count_{0}_{1}";
+
+        private static AdManager instance;
+
+        [Header("Debug")]
+        [SerializeField] private bool usePlaceholderAds = true;
+        [SerializeField] private bool showDebugInfo = false;
+
+        [Header("Rewarded Video AdUnitId")]
+        [SerializeField] private string skillRerollAdUnitId = string.Empty;
+        [SerializeField] private string settlementDoubleAdUnitId = string.Empty;
+        [SerializeField] private string reviveAdUnitId = string.Empty;
+        [SerializeField] private string energyTopUpAdUnitId = string.Empty;
+        [SerializeField] private string goldTopUpAdUnitId = string.Empty;
+        [SerializeField] private string blueprintTopUpAdUnitId = string.Empty;
+
+        [Header("Banner AdUnitId")]
+        [SerializeField] private string mainMenuBannerAdUnitId = string.Empty;
+        [SerializeField] private string settlementBannerAdUnitId = string.Empty;
+
+        private bool hasRevivedThisGame;
+        private bool hasSettlementDoubleThisGame;
+        private bool hasSkillRerollThisLevel;
+        private string currentBannerPlacement = string.Empty;
+
+        public static AdManager Instance
+        {
+            get
+            {
+                if (instance != null)
+                {
+                    return instance;
+                }
+
+                instance = FindObjectOfType<AdManager>();
+                if (instance != null)
+                {
+                    return instance;
+                }
+
+                var go = new GameObject("[AdManager]");
+                instance = go.AddComponent<AdManager>();
+                DontDestroyOnLoad(go);
+                return instance;
+            }
+        }
+
+        public static bool HasInstance => instance != null;
+
+        public int SharedRewardedDailyLimit => 10;
+
+        public bool HasRevivedThisGame() => hasRevivedThisGame;
+
+        private void Awake()
+        {
+            if (instance != null && instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+
+        private void OnEnable()
+        {
+            GameEvents.OnGameStart += ResetRunState;
+            GameEvents.OnLevelUp += OnLevelUp;
+            GameEvents.OnLevelUpChoiceComplete += OnLevelUpChoiceComplete;
+        }
+
+        private void OnDisable()
+        {
+            GameEvents.OnGameStart -= ResetRunState;
+            GameEvents.OnLevelUp -= OnLevelUp;
+            GameEvents.OnLevelUpChoiceComplete -= OnLevelUpChoiceComplete;
+        }
+
+        public bool CanWatchAd(AdType adType)
+        {
+            if (IsSharedRewardedType(adType) && GetSharedRewardedDailyCount() >= SharedRewardedDailyLimit)
+            {
+                return false;
+            }
+
+            switch (adType)
+            {
+                case AdType.SkillReroll:
+                    return !hasSkillRerollThisLevel;
+                case AdType.SettlementDouble:
+                    return !hasSettlementDoubleThisGame;
+                case AdType.Revive:
+                    return !hasRevivedThisGame;
+                case AdType.EnergyTopUp:
+                case AdType.GoldTopUp:
+                case AdType.BlueprintTopUp:
+                    return GetDailyCount(adType) < GetDailyLimit(adType);
+                default:
+                    return false;
+            }
+        }
+
+        public bool CanOfferRevive(int currentWave)
+        {
+            return currentWave >= 4 && CanWatchAd(AdType.Revive);
+        }
+
+        public int GetDailyCount(AdType adType)
+        {
+            return IsSharedRewardedType(adType)
+                ? GetSharedRewardedDailyCount()
+                : PlayerPrefs.GetInt(GetDailyCountKey(adType), 0);
+        }
+
+        public int GetDailyLimit(AdType adType)
+        {
+            switch (adType)
+            {
+                case AdType.SkillReroll:
+                case AdType.SettlementDouble:
+                case AdType.Revive:
+                    return SharedRewardedDailyLimit;
+                case AdType.EnergyTopUp:
+                    return 5;
+                case AdType.GoldTopUp:
+                case AdType.BlueprintTopUp:
+                    return 3;
+                default:
+                    return 0;
+            }
+        }
+
+        public void ShowRewardedAd(AdType adType, Action onSuccess, Action onFail = null)
+        {
+            if (!CanWatchAd(adType))
+            {
+                Log($"广告次数不可用: {adType}");
+                onFail?.Invoke();
+                return;
+            }
+
+            if (ShouldUsePlaceholderFlow(adType))
+            {
+                GrantWatchCount(adType);
+                onSuccess?.Invoke();
+                return;
+            }
+
+            Log($"真实广告流程尚未启用，暂走占位成功: {adType}");
+            GrantWatchCount(adType);
+            onSuccess?.Invoke();
+        }
+
+        public void PreloadRewardedAd(AdType adType)
+        {
+            Log($"预加载广告: {adType}");
+        }
+
+        public void ShowBanner(string placement)
+        {
+            currentBannerPlacement = placement;
+            Log($"显示 Banner: {placement}");
+        }
+
+        public void HideBanner(string placement)
+        {
+            if (!string.IsNullOrEmpty(placement) && currentBannerPlacement != placement)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(currentBannerPlacement))
+            {
+                Log($"隐藏 Banner: {currentBannerPlacement}");
+            }
+
+            currentBannerPlacement = string.Empty;
+        }
+
+        private void ResetRunState()
+        {
+            hasRevivedThisGame = false;
+            hasSettlementDoubleThisGame = false;
+            hasSkillRerollThisLevel = false;
+            HideBanner(string.Empty);
+        }
+
+        private void OnLevelUp(int level)
+        {
+            hasSkillRerollThisLevel = false;
+        }
+
+        private void OnLevelUpChoiceComplete()
+        {
+            hasSkillRerollThisLevel = false;
+        }
+
+        private void GrantWatchCount(AdType adType)
+        {
+            if (IsSharedRewardedType(adType))
+            {
+                int current = GetSharedRewardedDailyCount();
+                PlayerPrefs.SetInt(GetSharedRewardedDailyKey(), current + 1);
+            }
+            else
+            {
+                int current = PlayerPrefs.GetInt(GetDailyCountKey(adType), 0);
+                PlayerPrefs.SetInt(GetDailyCountKey(adType), current + 1);
+            }
+
+            switch (adType)
+            {
+                case AdType.Revive:
+                    hasRevivedThisGame = true;
+                    break;
+                case AdType.SettlementDouble:
+                    hasSettlementDoubleThisGame = true;
+                    break;
+                case AdType.SkillReroll:
+                    hasSkillRerollThisLevel = true;
+                    break;
+            }
+
+            PlayerPrefs.Save();
+            Log($"广告完成并记次: {adType}");
+        }
+
+        private bool IsSharedRewardedType(AdType adType)
+        {
+            return adType == AdType.SkillReroll ||
+                   adType == AdType.SettlementDouble ||
+                   adType == AdType.Revive;
+        }
+
+        private bool ShouldUsePlaceholderFlow(AdType adType)
+        {
+            return usePlaceholderAds || string.IsNullOrWhiteSpace(GetAdUnitId(adType));
+        }
+
+        private int GetSharedRewardedDailyCount()
+        {
+            return PlayerPrefs.GetInt(GetSharedRewardedDailyKey(), 0);
+        }
+
+        private string GetSharedRewardedDailyKey()
+        {
+            return string.Format(SharedDailyTotalKey, DateTime.Now.ToString("yyyyMMdd"));
+        }
+
+        private string GetDailyCountKey(AdType adType)
+        {
+            return string.Format(DailyCountKey, DateTime.Now.ToString("yyyyMMdd"), adType);
+        }
+
+        private string GetAdUnitId(AdType adType)
+        {
+            switch (adType)
+            {
+                case AdType.SkillReroll:
+                    return skillRerollAdUnitId;
+                case AdType.SettlementDouble:
+                    return settlementDoubleAdUnitId;
+                case AdType.Revive:
+                    return reviveAdUnitId;
+                case AdType.EnergyTopUp:
+                    return energyTopUpAdUnitId;
+                case AdType.GoldTopUp:
+                    return goldTopUpAdUnitId;
+                case AdType.BlueprintTopUp:
+                    return blueprintTopUpAdUnitId;
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private void Log(string message)
+        {
+            if (showDebugInfo)
+            {
+                GameLogger.Log($"[AdManager] {message}");
+            }
+        }
+    }
+}

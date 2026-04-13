@@ -5,7 +5,9 @@
 // ============================================================
 
 using LightVsDecay.Audio;
+using LightVsDecay.Ads;
 using LightVsDecay.Core;
+using LightVsDecay.Logic;
 using LightVsDecay.UI.Panels;
 using UnityEngine;
 
@@ -65,6 +67,7 @@ namespace LightVsDecay.UI
             // 订阅游戏事件
             Core.GameEvents.OnGameVictory += OnGameVictory;
             Core.GameEvents.OnGameDefeat += OnGameDefeat;
+            Core.GameEvents.OnPlayerDeathRequested += OnPlayerDeathRequested;
             Core.GameEvents.OnGamePaused += OnGamePaused;
             Core.GameEvents.OnGameResumed += OnGameResumed;
             Core.GameEvents.OnLevelUp += OnLevelUpShowSkillPanel;
@@ -79,6 +82,7 @@ namespace LightVsDecay.UI
             // 取消订阅
             Core.GameEvents.OnGameVictory -= OnGameVictory;
             Core.GameEvents.OnGameDefeat -= OnGameDefeat;
+            Core.GameEvents.OnPlayerDeathRequested -= OnPlayerDeathRequested;
             Core.GameEvents.OnGamePaused -= OnGamePaused;
             Core.GameEvents.OnGameResumed -= OnGameResumed;
             Core.GameEvents.OnLevelUp -= OnLevelUpShowSkillPanel;
@@ -111,6 +115,25 @@ namespace LightVsDecay.UI
             }
             
             ShowSettlementPanel(false);
+        }
+
+        private void OnPlayerDeathRequested()
+        {
+            int currentWave = WaveManager.Instance != null ? WaveManager.Instance.CurrentWaveNumber : 0;
+            if (AdManager.Instance.CanOfferRevive(currentWave))
+            {
+                ShowRevivePanel();
+                return;
+            }
+
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.Defeat();
+            }
+            else
+            {
+                ShowSettlementPanel(false);
+            }
         }
         
         private void OnGamePaused()
@@ -223,6 +246,7 @@ namespace LightVsDecay.UI
                 AudioManager.Instance.PauseBattleAudioForOverlay();
             }
             
+            Time.timeScale = 0f;
             revivePanel.SetActive(true);
             currentActivePanel = revivePanel;
             
@@ -251,6 +275,8 @@ namespace LightVsDecay.UI
             {
                 AudioManager.Instance.ResumeBattleAudioForOverlay();
             }
+
+            Time.timeScale = 1f;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

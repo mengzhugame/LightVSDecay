@@ -48,6 +48,9 @@ namespace LightVsDecay.Core
         
         /// <summary>游戏失败</summary>
         public static event Action OnGameDefeat;
+
+        /// <summary>玩家死亡，请求进入复活或失败判断</summary>
+        public static event Action OnPlayerDeathRequested;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 玩家进度事件
@@ -186,6 +189,7 @@ namespace LightVsDecay.Core
         public static void TriggerGameResumed() => OnGameResumed?.Invoke();
         public static void TriggerGameVictory() => OnGameVictory?.Invoke();
         public static void TriggerGameDefeat() => OnGameDefeat?.Invoke();
+        public static void TriggerPlayerDeathRequested() => OnPlayerDeathRequested?.Invoke();
         
         // 玩家进度
         public static void TriggerExpChanged(int current, int required) => OnExpChanged?.Invoke(current, required);
@@ -264,6 +268,7 @@ namespace LightVsDecay.Core
             OnGameResumed = null;
             OnGameVictory = null;
             OnGameDefeat = null;
+            OnPlayerDeathRequested = null;
             
             // 玩家进度
             OnExpChanged = null;

@@ -6,9 +6,11 @@
 // ============================================================
 
 using LightVsDecay.Audio;
+using LightVsDecay.Ads;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -108,6 +110,7 @@ namespace LightVsDecay.UI.Panels
         private ChapterDatabase chapterDatabase;
         private Image startButtonImage;
         private Color startButtonOriginalColor;
+        private bool hasTriggeredFirstPlayAutoStart = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -132,6 +135,20 @@ namespace LightVsDecay.UI.Panels
             SetupButtons();
             LoadPlayerData();
             UpdateAllUI();
+            TryStartFirstPlayTutorialBattle();
+        }
+
+        private void OnEnable()
+        {
+            AdManager.Instance.ShowBanner("MainMenu");
+        }
+
+        private void OnDisable()
+        {
+            if (AdManager.HasInstance)
+            {
+                AdManager.Instance.HideBanner("MainMenu");
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -569,6 +586,57 @@ namespace LightVsDecay.UI.Panels
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayButtonClick();
+            }
+        }
+
+        private void TryStartFirstPlayTutorialBattle()
+        {
+            if (hasTriggeredFirstPlayAutoStart)
+            {
+                return;
+            }
+
+            MetaData meta = ProgressManager.Instance?.Meta;
+            if (meta == null || !meta.isFirstPlay)
+            {
+                return;
+            }
+
+            hasTriggeredFirstPlayAutoStart = true;
+            StartCoroutine(AutoStartFirstPlayBattle());
+        }
+
+        private IEnumerator AutoStartFirstPlayBattle()
+        {
+            yield return null;
+
+            MetaData meta = ProgressManager.Instance?.Meta;
+            if (meta == null || !meta.isFirstPlay)
+            {
+                yield break;
+            }
+
+            currentViewIndex = 0;
+            SaveCurrentViewIndex();
+            UpdateAllUI();
+
+            meta.isFirstPlay = false;
+            meta.Save();
+
+            GameSessionConfig.Set(0, 1);
+
+            if (showDebugInfo)
+            {
+                GameLogger.Log("[MainMenuPanel] 首次启动自动进入第1章难度1战斗，不消耗体力。");
+            }
+
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.LoadGameScene();
+            }
+            else
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
             }
         }
         

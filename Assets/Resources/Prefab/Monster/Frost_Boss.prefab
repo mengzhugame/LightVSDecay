@@ -5628,15 +5628,15 @@ MonoBehaviour:
   freezeRayShieldDamagePerSecond: 500
   freezeRayLength: 20
   freezeRayExtendDuration: 1.5
-  freezeRayClashPushSpeed: 7.5
+  freezeRayClashPushSpeed: 5.5
   freezeRayBossAdvanceSpeed: 5.8
-  freezeRayPlayerPressureScale: 0.02
+  freezeRayPlayerPressureScale: 0.026
   freezeRayPlayerPressureRampUpDuration: 0.6
   freezeRayPlayerPressureDecayDuration: 0.2
   freezeRayDamagePressureWeight: 0.2
-  freezeRayKnockbackPressureWeight: 0.25
-  freezeRayOpeningAdvantageDuration: 1
-  freezeRayOpeningAdvantageMultiplier: 1.9
+  freezeRayKnockbackPressureWeight: 0.3
+  freezeRayOpeningAdvantageDuration: 0.85
+  freezeRayOpeningAdvantageMultiplier: 1.75
   freezeRayClashBreakThreshold: 16
   freezeRayInitialClashRatio: 0.58
   freezeRayRepositionDuration: 0.3

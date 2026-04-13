@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 using LightVsDecay.Audio;
+using LightVsDecay.Logic.Coin;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Player;
@@ -25,6 +26,8 @@ namespace LightVsDecay.UI.Panels
         [SerializeField] private TextMeshProUGUI stageNameText;
         [SerializeField] private Button pauseButton;
         [SerializeField] private TextMeshProUGUI coinText;
+        [SerializeField] private RectTransform goldCoinBarTarget;
+        [SerializeField] private RectTransform goldCoinBarPunchRoot;
         
         [Header("经验条")]
         [SerializeField] private GameObject expBarObj;  // 经验条物体（用于隐藏）
@@ -89,6 +92,15 @@ namespace LightVsDecay.UI.Panels
         
         [Header("关卡设置")]
         [SerializeField] private string currentStageName = "第一章 - 下水道";
+
+        [Header("战斗金币表现")]
+        [SerializeField] private float coinDisplayLerpSpeed = 18f;
+        [SerializeField] private float coinDisplayMinStepPerSecond = 20f;
+        [SerializeField] private float coinArriveSpeedBoost = 1.75f;
+        [SerializeField] private float coinArriveSpeedBoostDuration = 0.18f;
+        [SerializeField] private float coinPunchScale = 1.12f;
+        [SerializeField] private float coinPunchDuration = 0.12f;
+        [SerializeField] private float coinForceSyncDelay = 1.8f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
@@ -96,6 +108,14 @@ namespace LightVsDecay.UI.Panels
         
         private Coroutine comboFadeCoroutine;
         private bool ultReady = false;
+        private int displayedCoins = 0;
+        private int actualCoinTarget = 0;
+        private int displayCoinTarget = 0;
+        private float coinSpeedBoostTimer = 0f;
+        private float lastCoinTargetChangeTime = -999f;
+        private Coroutine coinPunchCoroutine;
+        private Vector3 coinPunchBaseScale = Vector3.one;
+        private bool hasCoinPunchBaseScale = false;
         // 玩家血条缓冲效果
         private float healthCurrentPercent = 1f;
         private float healthBufferPercent = 1f;
@@ -108,7 +128,6 @@ namespace LightVsDecay.UI.Panels
 // Boss血条缓冲效果
         private float bossCurrentHP = 1f;
         private float bossBufferHP = 1f;
-        private float bossWaveProgress = 0f;
         private Coroutine bossBufferCoroutine;
         private BossHealth cachedBossHealth;  // 缓存 BossHealth 引用
         private bool isBufferWaiting = false;   // 正在等待0.5秒延迟
@@ -121,6 +140,12 @@ namespace LightVsDecay.UI.Panels
         {
             // 初始化UI状态
             InitializeUI();
+
+            if (goldCoinBarPunchRoot != null)
+            {
+                coinPunchBaseScale = goldCoinBarPunchRoot.localScale;
+                hasCoinPunchBaseScale = true;
+            }
         }
         
         private void Start()
@@ -131,11 +156,13 @@ namespace LightVsDecay.UI.Panels
             // 设置按钮回调
             SetupButtons();
             RegisterExpBarTarget();
+            RegisterCoinBarTarget();
             RefreshWaveProgressFromRuntime();
         }
 
         private void Update()
         {
+            UpdateCoinDisplayAnimation(Time.deltaTime);
             RefreshWaveProgressFromRuntime();
         }
         
@@ -143,6 +170,19 @@ namespace LightVsDecay.UI.Panels
         {
             // 取消订阅
             UnsubscribeEvents();
+
+            ResetCoinPunchScale();
+
+            if (CoinPickupSpawner.Instance != null)
+            {
+                CoinPickupSpawner.Instance.SetCoinArriveNotifier(null);
+                CoinPickupSpawner.Instance.SetTargetPositionGetter(null);
+            }
+        }
+
+        private void OnDisable()
+        {
+            ResetCoinPunchScale();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -158,7 +198,8 @@ namespace LightVsDecay.UI.Panels
             }
             
             // 金币
-            UpdateCoinDisplay(0);
+            int initialCoins = ProgressManager.Instance != null ? ProgressManager.Instance.SessionCoins : 0;
+            SetCoinDisplayImmediate(initialCoins);
             
             // 经验
             UpdateExpDisplay(0, 10);
@@ -186,7 +227,6 @@ namespace LightVsDecay.UI.Panels
             // ═══ 新增：初始化 Boss 血条状态 ═══
             bossCurrentHP = 1f;
             bossBufferHP = 1f;
-            bossWaveProgress = 0f;
             isBufferWaiting = false;
             isBufferChasing = false;
             // Boss血条（初始隐藏）
@@ -262,6 +302,33 @@ namespace LightVsDecay.UI.Panels
                 StartCoroutine(DelayedRegisterExpBarTarget());
             }
         }
+
+        /// <summary>
+        /// Registers the battle coin bar absorb target with the coin spawner.
+        /// </summary>
+        private void RegisterCoinBarTarget()
+        {
+            if (CoinPickupSpawner.Instance != null)
+            {
+                CoinPickupSpawner.Instance.SetTargetPositionGetter(GetCoinBarWorldPosition);
+                CoinPickupSpawner.Instance.SetCoinArriveNotifier(NotifyCoinArrived);
+            }
+            else
+            {
+                StartCoroutine(DelayedRegisterCoinBarTarget());
+            }
+        }
+
+        private IEnumerator DelayedRegisterCoinBarTarget()
+        {
+            yield return null;
+
+            if (CoinPickupSpawner.Instance != null)
+            {
+                CoinPickupSpawner.Instance.SetTargetPositionGetter(GetCoinBarWorldPosition);
+                CoinPickupSpawner.Instance.SetCoinArriveNotifier(NotifyCoinArrived);
+            }
+        }
         private IEnumerator DelayedRegisterExpBarTarget()
         {
             yield return null; // 等待一帧
@@ -304,6 +371,42 @@ namespace LightVsDecay.UI.Panels
 
             return gameCamera.ScreenToWorldPoint(screenPos);
         }
+
+        /// <summary>
+        /// Gets the world position used by dropped coins when absorbing into the HUD.
+        /// </summary>
+        private Vector3 GetCoinBarWorldPosition()
+        {
+            RectTransform target = goldCoinBarTarget != null
+                ? goldCoinBarTarget
+                : (coinText != null ? coinText.rectTransform : null);
+
+            if (target == null)
+            {
+                return Camera.main != null
+                    ? Camera.main.ScreenToWorldPoint(new Vector3(Screen.width * 0.88f, Screen.height * 0.95f, 10f))
+                    : Vector3.zero;
+            }
+
+            Camera gameCamera = Camera.main;
+            if (gameCamera == null)
+            {
+                return target.position;
+            }
+
+            Canvas parentCanvas = target.GetComponentInParent<Canvas>();
+            Camera uiCamera = null;
+            if (parentCanvas != null && parentCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            {
+                uiCamera = parentCanvas.worldCamera;
+            }
+
+            Vector3 uiWorldCenter = target.TransformPoint(target.rect.center);
+            Vector3 screenPos = RectTransformUtility.WorldToScreenPoint(uiCamera, uiWorldCenter);
+            screenPos.z = Mathf.Abs(gameCamera.transform.position.z - transform.position.z);
+
+            return gameCamera.ScreenToWorldPoint(screenPos);
+        }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 事件回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -322,7 +425,8 @@ namespace LightVsDecay.UI.Panels
         
         private void OnCoinChanged(int coins)
         {
-            UpdateCoinDisplay(coins);
+            actualCoinTarget = Mathf.Max(0, coins);
+            lastCoinTargetChangeTime = Time.time;
         }
 
         private void OnComboChanged(int combo)
@@ -381,6 +485,7 @@ namespace LightVsDecay.UI.Panels
             }
 
             int totalWaves = Mathf.Max(waveManager.TotalWaves, 1);
+            int progressWaveCount = Mathf.Max(totalWaves - 1, 1);
             int currentWave = waveManager.CurrentWaveNumber;
 
             if (currentWave <= 0)
@@ -392,7 +497,11 @@ namespace LightVsDecay.UI.Panels
             currentWave = Mathf.Clamp(currentWave, 1, totalWaves);
 
             float intraWaveProgress = 0f;
-            switch (waveManager.CurrentState)
+            if (currentWave >= totalWaves)
+            {
+                intraWaveProgress = 1f;
+            }
+            else switch (waveManager.CurrentState)
             {
                 case WaveState.Spawning:
                 case WaveState.Battle:
@@ -403,11 +512,14 @@ namespace LightVsDecay.UI.Panels
                     intraWaveProgress = 1f;
                     break;
                 case WaveState.BossFight:
-                    intraWaveProgress = Mathf.Clamp01(bossWaveProgress);
+                    intraWaveProgress = 1f;
                     break;
             }
 
-            float overallProgress = ((currentWave - 1) + intraWaveProgress) / totalWaves;
+            float completedWaveCount = Mathf.Min(currentWave - 1, progressWaveCount - 1);
+            float overallProgress = currentWave >= totalWaves
+                ? 1f
+                : (completedWaveCount + intraWaveProgress) / progressWaveCount;
             UpdateWaveProgressDisplay(overallProgress, currentWave, totalWaves);
         }
 
@@ -440,7 +552,6 @@ namespace LightVsDecay.UI.Panels
         {
             // 查找并缓存 BossHealth
             cachedBossHealth = FindObjectOfType<BossHealth>();
-            bossWaveProgress = 0f;
             RefreshWaveProgressFromRuntime();
     
             int maxHealth = cachedBossHealth != null ? (int)cachedBossHealth.MaxHealth : 50000;
@@ -451,8 +562,6 @@ namespace LightVsDecay.UI.Panels
         private void OnBossHealthChanged(float healthPercent)
         {
             // 从缓存的 BossHealth 获取当前血量
-            bossWaveProgress = Mathf.Clamp01(1f - healthPercent);
-            RefreshWaveProgressFromRuntime();
             int currentHealth = 0;
             if (cachedBossHealth != null)
             {
@@ -467,7 +576,6 @@ namespace LightVsDecay.UI.Panels
         {
             //HideBossHealthBar();
             cachedBossHealth = null;
-            bossWaveProgress = 1f;
             RefreshWaveProgressFromRuntime();
             // 启动死亡处理协程
             StartCoroutine(BossDeathSequence());
@@ -559,6 +667,127 @@ namespace LightVsDecay.UI.Panels
             {
                 coinText.text = coins.ToString();
             }
+        }
+
+        private void SetCoinDisplayImmediate(int coins)
+        {
+            displayedCoins = Mathf.Max(0, coins);
+            actualCoinTarget = displayedCoins;
+            displayCoinTarget = displayedCoins;
+            UpdateCoinDisplay(displayedCoins);
+        }
+
+        private void UpdateCoinDisplayAnimation(float deltaTime)
+        {
+            if (displayCoinTarget < actualCoinTarget &&
+                Time.time - lastCoinTargetChangeTime >= coinForceSyncDelay)
+            {
+                displayCoinTarget = actualCoinTarget;
+            }
+
+            if (displayedCoins == displayCoinTarget)
+            {
+                coinSpeedBoostTimer = Mathf.Max(0f, coinSpeedBoostTimer - deltaTime);
+                return;
+            }
+
+            float speedMultiplier = coinSpeedBoostTimer > 0f ? coinArriveSpeedBoost : 1f;
+            float step = Mathf.Max(
+                coinDisplayMinStepPerSecond * speedMultiplier * deltaTime,
+                Mathf.Abs(displayCoinTarget - displayedCoins) * coinDisplayLerpSpeed * speedMultiplier * deltaTime);
+
+            displayedCoins = displayedCoins < displayCoinTarget
+                ? Mathf.Min(displayCoinTarget, displayedCoins + Mathf.CeilToInt(step))
+                : Mathf.Max(displayCoinTarget, displayedCoins - Mathf.CeilToInt(step));
+
+            coinSpeedBoostTimer = Mathf.Max(0f, coinSpeedBoostTimer - deltaTime);
+            UpdateCoinDisplay(displayedCoins);
+        }
+
+        private void NotifyCoinArrived(int visualValue)
+        {
+            displayCoinTarget = Mathf.Min(actualCoinTarget, displayCoinTarget + Mathf.Max(1, visualValue));
+            coinSpeedBoostTimer = coinArriveSpeedBoostDuration;
+            PlayCoinPunch();
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayCoinCollect();
+            }
+        }
+
+        private void PlayCoinPunch()
+        {
+            if (goldCoinBarPunchRoot == null)
+            {
+                return;
+            }
+
+             if (!hasCoinPunchBaseScale)
+            {
+                coinPunchBaseScale = goldCoinBarPunchRoot.localScale;
+                hasCoinPunchBaseScale = true;
+            }
+
+            if (coinPunchCoroutine != null)
+            {
+                StopCoroutine(coinPunchCoroutine);
+                goldCoinBarPunchRoot.localScale = coinPunchBaseScale;
+            }
+
+            coinPunchCoroutine = StartCoroutine(CoinPunchCoroutine());
+        }
+
+        private IEnumerator CoinPunchCoroutine()
+        {
+            Vector3 originalScale = coinPunchBaseScale;
+            Vector3 targetScale = originalScale * coinPunchScale;
+            float halfDuration = Mathf.Max(0.01f, coinPunchDuration * 0.5f);
+            float elapsed = 0f;
+
+            goldCoinBarPunchRoot.localScale = originalScale;
+
+            while (elapsed < halfDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / halfDuration);
+                goldCoinBarPunchRoot.localScale = Vector3.LerpUnclamped(originalScale, targetScale, EaseOutBack(t));
+                yield return null;
+            }
+
+            elapsed = 0f;
+            while (elapsed < halfDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / halfDuration);
+                goldCoinBarPunchRoot.localScale = Vector3.LerpUnclamped(targetScale, originalScale, t);
+                yield return null;
+            }
+
+            goldCoinBarPunchRoot.localScale = originalScale;
+            coinPunchCoroutine = null;
+        }
+
+        private void ResetCoinPunchScale()
+        {
+            if (coinPunchCoroutine != null)
+            {
+                StopCoroutine(coinPunchCoroutine);
+                coinPunchCoroutine = null;
+            }
+
+            if (goldCoinBarPunchRoot != null && hasCoinPunchBaseScale)
+            {
+                goldCoinBarPunchRoot.localScale = coinPunchBaseScale;
+            }
+        }
+
+        private static float EaseOutBack(float t)
+        {
+            const float c1 = 1.70158f;
+            const float c3 = c1 + 1f;
+            float x = t - 1f;
+            return 1f + c3 * x * x * x + c1 * x * x;
         }
         
         /// <summary>更新经验条</summary>

@@ -28,11 +28,15 @@ using TMPro;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Equipment;
+using System;
 
 namespace LightVsDecay.UI.Equipment
 {
     public class ItemInfoPanel : MonoBehaviour
     {
+        public static event Action<InventoryStack> InfoShown;
+        public static event Action<InventoryStack> InfoClosed;
+        public static event Action<InventoryStack> Equipped;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置（按 UI 层级对应）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -79,6 +83,9 @@ namespace LightVsDecay.UI.Equipment
         private InventoryStack _stack;
         private EquipmentPanel _parent;
         private EquipmentData  _data;
+        public RectTransform EquipButtonRect => equipButton != null ? equipButton.GetComponent<RectTransform>() : null;
+        public RectTransform CloseButtonRect => closeButton != null ? closeButton.GetComponent<RectTransform>() : null;
+        public InventoryStack CurrentStack => _stack;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 生命周期
@@ -102,6 +109,7 @@ namespace LightVsDecay.UI.Equipment
             _data   = EquipmentManager.Instance?.Database?.GetById(stack.equipmentId);
             if (_data == null) { Close(); return; }
             Refresh();
+            InfoShown?.Invoke(_stack);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -157,11 +165,13 @@ namespace LightVsDecay.UI.Equipment
         private void OnEquipClicked()
         {
             EquipmentManager.Instance?.Equip(_stack.equipmentId, _stack.rarity);
+            Equipped?.Invoke(_stack);
             Close();
         }
 
         private void Close()
         {
+            InfoClosed?.Invoke(_stack);
             _parent?.OnSubPanelClosed();
             gameObject.SetActive(false);
         }

@@ -25,6 +25,8 @@
 // ============================================================
 
 using UnityEngine;
+using TMPro;
+using System.Collections;
 using LightVsDecay.Logic.TechTree;
 using LightVsDecay.Core;
 
@@ -39,6 +41,17 @@ namespace LightVsDecay.UI.TechTree
         [Header("升级详情弹窗（TechTreeNodeDetailPanel）")]
         [SerializeField] private TechTreeNodeDetailPanel detailPanel;
 
+        [Header("首次引导 Tips")]
+        [SerializeField] private TextMeshProUGUI tutorialTipsText;
+        [SerializeField] private string[] tutorialTips =
+        {
+            "红色分支：提升激光伤害与大招效果",
+            "绿色分支：提升基地血量与护盾上限",
+            "黄色分支：增加金币收益与掉落率",
+            "蓝色分支：加快大招充能与击退效果"
+        };
+        [SerializeField] private float tutorialTipInterval = 2f;
+
         [Header("调试")]
         [SerializeField] private bool showDebugInfo = false;
 
@@ -48,6 +61,7 @@ namespace LightVsDecay.UI.TechTree
 
         private TechTreeNodeUI[] _allNodeUIs;
         private TechTreeLineUI[] _allLineUIs;
+        private Coroutine _tipCoroutine;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 生命周期
@@ -77,11 +91,13 @@ namespace LightVsDecay.UI.TechTree
             TechTreeManager.OnNodeUpgraded += OnNodeUpgraded;
             // 面板激活时刷新所有状态
             RefreshAll();
+            StartTutorialTips();
         }
 
         private void OnDisable()
         {
             TechTreeManager.OnNodeUpgraded -= OnNodeUpgraded;
+            StopTutorialTips();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -129,6 +145,55 @@ namespace LightVsDecay.UI.TechTree
         public void OnDetailPanelClosed()
         {
             RefreshAll();
+        }
+
+        public TechTreeNodeUI GetNodeUIById(string nodeId)
+        {
+            if (string.IsNullOrEmpty(nodeId) || _allNodeUIs == null)
+            {
+                return null;
+            }
+
+            foreach (var node in _allNodeUIs)
+            {
+                if (node != null && node.NodeData != null && node.NodeData.nodeId == nodeId)
+                {
+                    return node;
+                }
+            }
+
+            return null;
+        }
+
+        private void StartTutorialTips()
+        {
+            if (tutorialTipsText == null || tutorialTips == null || tutorialTips.Length == 0)
+            {
+                return;
+            }
+
+            StopTutorialTips();
+            _tipCoroutine = StartCoroutine(TutorialTipRoutine());
+        }
+
+        private void StopTutorialTips()
+        {
+            if (_tipCoroutine != null)
+            {
+                StopCoroutine(_tipCoroutine);
+                _tipCoroutine = null;
+            }
+        }
+
+        private IEnumerator TutorialTipRoutine()
+        {
+            int index = 0;
+            while (true)
+            {
+                tutorialTipsText.text = tutorialTips[index % tutorialTips.Length];
+                index++;
+                yield return new WaitForSecondsRealtime(Mathf.Max(0.5f, tutorialTipInterval));
+            }
         }
     }
 }
