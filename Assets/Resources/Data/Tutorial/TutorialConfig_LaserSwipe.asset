@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7385211a40b2ff343840481ea49f3f52, type: 3}
+  m_Name: TutorialConfig_LaserSwipe
+  m_EditorClassIdentifier: 
+  stepID: battle_laserSwipe
+  prefabPath: Effects/Tutorial/FingerSwipeGuide
+  parentPath: 
+  localPosition: {x: 0, y: 0, z: 0}
+  localScale: {x: 1, y: 1, z: 1}
+  useSpotlightOverlay: 0
+  holePadding: {x: 24, y: 24}
+  overlayMessage: 

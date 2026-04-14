@@ -35,7 +35,14 @@
       "Bash(find D:\\\\Project\\\\LightVSDecay\\\\Assets\\\\Scripts:*)",
       "Bash(find D:\\\\Project\\\\LightVSDecay\\\\Assets\\\\Scripts\\\\Data\\\\Runtime:*)",
       "WebFetch(domain:zhuanlan.zhihu.com)",
-      "WebFetch(domain:developers.weixin.qq.com)"
+      "WebFetch(domain:developers.weixin.qq.com)",
+      "WebFetch(domain:blog.csdn.net)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:discussions.unity.com)",
+      "WebFetch(domain:www.ronja-tutorials.com)",
+      "WebFetch(domain:toxigon.com)",
+      "WebFetch(domain:medium.com)"
     ]
   }
 }

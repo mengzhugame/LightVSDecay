@@ -12,6 +12,7 @@ using TMPro;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Equipment;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Equipment
 {
@@ -328,69 +329,16 @@ namespace LightVsDecay.UI.Equipment
 
         private IEnumerator AnimateIntStat(TextMeshProUGUI text, string label, int from, int to)
         {
-            yield return AnimatePunch(text.transform as RectTransform);
-
-            float elapsed = 0f;
-            while (elapsed < statRollDuration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / statRollDuration);
-                int value = Mathf.RoundToInt(Mathf.Lerp(from, to, t));
-                text.text = $"{label}{value}";
-                yield return null;
-            }
-
-            text.text = $"{label}{to}";
+            yield return UIAnimationHelper.PunchThenRollInt(
+                text, from, to, statPunchScale, statPunchDuration, statRollDuration, prefix: label);
             _statCoroutines[text] = null;
         }
 
         private IEnumerator AnimateFloatStat(TextMeshProUGUI text, string label, float from, float to)
         {
-            yield return AnimatePunch(text.transform as RectTransform);
-
-            float elapsed = 0f;
-            while (elapsed < statRollDuration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / statRollDuration);
-                float value = Mathf.Lerp(from, to, t);
-                text.text = $"{label}{value:F1}%";
-                yield return null;
-            }
-
-            text.text = $"{label}{to:F1}%";
+            yield return UIAnimationHelper.PunchThenRollFloat(
+                text, from, to, statPunchScale, statPunchDuration, statRollDuration, prefix: label, suffix: "%");
             _statCoroutines[text] = null;
-        }
-
-        private IEnumerator AnimatePunch(RectTransform rect)
-        {
-            if (rect == null)
-            {
-                yield break;
-            }
-
-            Vector3 baseScale = rect.localScale;
-            float half = Mathf.Max(0.05f, statPunchDuration * 0.5f);
-            float elapsed = 0f;
-
-            while (elapsed < half)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / half);
-                rect.localScale = Vector3.Lerp(baseScale, baseScale * statPunchScale, t);
-                yield return null;
-            }
-
-            elapsed = 0f;
-            while (elapsed < half)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / half);
-                rect.localScale = Vector3.Lerp(baseScale * statPunchScale, baseScale, t);
-                yield return null;
-            }
-
-            rect.localScale = baseScale;
         }
 
         private void StopAllStatAnimations()

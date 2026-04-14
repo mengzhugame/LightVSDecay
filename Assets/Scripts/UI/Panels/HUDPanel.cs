@@ -9,6 +9,7 @@ using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Player;
 using LightVsDecay.Logic.XP;
 using LightVsDecay.Core;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -740,31 +741,9 @@ namespace LightVsDecay.UI.Panels
 
         private IEnumerator CoinPunchCoroutine()
         {
-            Vector3 originalScale = coinPunchBaseScale;
-            Vector3 targetScale = originalScale * coinPunchScale;
-            float halfDuration = Mathf.Max(0.01f, coinPunchDuration * 0.5f);
-            float elapsed = 0f;
-
-            goldCoinBarPunchRoot.localScale = originalScale;
-
-            while (elapsed < halfDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / halfDuration);
-                goldCoinBarPunchRoot.localScale = Vector3.LerpUnclamped(originalScale, targetScale, EaseOutBack(t));
-                yield return null;
-            }
-
-            elapsed = 0f;
-            while (elapsed < halfDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / halfDuration);
-                goldCoinBarPunchRoot.localScale = Vector3.LerpUnclamped(targetScale, originalScale, t);
-                yield return null;
-            }
-
-            goldCoinBarPunchRoot.localScale = originalScale;
+            goldCoinBarPunchRoot.localScale = coinPunchBaseScale;
+            yield return UIAnimationHelper.PlayScalePunch(
+                goldCoinBarPunchRoot, coinPunchScale, coinPunchDuration, useUnscaledTime: false);
             coinPunchCoroutine = null;
         }
 
@@ -782,14 +761,6 @@ namespace LightVsDecay.UI.Panels
             }
         }
 
-        private static float EaseOutBack(float t)
-        {
-            const float c1 = 1.70158f;
-            const float c3 = c1 + 1f;
-            float x = t - 1f;
-            return 1f + c3 * x * x * x + c1 * x * x;
-        }
-        
         /// <summary>更新经验条</summary>
         private void UpdateExpDisplay(int current, int required)
         {

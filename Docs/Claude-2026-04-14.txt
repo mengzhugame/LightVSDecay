@@ -1,0 +1,423 @@
+关于unity ugui 新手引导的透明遮罩的挖孔方案实现，首先去网上搜索一些ugui的挖孔实现方案，然后再读取我上一个项目 美妆叠叠乐的新手引导 UGUI的挖孔实现，代码再 D:\Project\BeautyStacking\Assets\Scripts 文件夹下。最终分析并生成一套性能和效果都不错的ugui透明遮罩的UI挖孔实现方案，最后查找现在这个光与朽项目的新手引导挖孔代码， D:\Project\LightVSDecay\Assets\Scripts 文件夹下，做一个对比和评判，分析并总结现在项目实现的ugui挖孔功能是否需要修改和更换？如果需要修改，则告诉我最终的实现方案，等我确认后，再开始执行代码修改。
+
+
+● 以上是完整的对比分析和改造方案。核心结论总结：
+
+  ---
+  对比结论
+
+  ┌──────────┬──────────────────┬───────────────────────────┐
+  │          │  光与朽现有方案  │      美妆叠叠乐方案       │
+  ├──────────┼──────────────────┼───────────────────────────┤
+  │ 技术     │ 4 面板几何切割   │ SDF Shader 单图层         │
+  ├──────────┼──────────────────┼───────────────────────────┤
+  │ DrawCall │ 4+（打断 Batch） │ 1                         │
+  ├──────────┼──────────────────┼───────────────────────────┤
+  │ 孔洞形状 │ 仅直角矩形       │ 圆角矩形（可配置）        │
+  ├──────────┼──────────────────┼───────────────────────────┤
+  │ 边缘质量 │ 硬边，无抗锯齿   │ smoothstep 软边           │
+  ├──────────┼──────────────────┼───────────────────────────┤
+  │ 点击穿透 │ 4 块各自处理     │ C# SDF 与 shader 完全一致 │
+  ├──────────┼──────────────────┼───────────────────────────┤
+  │ 可扩展性 │ 改形状需大改     │ 改参数即可变形            │
+  └──────────┴──────────────────┴───────────────────────────┘
+
+  结论：需要替换。 现有代码结构本身不差，但四面板方案是视觉和性能的双重短板。
+
+  改造成本极低：
+  - 新增 1 个 shader 文件（直接移植美妆项目）
+  - 修改 TutorialSpotlightOverlay.cs 内部实现
+  - MainSceneTutorialDirector.cs 零改动（调用接口 Show()/Hide() 完全不变）
+  - Prefab 里删掉 4 个 block 面板子节点
+
+  确认这个方案后我开始执行代码修改。
+
+------------------------------------------------------------------------------------------------------------------------
+
+确认，在移植代码和修改前，先把美妆叠叠乐这个新手引导和UI遮罩挖孔的代码，提取成公共的代码模板库，放在D:\Project\GamePlanningDoc\40_知识\代码模板库 文件夹下。 然后开始执行光与朽项目的代码修改。
+
+ 已完成：
+
+  1. 模板库（D:\Project\GamePlanningDoc\40_知识\代码模板库\UGUI挖孔遮罩\）
+    - UIHoleMask.shader
+    - HoleMaskController.cs（通用命名空间，Debug.Log 替换 GameLogger）
+    - HoleMaskClickBlocker.cs
+    - README.md
+  2. LightVSDecay 项目
+    - 新增 Assets/Shaders/UIHoleMask.shader
+    - 重构 TutorialSpotlightOverlay.cs：移除 4 个 block 面板字段/逻辑，改用 SDF Shader 单图层，保留
+  Show()/Hide()/SetMessage() 接口不变
+
+  需要你在 Unity Editor 中手动完成：
+
+  在 Scene 或 Prefab 里找到 TutorialSpotlightOverlay 所在的 GameObject：
+  1. 删除子节点：topBlock、bottomBlock、leftBlock、rightBlock（4 个遮罩面板）
+  2. 确认 Image 组件的 Raycast Target 为 true（用于拦截遮罩区域点击）
+  3. 原有的 ring、finger、messageRoot 子节点保留不动
+------------------------------------------------------------------------------------------------------------------------
+
+我查看了D:\Project\GamePlanningDoc\40_知识\代码模板库\UGUI挖孔遮罩\README.md 这个文档不够完整，没有美妆叠叠乐项目的TutorialManager.cs，也没有相关TutorialConfigSO.cs配置文件，需要写入 新手引导的Effects/XinShouYinDao 这个特效预制体文件（手指动画和黄色光圈扩散动画）。首先应该是这套模板库的详细用法，例如需要再MainScene.scene里建立一个TutorialManager节点 挂载TutorialManager脚本，然后再 Assets\Resources\Data\Tutorial 文件夹中建立配置文件，右键-创建配置文件。然后再需要遮罩的场景 添加UI挂载点 Canvas/XinShouYinDaoPoint。然后填入相关的特效预制体，和挖孔遮罩配置参数，还有空的目标路径Canvas/XinShouYinDao-DuiDieQu。这样一整套的新手引导遮罩蒙版的详细完整流程。  需要修改和完善通用模板库的相关代码和README.md文件。
+关于光与朽的新手引导流程，首次启动进入游戏，调用手指+左右弧线箭头的预制体（手指左右移动带动画），当检测到玩家手指触动屏幕，则这个预制体隐藏或销毁。技能三选一 和无人机三选一不用做新手引导，已有常驻文字提示和流派色标签+协同发光等效果。当第一次大招满后，会调用手指预制体（手指戳向大招按钮动画），当玩家点击后，预制体隐藏或销毁。 当玩家第一局战斗结束，返回主界面时，会弹出TipsPanal 面板，显示文字 科技树系统已解锁！永久强化你的战力！ 然后有科技树按钮有红点显示（功能已有）。然后当玩家点击科技树按钮后，进入科技树界面，调用手指+光圈预制体（手指动画和黄色光圈扩散动画），引导玩家去点击科技树节点，玩家点击节点后会弹出升级面板，手指再指向升级按钮，等待玩家点击升级。当玩家点击升级按钮后，手指再指向关闭按钮，显示科技树一级界面后，手指再指向上面返回按钮，引导玩家回到主页面。这就算一次科技树引导完成。 当玩家通关第二章难度1时，回到主界面会弹出TipsPanal 面板，显示文字 装备系统已解锁！强化你的光棱塔！然后装备按钮上有红点显示（功能已有）。玩家第一次进入装备界面后，这时候就显示挖洞，调用手指+光圈预制体（手指动画和黄色光圈扩散动画），指向背包的中第一个装备，这时候会弹出二级信息界面，手指和光圈指向装备按钮，当玩家点击装备按钮后，会有信息面板Info的文字UI 互动 (UI Punch)：UI 上的数字要 “弹一下” (Scale 1.0 -> 1.2 -> 1.0)。数字滚动 (Rolling Number)：UI 上的数字不要瞬间 +50。要用代码让它在 0.5秒 内从 100 滚到 150。然后直接手指引导玩家点击顶部返回按钮。完成装备系统的引导。
+感觉梳理下来，好像确实不需要用到黑色遮罩和UI扣洞效果，只需要再合适的时候调用合适的效果prefab即可。但是也需要新手引导的配置文件，需要配置新手引导手指特效prefab的位置。
+根据我刚描述的流程，然后重新生成光与朽_新手引导系统设计文档_V2.0.md 文件。
+等文件生成好后，先让我确认最新版的新手引导流程，然后读取光与朽的unity工程项目代码的新手引导相关代码，做相应的修改和功能制作，并生成一份光与朽_新手引导功能_Unity接入文档_V2.0.md 文档。  所有文档都保存在D:\Project\GamePlanningDoc\20_项目\02_光与朽项目\01_策划文档 文件夹下。
+
+内容很清晰，大体流程我已理解。在开始之前有几个问题需要确认：
+
+  ---
+  问题 1：模板库中的 BeautyStacking 文件
+
+  你提到模板库需要补充 TutorialManager.cs 和 TutorialConfigSO.cs，这两个文件在美妆叠叠乐项目里的路径是什么？还是要我在
+   D:\Project\BeautyStacking\Assets\Scripts 下自行搜索？
+
+  ---
+  问题 2：光与朽现有的特效 Prefab 状态
+
+  流程里用到了两种特效 Prefab：
+  - 手指 + 左右弧线箭头（激光操控引导）
+  - 手指 + 黄色光圈扩散（科技树、装备引导）
+
+  这两个 Prefab 目前在光与朽项目里是否已经制作好了？还是需要我在文档里描述清楚，由 TA/美术制作？
+
+  ---
+  问题 3：UI 动画效果的现有状态
+
+  装备引导完成时你提到了两个交互反馈效果：
+  - UI Punch（数值弹一下，Scale 1.0 → 1.2 → 1.0）
+  - Rolling Number（数字滚动 0.5 秒）
+
+  这两个效果在项目里是否已有实现？还是 V2.0 文档里需要列为「待开发」？
+
+  ---
+  问题 4：TipsPanel 解锁提示面板
+
+  科技树解锁和装备系统解锁时弹出的 TipsPanel —— 项目里是否已有这个面板组件可以复用？
+
+  ---
+  等你回复这几个问题后，我会先完成模板库的补充，然后生成
+  光与朽_新手引导系统设计文档_V2.0.md，请你确认流程后再进入代码阶段。
+------------------------------------------------------------------------------------------------------------------------
+
+关于问题1，代码路径D:\Project\BeautyStacking\Assets\Scripts\Runtime\Managers\TutorialManager.cs  D:\Project\BeautyStacking\Assets\Scripts\Core\Data\TutorialConfigSO.cs  关于问题2，这两个特效prefab还没有制作好，你可以在文档里描述清楚，我来制作。关于问题3，UI动画效果项目里已实现，你可以查看现在的工程代码，先查看装备系统重是否有这个动画效果的实现，然后战斗中的金币栏就采用了这种动画，如果有多个地方采用这种动画效果的实现，请封装为通用方法，以后多个地方调用即可。然后告诉我这种动画效果通用的名称是什么？例如 Q弹UI效果？ 以后我需要那个UI是这种效果，可以直接给你描述，你就可以调用这个方法，把这套方法也总结到D:\Project\GamePlanningDoc\40_知识\代码模板库 知识库中。关于问题4，TipsPanel 解锁提示面板可以复用，并且项目中已有相关功能，你可以查看工程代码。你再进入修改代码阶段时，需要查看现有工程的新手引导相关代码，避免重复制作。
+
+信息收集完毕。现在我清楚整体情况：
+
+  现有代码状况速览：
+  - MainSceneTutorialDirector.cs：科技树+装备引导的状态机已实现，用 TutorialSpotlightOverlay 做高亮
+  - TipsPanelController.cs：解锁提示面板已完整实现，直接可用
+  - EquipmentPanel.cs：有 AnimatePunch + AnimateIntStat（Roll Number）已实现
+  - HUDPanel.cs：有 CoinPunchCoroutine（相同逻辑，独立实现）
+  - 战场内引导（激光操控、大招）：完全缺失，需新增
+
+  这个动画效果的通用名称是 Scale Punch（Q弹缩放效果）。DOTween 里叫 DOPunchScale，游戏行业常称 "Juice UI" 或 "UI
+  Pop"，中文业内叫"Q弹效果"。EquipmentPanel 和 HUDPanel 各自实现了一套，需要提取为通用工具类。
+
+  ---
+  现在生成 V2.0 文档：
+
+● Write(D:\Project\GamePlanningDoc\20_项目\02_光与朽项目\01_策划文档\光与朽_新手引导系统设计文档_V2.0.md)
+  ⎿  Wrote 229 lines to ..\GamePlanningDoc\20_项目\02_光与朽项目\01_策划文档\光与朽_新手引导系统设计文档_V2.0.md
+       1 # 《光与朽》新手引导系统设计文档 V2.0
+       2
+       3 > **文档状态**：待确认
+       4 > **更新说明**：V2.0 基于 V1.0 全面重构。核心变化：取消黑色遮罩挖孔方案，改用「特效Prefab直接指引」模
+         式（手指动画 + 黄色光圈扩散）；战斗内新增激光操控引导和大招引导；科技树与装备系统引导流程细化。
+       5
+       6 ---
+       7
+       8 ## 一、设计原则
+       9
+      10 | 原则 | 说明 |
+     … +219 lines (ctrl+o to expand)
+
+● 文档已生成：光与朽_新手引导系统设计文档_V2.0.md
+
+  ---
+  请确认以下几个关键设计决策：
+
+  1. 激光操控引导（Step 1）
+  文档里写的是「检测到玩家手指触摸屏幕任意一次」就结束引导。但实际你可能更希望检测的是「玩家已经拖动过激光」而不是只要
+  触摸就结束。哪个更准确？
+
+  2. 科技树 / 装备引导改为 Prefab 方案
+  现有 MainSceneTutorialDirector.cs 已经写了完整的状态机，逻辑基本正确，只需要把 spotlightOverlay.Show(...)
+  替换为「在目标位置生成手指+光圈Prefab」。这个改动确认吗？还是你想继续保留 SpotlightOverlay 作为备用？
+
+  3. 装备引导是否保留挖孔效果
+  你在需求里写了「这时候就显示挖洞」，但后面又说感觉不需要黑色遮罩了。装备引导最终要不要黑色遮罩挖孔？
+
+  4. UI 动画通用名 Scale Punch
+  确认后我会把 EquipmentPanel 和 HUDPanel 里的重复实现提取成 UIAnimationHelper.cs，并总结到知识库
+  D:\Project\GamePlanningDoc\40_知识\代码模板库。
+------------------------------------------------------------------------------------------------------------------------
+
+1.激光操作引导希望检测的是玩家已经拖动过激光（实际是玩家手机在手机屏幕上滑动）更准确。2.科技树 / 装备引导改为 Prefab 方案改动确认，不需要保留SpotlightOverlay这个效果。3.你提醒了我，如果科技树界面和装备界面没有黑色透明遮罩，玩家可能去点击别的地方，这种也不好判定玩家是否过了引导，然后会导致引导的显示存在错误的位置。修改一下方案，科技树界面和装备界面的新手引导是需要UI挖孔效果，是否可参考美妆叠叠乐的新手引导，通过新手引导配置来配置挖孔参数和手指特效？4.确认，UI的Q弹缩放效果
+
+文档已更新。请确认以下完整设计方案：
+
+  ---
+  核心架构（两种引导模式）：
+
+  ┌─────────────────────────┬───────────────────────┬──────────────────────────────────┐
+  │          场景           │         遮罩          │           特效 Prefab            │
+  ├─────────────────────────┼───────────────────────┼──────────────────────────────────┤
+  │ 战斗内（激光/大招）     │ 无遮罩                │ FingerSwipeGuide / FingerPointer │
+  ├─────────────────────────┼───────────────────────┼──────────────────────────────────┤
+  │ 系统界面（科技树/装备） │ SpotlightOverlay 挖孔 │ FingerPointerWithRing            │
+  └─────────────────────────┴───────────────────────┴──────────────────────────────────┘
+
+  关键决策确认点：
+
+  1. 激光结束条件：Touch.deltaPosition.magnitude > 10px，检测真实拖动（非单纯触摸）✓
+  2. 科技树/装备：保留 SpotlightOverlay 挖孔 + 叠加手指光圈 Prefab ✓
+  3. 配置驱动：9个步骤各有独立 TutorialStepConfigSO 资产 ✓
+  4. Q弹缩放：提取为 UIAnimationHelper.cs，全项目复用 ✓
+
+  你看 V2.0 文档还有需要调整的地方吗？确认后我就开始读现有代码做实装。
+------------------------------------------------------------------------------------------------------------------------
+关于第2个，应该去掉四面板几何切割 SpotlightOverlay 挖孔，改为美妆叠叠乐的SDF Shader的挖孔，并且采用美妆叠叠的配置方式，可以配置挖孔参数和特效预制体。
+
+确认这个架构方向，开始制作
+
+ 本次完成的内容：
+
+  ┌─────────────────┬───────────────────────────────────────────┬────────────────────────────────────────────────┐
+  │      任务       │                   文件                    │                      状态                      │
+  ├─────────────────┼───────────────────────────────────────────┼────────────────────────────────────────────────┤
+  │ EquipmentPanel  │ Assets/Scripts/UI/Equipment/EquipmentPane │ 删除 AnimatePunch/AnimateIntStat/AnimateFloatS │
+  │ 动画重构        │ l.cs                                      │ tat，改调                                      │
+  │                 │                                           │ UIAnimationHelper.PunchThenRollInt/Float       │
+  ├─────────────────┼───────────────────────────────────────────┼────────────────────────────────────────────────┤
+  │ HUDPanel        │                                           │ CoinPunchCoroutine 改调                        │
+  │ 金币动画重构    │ Assets/Scripts/UI/Panels/HUDPanel.cs      │ UIAnimationHelper.PlayScalePunch，删除         │
+  │                 │                                           │ EaseOutBack                                    │
+  ├─────────────────┼───────────────────────────────────────────┼────────────────────────────────────────────────┤
+  │ Unity 接入文档  │                                           │ 新建，完整覆盖两个                             │
+  │ V2.0            │ 光与朽_新手引导功能_Unity接入文档_V2.0.md │ Director、TutorialStepConfigSO 配置、Prefab    │
+  │                 │                                           │ 规格、Inspector 赋值、验证清单                 │
+  ├─────────────────┼───────────────────────────────────────────┼────────────────────────────────────────────────┤
+  │ UIAnimationHelp │ 代码模板库/07_UIAnimationHelper.md        │ 新建，含完整代码 + 打断重启示例 + Dictionary   │
+  │ er 模板         │                                           │ 管理多属性示例                                 │
+  ├─────────────────┼───────────────────────────────────────────┼────────────────────────────────────────────────┤
+  │ UGUI挖孔遮罩    │                                           │ 追加 TutorialDirector                          │
+  │ README 补全     │ UGUI挖孔遮罩/README.md                    │ 完整接入方案（配置驱动架构 + 核心方法 +        │
+  │                 │                                           │ 点击穿透实现）                                 │
+  ├─────────────────┼───────────────────────────────────────────┼────────────────────────────────────────────────┤
+  │ 模板库索引更新  │ 00_INDEX.md                               │ 新增 07/08 两条记录 + 最近更新日志             │
+  └─────────────────┴───────────────────────────────────────────┴────────────────────────────────────────────────┘
+------------------------------------------------------------------------------------------------------------------------
+
+关于新手引导问题，我运行游戏进行测试，为什么我滑动鼠标，战斗新手的新手引导预制体FingerSwipeGuide还一直存在？是因为你判断的是手机，每考虑电脑鼠标滑动吗？那有些玩家用安卓模拟器玩怎么办？
+
+根本原因：#if UNITY_EDITOR || UNITY_STANDALONE 和 #else 是互斥分支，安卓模拟器打包后走 #else 只检测
+  touch，而模拟器的鼠标操作不产生 touch 事件，两边都漏了。
+
+  修复逻辑：去掉预编译分支，两种检测同时运行：
+  - 鼠标检测：覆盖编辑器 / PC / 安卓模拟器
+  - 触摸检测：覆盖真机
+
+  现在编辑器里按住左键横向拖动鼠标即可触发引导完成。
+
+------------------------------------------------------------------------------------------------------------------------
+
+为什么大招充能满了，没有调用新手引导的手指预制体？
+
+找到根本原因了。看 ChangeState() 第 584 行的执行顺序：
+
+  OnEnterReady()
+    → ShowReadyBubble()  ← 第 333 行：设置 hasSeenOverloadTutorial = true 并 Save()
+  GameEvents.TriggerOverloadStateChanged(Ready)  ← 事件之后才发出
+    → BattleTutorialDirector.OnOverloadStateChanged()
+        → 检查 _shouldShowOverloadTutorial
+
+  两个叠加问题：
+
+  1. 你之前开发测试时已经触发过大招，ShowReadyBubble() 早就把 hasSeenOverloadTutorial = true 存入了
+  PlayerPrefs。BattleTutorialDirector.Start() 读到的就是 true，所以 _shouldShowOverloadTutorial =
+  false，引导永远不显示。
+  2. 即使从头开始，ShowReadyBubble() 和 BattleTutorialDirector 共用同一个 flag，但 Bubble 优先写，下次启动就失效了。
+
+  修复方案：ShowReadyBubble() 不应该设置这个 flag——只有 BattleTutorialDirector 完成引导后才有权写。
+------------------------------------------------------------------------------------------------------------------------
+
+关于新手引导UI扣洞的几个问题，1.在场景中隐藏TutorialSpotlightOverlay节点，然后运行游戏进入装备界面， 会导致遮罩无法显示。应该是默认隐藏节点，然后进入界面后，脚本显示这个节点。 2.因为遮罩的层级显示关系，加载的手指特效预制体 Tutorial_tech_select_node 节点 不能直接挂载到科技树节点下，应该挂载到MainSceneTutorialDirector节点下（但是之前的节点的位置是正确的，继续保持位置正确）。3.游戏在运行中，无法调试遮罩挖孔，这个孔的大小和位置。我希望脚本上有个调试开关，我勾选后，运行游戏，可以在游戏中调试洞口的大小和位置，还有圆角度（可以调成正方形或者圆形）。然后我记录好参数后，可以输入到配置中。
+代码结构正常。三处修改总结：
+
+  ---
+  修复1 — inactive 节点无法显示遮罩
+
+  新增 EnsureInitialized()，在 Show() 最开头懒初始化（GetComponent、new Material 对 inactive
+  对象都可以正常执行）。Awake() 中去掉了 SetActive(false)（防止 Show()→SetActive(true)→Awake→SetActive(false)
+  的死循环），改为：
+  - Scene 中 Inspector 把节点保持 inactive 即可（你原来就是这样设置的）
+  - Awake() 只做初始化，不再强制隐藏
+
+  修复2 — 手指 Prefab 层级
+
+  SpawnFingerPrefab() 默认父节点改为 this.transform（MainSceneTutorialDirector 节点）。位置通过
+  RectTransformUtility.WorldToScreenPoint → ScreenPointToLocalPointInRectangle
+  将目标屏幕位置换算到新父节点的本地坐标，视觉位置与之前完全一致。
+
+  修复3 — 运行时调试孔洞
+
+  Inspector 新增 4 个字段（在 调试模式 Header 下）：
+
+  ┌─────────────────────┬──────────────────────────────────────┐
+  │        字段         │                 说明                 │
+  ├─────────────────────┼──────────────────────────────────────┤
+  │ Debug Mode          │ 勾选后遮罩始终可见，Update 接管驱动  │
+  ├─────────────────────┼──────────────────────────────────────┤
+  │ Debug Target        │ 拖入任意 RectTransform，孔洞自动对齐 │
+  ├─────────────────────┼──────────────────────────────────────┤
+  │ Debug Padding       │ 实时调整边距（等同于 holePadding）   │
+  ├─────────────────────┼──────────────────────────────────────┤
+  │ Debug Corner Radius │ 实时调整圆角，0=直角矩形，调大=圆形  │
+  └─────────────────────┴──────────────────────────────────────┘
+
+  调好后把 Debug Padding / Debug Corner Radius 值填入对应 TutorialStepConfigSO 的 holePadding / cornerRadius
+  字段即可。
+
+------------------------------------------------------------------------------------------------------------------------
+现在运行游戏，遮罩挖洞的位置显示是正确了，但是鼠标点击洞内的按钮没有任何反应。这是什么问题？
+
+问题出在点击穿透的实现机制上。
+
+  根本原因：Unity UI 的点击事件流程是先由 GraphicRaycaster
+  做射线检测决定谁"接收"事件，IPointerClickHandler.OnPointerClick() 是在射线已命中之后才调用的回调。当前代码在回调里
+  return，只是说"我不处理"，但射线已经被遮罩 Image 吃掉了——下方按钮根本没有机会参与射线检测。
+
+  正确做法：实现 ICanvasRaycastFilter 接口的 IsRaycastLocationValid()。这个接口在射线检测阶段就介入：返回 false
+  表示这个点"射线穿透"，GraphicRaycaster 会继续向下检测下层按钮。
+
+using 正常，UnityEngine.EventSystems 包含 ICanvasRaycastFilter。
+
+  ---
+  机制对比：
+
+  ┌───────────────────────────────────────────────┬──────────────────────────────┬─────────────────────────────────┐
+  │                     方式                      │           介入阶段           │              效果               │
+  ├───────────────────────────────────────────────┼──────────────────────────────┼─────────────────────────────────┤
+  │ IPointerClickHandler + eventData.Use()        │ 回调阶段（事件已被遮罩吃掉） │ 下层按钮永远收不到事件 ❌       │
+  ├───────────────────────────────────────────────┼──────────────────────────────┼─────────────────────────────────┤
+  │ ICanvasRaycastFilter.IsRaycastLocationValid() │ 射线检测阶段（最早期）       │ 返回 false → 射线直接穿透到按钮 │
+  │                                               │                              │  ✅                             │
+  └───────────────────────────────────────────────┴──────────────────────────────┴─────────────────────────────────┘
+
+  现在孔洞内的按钮可以正常响应点击；孔洞外的区域 IsRaycastLocationValid 返回 true，遮罩正常拦截误触。
+
+------------------------------------------------------------------------------------------------------------------------
+
+BUG还存在，UI挖洞的按钮，依然很难点击。
+
+
+● 逻辑干净。修改总结：
+
+  ---
+  问题根因：
+
+  之前的 IsPointInHole 把 screenPoint 除以 Screen.width/Height 归一化后，再与归一化的 _currentHoleCenter 比较。但
+  Unity 的 IsRaycastLocationValid(sp) 传入的是物理像素坐标，而我们在 UpdateShaderHole() 里用的 WorldToScreenPoint
+  也是物理像素，两个值相除后的浮点精度在不同 Canvas Scaler 模式下会有细微误差，导致边界附近 SDF
+  判断出错——点在视觉洞里，C# 却认为在洞外，射线被拦截。
+
+  修复：
+
+  ┌────────────────────┬────────────────────────────────┬─────────────────────────────────────┐
+  │                    │              之前              │                现在                 │
+  ├────────────────────┼────────────────────────────────┼─────────────────────────────────────┤
+  │ 存储的孔洞参数     │ 归一化 _currentHoleCenter/Size │ 像素空间 _holeScreenCenter/HalfSize │
+  ├────────────────────┼────────────────────────────────┼─────────────────────────────────────┤
+  │ IsPointInHole 输入 │ 先归一化再 SDF                 │ 直接像素空间 SDF                    │
+  ├────────────────────┼────────────────────────────────┼─────────────────────────────────────┤
+  │ 坐标系一致性       │ ✗ 可能有 Canvas Scaler 误差    │ ✅ 完全同一坐标系                   │
+  ├────────────────────┼────────────────────────────────┼─────────────────────────────────────┤
+  │ Shader 参数        │ 归一化（不变）                 │ 归一化（不变）                      │
+  └────────────────────┴────────────────────────────────┴─────────────────────────────────────┘
+
+
+------------------------------------------------------------------------------------------------------------------------
+
+我知道是什么问题了，因为手指的光圈特效挡住了鼠标的点击，所以鼠标点击不到，有时候能点击到，是因为动画刚好缩小，鼠标
+刚好点击到按钮上。因为我的手指和光圈都是ui的image组件，并且好像默认都勾选了raycastTarget选项，所以导致点击不到。是我
+手动取消这个选项，还是你用代码控制？
+
+用代码控制，两处均已处理。
+
+  GetComponentsInChildren<Graphic>(true) 会递归取到所有子节点的 Image、RawImage、Text、TextMeshProUGUI
+  等（它们都继承自 Graphic），参数 true 表示包含 inactive 的子节点，一次性全部关掉 raycastTarget。
+
+  这样不管以后 Prefab 里加了多少层 Image，都不需要手动挨个取消勾选。
+------------------------------------------------------------------------------------------------------------------------
+
+解决新手引导手指特效预制体的位置，因为我的返回按钮在屏幕左上角，所以返回按钮锚点也在左上角，但是手指特效预制体的位置计算出来的就不正确了。之前的UI按钮锚点都在中间，所以直接引用组件没问题，但是有的UI锚点改变后，特效预制体的位置也就改变了。然后还没有任何可以调试位置参数的功能，配置里的Local Position 参数 是否可以修正这个问题？如果可以，那给我做一个调试功能，可以修改位置，这样我运行时，发现位置不对，通过调试获得参数，然后输入到配置里的Local Position。 还需要解决一个问题，为什么挖孔不能是圆孔？我通过调整DebugCornerRadius参数，发现是扁圆，不是正圆？是算法问题导致么？是否可以有功能可以切换形状？然后CornnerRadius参数配置里没有，需要添加。
+
+All changes are in place. Here's a summary of what was completed in this session:
+
+  MainSceneTutorialDirector.cs — final changes:
+
+  1. ShowStep() — now passes config.cornerRadius and config.holeShape to spotlightOverlay.Show(), so each tutorial
+  step can have its own shape (rect/rounded/circle) and radius.
+  2. SpawnFingerPrefab() — position logic extracted to ApplyFingerPosition(), _currentFingerTarget cached after spawn.
+  3. ApplyFingerPosition() (new) — uses GetWorldCorners to compute the visual bounding-box center of target, then
+  converts to the parent's local coordinate space via screen-point conversion. This correctly handles buttons with
+  top-left anchors/pivots (like the Back button) where target.position is the corner, not the center. The offset
+  (config.localPosition) is added on top.
+
+  How to use the debug workflow:
+  1. Run in Play mode, enter the tutorial step you want to tune
+  2. Tick debugFingerPos on MainSceneTutorialDirector in Inspector
+  3. Drag debugFingerOffset X/Y — the finger prefab moves in real time
+  4. Copy the values you like into the corresponding TutorialStepConfigSO.localPosition
+------------------------------------------------------------------------------------------------------------------------
+
+你修改完UI扣洞后，首先TutorialSpotlightOverlay Debug模式下没有debugFingerOffset X/Y 这个调试参数，然后现在进入科技树界面，选择节点的扣洞是正确的，但是点击节点后，到升级按钮上扣洞的位置显示就是错误的。请分析并检查这个错误原因，并进行修复。
+
+分析完成。找到两个根本原因：
+
+  问题 1 — debugFingerOffset 在哪里：该参数在 MainSceneTutorialDirector（Inspector 里的"调试 -
+  手指位置微调"分组），不在 TutorialSpotlightOverlay。两个组件各管一类调试：TutorialSpotlightOverlay
+  调洞的形状/大小，MainSceneTutorialDirector 调手指偏移。
+
+  问题 2 — 升级按钮扣洞位置错误，两个叠加原因：
+
+  1. 调用时机过早：TechTreeNodeDetailPanel.Show() 执行顺序是 SetActive(true) → Refresh() →
+  DetailShown.Invoke()，事件在同一帧同步触发。此刻 Canvas 布局系统尚未完成该帧的 layout rebuild，GetWorldCorners()
+  拿到的仍是面板激活前的旧坐标（或默认 0,0,0）。SelectNode 步骤之所以正确，是因为它走的是 RefreshTechTutorialStep()
+  协程，有 yield return null 让布局先跑一帧。
+  2. 手指不持续跟踪：Update() 里只在 debugFingerPos=true
+  时才更新手指位置，正常模式下手指只定位一次。即便遮罩的孔在第二帧修正，手指还留在第 0 帧的错误位置。
+
+  修复方案：
+  - OnTechDetailShown 和 OnEquipmentInfoShown 改为启动协程，等一帧再调 ShowStep
+  - Update() 改为始终跟踪手指目标，不限于 debug 模式
+● 所有修改完成，总结如下：
+
+  ---
+  修复内容
+
+  ┌──────────────────────┬────────────────────────────────────────────────┬───────────────────────────────────────┐
+  │         问题         │                      原因                      │                 修复                  │
+  ├──────────────────────┼────────────────────────────────────────────────┼───────────────────────────────────────┤
+  │                      │ DetailShown 事件在 SetActive(true)             │ OnTechDetailShown → 协程              │
+  │ 升级按钮扣洞位置错误 │ 同帧触发，Canvas layout 尚未                   │ ShowTechUpgradeStep()，yield return   │
+  │                      │ rebuild，GetWorldCorners() 返回旧坐标          │ null 等一帧再调 ShowStep              │
+  ├──────────────────────┼────────────────────────────────────────────────┼───────────────────────────────────────┤
+  │                      │ Update() 只在 debugFingerPos=true              │ 始终每帧调                            │
+  │ 手指位置跟随目标矫正 │ 时更新手指位置，正常模式下手指停在第 0         │ ApplyFingerPosition，正常用           │
+  │                      │ 帧的错误位置                                   │ _currentFingerOffset，debug 用        │
+  │                      │                                                │ debugFingerOffset                     │
+  ├──────────────────────┼────────────────────────────────────────────────┼───────────────────────────────────────┤
+  │ 装备界面同样问题     │ OnEquipmentInfoShown 也是同帧同步触发          │ 同样加了 ShowEquipmentEquipStep()     │
+  │                      │                                                │ 协程                                  │
+  └──────────────────────┴────────────────────────────────────────────────┴───────────────────────────────────────┘
+
+  ---
+  关于 debugFingerOffset 的位置
+
+  它在 MainSceneTutorialDirector 组件的 Inspector 里（不是 TutorialSpotlightOverlay）：
+
+  - TutorialSpotlightOverlay 的 debug 区域 → 调孔洞的位置/大小/形状
+  - MainSceneTutorialDirector 的"调试 - 手指位置微调"分组 → 调手指特效的偏移
+
+  两个组件各管各的，在 Hierarchy 里选对应节点就能看到。
+------------------------------------------------------------------------------------------------------------------------

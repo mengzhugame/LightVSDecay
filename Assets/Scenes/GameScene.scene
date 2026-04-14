@@ -6222,6 +6222,7 @@ RectTransform:
   - {fileID: 4750291716548683704}
   - {fileID: 1478829714}
   - {fileID: 1860509987}
+  - {fileID: 1231692334}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -6756,6 +6757,9 @@ MonoBehaviour:
   skillButton: {fileID: 960533966}
   fillImage: {fileID: 131474929}
   readyVFX: {fileID: 443478144162214717}
+  readyBubbleRoot: {fileID: 0}
+  readyBubbleText: {fileID: 0}
+  readyBubbleMessage: "\u5927\u62DB\u5DF2\u5C31\u7EEA\uFF0C\u70B9\u51FB\u7ACB\u5373\u91CA\u653E\uFF01"
   fillSmoothSpeed: 5
   btnPressScale: 0.85
   btnPressDuration: 0.08
@@ -8442,6 +8446,59 @@ MonoBehaviour:
   rightCrateX: 4.5
   turretTransform: {fileID: 539129848056647857}
   showDebugInfo: 1
+--- !u!1 &1231692333
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 1231692334}
+  - component: {fileID: 1231692335}
+  m_Layer: 5
+  m_HasEditorInfo: 1
+  m_Name: BattleTutorialDirector
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1231692334
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1231692333}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 931834403}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1231692335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1231692333}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34bfbe7c6f1e0ac49b4dc7f1e13a0475, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  laserConfig: {fileID: 11400000, guid: 72d0472f79f8cd24dbefe1753008c300, type: 2}
+  swipeThreshold: 8
+  overloadConfig: {fileID: 11400000, guid: 0fedc661f726a42409a70ee630adfc9f, type: 2}
+  overloadButtonRect: {fileID: 960533965}
 --- !u!1 &1245219309
 GameObject:
   m_ObjectHideFlags: 0
@@ -10182,6 +10239,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   titleText: {fileID: 2002253805}
+  tipsBannerText: {fileID: 0}
   skillDatabase: {fileID: 11400000, guid: 68a59b6950502b142a899fa3880d365d, type: 2}
   cardBgAttack: {fileID: 21300000, guid: ad73d2c5ed7028940bc833d36f6079ce, type: 3}
   cardBgPassive: {fileID: 21300000, guid: 8475edcec0398c44e8ab65e87f563bb6, type: 3}
@@ -10192,9 +10250,12 @@ MonoBehaviour:
   cards:
   - cardButton: {fileID: 1330074836}
     cardBackground: {fileID: 1330074837}
+    glowFrame: {fileID: 0}
     skillIcon: {fileID: 1409913879}
     skillNameText: {fileID: 1947179227}
     skillDescText: {fileID: 1647548713}
+    laneBadge: {fileID: 0}
+    laneText: {fileID: 0}
     newTagObj: {fileID: 197103532}
     tagText: {fileID: 1915736723}
     upgradeObj: {fileID: 735790605}
@@ -10204,9 +10265,12 @@ MonoBehaviour:
     - {fileID: 596337877}
   - cardButton: {fileID: 671843695}
     cardBackground: {fileID: 671843696}
+    glowFrame: {fileID: 0}
     skillIcon: {fileID: 841546612}
     skillNameText: {fileID: 1528889730}
     skillDescText: {fileID: 1886503106}
+    laneBadge: {fileID: 0}
+    laneText: {fileID: 0}
     newTagObj: {fileID: 854416347}
     tagText: {fileID: 27850947}
     upgradeObj: {fileID: 1788697367}
@@ -10216,9 +10280,12 @@ MonoBehaviour:
     - {fileID: 27089015}
   - cardButton: {fileID: 1186991657}
     cardBackground: {fileID: 1186991658}
+    glowFrame: {fileID: 0}
     skillIcon: {fileID: 1289549036}
     skillNameText: {fileID: 411421791}
     skillDescText: {fileID: 2082920762}
+    laneBadge: {fileID: 0}
+    laneText: {fileID: 0}
     newTagObj: {fileID: 2005414398}
     tagText: {fileID: 307729490}
     upgradeObj: {fileID: 1384987729}

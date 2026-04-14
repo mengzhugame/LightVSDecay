@@ -319,6 +319,8 @@ namespace LightVsDecay.Logic.Player
 
         private void ShowReadyBubble()
         {
+            // 注意：不在此处设置 hasSeenOverloadTutorial，
+            // 该 flag 由 BattleTutorialDirector 在玩家点击大招后统一写入。
             if (readyBubbleRoot == null || ProgressManager.Instance == null || ProgressManager.Instance.Meta.hasSeenOverloadTutorial)
             {
                 return;
@@ -330,8 +332,6 @@ namespace LightVsDecay.Logic.Player
             }
 
             readyBubbleRoot.SetActive(true);
-            ProgressManager.Instance.Meta.hasSeenOverloadTutorial = true;
-            ProgressManager.Instance.Meta.Save();
         }
 
         private void HideReadyBubble()

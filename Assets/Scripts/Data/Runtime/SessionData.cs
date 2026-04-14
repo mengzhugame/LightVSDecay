@@ -209,11 +209,17 @@ namespace LightVsDecay.Data.Runtime
         public bool hasSeenDroneTutorial = false;
         public bool hasViewedTechTreeTutorial = false;
         public bool hasViewedEquipmentTutorial = false;
-        
+
+        /// <summary>科技树解锁提示（TipsPanel）是否已显示过</summary>
+        public bool hasShownTechTreeUnlockTip = false;
+
+        /// <summary>装备系统解锁提示（TipsPanel）是否已显示过</summary>
+        public bool hasShownEquipmentUnlockTip = false;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 存档键
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private const string KEY_GEMS = "PlayerGems";
         private const string KEY_GOLD = "PlayerGoldCoins";
         private const string KEY_ENERGY = "PlayerEnergy";
@@ -231,6 +237,8 @@ namespace LightVsDecay.Data.Runtime
         private const string KEY_SEEN_DRONE_TUTORIAL = "Tutorial_HasSeenDrone";
         private const string KEY_VIEWED_TECH_TREE_TUTORIAL = "Tutorial_HasViewedTechTree";
         private const string KEY_VIEWED_EQUIPMENT_TUTORIAL = "Tutorial_HasViewedEquipment";
+        private const string KEY_SHOWN_TECH_TREE_TIP   = "Tutorial_HasShownTechTreeTip";
+        private const string KEY_SHOWN_EQUIPMENT_TIP   = "Tutorial_HasShownEquipmentTip";
         // 默认章节数量
         private const int DEFAULT_CHAPTER_COUNT = 3;
         
@@ -375,6 +383,8 @@ namespace LightVsDecay.Data.Runtime
             hasSeenDroneTutorial = PlayerPrefs.GetInt(KEY_SEEN_DRONE_TUTORIAL, 0) == 1;
             hasViewedTechTreeTutorial = PlayerPrefs.GetInt(KEY_VIEWED_TECH_TREE_TUTORIAL, 0) == 1;
             hasViewedEquipmentTutorial = PlayerPrefs.GetInt(KEY_VIEWED_EQUIPMENT_TUTORIAL, 0) == 1;
+            hasShownTechTreeUnlockTip  = PlayerPrefs.GetInt(KEY_SHOWN_TECH_TREE_TIP,   0) == 1;
+            hasShownEquipmentUnlockTip = PlayerPrefs.GetInt(KEY_SHOWN_EQUIPMENT_TIP,   0) == 1;
             // 加载章节进度
             LoadChapterProgress(chapterCount);
             
@@ -481,6 +491,8 @@ namespace LightVsDecay.Data.Runtime
             PlayerPrefs.SetInt(KEY_SEEN_DRONE_TUTORIAL, hasSeenDroneTutorial ? 1 : 0);
             PlayerPrefs.SetInt(KEY_VIEWED_TECH_TREE_TUTORIAL, hasViewedTechTreeTutorial ? 1 : 0);
             PlayerPrefs.SetInt(KEY_VIEWED_EQUIPMENT_TUTORIAL, hasViewedEquipmentTutorial ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_SHOWN_TECH_TREE_TIP,   hasShownTechTreeUnlockTip  ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_SHOWN_EQUIPMENT_TIP,   hasShownEquipmentUnlockTip ? 1 : 0);
             // 保存章节进度（JSON格式）
             SaveChapterProgress();
             
@@ -522,8 +534,10 @@ namespace LightVsDecay.Data.Runtime
             hasSeenSkillTutorial = false;
             hasSeenOverloadTutorial = false;
             hasSeenDroneTutorial = false;
-            hasViewedTechTreeTutorial = false;
+            hasViewedTechTreeTutorial  = false;
             hasViewedEquipmentTutorial = false;
+            hasShownTechTreeUnlockTip  = false;
+            hasShownEquipmentUnlockTip = false;
             // 重置章节进度
             InitializeDefaultChapterProgress(chapterCount);
             
