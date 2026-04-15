@@ -2777,7 +2777,7 @@ MonoBehaviour:
   equipBackToMainConfig: {fileID: 11400000, guid: a19edc429112f3543b302806a6adefb1, type: 2}
   equipmentPanel: {fileID: 388340651}
   itemInfoPanel: {fileID: 1845044045}
-  debugFingerPos: 1
+  debugFingerPos: 0
   debugFingerOffset: {x: 0, y: 0}
 --- !u!1 &203844586
 GameObject:
@@ -10077,7 +10077,7 @@ MonoBehaviour:
   messageRoot: {fileID: 0}
   messageText: {fileID: 0}
   messageOffset: {x: 0, y: 110}
-  debugMode: 1
+  debugMode: 0
   debugTarget: {fileID: 0}
   debugPadding: {x: 24, y: 24}
   debugShape: 0
