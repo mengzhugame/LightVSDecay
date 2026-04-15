@@ -184,11 +184,23 @@ namespace LightVsDecay.Core
         
         // 游戏状态
         public static void TriggerGameStateChanged(GameState state) => OnGameStateChanged?.Invoke(state);
-        public static void TriggerGameStart() => OnGameStart?.Invoke();
+        public static void TriggerGameStart()
+        {
+            AnalyticsManager.TryLogFirstBattleStart();
+            OnGameStart?.Invoke();
+        }
         public static void TriggerGamePaused() => OnGamePaused?.Invoke();
         public static void TriggerGameResumed() => OnGameResumed?.Invoke();
-        public static void TriggerGameVictory() => OnGameVictory?.Invoke();
-        public static void TriggerGameDefeat() => OnGameDefeat?.Invoke();
+        public static void TriggerGameVictory()
+        {
+            AnalyticsManager.TryLogFirstBattleResult(true);
+            OnGameVictory?.Invoke();
+        }
+        public static void TriggerGameDefeat()
+        {
+            AnalyticsManager.TryLogFirstBattleResult(false);
+            OnGameDefeat?.Invoke();
+        }
         public static void TriggerPlayerDeathRequested() => OnPlayerDeathRequested?.Invoke();
         
         // 玩家进度

@@ -352,6 +352,7 @@ namespace LightVsDecay.UI.Panels
             switch (_currentMode)
             {
                 case TopBarResourceType.Energy:
+                    AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickEnergy);
                     AdManager.Instance.ShowRewardedAd(AdType.EnergyTopUp,
                         onSuccess: () =>
                         {
@@ -361,6 +362,7 @@ namespace LightVsDecay.UI.Panels
                         onFail: RefreshAll);
                     break;
                 case TopBarResourceType.Gold:
+                    AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickGold);
                     AdManager.Instance.ShowRewardedAd(AdType.GoldTopUp,
                         onSuccess: () =>
                         {
@@ -370,6 +372,7 @@ namespace LightVsDecay.UI.Panels
                         onFail: RefreshAll);
                     break;
                 case TopBarResourceType.Blueprint:
+                    AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickBlueprint);
                     AdManager.Instance.ShowRewardedAd(AdType.BlueprintTopUp,
                         onSuccess: () =>
                         {

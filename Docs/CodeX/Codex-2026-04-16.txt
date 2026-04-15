@@ -1,0 +1,81 @@
+检查光与朽第二章的熔浆液和第三章冰墙是否阻挡激光的穿透效果，应该是需要阻挡激光穿透，包括连锁反应的技能等效果。
+
+已检查并修正：第二章熔浆液、第三章冰墙的数据都是 `Stationary`，主激光穿透逻辑里已经有 `enemy.IsStationary` 后 `break` 的阻挡处理，所以主激光穿透本身会被它们挡住，位置在 [LaserController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/LaserController.cs#L585)。
+
+这次真正缺的是“连锁反应”路径阻挡：之前连锁不会把熔浆液/冰墙当目标，但会直接按范围跳到障碍物后面的怪。现在已在 [ChainLightningManager.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/ChainLightningManager.cs#L663) 增加路径检测，连锁从源目标跳向下一个目标前，会用 Linecast 检查中间是否有 `Stationary` 障碍；如果中间有熔浆液或冰墙，就不会生成这条连锁。缓存和检测函数在 [ChainLightningManager.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/ChainLightningManager.cs#L96) 和 [ChainLightningManager.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/ChainLightningManager.cs#L679)。
+
+验证：`dotnet build Assembly-CSharp.csproj` 已通过，`0` 个错误；仍有一些项目原有 warning，没有新增编译错误。
+------------------------------------------------------------------------------------------------------------------------
+
+关于光与朽第一章弹球怪Dark_Drifter做修改，现在的弹球怪被激光一碰就回退，然后撞墙，再慢悠悠朝玩家的光棱塔移动，然后又被激光扫一下就后退弹出。本身的弹球怪的机制没什么问题，但是这种玩家等待弹球怪慢悠悠的过来的过程很煎熬，我不确定是否是弹球怪的弹性不够？导致弹球怪撞墙后回来很慢？还是其它问题？是否可以修改弹球怪撞墙后，加速朝玩家冲去？来解决这个问题？或者你有更好的方案或建议给我?先确定修改方案，等我确认后，再开始代码修改。
+
+已按确认方案改好了：Dark_Drifter 现在在“弹飞状态结束”后，会短暂进入回冲状态，朝光棱塔加速追击，避免被激光扫走后慢慢爬回来那段煎熬空窗。
+
+改动集中在 3 个文件：
+
+- [EnemyData.cs](D:/Project/LightVSDecay/Assets/Scripts/Data/SO/EnemyData.cs:122)：新增 `drifterReturnRushDuration` 和 `drifterReturnRushSpeedMultiplier` 两个可调参数。
+- [EnemyBlob.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy/EnemyBlob.cs:161)：新增 Drifter 回冲状态；退出弹飞时启动；回冲期间临时提高追塔速度；再次被击退或对象池复用时会重置。
+- [Dark_Drifter.asset](D:/Project/LightVSDecay/Assets/Resources/Data/MonsterData/Dark_Drifter.asset:36)：第一章 Dark_Drifter 开启参数：`0.75s` 回冲，`3.5x` 速度倍率。
+
+验证也跑过了：
+
+```text
+dotnet build LightVSDecay.sln --no-restore
+结果：0 errors，17 warnings
+```
+
+这些 warning 是 Unity analyzer / 项目既有未使用字段之类的警告，没有新增编译错误。手感上这版应该会从“慢慢等它回来”变成“被弹走后立刻反扑一小段”，如果进 Unity 试玩后觉得压迫感太强，优先把 `drifterReturnRushSpeedMultiplier` 从 `3.5` 调到 `3.0`；如果还是慢，就把持续时间从 `0.75` 提到 `0.9`。
+------------------------------------------------------------------------------------------------------------------------
+
+先制作一个fps右上角显示的功能脚本，这样我打包再手机上运行，可以运行游戏，进入战斗，实时观看当前帧率，如果掉到60帧以下，我就连接真机profile,记录当前数据并保存，然后发送给你，或者把卡顿的那一段截图发送给你，然后来检测。然后保证数据采集工具开启后，再手机中也可以采集数据和保存数据文件。
+
+已新增一个自启动的手机性能采集脚本：[MobilePerformanceOverlay.cs](/D:/Project/LightVSDecay/Assets/Scripts/Debug/MobilePerformanceOverlay.cs:16)，并补了对应 `.meta`。它不会改战斗逻辑，打包后会自动在右上角显示 FPS，并默认开始记录 CSV 数据。
+
+使用方式：
+
+- 右上角显示：`FPS`、当前帧耗时、平均 FPS、最近低帧、采样数量。
+- 手机端：连续三击右上角可展开/收起详细面板；连续三击左上角可隐藏/显示。
+- 展开后按钮：`Stop/Record` 暂停或继续记录，`Save` 立即保存 CSV，`Mark` 手动打标记。
+- PC/Editor 快捷键：`F9` 显示隐藏，`F10` 开关记录，`F11` 打标记，`F12` 保存。
+- 自动保存：切后台、退出游戏时会自动保存，防止手机复现后数据丢失。
+
+CSV 会保存到 `Application.persistentDataPath`，展开面板里会显示真实保存路径。文件名类似：
+
+```text
+MobilePerf_20260416_153000_pause.csv
+MobilePerf_20260416_153000_manual.csv
+```
+
+CSV 里包含这些字段：场景名、FPS、平均 FPS、最低 FPS、最近低帧、平均帧耗时、最大帧耗时、超过 16.67ms 的帧数、超过 33.33ms 的帧数、GC Alloc、Main Thread ms、Render Thread ms、内存占用、手动/场景切换标记。
+
+验证结果：我已运行 `dotnet build LightVSDecay.sln --no-restore`，新增脚本编译通过，`0` 个错误。当前工作区原本有很多未提交改动，我只新增了这两个文件：
+
+- [MobilePerformanceOverlay.cs](/D:/Project/LightVSDecay/Assets/Scripts/Debug/MobilePerformanceOverlay.cs:16)
+- [MobilePerformanceOverlay.cs.meta](/D:/Project/LightVSDecay/Assets/Scripts/Debug/MobilePerformanceOverlay.cs.meta:1)
+
+你接下来可以直接打 Development Build 到手机。进入战斗后如果右上角 FPS 掉到 60 以下，就连接 Unity Profiler 录那一段；同时也可以点面板里的 `Save`，把生成的 `MobilePerf_*.csv` 发给我。Android 上如果不好找文件，可以用展开面板显示的路径，或者通过 `adb pull` 从应用的 persistent data 目录拉出来。
+------------------------------------------------------------------------------------------------------------------------
+
+你理解错了，应该是只制作右上角显示FPS帧率的脚本。 然后保证BattleStatistics.cs 战斗数据采集脚本开启后，再手机上可以正常采集收集数据（因为之前你做的功能，打包屏蔽数据采集脚本）。 我已删掉你刚才的手机性能数据采集功能。你需要重新制作显示功能就好。
+
+已按你的要求重新处理：
+
+新增了一个只显示 FPS 的脚本：[FpsDisplay.cs](/D:/Project/LightVSDecay/Assets/Scripts/Debug/FpsDisplay.cs:1)。它会在游戏启动后自动创建，不需要挂到场景对象上；只在右上角显示 `FPS xx.x`，不采集、不保存、不写文件，颜色会按帧率变化：绿色接近 60、黄色低于 58、红色低于 45。
+
+同时修正了 [BattleStatistics.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Statistics/BattleStatistics.cs:1353) 的手机包导出问题：我移除了 `!UNITY_EDITOR && !DEVELOPMENT_BUILD` 下直接 `return` 的屏蔽。现在只要 `BattleStatistics` 的 `enableDataCollection` 在 Inspector 中开启，真机普通包也会正常采集，并在胜利/失败时通过 `Application.persistentDataPath` 保存 `BattleLog_*.csv`。
+
+验证过 `dotnet build LightVSDecay.sln --no-restore`，编译通过，`0` 个错误。当前这次相关改动只有：
+
+- [FpsDisplay.cs](/D:/Project/LightVSDecay/Assets/Scripts/Debug/FpsDisplay.cs:1)
+- [FpsDisplay.cs.meta](/D:/Project/LightVSDecay/Assets/Scripts/Debug/FpsDisplay.cs.meta:1)
+- [BattleStatistics.cs](/D:/Project/LightVSDecay/Assets/Scripts/Logic/Statistics/BattleStatistics.cs:1353)
+
+注意：我没有把 `enableDataCollection` 默认改成 `true`，避免正式包无意开启采集。你打包测试前需要在场景里的 `BattleStatistics` 组件上手动勾选数据采集开关。
+------------------------------------------------------------------------------------------------------------------------
+
+关于新手引导的手机测试BUG问题，
+1.我在主界面隐藏了TutorialSpotlightOverlay这个节点，然后运行游戏，进入科技树界面，科技树，挖洞TutorialSpotlightOverlay节点没有显示。
+2.继续点击科技树需要升级的节点后，手机上显示纯黑色遮罩和手指特效，然后手机闪点击手指特效哪里，没有任何反应。
+需要查找并修复这个问题。
+
+------------------------------------------------------------------------------------------------------------------------

@@ -184,7 +184,7 @@ namespace LightVsDecay.Logic.Player
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         public float CurrentLaserWidth => baseLaserWidth * skillWidthMultiplier * overloadWidthMultiplier;
-        public float CurrentSubLaserWidth => CurrentLaserWidth * SUB_LASER_WIDTH_RATIO * overloadWidthMultiplier;
+        public float CurrentSubLaserWidth => CurrentLaserWidth * SUB_LASER_WIDTH_RATIO;
         public float CurrentKnockbackForce => knockbackHandler.CurrentKnockbackForce;
         public float CurrentCritRate => critSystem.CurrentCritRate;
         public float CritMultiplier => critSystem.TotalCritMultiplier;

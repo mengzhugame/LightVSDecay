@@ -128,6 +128,8 @@ namespace LightVsDecay.UI
 
         private void Start()
         {
+            AnalyticsManager.LogAppLaunch();
+
             SetupButtons();
             SwitchToState(MainSceneState.Main);
 

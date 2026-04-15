@@ -116,6 +116,8 @@ namespace LightVsDecay.Logic.Player
         private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
         private Color originalBaseColor;  // 缓存原始材质颜色
         private bool hasOriginalColor = false;
+        private Color requestedBaseColor;
+        private bool hasRequestedBaseColor = false;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -324,6 +326,7 @@ namespace LightVsDecay.Logic.Player
             // 更新宽度
             lineRenderer.startWidth = laserWidth;
             lineRenderer.endWidth = laserWidth;
+            ApplyLaserColor();
             
             // 更新 VFX 位置
             UpdateVFXPositions();
@@ -393,6 +396,7 @@ namespace LightVsDecay.Logic.Player
         public void SetLaserWidth(float width)
         {
             laserWidth = Mathf.Max(0.01f, width);
+            ApplyLaserColor();
         }
         
         /// <summary>
@@ -427,6 +431,8 @@ namespace LightVsDecay.Logic.Player
         public void SetColor(Color color)
         {
             if (lineRenderer == null) return;
+            requestedBaseColor = color;
+            hasRequestedBaseColor = true;
 
             // 2. 通过 MaterialPropertyBlock 设置 Shader 的 _BaseColor
             if (laserPropertyBlock == null)
@@ -437,6 +443,7 @@ namespace LightVsDecay.Logic.Player
             lineRenderer.GetPropertyBlock(laserPropertyBlock);
             laserPropertyBlock.SetColor(BaseColorID, color);
             lineRenderer.SetPropertyBlock(laserPropertyBlock);
+            ApplyLaserColor();
         }
         
         /// <summary>
@@ -506,8 +513,30 @@ namespace LightVsDecay.Logic.Player
                 {
                     originalBaseColor = lineRenderer.sharedMaterial.GetColor(BaseColorID);
                     hasOriginalColor = true;
+                    requestedBaseColor = originalBaseColor;
+                    hasRequestedBaseColor = true;
                 }
             }
+        }
+
+        private void ApplyLaserColor()
+        {
+            if (lineRenderer == null || !hasRequestedBaseColor) return;
+
+            if (laserPropertyBlock == null)
+            {
+                laserPropertyBlock = new MaterialPropertyBlock();
+            }
+
+            float safeBaseWidth = Mathf.Max(0.01f, baseWidth);
+            float widthRatio = Mathf.Max(1f, laserWidth / safeBaseWidth);
+            float brightnessScale = Mathf.Clamp(1f / Mathf.Sqrt(widthRatio), 0.55f, 1f);
+            Color compensatedColor = requestedBaseColor * brightnessScale;
+            compensatedColor.a = requestedBaseColor.a;
+
+            lineRenderer.GetPropertyBlock(laserPropertyBlock);
+            laserPropertyBlock.SetColor(BaseColorID, compensatedColor);
+            lineRenderer.SetPropertyBlock(laserPropertyBlock);
         }
 
         private RaycastHit2D FindVisualHit(Vector2 origin, Vector2 direction, float distance, LayerMask layerMask)
@@ -582,6 +611,8 @@ namespace LightVsDecay.Logic.Player
     
             if (hasOriginalColor)
             {
+                requestedBaseColor = originalBaseColor;
+                hasRequestedBaseColor = true;
                 if (laserPropertyBlock == null)
                 {
                     laserPropertyBlock = new MaterialPropertyBlock();
@@ -590,10 +621,12 @@ namespace LightVsDecay.Logic.Player
                 lineRenderer.GetPropertyBlock(laserPropertyBlock);
                 laserPropertyBlock.SetColor(BaseColorID, originalBaseColor);
                 lineRenderer.SetPropertyBlock(laserPropertyBlock);
+                ApplyLaserColor();
             }
             else
             {
                 // 清除 PropertyBlock，恢复材质默认值
+                hasRequestedBaseColor = false;
                 if (laserPropertyBlock != null)
                 {
                     laserPropertyBlock.Clear();

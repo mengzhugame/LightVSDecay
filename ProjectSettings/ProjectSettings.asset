@@ -191,6 +191,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
+    Android: com.DefaultCompany.LightVSDecay
     Standalone: com.DefaultCompany.LightVSDecay
   buildNumber:
     Standalone: 0

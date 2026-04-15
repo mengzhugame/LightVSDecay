@@ -111,6 +111,7 @@ namespace LightVsDecay.UI.Panels
         private Image startButtonImage;
         private Color startButtonOriginalColor;
         private bool hasTriggeredFirstPlayAutoStart = false;
+        private bool hasAutoShownEnergyPanel = false;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -136,10 +137,12 @@ namespace LightVsDecay.UI.Panels
             LoadPlayerData();
             UpdateAllUI();
             TryStartFirstPlayTutorialBattle();
+            StartCoroutine(ShowEnergyPanelIfNeededNextFrame());
         }
 
         private void OnEnable()
         {
+            hasAutoShownEnergyPanel = false;
             AdManager.Instance.ShowBanner("MainMenu");
         }
 
@@ -659,6 +662,7 @@ namespace LightVsDecay.UI.Panels
             }
             
             UpdateAllUI();
+            StartCoroutine(ShowEnergyPanelIfNeededNextFrame());
             
             if (showDebugInfo)
             {
@@ -677,6 +681,33 @@ namespace LightVsDecay.UI.Panels
                 SaveCurrentViewIndex();
                 UpdateAllUI();
             }
+        }
+
+        private IEnumerator ShowEnergyPanelIfNeededNextFrame()
+        {
+            yield return null;
+
+            if (hasAutoShownEnergyPanel || hasTriggeredFirstPlayAutoStart)
+            {
+                yield break;
+            }
+
+            if (ProgressManager.Instance?.Meta?.isFirstPlay == true)
+            {
+                yield break;
+            }
+
+            int currentEnergy = ProgressManager.Instance != null
+                ? ProgressManager.Instance.Energy
+                : PlayerPrefs.GetInt("PlayerEnergy", 5);
+
+            if (currentEnergy > 0 || topBarTipsPanel == null || topBarTipsPanel.gameObject.activeSelf)
+            {
+                yield break;
+            }
+
+            hasAutoShownEnergyPanel = true;
+            topBarTipsPanel.Show(TopBarResourceType.Energy);
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

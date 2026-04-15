@@ -84,7 +84,10 @@ namespace LightVsDecay.Logic
         public bool IsBossFight => isBossFight;
         
         public GameSettings Settings => settings;
-        public WaveConfig WaveConfig => currentChapterConfig?.waveConfig ?? waveConfig;
+        public WaveConfig WaveConfig =>
+            currentDifficultySettings?.overrideWaveConfig != null
+                ? currentDifficultySettings.overrideWaveConfig
+                : currentChapterConfig?.waveConfig ?? waveConfig;
         
         /// <summary>格式化的游戏时间 (MM:SS)</summary>
         public string GameTimeFormatted => $"{Mathf.FloorToInt(gameTimer / 60):D1}:{Mathf.FloorToInt(gameTimer % 60):D2}";

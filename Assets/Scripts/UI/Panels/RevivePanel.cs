@@ -108,6 +108,7 @@ namespace LightVsDecay.UI.Panels
 
         private void OnReviveClicked()
         {
+            AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickRevive);
             AdManager.Instance.ShowRewardedAd(AdType.Revive, RevivePlayer, RefreshView);
         }
 

@@ -391,6 +391,7 @@ namespace LightVsDecay.UI.Panels
                 doubleReceivedButton.onClick.RemoveAllListeners();
                 doubleReceivedButton.onClick.AddListener(() =>
                 {
+                    AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickDouble);
                     AdManager.Instance.ShowRewardedAd(AdType.SettlementDouble,
                         onSuccess: () =>
                         {

@@ -420,4 +420,6 @@ All changes are in place. Here's a summary of what was completed in this session
   - MainSceneTutorialDirector 的"调试 - 手指位置微调"分组 → 调手指特效的偏移
 
   两个组件各管各的，在 Hierarchy 里选对应节点就能看到。
+
 ------------------------------------------------------------------------------------------------------------------------
+

@@ -125,6 +125,12 @@ namespace LightVsDecay.Data.SO
         [Tooltip("弹飞结束速度阈值 - 速度低于此值时恢复移动")]
         [Range(0.5f, 10f)]
         public float knockbackSpeedThreshold = 2.0f;
+        [Tooltip("Drifter 弹飞结束后的回冲持续时间")]
+        [Range(0f, 2f)]
+        public float drifterReturnRushDuration = 0f;
+        [Tooltip("Drifter 回冲期间的移动速度倍率")]
+        [Range(1f, 8f)]
+        public float drifterReturnRushSpeedMultiplier = 1f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 视觉设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

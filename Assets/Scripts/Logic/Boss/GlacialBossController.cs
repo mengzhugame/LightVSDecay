@@ -323,6 +323,8 @@ namespace LightVsDecay.Logic.Boss
                 phase2TankTimer = phase2TankSummonInterval;
                 if (showDebugInfo)
                     GameLogger.Log("[GlacialBoss] 进入阶段二：极寒爆发！");
+                CameraShake.Instance?.Shake(0.45f, 0.5f);
+                HapticFeedback.Instance?.Trigger(HapticType.Heavy);
             }
             else if (currentPhase < 3 && hp <= 0.3f)
             {
@@ -330,6 +332,8 @@ namespace LightVsDecay.Logic.Boss
                 absoluteZeroCooldownTimer = Mathf.Min(absoluteZeroCooldownTimer, absoluteZeroCooldownPhase3);
                 if (showDebugInfo)
                     GameLogger.Log("[GlacialBoss] 进入阶段三：绝对压制！");
+                CameraShake.Instance?.Shake(0.55f, 0.6f);
+                HapticFeedback.Instance?.Trigger(HapticType.Heavy);
             }
         }
 

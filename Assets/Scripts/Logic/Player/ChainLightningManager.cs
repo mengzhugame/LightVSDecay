@@ -93,6 +93,7 @@ namespace LightVsDecay.Logic.Player
         
         // 缓存
         private Collider2D[] nearbyEnemyBuffer = new Collider2D[30];
+        private RaycastHit2D[] chainBlockerBuffer = new RaycastHit2D[16];
         private int enemyLayerMask;
         
         // 本帧被激光直接命中的敌人（用于触发传导）
@@ -659,6 +660,7 @@ namespace LightVsDecay.Logic.Player
 
                 // 排除已在链中的敌人
                 if (excludeIds.Contains(enemyId)) continue;
+                if (IsChainPathBlockedByStationaryObstacle(position, enemy)) continue;
                 
                 float dist = Vector3.Distance(position, enemy.transform.position);
                 if (dist < nearestDist)
@@ -669,6 +671,36 @@ namespace LightVsDecay.Logic.Player
             }
             
             return nearest;
+        }
+
+        /// <summary>
+        /// 熔浆液、冰墙等 Stationary 障碍会阻断连锁反应的传导视线。
+        /// </summary>
+        private bool IsChainPathBlockedByStationaryObstacle(Vector3 startPosition, EnemyBlob target)
+        {
+            if (target == null) return true;
+
+            Vector2 start = startPosition;
+            Vector2 end = target.transform.position;
+            float targetDistance = Vector2.Distance(start, end);
+            if (targetDistance <= 0.01f) return false;
+
+            int hitCount = Physics2D.LinecastNonAlloc(start, end, chainBlockerBuffer, enemyLayerMask);
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit2D hit = chainBlockerBuffer[i];
+                if (hit.collider == null) continue;
+
+                EnemyBlob hitEnemy = hit.collider.GetComponentInParent<EnemyBlob>();
+                if (hitEnemy == null || hitEnemy == target || hitEnemy.IsDead) continue;
+                if (!hitEnemy.IsStationary) continue;
+
+                // 只阻挡源点和目标之间的地形障碍，避免目标背后的冰墙误拦截。
+                if (hit.distance < targetDistance - 0.05f)
+                    return true;
+            }
+
+            return false;
         }
         
         /// <summary>

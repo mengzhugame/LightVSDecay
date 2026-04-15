@@ -108,8 +108,8 @@ MonoBehaviour:
   scatterDistanceMin: 0.35
   scatterDistanceMax: 0.9
   scatterArcHeight: 0.2
-  hoverDurationMin: 0.45
-  hoverDurationMax: 0.7
+  hoverDurationMin: 0.25
+  hoverDurationMax: 0.45
   hoverAmplitude: 0.06
   hoverFrequency: 5
   absorbDelayMin: 0

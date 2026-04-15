@@ -81,6 +81,12 @@ namespace LightVsDecay.UI.Panels
         
         [Header("重掷按钮")]
         [SerializeField] private Button retryButton;
+        [SerializeField] private Image retryIconImage;
+        [SerializeField] private TextMeshProUGUI retryButtonText;
+        [SerializeField] private Sprite freeRetryIconSprite;
+        [SerializeField] private Sprite adRetryIconSprite;
+        [SerializeField] private Color retryIconNormalColor = Color.white;
+        [SerializeField] private Color retryIconDisabledColor = new Color(0.45f, 0.45f, 0.45f, 1f);
         [SerializeField] private int maxRetryCount = 1;
         
         [Header("调试")]
@@ -98,6 +104,7 @@ namespace LightVsDecay.UI.Panels
         private int currentLevel;
         private int retryCountRemaining;
         private List<SkillData> currentChoices = new List<SkillData>();
+        private Color retryTextNormalColor = Color.white;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -105,6 +112,7 @@ namespace LightVsDecay.UI.Panels
         
         private void Awake()
         {
+            CacheRetryIcon();
             SetupButtons();
         }
         
@@ -430,6 +438,7 @@ namespace LightVsDecay.UI.Panels
                 return;
             }
 
+            AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickReroll);
             AdManager.Instance.ShowRewardedAd(AdType.SkillReroll,
                 onSuccess: () =>
                 {
@@ -539,22 +548,59 @@ namespace LightVsDecay.UI.Panels
                 bool canWatchAd = AdManager.Instance.CanWatchAd(AdType.SkillReroll);
                 retryButton.interactable = hasFreeRetry || canWatchAd;
 
-                var buttonText = retryButton.GetComponentInChildren<TextMeshProUGUI>();
-                if (buttonText != null)
+                UpdateRetryIcon(hasFreeRetry, canWatchAd);
+            }
+        }
+
+        private void CacheRetryIcon()
+        {
+            if (retryIconImage == null && retryButton != null)
+            {
+                Image[] images = retryButton.GetComponentsInChildren<Image>(true);
+                foreach (Image image in images)
                 {
-                    if (hasFreeRetry)
+                    if (image != null && image != retryButton.targetGraphic)
                     {
-                        buttonText.text = $"重掷 ({retryCountRemaining})";
-                    }
-                    else if (canWatchAd)
-                    {
-                        buttonText.text = "看视频再抽一次";
-                    }
-                    else
-                    {
-                        buttonText.text = "今日已达上限";
+                        retryIconImage = image;
+                        break;
                     }
                 }
+            }
+
+            if (freeRetryIconSprite == null && retryIconImage != null)
+            {
+                freeRetryIconSprite = retryIconImage.sprite;
+            }
+
+            if (retryButtonText == null && retryButton != null)
+            {
+                retryButtonText = retryButton.GetComponentInChildren<TextMeshProUGUI>(true);
+            }
+
+            if (retryButtonText != null)
+            {
+                retryTextNormalColor = retryButtonText.color;
+            }
+        }
+
+        private void UpdateRetryIcon(bool hasFreeRetry, bool canWatchAd)
+        {
+            if (retryIconImage == null)
+            {
+                return;
+            }
+
+            Sprite targetSprite = hasFreeRetry ? freeRetryIconSprite : adRetryIconSprite;
+            if (targetSprite != null)
+            {
+                retryIconImage.sprite = targetSprite;
+            }
+
+            retryIconImage.color = (hasFreeRetry || canWatchAd) ? retryIconNormalColor : retryIconDisabledColor;
+
+            if (retryButtonText != null)
+            {
+                retryButtonText.color = (hasFreeRetry || canWatchAd) ? retryTextNormalColor : retryIconDisabledColor;
             }
         }
         

@@ -516,8 +516,9 @@ namespace LightVsDecay.Logic.Boss
             // 粒子加强
             SetCraterEmissionRate(craterEmissionPhase2);
 
-            // 屏幕震动
+            // 屏幕震动 + 手机震动
             CameraShake.Instance?.Shake(phase2TransitionShakeIntensity, phase2TransitionShakeDuration);
+            HapticFeedback.Instance?.Trigger(HapticType.Heavy);
 
             // —— VFX 预留 ——
             // 接入方式：将阶段切换特效预制体拖入 Inspector → vfxPhase2Transition
@@ -538,8 +539,9 @@ namespace LightVsDecay.Logic.Boss
             // 粒子最强
             SetCraterEmissionRate(craterEmissionPhase3);
 
-            // 屏幕强震
+            // 屏幕强震 + 手机震动
             CameraShake.Instance?.Shake(phase3TransitionShakeIntensity, phase3TransitionShakeDuration);
+            HapticFeedback.Instance?.Trigger(HapticType.Heavy);
 
             // 眼睛变红（调用 BossEyeController.SetTintColor）
             if (eyeController != null)

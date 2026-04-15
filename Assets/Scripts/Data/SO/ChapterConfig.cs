@@ -71,39 +71,55 @@ namespace LightVsDecay.Data.SO
         [Tooltip("金币掉落倍率")]
         [Range(1f, 3f)]
         public float coinDropMultiplier = 1f;
-        
-        [Tooltip("经验掉落倍率")]
-        [Range(1f, 2f)]
+
+        [Tooltip("经验掉落倍率（D2-D5 需小于1以补偿数量增加，保持总EXP=基准，确保W9约Lv17）")]
+        [Range(0.5f, 2f)]
         public float expDropMultiplier = 1f;
+
+        [Header("波次配置覆盖")]
+        [Tooltip("此难度专属波次文件（留空则使用章节默认 waveConfig）")]
+        public WaveConfig overrideWaveConfig;
         
         /// <summary>
-        /// 创建默认难度配置
+        /// 创建默认难度配置（数值已按章节难度方案 V1.0 确认）
+        /// Boss HP 封顶 2.20×，Boss ATK 最高 2.20×，经验补偿保证 W9 约 Lv17
         /// </summary>
         public static DifficultySettings CreateDefault(int level)
         {
+            // 经验补偿 = 1 / countMultiplier，确保总EXP收益在各难度下保持基准水平
+            float[] countMults  = { 1.00f, 1.15f, 1.30f, 1.45f, 1.60f };
+            float[] hpMults     = { 1.00f, 1.30f, 1.60f, 1.90f, 2.20f };
+            float[] speedMults  = { 1.00f, 1.05f, 1.10f, 1.15f, 1.20f };
+            float[] bossHpMults = { 1.00f, 1.40f, 1.75f, 2.00f, 2.20f };
+            float[] bossAtkMults= { 1.00f, 1.25f, 1.55f, 1.90f, 2.20f };
+            float[] coinMults   = { 1.00f, 1.25f, 1.55f, 1.80f, 2.00f };
+
+            int idx = Mathf.Clamp(level - 1, 0, 4);
+            float expComp = Mathf.Round((1f / countMults[idx]) * 100f) / 100f; // 四舍五入到小数点后2位
+
             return new DifficultySettings
             {
-                difficultyLevel = level,
-                displayName = GetDefaultName(level),
-                enemyHealthMultiplier = 1f + (level - 1) * 0.3f,      // 1.0, 1.3, 1.6, 1.9, 2.2
-                enemyCountMultiplier = 1f + (level - 1) * 0.15f,      // 1.0, 1.15, 1.3, 1.45, 1.6
-                enemySpeedMultiplier = 1f + (level - 1) * 0.05f,      // 1.0, 1.05, 1.1, 1.15, 1.2
-                bossHealthMultiplier = 1f + (level - 1) * 0.4f,       // 1.0, 1.4, 1.8, 2.2, 2.6
-                bossAttackMultiplier = 1f + (level - 1) * 0.2f,       // 1.0, 1.2, 1.4, 1.6, 1.8
-                coinDropMultiplier = 1f + (level - 1) * 0.25f,        // 1.0, 1.25, 1.5, 1.75, 2.0
-                expDropMultiplier = 1f + (level - 1) * 0.1f           // 1.0, 1.1, 1.2, 1.3, 1.4
+                difficultyLevel      = level,
+                displayName          = GetDefaultName(level),
+                enemyHealthMultiplier = hpMults[idx],
+                enemyCountMultiplier  = countMults[idx],
+                enemySpeedMultiplier  = speedMults[idx],
+                bossHealthMultiplier  = bossHpMults[idx],
+                bossAttackMultiplier  = bossAtkMults[idx],
+                coinDropMultiplier    = coinMults[idx],
+                expDropMultiplier     = expComp            // 0.63-1.00，补偿数量增加
             };
         }
-        
+
         private static string GetDefaultName(int level)
         {
             return level switch
             {
-                1 => "普通",
-                2 => "困难",
-                3 => "噩梦",
-                4 => "地狱",
-                5 => "深渊",
+                1 => "虚空之触",
+                2 => "侵蚀之潮",
+                3 => "精英冲击",
+                4 => "噩梦深渊",
+                5 => "混沌崩解",
                 _ => $"难度{level}"
             };
         }

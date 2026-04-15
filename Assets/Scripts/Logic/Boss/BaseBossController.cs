@@ -636,6 +636,7 @@ namespace LightVsDecay.Logic.Boss
             float shakeIntensity = config != null ? config.spawnShakeIntensity : 0.5f;
             float shakeDuration = config != null ? config.spawnShakeDuration : 0.5f;
             CameraShake.Instance?.Shake(shakeIntensity, shakeDuration);
+            HapticFeedback.Instance?.Trigger(HapticType.Critical);
             yield return new WaitForSeconds(shakeDuration);
             ChangeState(BossState.Idle);
         }

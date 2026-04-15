@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 221542e697f31cc4d9ac5764a95040a0, type: 3}
   m_Name: Chapter01_Dark
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   chapterIndex: 0
   chapterNumber: 1
   chapterName: "\u6DF1\u6697\u865A\u7A7A"
@@ -27,7 +27,7 @@ MonoBehaviour:
   mechanicType: 0
   difficulties:
   - difficultyLevel: 1
-    displayName: "\u666E\u901A"
+    displayName: "\u865A\u7A7A\u4E4B\u89E6"
     enemyHealthMultiplier: 1
     enemyCountMultiplier: 1
     enemySpeedMultiplier: 1
@@ -35,39 +35,44 @@ MonoBehaviour:
     bossAttackMultiplier: 1
     coinDropMultiplier: 1
     expDropMultiplier: 1
+    overrideWaveConfig: {fileID: 0}
   - difficultyLevel: 2
-    displayName: "\u56F0\u96BE"
+    displayName: "\u4FB5\u8680\u4E4B\u6F6E"
     enemyHealthMultiplier: 1.3
     enemyCountMultiplier: 1.15
     enemySpeedMultiplier: 1.05
     bossHealthMultiplier: 1.4
-    bossAttackMultiplier: 1.2
+    bossAttackMultiplier: 1.25
     coinDropMultiplier: 1.25
-    expDropMultiplier: 1.1
+    expDropMultiplier: 0.87
+    overrideWaveConfig: {fileID: 0}
   - difficultyLevel: 3
-    displayName: "\u5669\u68A6"
+    displayName: "\u7CBE\u82F1\u51B2\u51FB"
     enemyHealthMultiplier: 1.6
     enemyCountMultiplier: 1.3
     enemySpeedMultiplier: 1.1
-    bossHealthMultiplier: 1.8
-    bossAttackMultiplier: 1.4
-    coinDropMultiplier: 1.5
-    expDropMultiplier: 1.2
+    bossHealthMultiplier: 1.75
+    bossAttackMultiplier: 1.55
+    coinDropMultiplier: 1.55
+    expDropMultiplier: 0.77
+    overrideWaveConfig: {fileID: 11400000, guid: a1b2c3d4e5f61234abcd5678ef901234, type: 2}
   - difficultyLevel: 4
-    displayName: "\u5730\u72F1"
-    enemyHealthMultiplier: 1.9000001
+    displayName: "\u5668\u68A6\u6DF1\u6E0A"
+    enemyHealthMultiplier: 1.9
     enemyCountMultiplier: 1.45
     enemySpeedMultiplier: 1.15
-    bossHealthMultiplier: 2.2
-    bossAttackMultiplier: 1.6
-    coinDropMultiplier: 1.75
-    expDropMultiplier: 1.3
+    bossHealthMultiplier: 2
+    bossAttackMultiplier: 1.9
+    coinDropMultiplier: 1.8
+    expDropMultiplier: 0.69
+    overrideWaveConfig: {fileID: 11400000, guid: b2c3d4e5f67891234bcd5678ef9012ab, type: 2}
   - difficultyLevel: 5
-    displayName: "\u6DF1\u6E0A"
+    displayName: "\u6151\u4E71\u6E83\u89E3"
     enemyHealthMultiplier: 2.2
     enemyCountMultiplier: 1.6
     enemySpeedMultiplier: 1.2
-    bossHealthMultiplier: 2.6
-    bossAttackMultiplier: 1.8
+    bossHealthMultiplier: 2.2
+    bossAttackMultiplier: 2.2
     coinDropMultiplier: 2
-    expDropMultiplier: 1.4
+    expDropMultiplier: 0.63
+    overrideWaveConfig: {fileID: 11400000, guid: c3d4e5f678901234cde5678ef9012abc, type: 2}
