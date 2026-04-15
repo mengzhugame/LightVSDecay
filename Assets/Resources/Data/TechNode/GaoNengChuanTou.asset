@@ -20,7 +20,7 @@ MonoBehaviour:
   effectType: 6
   effectValuePerLevel: 10
   maxLevel: 5
-  baseCost: 1000
-  growthFactor: 1.08
+  baseCost: 3000
+  growthFactor: 1.07
   prerequisiteNodeIds:
   - node_fp_crit_d

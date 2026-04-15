@@ -216,6 +216,12 @@ namespace LightVsDecay.Data.Runtime
         /// <summary>装备系统解锁提示（TipsPanel）是否已显示过</summary>
         public bool hasShownEquipmentUnlockTip = false;
 
+        /// <summary>科技树首次升级是否已使用免费机会</summary>
+        public bool hasUsedFirstTechUpgradeFree = false;
+
+        /// <summary>装备界面首次合成是否已使用免费机会</summary>
+        public bool hasUsedFirstEquipMergeFree = false;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 存档键
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -239,6 +245,8 @@ namespace LightVsDecay.Data.Runtime
         private const string KEY_VIEWED_EQUIPMENT_TUTORIAL = "Tutorial_HasViewedEquipment";
         private const string KEY_SHOWN_TECH_TREE_TIP   = "Tutorial_HasShownTechTreeTip";
         private const string KEY_SHOWN_EQUIPMENT_TIP   = "Tutorial_HasShownEquipmentTip";
+        private const string KEY_FIRST_TECH_FREE  = "Tutorial_FirstTechFree";
+        private const string KEY_FIRST_MERGE_FREE = "Tutorial_FirstMergeFree";
         // 默认章节数量
         private const int DEFAULT_CHAPTER_COUNT = 3;
         
@@ -385,6 +393,8 @@ namespace LightVsDecay.Data.Runtime
             hasViewedEquipmentTutorial = PlayerPrefs.GetInt(KEY_VIEWED_EQUIPMENT_TUTORIAL, 0) == 1;
             hasShownTechTreeUnlockTip  = PlayerPrefs.GetInt(KEY_SHOWN_TECH_TREE_TIP,   0) == 1;
             hasShownEquipmentUnlockTip = PlayerPrefs.GetInt(KEY_SHOWN_EQUIPMENT_TIP,   0) == 1;
+            hasUsedFirstTechUpgradeFree = PlayerPrefs.GetInt(KEY_FIRST_TECH_FREE,  0) == 1;
+            hasUsedFirstEquipMergeFree  = PlayerPrefs.GetInt(KEY_FIRST_MERGE_FREE, 0) == 1;
             // 加载章节进度
             LoadChapterProgress(chapterCount);
             
@@ -493,6 +503,8 @@ namespace LightVsDecay.Data.Runtime
             PlayerPrefs.SetInt(KEY_VIEWED_EQUIPMENT_TUTORIAL, hasViewedEquipmentTutorial ? 1 : 0);
             PlayerPrefs.SetInt(KEY_SHOWN_TECH_TREE_TIP,   hasShownTechTreeUnlockTip  ? 1 : 0);
             PlayerPrefs.SetInt(KEY_SHOWN_EQUIPMENT_TIP,   hasShownEquipmentUnlockTip ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_FIRST_TECH_FREE,  hasUsedFirstTechUpgradeFree ? 1 : 0);
+            PlayerPrefs.SetInt(KEY_FIRST_MERGE_FREE, hasUsedFirstEquipMergeFree  ? 1 : 0);
             // 保存章节进度（JSON格式）
             SaveChapterProgress();
             
@@ -538,6 +550,8 @@ namespace LightVsDecay.Data.Runtime
             hasViewedEquipmentTutorial = false;
             hasShownTechTreeUnlockTip  = false;
             hasShownEquipmentUnlockTip = false;
+            hasUsedFirstTechUpgradeFree = false;
+            hasUsedFirstEquipMergeFree  = false;
             // 重置章节进度
             InitializeDefaultChapterProgress(chapterCount);
             

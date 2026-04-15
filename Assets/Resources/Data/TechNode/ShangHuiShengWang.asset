@@ -20,8 +20,8 @@ MonoBehaviour:
   effectType: 22
   effectValuePerLevel: 1
   maxLevel: 3
-  baseCost: 1000
+  baseCost: 1800
   growthFactor: 1.1
   prerequisiteNodeIds:
   - node_rs_lucky1
-  prerequisiteMinLevel: 50
+  prerequisiteMinLevel: 8

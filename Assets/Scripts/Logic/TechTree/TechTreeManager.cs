@@ -118,16 +118,30 @@ namespace LightVsDecay.Logic.TechTree
             if (!IsPrerequisiteMet(data)) return TechUpgradeResult.PrerequisiteNotMet;
 
             int cost = data.GetUpgradeCost(lv);
-            if (ProgressManager.Instance == null || ProgressManager.Instance.GoldCoins < cost)
-                return TechUpgradeResult.InsufficientGold;
 
-            ProgressManager.Instance.ConsumeGoldCoins(cost);
+            // 首次升级免费
+            var meta = ProgressManager.Instance?.Meta;
+            bool isFreeUpgrade = meta != null && !meta.hasUsedFirstTechUpgradeFree;
+
+            if (!isFreeUpgrade)
+            {
+                if (ProgressManager.Instance == null || ProgressManager.Instance.GoldCoins < cost)
+                    return TechUpgradeResult.InsufficientGold;
+                ProgressManager.Instance.ConsumeGoldCoins(cost);
+            }
+            else
+            {
+                meta.hasUsedFirstTechUpgradeFree = true;
+                meta.Save();
+                cost = 0;
+            }
+
             _nodeLevels[nodeId] = lv + 1;
             Save();
 
             int newLv = _nodeLevels[nodeId];
             if (showDebugInfo)
-                GameLogger.Log($"[TechTree] {data.displayName} Lv.{newLv}  (-{cost} 金币)");
+                GameLogger.Log($"[TechTree] {data.displayName} Lv.{newLv}  (-{cost} 金币){(cost == 0 ? " [首次免费]" : "")}");
 
             OnNodeUpgraded?.Invoke(nodeId, newLv);
             return TechUpgradeResult.Success;

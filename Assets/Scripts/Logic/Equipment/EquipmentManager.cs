@@ -276,8 +276,21 @@ namespace LightVsDecay.Logic.Equipment
             var resultData = database.GetMergeResult(sourceData);
             if (resultData == null) return false;
 
-            stack.count -= 3;
-            if (stack.count <= 0) _inventory.Remove(stack);
+            // 首次合成免费：不消耗材料
+            var meta = ProgressManager.Instance?.Meta;
+            bool isFree = meta != null && !meta.hasUsedFirstEquipMergeFree;
+            if (isFree)
+            {
+                meta.hasUsedFirstEquipMergeFree = true;
+                meta.Save();
+                if (showDebugInfo)
+                    GameLogger.Log($"[EquipManager] 首次合成免费！生成: {resultData.equipmentId}({resultData.rarity})");
+            }
+            else
+            {
+                stack.count -= 3;
+                if (stack.count <= 0) _inventory.Remove(stack);
+            }
 
             AddToInventoryNoSave(resultData.equipmentId, resultData.rarity, 1);
 

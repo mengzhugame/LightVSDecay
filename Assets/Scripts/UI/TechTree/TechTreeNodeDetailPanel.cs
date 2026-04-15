@@ -274,10 +274,15 @@ namespace LightVsDecay.UI.TechTree
 
             upgradeButton.gameObject.SetActive(true);
 
+            // 首次升级免费检查
+            bool isFreeUpgrade = ProgressManager.Instance?.Meta != null
+                                 && !ProgressManager.Instance.Meta.hasUsedFirstTechUpgradeFree;
+
             bool prereqOk   = TechTreeManager.Instance != null
                               && TechTreeManager.Instance.CanUpgrade(_data.nodeId);
-            bool canAfford  = ProgressManager.Instance != null
-                              && ProgressManager.Instance.GoldCoins >= cost;
+            bool canAfford  = isFreeUpgrade
+                              || (ProgressManager.Instance != null
+                                  && ProgressManager.Instance.GoldCoins >= cost);
             bool canUpgrade = prereqOk && canAfford;
 
             // 按钮交互 + 背景色
@@ -289,10 +294,15 @@ namespace LightVsDecay.UI.TechTree
             if (upgradeLabelText != null)
                 upgradeLabelText.color = canUpgrade ? costNormalColor : Color.gray;
 
-            // 金币数字：前置不满足=灰，金币不足=红，正常=白
+            // 金币数字：首次免费=绿色"免费"，前置不满足=灰，金币不足=红，正常=白
             if (upgradeButtonText != null)
             {
-                if (!prereqOk)
+                if (isFreeUpgrade && prereqOk)
+                {
+                    upgradeButtonText.text  = "免费";
+                    upgradeButtonText.color = new Color(0.2f, 1f, 0.4f, 1f); // 亮绿色
+                }
+                else if (!prereqOk)
                 {
                     upgradeButtonText.text  = $"{cost:N0}";
                     upgradeButtonText.color = Color.gray;
@@ -304,9 +314,10 @@ namespace LightVsDecay.UI.TechTree
                 }
             }
 
-            // 金币图标：可升级=白，否则=灰
+            // 金币图标：首次免费时隐藏（不需要金币），否则正常显示
             if (goldIconImage != null)
-                goldIconImage.color = canUpgrade ? Color.white : Color.gray;
+                goldIconImage.color = (isFreeUpgrade && prereqOk) ? new Color(0, 0, 0, 0)
+                                                                   : (canUpgrade ? Color.white : Color.gray);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -11,6 +11,7 @@ using UnityEngine.UI;
 using TMPro;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Logic;
 using LightVsDecay.Logic.Equipment;
 using LightVsDecay.UI;
 
@@ -50,6 +51,9 @@ namespace LightVsDecay.UI.Equipment
 
         [Tooltip("合成红点：背包中存在可合成组（≥3个同种同品质）时显示")]
         [SerializeField] private GameObject mergeRedDot;
+
+        [Tooltip("合成免费标签：首次合成可用时显示在合成按钮上")]
+        [SerializeField] private GameObject mergeFreeBadge;
 
         [Tooltip("装备红点：背包中存在比已装备更高品质的同槽物品时显示")]
         [SerializeField] private GameObject equipRedDot;
@@ -187,6 +191,15 @@ namespace LightVsDecay.UI.Equipment
             // 装备红点：背包中存在比已装备品质更高的同槽物品
             if (equipRedDot != null)
                 equipRedDot.SetActive(HasBetterItemInInventory(mgr));
+
+            // 首次合成免费标签
+            if (mergeFreeBadge != null)
+            {
+                bool firstFreeAvailable = ProgressManager.Instance?.Meta != null
+                                          && !ProgressManager.Instance.Meta.hasUsedFirstEquipMergeFree
+                                          && mgr.HasAnyMergeable();
+                mergeFreeBadge.SetActive(firstFreeAvailable);
+            }
         }
 
         private bool HasBetterItemInInventory(EquipmentManager mgr)

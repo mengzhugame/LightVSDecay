@@ -20,7 +20,7 @@ MonoBehaviour:
   effectType: 24
   effectValuePerLevel: 1
   maxLevel: 1
-  baseCost: 3000
+  baseCost: 8000
   growthFactor: 1
   prerequisiteNodeIds:
   - node_rs_offline

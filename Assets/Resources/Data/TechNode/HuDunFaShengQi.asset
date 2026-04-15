@@ -19,9 +19,9 @@ MonoBehaviour:
   nodeType: 0
   effectType: 11
   effectValuePerLevel: 5
-  maxLevel: 20
-  baseCost: 200
+  maxLevel: 8
+  baseCost: 1800
   growthFactor: 1.07
   prerequisiteNodeIds:
   - node_sv_armor1
-  prerequisiteMinLevel: 50
+  prerequisiteMinLevel: 8

@@ -26,6 +26,6 @@ MonoBehaviour:
   subEffectDescription: 
   legendaryPassiveDescription: 
   maxLevel: 25
-  levelUpGoldBase: 100
+  levelUpGoldBase: 700
   levelUpBlueprintBase: 5
   icon: {fileID: 21300000, guid: 923f5e94f9ace2a4fb2ca58be8cadcfb, type: 3}
