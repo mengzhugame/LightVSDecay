@@ -50,6 +50,7 @@ namespace LightVsDecay.Core
         // Android 振动器缓存
 #if UNITY_ANDROID && !UNITY_EDITOR
         private AndroidJavaObject _vibrator;
+        private int _androidSdkVersion;
 #endif
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -66,6 +67,8 @@ namespace LightVsDecay.Core
                 using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
                 using var activity    = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
                 _vibrator = activity.Call<AndroidJavaObject>("getSystemService", "vibrator");
+                _androidSdkVersion = new AndroidJavaClass("android.os.Build$VERSION")
+                                         .GetStatic<int>("SDK_INT");
             }
             catch (System.Exception e)
             {
@@ -116,7 +119,20 @@ namespace LightVsDecay.Core
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
-                _vibrator?.Call("vibrate", (long)durationMs);
+                if (_vibrator == null) return;
+                if (_androidSdkVersion >= 26)
+                {
+                    // Android 8+（API 26+）：使用 VibrationEffect，避免小米 HyperOS 对旧接口的 no-op
+                    using var vfxClass = new AndroidJavaClass("android.os.VibrationEffect");
+                    using var effect   = vfxClass.CallStatic<AndroidJavaObject>(
+                                             "createOneShot", (long)durationMs, -1); // -1 = DEFAULT_AMPLITUDE
+                    _vibrator.Call("vibrate", effect);
+                }
+                else
+                {
+                    // Android 7 及以下旧设备：使用旧接口兼容
+                    _vibrator.Call("vibrate", (long)durationMs);
+                }
             }
             catch (System.Exception e)
             {
