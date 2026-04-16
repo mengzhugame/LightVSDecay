@@ -49,6 +49,9 @@ namespace LightVsDecay.UI.Tutorial
         private Image _maskImage;
         private Material _holeMaskMaterial;
 
+        // Show() 调用 SetActive(true) 之前置 true，防止 Awake() 将其再次隐藏
+        private bool _showRequested;
+
         private RectTransform _target;
         private bool _trackTarget;
         private Vector3 _ringBaseScale = Vector3.one;
@@ -65,8 +68,9 @@ namespace LightVsDecay.UI.Tutorial
         private void Awake()
         {
             EnsureInitialized();
-            // 非调试模式下保持隐藏；调试模式下保持可见，方便运行时调参
-            if (!debugMode)
+            // 非调试模式下保持隐藏；调试模式下保持可见，方便运行时调参。
+            // _showRequested 为 true 时说明是被 Show() 主动激活，不应自动隐藏。
+            if (!debugMode && !_showRequested)
                 gameObject.SetActive(false);
         }
 
@@ -139,7 +143,10 @@ namespace LightVsDecay.UI.Tutorial
                 holePadding = padding.Value;
             _trackTarget = trackTarget;
 
+            // 标记后再激活：防止 Awake()（在首次 SetActive 时同步触发）将节点重新隐藏
+            _showRequested = true;
             gameObject.SetActive(true);
+            _showRequested = false;
             SetMessage(message);
             RefreshLayout();
         }
@@ -193,7 +200,8 @@ namespace LightVsDecay.UI.Tutorial
         /// </summary>
         private void UpdateShaderHole()
         {
-            if (_holeMaskMaterial == null || _target == null)
+            // 目标为空则无法计算，直接跳出
+            if (_target == null)
                 return;
 
             Canvas canvas = _rootRect.GetComponentInParent<Canvas>();
@@ -229,13 +237,17 @@ namespace LightVsDecay.UI.Tutorial
                 _                 => Mathf.Min(_activeCornerRadius, halfMin), // RoundedRect，上限为短边半径
             };
 
-            // C# 端点击检测：像素空间，与 IsRaycastLocationValid 的 sp 完全一致
+            // C# 端点击检测：像素空间，与 IsRaycastLocationValid 的 sp 完全一致。
+            // 必须在 Shader 赋值之前完成，即使 Material 为 null（Shader 未加载）也能保证点击穿透正常工作。
             _holeScreenCenter   = screenCenter;
             _holeScreenHalfSize = screenSize * 0.5f;
             // 同步圆角到 cornerRadius 字段，让 IsPointInHole 使用
             cornerRadius = effectiveRadius;
 
-            // Shader 端：直接传像素值（Shader 已换为像素坐标系，彻底解决椭圆问题）
+            // Shader 端：仅在 Material 有效时写入（Shader 未加入 Always Included Shaders 时 Material 为 null）
+            if (_holeMaskMaterial == null)
+                return;
+
             _holeMaskMaterial.SetVector("_HoleCenter",   new Vector4(screenCenter.x, screenCenter.y, 0f, 0f));
             _holeMaskMaterial.SetVector("_HoleSize",     new Vector4(screenSize.x,   screenSize.y,   0f, 0f));
             _holeMaskMaterial.SetFloat ("_CornerRadius", effectiveRadius);

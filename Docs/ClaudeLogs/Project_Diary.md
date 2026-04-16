@@ -1,5 +1,33 @@
 # Project Diary — 光与朽
 
+## 2026-04-16：新手引导双BUG修复（TutorialSpotlightOverlay）
+
+### 问题描述
+1. **编辑器/真机 BUG**：在 Hierarchy 中将 `TutorialSpotlightOverlay` 节点设为 inactive 后运行游戏，进入科技树界面时遮罩不显示（挖洞效果不出现）。
+2. **真机 BUG**：真机上显示纯黑色遮罩（挖洞不渲染），且点击手指特效位置无任何反应（点击无法穿透遮罩）。
+
+### 根因分析
+
+#### Bug 1：`Awake()` 与 `Show()` 的竞态
+- 设计意图：`TutorialSpotlightOverlay` 应在 Scene 中以 **inactive** 状态放置（`EnsureInitialized()` 注释有说明）。
+- `Awake()` 末尾有 `if (!debugMode) gameObject.SetActive(false)` 逻辑——目的是防止开发者不小心把节点留成 active。
+- **问题**：当节点 inactive 起步时，`Awake()` 不会在 Start 时执行；但 `Show()` 调用 `gameObject.SetActive(true)` 时，Unity **同步触发** `Awake()`。此时 `Awake()` 里的 `SetActive(false)` 把节点重新隐藏，随后 `Show()` 继续执行 `SetMessage/RefreshLayout`，但 GameObject 已经是 inactive，遮罩永远不可见。
+
+#### Bug 2：Shader 加载失败导致射线检测全拦截
+- 真机上若 `UI/HoleMask` Shader 未加入 **Always Included Shaders**，`Shader.Find()` 返回 null，`_holeMaskMaterial` 为 null。
+- `UpdateShaderHole()` 开头判断 `if (_holeMaskMaterial == null || _target == null) return;`——提前返回，导致 `_holeScreenHalfSize` **始终为 Vector2.zero**。
+- `IsPointInHole()` 检测到 `_holeScreenHalfSize == Vector2.zero` 后直接返回 `false`（不在洞内），`IsRaycastLocationValid` 返回 `true`（拦截所有点击）。
+- 结果：整个遮罩变成纯黑不透明区域，且所有触摸事件全被拦截，按钮完全无法点击。
+
+### 修复方案
+
+**Fix 1**（Bug 1）：在 `Show()` 中调用 `gameObject.SetActive(true)` 之前，先设 `_showRequested = true` 标志，让 `Awake()` 跳过自隐藏逻辑。`SetActive` 同步调用 `Awake` 完成后，立即将标志复位。
+
+**Fix 2**（Bug 2）：将 `UpdateShaderHole()` 中孔洞屏幕坐标的计算（_holeScreenCenter / _holeScreenHalfSize / cornerRadius）与 Shader Material 赋值解耦。只要 `_target != null` 就进行坐标计算（保证 `IsRaycastLocationValid` 正确工作），仅在 `_holeMaskMaterial != null` 时才向 Shader 写属性。
+
+### 文件修改清单
+- `Assets/Scripts/UI/Tutorial/TutorialSpotlightOverlay.cs` — 上述两处修复
+
 ## 2026-03-31：Ch2 熔浆液三修 + 波次全面重设计
 
 ### 本次解决的问题
