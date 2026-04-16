@@ -42,6 +42,10 @@ namespace LightVsDecay.Logic
         [SerializeField] private string mainMenuSceneName = "MainScene";
         [SerializeField] private string gameSceneName = "GameScene";
 
+        [Header("═══ Shader 预热 ═══")]
+        [Tooltip("拖入 Assets/Shaders/URPShaderVariants.shadervariants，游戏启动时一次性预热所有 Shader 变体，消除首次渲染卡顿")]
+        [SerializeField] private ShaderVariantCollection shaderVariantCollection;
+
         [Header("═══ 调试 ═══")]
         [SerializeField] private bool showDebugInfo = false;
         
@@ -126,6 +130,14 @@ namespace LightVsDecay.Logic
             // ── 帧率设置：Android 默认 30fps，必须显式设置为 60 ──
             Application.targetFrameRate = 60;
             QualitySettings.vSyncCount  = 0; // 部分设备的 vsync 会覆盖 targetFrameRate
+
+            // ── Shader 变体预热：在启动阶段一次性编译所有已录制的 Shader 变体，
+            //    避免首次渲染某种材质时 GPU 实时编译造成的卡顿（毛刺帧）
+            if (shaderVariantCollection != null)
+            {
+                shaderVariantCollection.WarmUp();
+                GameLogger.Log("[GameManager] Shader 变体预热完成");
+            }
 
             // ★★★ 调试 ★★★
             GameLogger.Log($"[GameManager] OnSingletonAwake - InstanceID: {this.GetInstanceID()}");
