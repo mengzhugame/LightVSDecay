@@ -37,6 +37,8 @@ namespace LightVsDecay.Core
         [Tooltip("是否启用手机震动（可供玩家在设置中关闭）")]
         [SerializeField] private bool hapticEnabled = true;
 
+        private const string PREF_HAPTIC_ENABLED = "HapticEnabled";
+
         [Header("调试")]
         [SerializeField] private bool showDebugLog = false;
 
@@ -60,6 +62,9 @@ namespace LightVsDecay.Core
         protected override void Awake()
         {
             base.Awake();
+
+            // 从 PlayerPrefs 恢复玩家上次的震动开关状态
+            hapticEnabled = PlayerPrefs.GetInt(PREF_HAPTIC_ENABLED, 1) == 1;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
@@ -156,11 +161,13 @@ namespace LightVsDecay.Core
         }
 
         /// <summary>
-        /// 全局启用/禁用（供设置界面调用）
+        /// 全局启用/禁用（供设置界面调用），自动持久化到 PlayerPrefs
         /// </summary>
         public void SetEnabled(bool enabled)
         {
             hapticEnabled = enabled;
+            PlayerPrefs.SetInt(PREF_HAPTIC_ENABLED, enabled ? 1 : 0);
+            PlayerPrefs.Save();
         }
 
         public bool IsEnabled => hapticEnabled;

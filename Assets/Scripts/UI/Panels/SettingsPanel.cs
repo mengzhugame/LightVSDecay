@@ -28,9 +28,14 @@ namespace LightVsDecay.UI
         [Header("═══ 音频开关 ═══")]
         [Tooltip("音乐开关 Toggle")]
         [SerializeField] private Toggle musicToggle;
-        
+
         [Tooltip("音效开关 Toggle")]
         [SerializeField] private Toggle soundToggle;
+
+        [Header("═══ 震动开关 ═══")]
+        [Tooltip("震动开关 Toggle")]
+        [SerializeField] private Toggle shockToggle;
+
         [Header("═══ 开关滑块（Checkmark）═══")]
         [Tooltip("音乐开关滑块")]
         [SerializeField] private RectTransform musicCheckmark;
@@ -38,18 +43,25 @@ namespace LightVsDecay.UI
         [Tooltip("音效开关滑块")]
         [SerializeField] private RectTransform soundCheckmark;
 
+        [Tooltip("震动开关滑块")]
+        [SerializeField] private RectTransform shockCheckmark;
+
         [Header("═══ 滑块位置配置 ═══")]
         [Tooltip("开启时的X位置")]
         [SerializeField] private float checkmarkOnPosX = 140f;
 
         [Tooltip("关闭时的X位置")]
         [SerializeField] private float checkmarkOffPosX = -140f;
+
         [Header("═══ 开关填充图（可选，用于视觉反馈）═══")]
         [Tooltip("音乐开关填充图（开启时显示）")]
         [SerializeField] private GameObject musicFillImage;
-        
+
         [Tooltip("音效开关填充图（开启时显示）")]
         [SerializeField] private GameObject soundFillImage;
+
+        [Tooltip("震动开关填充图（开启时显示）")]
+        [SerializeField] private GameObject shockFillImage;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // UI 组件引用 - 底部按钮区域（战斗场景显示）
@@ -156,7 +168,12 @@ namespace LightVsDecay.UI
             {
                 soundToggle.onValueChanged.AddListener(OnSoundToggleChanged);
             }
-            
+
+            if (shockToggle != null)
+            {
+                shockToggle.onValueChanged.AddListener(OnShockToggleChanged);
+            }
+
             RefreshToggleStates();
         }
         
@@ -189,6 +206,14 @@ namespace LightVsDecay.UI
                 UpdateCheckmarkPosition(soundCheckmark, soundOn);
                 UpdateFillImage(soundFillImage, soundOn);
             }
+
+            if (shockToggle != null)
+            {
+                bool shockOn = HapticFeedback.Instance != null && HapticFeedback.Instance.IsEnabled;
+                shockToggle.SetIsOnWithoutNotify(shockOn);
+                UpdateCheckmarkPosition(shockCheckmark, shockOn);
+                UpdateFillImage(shockFillImage, shockOn);
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -220,10 +245,9 @@ namespace LightVsDecay.UI
             {
                 AudioManager.Instance.SFXEnabled = isOn;
             }
-            // 更新 Checkmark 位置
             UpdateCheckmarkPosition(soundCheckmark, isOn);
             UpdateFillImage(soundFillImage, isOn);
-            
+
             PlayButtonSound();
 
             if (showDebugInfo)
@@ -231,6 +255,24 @@ namespace LightVsDecay.UI
                 GameLogger.Log($"[SettingsPanel] 音效开关: {isOn}");
             }
         }
+
+        private void OnShockToggleChanged(bool isOn)
+        {
+            if (HapticFeedback.Instance != null)
+            {
+                HapticFeedback.Instance.SetEnabled(isOn);
+            }
+            UpdateCheckmarkPosition(shockCheckmark, isOn);
+            UpdateFillImage(shockFillImage, isOn);
+
+            PlayButtonSound();
+
+            if (showDebugInfo)
+            {
+                GameLogger.Log($"[SettingsPanel] 震动开关: {isOn}");
+            }
+        }
+
         /// <summary>
         /// 更新 Checkmark 滑块位置
         /// </summary>
