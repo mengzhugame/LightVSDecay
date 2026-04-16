@@ -290,9 +290,182 @@
 
 需要考虑新手引导，首次科技树升级免费，装备界面，首次合成免费。
 
+全部完成并已推送。以下是本次实现摘要：
 
+  ---
+  完成内容：
+
+  1. 设计文档 → D:\Project\GamePlanningDoc\...\光与朽_经济数值方案_202604.md
+
+  2. 科技树数值重调（26节点）
+  - 根节点：baseCost 200→1200，maxLevel 50/20→8
+  - 分支节点（11个）：baseCost 200-400→1800，maxLevel→8，prerequisiteMinLevel 50→8（解除原本需要Lv50的无限刷门槛）
+  - 深度节点：baseCost 1000→3000，maxLevel→5
+  - 里程碑节点（9个）：baseCost→8,000-15,000
+  - 新总投入约 384,000 金 ≈ 43 局 D1
+
+  3. 装备升级基数（12件）
+  - Uncommon: 100→200 | Rare: 100→400 | Epic: 100→700 | Legendary: 100→1000
+  - Legendary 满级约 52 局 D1，与图纸消耗对齐
+
+  4. 新手首次免费机制
+  - SessionData.MetaData 新增 2 个 flag + PlayerPrefs 键
+  - TechTreeManager.TryUpgradeNode()：首次升级跳过金币扣除
+  - TechTreeNodeDetailPanel：首次时按钮显示绿色 "免费" 标签，金币图标隐藏
+  - EquipmentManager.Merge()：首次合成不消耗3件材料
+  - EquipmentPanel：新增 mergeFreeBadge 字段，在场景中将徽标 GameObject 拖入即可显示
+
+  ▎ 注意：EquipmentPanel 的 mergeFreeBadge 是新的 SerializeField，需要在 Unity 中把对应的 UI 物体（如一个写着"免费"的
+  ▎ Image/Text）拖到该字段上才会生效。
 ------------------------------------------------------------------------------------------------------------------------
+
+关于新手引导的手机测试BUG问题，1.我在主界面隐藏了TutorialSpotlightOverlay这个节点，然后运行游戏，进入科技树界面，科技树，挖洞TutorialSpotlightOverlay节点没有显示。2.继续点击科技树需要升级的节点后，手机上显示纯黑色遮罩和手指特效，然后手机闪点击手指特效哪里，没有任何反应。需要查找并修复这个问题。 真机上显示纯黑色遮罩的问题，可能是因为挖洞shader没有加入Graphics的Always included shaders里导致的。现在我添加了这个shader，等下再打包测试下。 然后需要你查找这2个bug问题，并协助我修复关于新手引导的BUG。
+
+两个 BUG 均已修复并推送。下面是具体分析：
+
+  ---
+  Bug 1：遮罩不显示（编辑器 / 真机通用）
+
+  根因：Unity 对 inactive 的 GameObject 不调用 Awake()，会把它推迟到首次 SetActive(true) 时同步执行。Show() 里调用
+  gameObject.SetActive(true) 触发了 Awake()，而 Awake() 末尾有 if (!debugMode)
+  gameObject.SetActive(false)，把节点立刻再次隐藏，导致遮罩永远看不到。
+
+  修复：引入 _showRequested 标志位。Show() 在调用 SetActive(true) 前将其置 true，让 Awake() 跳过自隐藏，SetActive
+  返回后立即复位。
+
+  ---
+  Bug 2：真机纯黑 + 点击无反应
+
+  根因：分两层——
+
+  1. 纯黑遮罩：Shader 未加入 Always Included Shaders，Shader.Find("UI/HoleMask") 返回 null，_holeMaskMaterial 为 null →
+  纯黑色覆盖（你已通过添加 Shader 解决）。
+  2. 点击无穿透：UpdateShaderHole() 原来的第一行是 if (_holeMaskMaterial == null || _target == null) return;，material
+  为 null 时直接返回，导致 _holeScreenHalfSize 永远是 Vector2.zero。IsPointInHole() 检测到这个零值会直接返回
+  false（不在洞内），IsRaycastLocationValid 对所有触摸点返回 true（全部拦截），按钮完全无法触发。
+
+  修复：将孔洞屏幕坐标计算与 Shader 赋值解耦——只要 _target != null 就先算出
+  _holeScreenCenter/_holeScreenHalfSize/cornerRadius，最后再判断 _holeMaskMaterial == null 才提前 return，不写 Shader
+  属性。这样即使 Shader 加载失败，点击穿透逻辑依然正常工作。
 ------------------------------------------------------------------------------------------------------------------------
+
+关于光与朽真机性能问题，1.我在红米K80手机上运行光与朽，为什么一直显示30fps? 是我的这个显示D:\Project\LightVSDecay\Assets\Scripts\Debug\FpsDisplay.cs的脚本出问题了吗？还是unity设置的问题导致的？手机的屏幕刷新率我已改为60hz了。2.刚第二章和第三章进入战斗时，261.帧率只有15FPS，过了一会才涨到了30fps. 这是什么问题？是否需要我连接unity真机profiler,保存数据文件，发给你检测？你顺便查看一下工程内的所有代码文件，查看是否有相关代码需要做性能优化。我需要这个游戏在手机端可以流畅运行达到60fps，并且手机不会发烫，没有任何性能问题。
+
+ 完成，已推送。下面是完整说明：
+
+  ---
+  问题一：始终 30fps
+
+  根因：Unity 在 Android 上的默认 Application.targetFrameRate = 30，项目代码里从未设过这个值。FpsDisplay.cs
+  是无辜的，它只是计数器。
+
+  修复：在 GameManager.OnSingletonAwake() 最开头加了两行：
+  Application.targetFrameRate = 60;
+  QualitySettings.vSyncCount  = 0; // 防止部分 Android 设备的 vsync 覆盖 targetFrameRate
+
+  打包后这台红米 K80 的 60Hz 屏幕就能跑满了。
+
+  ---
+  问题二：进入战斗时瞬间 15fps
+
+  根因：调用链如下——
+  DelayedStartGame → ApplyChapterConfig → EnemyPoolManager.InitializeForChapter
+    → foreach 每种敌人 → new ObjectPool(..., prewarmCount)  ← 构造函数内同步 Prewarm
+      → for(0..prewarmCount) Instantiate(prefab)  ← 全部挤在同一帧！
+  第二/三章共 7-8 种敌人，每种预热 4~12 个，单帧 50~80 次 Instantiate + GPU Shader 首次编译，耗时 60~100ms，即 15fps。
+
+  修复（三处联动）：
+  1. EnemyPoolManager.InitializeForChapter：只建空池结构（initialSize=0），将预热目标存入 prewarmTargets 字典
+  2. EnemyPoolManager：新增 WarmupCoroutine(instancesPerFrame=2)，每帧只创建 2 个实例，通过 yield return null 分散到多帧
+  3. GameManager.DelayedStartGame：在 StartGame() 前 yield return StartCoroutine(WarmupCoroutine())
+  等待预热完成，预热期间的帧率抖动发生在游戏启动前（玩家尚未进入战斗）
+
+  ---
+  问题三：每波次调用 FindObjectsOfType
+
+  WaveManager.ProtectDropPhaseRoutine 每波结束后调用 FindObjectsOfType<TacticalCrate>()，需要遍历全场景。改为直接查询
+  TactorialDropManager.Instance.IsDropPhase（O(1)）。
+
+  ---
+  额外建议（Unity 编辑器设置，不在代码范围）
+
+  需要你在编辑器里手动确认：
+  - IL2CPP：确认 Build Settings → Scripting Backend = IL2CPP（比 Mono 快 20-30%）
+  - Texture Compression：Android 用 ASTC 格式（更快 GPU 解码）
+  - ShaderVariantCollection 预热：在 ProjectSettings → Graphics → Always Included Shaders 或者配置
+  ShaderVariantCollection 并在启动时调用 Warmup()，消除首次用到新 Shader 时的 GPU 编译毛刺（这也是 15fps 的部分成因）
+  - 关闭 Real-time Shadows：移动端 Quality Settings 里关阴影
 ------------------------------------------------------------------------------------------------------------------------
+
+我切换了Build Settings → Scripting Backend = IL2CPP，贴图格式也修改了 ASTC 格式，也关闭了实时阴影，但是我没有找到你说的ShaderVariantCollection 预热在哪里。是需要保存shader变体收集文件吗？还是说把工程里的所有shader都加入到Always Included Shaders 里？还是说代码调用Warmup()？
+
+好问题，三种方式各有用途，不是互斥的。让我解释清楚：
+
+  ---
+  ShaderVariantCollection 是什么
+
+  Android 打包时，Unity 把 Shader 源码编译成 GPU 字节码。但 Shader 有很多"变体"（比如开关了某个 keyword 的版本），Unity
+  默认在首次渲染时才编译对应变体 → 这就是首次用到某种怪物/特效时的那一帧卡顿。
+
+  ---
+  三种方式的区别
+
+  方式: Always Included Shaders
+  用途: 强制把整个 Shader 所有变体打进包
+  你需要吗: 只适合小型/特殊 Shader（如你的 UI/HoleMask）。全部 Shader 这么做会让包体暴增
+  ────────────────────────────────────────
+  方式: ShaderVariantCollection + Warmup()
+  用途: 精确记录游戏实际用到的变体，打包时只包含这些，运行时一次性预热
+  你需要吗: 这是正确方式
+  ────────────────────────────────────────
+  方式: 手动代码 Warmup()
+  用途: 调用已有的 .shadervariants 文件做预热
+  你需要吗: 配合上面那个一起用
+
+  ---
+  推荐做法（两步）
+
+  第一步：录制变体文件
+
+  在 Unity 编辑器里：
+
+  1. Edit → Project Settings → Graphics，找到 "Shader Variant Collection" 区域
+  2. 点击 "Save to asset" 或者用菜单 Window → Analysis → Shader Variant Collection 打开面板
+  3. 在编辑器 Play 模式下，把游戏从头玩一遍（每个章节至少走一遍，让所有材质都渲染一次）
+  4. Unity 会自动追踪用到的所有 Shader 变体
+  5. 停止 Play 后，在 Graphics 页面点 "Save to asset"，保存为 Assets/ShaderVariants/GameShaderVariants.shadervariants
+
+  第二步：运行时预热
+
+  在 GameManager.OnSingletonAwake() 里加载并预热（文件路径放进 Inspector）：
+
+  [Header("Shader 预热")]
+  [SerializeField] private ShaderVariantCollection shaderVariantCollection;
+
+  然后在 OnSingletonAwake() 里：
+
+  if (shaderVariantCollection != null)
+      shaderVariantCollection.WarmUp();
+
+  放在 Application.targetFrameRate = 60 之后即可。WarmUp() 会同步编译所有已录制的变体，通常在 Loading
+  阶段调用（比如启动画面期间），几十毫秒内完成，玩家无感。
+
+  ---
+  对你的项目，最简方案
+
+  你目前的怪物用的主要是：
+  - UI/HoleMask（新手引导，已加入 Always Included，√）
+  - Metaballs 的阈值 Shader
+  - 怪物 Body 的流体 Shader
+  - 激光/特效 Shader
+
+  最快的做法：
+
+  1. 编辑器 Play 模式走一遍第一、二、三章战斗各一波
+  2. Edit → Project Settings → Graphics → 底部 "Save to asset" 保存 .shadervariants
+  3. 把生成的文件拖进 GameManager 的 shaderVariantCollection 字段
+  4. 我帮你把 WarmUp() 调用加进代码
+
+  要我现在把代码加进去吗？你先去录制变体文件，我这边把代码位置准备好。
 ------------------------------------------------------------------------------------------------------------------------
 
