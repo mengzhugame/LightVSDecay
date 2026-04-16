@@ -647,10 +647,30 @@ namespace LightVsDecay.Logic.Boss
 #endif
             AudioManager.Instance?.PlayBossRoar();
 
-            // 播放入场专属特效（黑线冲击特效等，由子类通过 SpawnVFXPrefab 配置）
-            GameObject spawnVFX = SpawnVFXPrefab;
-            if (spawnVFX != null)
-                Object.Instantiate(spawnVFX, transform.position, Quaternion.identity);
+            // 播放入场专属特效（黑线冲击特效，由子类通过 SpawnVFXPrefab 配置）
+            GameObject spawnVFXPrefab = SpawnVFXPrefab;
+            if (spawnVFXPrefab != null)
+            {
+                GameObject vfxInstance = Object.Instantiate(spawnVFXPrefab, transform.position, Quaternion.identity);
+
+                // 自动销毁：读取粒子系统时长；若无粒子系统，兜底 5 秒后销毁
+                float vfxLifetime = 5f;
+                ParticleSystem ps = vfxInstance.GetComponent<ParticleSystem>();
+                if (ps == null) ps = vfxInstance.GetComponentInChildren<ParticleSystem>(true);
+                if (ps != null)
+                {
+                    var main = ps.main;
+                    float maxLifetime = main.startLifetime.mode == ParticleSystemCurveMode.Constant
+                        ? main.startLifetime.constant
+                        : main.startLifetime.constantMax;
+                    vfxLifetime = main.duration + maxLifetime;
+                }
+                Object.Destroy(vfxInstance, vfxLifetime);
+            }
+            else
+            {
+                GameLogger.LogWarning($"[{GetType().Name}] SpawnVFXPrefab 未配置，入场黑线特效不会播放！请在 Inspector 的「入场演出」区块拖入预制体。");
+            }
 
             float shakeIntensity = config != null ? config.spawnShakeIntensity : 0.5f;
             float shakeDuration = config != null ? config.spawnShakeDuration : 0.5f;
