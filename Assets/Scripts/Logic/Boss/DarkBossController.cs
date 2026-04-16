@@ -31,7 +31,12 @@ namespace LightVsDecay.Logic.Boss
         [Tooltip("Boss 死亡时播放的专属爆炸特效预制体")]
         [SerializeField] private GameObject deathVFXPrefab;
 
+        [Header("═══ 入场演出 ═══")]
+        [Tooltip("Boss 落地咆哮时播放的黑线冲击特效预制体")]
+        [SerializeField] private GameObject spawnVFXPrefab;
+
         public override GameObject DeathVFXPrefab => deathVFXPrefab;
+        public override GameObject SpawnVFXPrefab => spawnVFXPrefab;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Ch1 专属：污秽球系统

@@ -174,6 +174,9 @@ namespace LightVsDecay.Audio
         [Tooltip("熔岩BOSS吸收融合音效（每次吸收 LavaSlime 回血时播放，与 VolcanoBossController.sfxAbsorbSlime 共享同一音效）")]
         public AudioClip bossAbsorb;
 
+        [Tooltip("Boss 死亡爆炸音效（子弹时间开始、爆炸特效播放的同一帧触发）")]
+        public AudioClip bossDeath;
+
         [Tooltip("Boss 音效音量")]
         [Range(0f, 1f)]
         public float bossDefaultVolume = 0.7f;

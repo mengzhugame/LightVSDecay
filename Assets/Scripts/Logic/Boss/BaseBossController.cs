@@ -173,6 +173,9 @@ namespace LightVsDecay.Logic.Boss
         /// <summary>各章节专属死亡特效预制体（由子类通过 Inspector 配置并重写此属性）</summary>
         public virtual GameObject DeathVFXPrefab => null;
 
+        /// <summary>各章节专属入场特效预制体（Boss 落地咆哮时播放的黑线特效，由子类配置）</summary>
+        public virtual GameObject SpawnVFXPrefab => null;
+
         /// <summary>Boss 身体 Transform（供 DOPunchScale 使用；null 时回退到 transform 本身）</summary>
         public Transform BodyTransform => bodyTransform;
 
@@ -643,6 +646,12 @@ namespace LightVsDecay.Logic.Boss
             transform.position = battleAnchorPosition;
 #endif
             AudioManager.Instance?.PlayBossRoar();
+
+            // 播放入场专属特效（黑线冲击特效等，由子类通过 SpawnVFXPrefab 配置）
+            GameObject spawnVFX = SpawnVFXPrefab;
+            if (spawnVFX != null)
+                Object.Instantiate(spawnVFX, transform.position, Quaternion.identity);
+
             float shakeIntensity = config != null ? config.spawnShakeIntensity : 0.5f;
             float shakeDuration = config != null ? config.spawnShakeDuration : 0.5f;
             CameraShake.Instance?.Shake(shakeIntensity, shakeDuration);

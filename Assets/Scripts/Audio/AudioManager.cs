@@ -897,14 +897,14 @@ namespace LightVsDecay.Audio
 
         
         /// <summary>
-        /// 播放 Boss 死亡音效
+        /// 播放 Boss 死亡爆炸音效（子弹时间开始帧调用）
         /// </summary>
         public void PlayBossDeath()
         {
-            // if (config != null)
-            // {
-            //     PlaySFX(config.bossDeath, config.bossDefaultVolume);
-            // }
+            if (config != null && config.bossDeath != null)
+            {
+                PlaySFX(config.bossDeath, config.bossDefaultVolume);
+            }
         }
         
         /// <summary>

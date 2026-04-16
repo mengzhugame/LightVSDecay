@@ -718,6 +718,7 @@ namespace LightVsDecay.Logic
 
             CameraShake.Instance?.Shake(1.5f, 0.4f);
             HapticFeedback.Instance?.TriggerRaw(600);
+            AudioManager.Instance?.PlayBossDeath();   // 爆炸音效
             AudioManager.Instance?.SetBGMPitch(0.5f);
 
             yield return new WaitForSecondsRealtime(0.50f);
