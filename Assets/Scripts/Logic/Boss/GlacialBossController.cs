@@ -32,6 +32,16 @@ namespace LightVsDecay.Logic.Boss
         public static GlacialBossController ActiveInstance { get; private set; }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 死亡演出
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("═══ 死亡演出 ═══")]
+        [Tooltip("Boss 死亡时播放的专属爆炸特效预制体")]
+        [SerializeField] private GameObject deathVFXPrefab;
+
+        public override GameObject DeathVFXPrefab => deathVFXPrefab;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置（Ch3 专属）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

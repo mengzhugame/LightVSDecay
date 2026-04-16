@@ -13,6 +13,7 @@ using LightVsDecay.Core.Pool;
 using LightVsDecay.Data;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
+using LightVsDecay.Logic.Boss;
 using LightVsDecay.Logic.Enemy;
 
 namespace LightVsDecay.Logic
@@ -658,7 +659,110 @@ namespace LightVsDecay.Logic
         {
             if (isBossFight)
             {
-                Victory();
+                isTimerRunning = false;
+                StartCoroutine(BossDeathSequenceCoroutine());
+            }
+        }
+
+        /// <summary>
+        /// Boss 死亡演出协程：子弹时间 + 爆炸特效 + 相机震动，约 1.8s 后调用 Victory()
+        /// 全程使用 WaitForSecondsRealtime / unscaledDeltaTime，不受 timeScale 影响
+        /// </summary>
+        private System.Collections.IEnumerator BossDeathSequenceCoroutine()
+        {
+            BaseBossController boss = BaseBossController.Current;
+            Vector3 bossPos = boss != null ? boss.transform.position : Vector3.zero;
+
+            // ── T+0.00s：轻震 + Boss 抖动缩放（正常速度感受冲击）─────────
+            CameraShake.Instance?.Shake(0.4f, 0.4f);
+
+#if DOTWEEN
+            if (boss != null)
+            {
+                UnityEngine.Transform punchTarget = boss.BodyTransform != null
+                    ? boss.BodyTransform
+                    : boss.transform;
+                punchTarget.DOPunchScale(Vector3.one * 0.35f, 0.4f, 8, 0.5f);
+            }
+#endif
+
+            yield return new WaitForSecondsRealtime(0.40f);
+
+            // ── T+0.40s：Boss Sprite 闪白 × 3次（0.3s）─────────────────
+            if (boss != null)
+                yield return StartCoroutine(FlashBossWhite(boss));
+
+            // ── T+0.70s：Boss 隐藏 + 播放专属爆炸特效 + 子弹时间开始 ────
+            if (boss != null)
+                boss.gameObject.SetActive(false);
+
+            GameObject vfxPrefab = boss != null ? boss.DeathVFXPrefab : null;
+            if (vfxPrefab != null)
+                Object.Instantiate(vfxPrefab, bossPos, Quaternion.identity);
+
+            // 子弹时间
+            Time.timeScale        = 0.1f;
+            Time.fixedDeltaTime   = 0.02f * 0.1f;
+
+            CameraShake.Instance?.Shake(1.5f, 0.4f);
+            HapticFeedback.Instance?.TriggerRaw(600);
+            AudioManager.Instance?.SetBGMPitch(0.5f);
+
+            yield return new WaitForSecondsRealtime(0.50f);
+
+            // ── T+1.20s：timeScale 线性恢复 + 色差脉冲 + BGM pitch 恢复 ─
+            float lerpDuration = 0.20f;
+            float elapsed = 0f;
+            while (elapsed < lerpDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / lerpDuration);
+                Time.timeScale      = Mathf.Lerp(0.1f, 1.0f, t);
+                Time.fixedDeltaTime = 0.02f * Time.timeScale;
+                yield return null;
+            }
+            Time.timeScale      = 1.0f;
+            Time.fixedDeltaTime = 0.02f;
+
+            AudioManager.Instance?.ResetBGMPitch();
+            LightVsDecay.VFX.PostProcess.ScreenEffectController.Instance?.PlayChromaticPulse(0.3f);
+
+            yield return new WaitForSecondsRealtime(0.20f);
+
+            // ── T+1.40s：暗角收拢（视觉过渡到结算界面）─────────────────
+            LightVsDecay.VFX.PostProcess.ScreenEffectController.Instance?.PlayVignetteClose(0.55f, 0.4f);
+
+            yield return new WaitForSecondsRealtime(0.40f);
+
+            // ── T+1.80s：调用正常胜利流程 ─────────────────────────────
+            Victory();
+        }
+
+        /// <summary>
+        /// Boss Sprite 闪白 × flashCount 次（每次 flashInterval 秒），使用真实时间
+        /// </summary>
+        private System.Collections.IEnumerator FlashBossWhite(BaseBossController boss,
+            int flashCount = 3, float flashInterval = 0.10f)
+        {
+            SpriteRenderer[] renderers   = boss.BodyRenderers;
+            Color[]           origColors = boss.OriginalColors;
+            if (renderers == null || renderers.Length == 0) yield break;
+
+            float onTime  = flashInterval * 0.4f;
+            float offTime = flashInterval * 0.6f;
+
+            for (int i = 0; i < flashCount; i++)
+            {
+                for (int j = 0; j < renderers.Length; j++)
+                    if (renderers[j] != null) renderers[j].color = Color.white;
+
+                yield return new WaitForSecondsRealtime(onTime);
+
+                for (int j = 0; j < renderers.Length; j++)
+                    if (renderers[j] != null && origColors != null && j < origColors.Length)
+                        renderers[j].color = origColors[j];
+
+                yield return new WaitForSecondsRealtime(offTime);
             }
         }
         

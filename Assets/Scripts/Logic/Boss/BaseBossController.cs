@@ -167,6 +167,15 @@ namespace LightVsDecay.Logic.Boss
         // 属性
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+        /// <summary>场景内当前活跃的 Boss 实例（供 GameManager 死亡演出序列获取位置和特效）</summary>
+        public static BaseBossController Current { get; private set; }
+
+        /// <summary>各章节专属死亡特效预制体（由子类通过 Inspector 配置并重写此属性）</summary>
+        public virtual GameObject DeathVFXPrefab => null;
+
+        /// <summary>Boss 身体 Transform（供 DOPunchScale 使用；null 时回退到 transform 本身）</summary>
+        public Transform BodyTransform => bodyTransform;
+
         public BossConfig Config => config;
         public SpriteRenderer[] BodyRenderers => bodyRenderers;
         public Color[] OriginalColors => originalColors;
@@ -230,6 +239,7 @@ namespace LightVsDecay.Logic.Boss
 
         protected virtual void Awake()
         {
+            Current = this;
             rb = GetComponent<Rigidbody2D>();
             bossHealth = GetComponent<BossHealth>();
             if (rb != null)
@@ -1241,6 +1251,11 @@ namespace LightVsDecay.Logic.Boss
         }
 
         public void ForceStun() => ChangeState(BossState.Stun);
+
+        protected virtual void OnDestroy()
+        {
+            if (Current == this) Current = null;
+        }
 
         protected int GetCurrentMobCount() =>
             EnemyPoolManager.Instance != null ? EnemyPoolManager.Instance.TotalActiveEnemies : 0;

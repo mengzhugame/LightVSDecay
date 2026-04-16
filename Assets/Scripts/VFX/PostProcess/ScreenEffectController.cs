@@ -83,14 +83,17 @@ namespace LightVsDecay.VFX.PostProcess
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
         private Vignette vignette;
-        
+        private ChromaticAberration chromaticAberration;
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 运行时状态
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
+
         private bool isLowHealth = false;
         private Coroutine heartbeatCoroutine;
         private Coroutine glassCrackCoroutine;
+        private Coroutine chromaticCoroutine;
+        private Coroutine vignetteCloseCoroutine;
         
         // 原始暗角设置（用于恢复）
         private float originalVignetteIntensity;
@@ -172,7 +175,7 @@ namespace LightVsDecay.VFX.PostProcess
                     // 保存原始设置
                     originalVignetteIntensity = vignette.intensity.value;
                     originalVignetteColor = vignette.color.value;
-                    
+
                     if (showDebugInfo)
                     {
                         GameLogger.Log("[ScreenEffectController] Vignette 组件已获取");
@@ -182,6 +185,9 @@ namespace LightVsDecay.VFX.PostProcess
                 {
                     GameLogger.LogWarning("[ScreenEffectController] Volume Profile 中没有 Vignette 组件");
                 }
+
+                // 获取 ChromaticAberration 组件（可选，不存在时静默跳过）
+                postProcessVolume.profile.TryGet(out chromaticAberration);
             }
             else
             {
@@ -435,17 +441,93 @@ namespace LightVsDecay.VFX.PostProcess
         public void StopAllEffects()
         {
             StopHeartbeat();
-            
+
             if (glassCrackCoroutine != null)
             {
                 StopCoroutine(glassCrackCoroutine);
                 glassCrackCoroutine = null;
             }
-            
             if (glassCrackImage != null)
-            {
                 glassCrackImage.gameObject.SetActive(false);
+
+            if (chromaticCoroutine != null)
+            {
+                StopCoroutine(chromaticCoroutine);
+                chromaticCoroutine = null;
             }
+            if (chromaticAberration != null)
+                chromaticAberration.intensity.value = 0f;
+
+            if (vignetteCloseCoroutine != null)
+            {
+                StopCoroutine(vignetteCloseCoroutine);
+                vignetteCloseCoroutine = null;
+            }
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Boss 死亡演出效果
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 色差脉冲（Boss 击杀能量爆发瞬间）
+        /// 使用 unscaledDeltaTime，不受子弹时间 timeScale 影响
+        /// </summary>
+        public void PlayChromaticPulse(float duration = 0.3f)
+        {
+            if (chromaticCoroutine != null) StopCoroutine(chromaticCoroutine);
+            chromaticCoroutine = StartCoroutine(ChromaticPulseCoroutine(duration));
+        }
+
+        private IEnumerator ChromaticPulseCoroutine(float duration)
+        {
+            if (chromaticAberration == null) yield break;
+
+            float half = duration * 0.5f;
+            float elapsed = 0f;
+            while (elapsed < half)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                chromaticAberration.intensity.value = Mathf.Lerp(0f, 0.8f, elapsed / half);
+                yield return null;
+            }
+            elapsed = 0f;
+            while (elapsed < half)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                chromaticAberration.intensity.value = Mathf.Lerp(0.8f, 0f, elapsed / half);
+                yield return null;
+            }
+            chromaticAberration.intensity.value = 0f;
+            chromaticCoroutine = null;
+        }
+
+        /// <summary>
+        /// 暗角收拢过渡（Boss 死亡到结算的视觉过渡）
+        /// 使用 unscaledDeltaTime
+        /// </summary>
+        public void PlayVignetteClose(float targetIntensity = 0.55f, float duration = 0.4f)
+        {
+            if (vignetteCloseCoroutine != null) StopCoroutine(vignetteCloseCoroutine);
+            vignetteCloseCoroutine = StartCoroutine(VignetteCloseCoroutine(targetIntensity, duration));
+        }
+
+        private IEnumerator VignetteCloseCoroutine(float targetIntensity, float duration)
+        {
+            if (vignette == null) yield break;
+
+            float startIntensity = vignette.intensity.value;
+            vignette.color.value = Color.black;
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                vignette.intensity.value = Mathf.Lerp(startIntensity, targetIntensity, elapsed / duration);
+                yield return null;
+            }
+            vignette.intensity.value = targetIntensity;
+            vignetteCloseCoroutine = null;
         }
         
         /// <summary>

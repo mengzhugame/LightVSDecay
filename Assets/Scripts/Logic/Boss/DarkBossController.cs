@@ -24,6 +24,16 @@ namespace LightVsDecay.Logic.Boss
     public class DarkBossController : BaseBossController
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 死亡演出
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        [Header("═══ 死亡演出 ═══")]
+        [Tooltip("Boss 死亡时播放的专属爆炸特效预制体")]
+        [SerializeField] private GameObject deathVFXPrefab;
+
+        public override GameObject DeathVFXPrefab => deathVFXPrefab;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Ch1 专属：污秽球系统
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
