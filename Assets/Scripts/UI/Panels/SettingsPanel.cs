@@ -9,7 +9,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using LightVsDecay.Audio;
-using LightVsDecay.Logic;
 using LightVsDecay.Core;
 
 namespace LightVsDecay.UI
@@ -77,10 +76,6 @@ namespace LightVsDecay.UI
         [Tooltip("重新开始按钮")]
         [SerializeField] private Button restartButton;
         
-        [Header("═══ 按钮禁用颜色 ═══")]
-        [Tooltip("按钮禁用时的颜色")]
-        [SerializeField] private Color disabledButtonColor = new Color(0.5f, 0.5f, 0.5f, 1f);
-        
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // UI 组件引用 - 内容区域（用于点击空白关闭判断）
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -99,25 +94,10 @@ namespace LightVsDecay.UI
         
         private bool showBottomArea = false;  // 是否显示底部按钮区域
         private bool isInBattleScene = false; // 是否在战斗场景
-        private Image restartButtonImage;
-        private Color restartButtonOriginalColor;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
-        private void Awake()
-        {
-            // 缓存重新开始按钮的图片组件
-            if (restartButton != null)
-            {
-                restartButtonImage = restartButton.GetComponent<Image>();
-                if (restartButtonImage != null)
-                {
-                    restartButtonOriginalColor = restartButtonImage.color;
-                }
-            }
-        }
         
         private void Start()
         {
@@ -142,9 +122,6 @@ namespace LightVsDecay.UI
                 {
                     AudioManager.Instance.PauseBattleAudioForOverlay();
                 }
-                
-                // 更新重新开始按钮状态
-                UpdateRestartButtonState();
             }
             
             if (showDebugInfo)
@@ -179,8 +156,8 @@ namespace LightVsDecay.UI
         
         private void SetupButtons()
         {
-            if (homeButton       != null) homeButton.onClick.AddListener(OnHomeButtonClicked);
-            if (restartButton    != null) restartButton.onClick.AddListener(OnRestartButtonClicked);
+            if (homeButton    != null) homeButton.onClick.AddListener(OnHomeButtonClicked);
+            if (restartButton != null) restartButton.onClick.AddListener(OnContinueButtonClicked);
             // ★ 新增
             if (backgroundButton != null) backgroundButton.onClick.AddListener(OnCloseClicked);
             if (closeButton      != null) closeButton.onClick.AddListener(OnCloseClicked);
@@ -315,85 +292,16 @@ namespace LightVsDecay.UI
             }
         }
         
-        private void OnRestartButtonClicked()
+        private void OnContinueButtonClicked()
         {
-            // 检查能量是否足够
-            int currentEnergy = 0;
-            if (ProgressManager.Instance != null)
-            {
-                currentEnergy = ProgressManager.Instance.Energy;
-            }
-            else
-            {
-                currentEnergy = PlayerPrefs.GetInt("PlayerEnergy", 5);
-            }
-            
-            if (currentEnergy <= 0)
-            {
-                if (showDebugInfo)
-                {
-                    GameLogger.Log("[SettingsPanel] 能量不足，无法重新开始");
-                }
-                return;
-            }
-            
             PlayButtonSound();
-            
+
             if (showDebugInfo)
             {
-                GameLogger.Log("[SettingsPanel] 点击重新开始");
+                GameLogger.Log("[SettingsPanel] 点击继续游戏");
             }
-            
-            // 扣除能量
-            if (ProgressManager.Instance != null)
-            {
-                ProgressManager.Instance.ConsumeEnergy(1);
-            }
-            else
-            {
-                PlayerPrefs.SetInt("PlayerEnergy", currentEnergy - 1);
-                PlayerPrefs.Save();
-            }
-            
-            // 隐藏面板
+
             Hide();
-            
-            // 重新开始游戏
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.RestartGame();
-            }
-        }
-        
-        /// <summary>
-        /// 更新重新开始按钮状态（能量不足时置灰）
-        /// </summary>
-        private void UpdateRestartButtonState()
-        {
-            if (restartButton == null) return;
-            
-            int currentEnergy = 0;
-            if (ProgressManager.Instance != null)
-            {
-                currentEnergy = ProgressManager.Instance.Energy;
-            }
-            else
-            {
-                currentEnergy = PlayerPrefs.GetInt("PlayerEnergy", 5);
-            }
-            
-            bool hasEnergy = currentEnergy > 0;
-            restartButton.interactable = hasEnergy;
-            
-            if (restartButtonImage != null)
-            {
-                restartButtonImage.color = hasEnergy ? restartButtonOriginalColor : disabledButtonColor;
-            }
-            
-            if (showDebugInfo)
-            {
-                GameLogger.Log($"[SettingsPanel] 重新开始按钮状态: 能量={currentEnergy}, 可用={hasEnergy}");
-            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
