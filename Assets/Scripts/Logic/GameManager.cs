@@ -5,6 +5,7 @@
 // 更新：集成章节系统，从 GameSessionConfig 读取配置
 // ============================================================
 
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using LightVsDecay.Audio;
@@ -657,7 +658,9 @@ namespace LightVsDecay.Logic
         
         public void OnBossDefeated()
         {
-            if (isBossFight)
+            // isBossFight 标志依赖 EnterBossFight() 被调用，但实际未接入调用链；
+            // 改为直接检查游戏状态，只要处于 Playing 就触发演出序列
+            if (currentState == GameState.Playing)
             {
                 isTimerRunning = false;
                 StartCoroutine(BossDeathSequenceCoroutine());
