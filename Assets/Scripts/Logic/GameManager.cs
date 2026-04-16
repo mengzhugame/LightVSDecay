@@ -192,6 +192,12 @@ namespace LightVsDecay.Logic
             
             if (scene.name == gameSceneName)
             {
+                // ClearAllEvents() 在 LoadGameScene/LoadMainMenu 中会将 OnBossDeath 置 null，
+                // PersistentSingleton 的 OnSingletonAwake 只执行一次，无法自动恢复订阅，
+                // 因此每次进入游戏场景时必须在此重新订阅，防止死亡演出序列永远不触发。
+                GameEvents.OnBossDeath -= OnBossDefeated; // 防止重复订阅
+                GameEvents.OnBossDeath += OnBossDefeated;
+
                 // 进入游戏场景
                 StartCoroutine(DelayedStartGame());
             }
