@@ -123,6 +123,10 @@ namespace LightVsDecay.Logic
         
         protected override void OnSingletonAwake()
         {
+            // ── 帧率设置：Android 默认 30fps，必须显式设置为 60 ──
+            Application.targetFrameRate = 60;
+            QualitySettings.vSyncCount  = 0; // 部分设备的 vsync 会覆盖 targetFrameRate
+
             // ★★★ 调试 ★★★
             GameLogger.Log($"[GameManager] OnSingletonAwake - InstanceID: {this.GetInstanceID()}");
             GameLogger.Log($"[GameManager] OnSingletonAwake - chapterDatabase: {(chapterDatabase != null ? chapterDatabase.name : "NULL")}");
@@ -194,13 +198,19 @@ namespace LightVsDecay.Logic
         {
             // 等待一帧，让所有 Start() 执行完毕
             yield return null;
-            
+
             // 初始化章节配置
             InitializeChapterConfig();
-            
+
             // 应用章节配置（背景、BGM等）
+            // 注意：此方法内部调用 EnemyPoolManager.InitializeForChapter，
+            //       但该调用不再做同步预热（prewarmCount=0），防止单帧大量 Instantiate 卡顿
             ApplyChapterConfig();
-            
+
+            // 将对象池预热分散到多帧执行，避免首帧 50~80 次 Instantiate 导致 15fps 卡顿
+            if (EnemyPoolManager.Instance != null)
+                yield return StartCoroutine(EnemyPoolManager.Instance.WarmupCoroutine());
+
             // 开始游戏
             StartGame();
         }

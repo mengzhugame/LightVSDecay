@@ -814,18 +814,18 @@ namespace LightVsDecay.Logic
             // 等待一小段时间，让 TacticalDropManager 有机会生成宝箱
             yield return new WaitForSeconds(2.0f);
 
-            // 检查场上是否有宝箱
-            // 注意：需要引用 LightVsDecay.Logic.TacticalDrop 命名空间
-            var crates = FindObjectsOfType<TacticalCrate>();
-    
-            // 如果处于 Complete 状态（说明还没进下一波），且场上没有宝箱
-            if (currentState == WaveState.Complete && (crates == null || crates.Length == 0))
+            // 检查 Drop 阶段是否正常启动（O(1) 查询，避免 FindObjectsOfType 遍历全场景）
+            bool dropActive = TacticalDropManager.Instance != null
+                              && TacticalDropManager.Instance.IsDropPhase;
+
+            // 如果处于 Complete 状态（说明还没进下一波），且 Drop 阶段未激活
+            if (currentState == WaveState.Complete && !dropActive)
             {
                 if (showDebugInfo)
                 {
-                    GameLogger.LogWarning("[WaveManager] ⚠️ 检测到 Drop 阶段异常（无宝箱），强制进入下一波！");
+                    GameLogger.LogWarning("[WaveManager] ⚠️ 检测到 Drop 阶段异常（无宝箱/未激活），强制进入下一波！");
                 }
-        
+
                 // 强制开始下一波，防止卡死
                 StartNextWave();
             }

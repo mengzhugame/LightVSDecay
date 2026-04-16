@@ -95,6 +95,9 @@ namespace LightVsDecay.Core.Pool
         private HashSet<EnemyBlob> nonPooledActive;               // 追踪非池化（精英怪）存活实例
         private Transform poolContainer;
 
+        // 预热目标表：InitializeForChapter 不再同步预热，由 WarmupCoroutine 分帧完成
+        private Dictionary<EnemyType, int> prewarmTargets = new Dictionary<EnemyType, int>();
+
         // 统计
         private int totalActiveEnemies = 0;
         
@@ -118,8 +121,9 @@ namespace LightVsDecay.Core.Pool
             CreatePoolContainer();
 
             // 对象池由 GameManager.ApplyChapterConfig() 按章节按需初始化
-            pools = new Dictionary<EnemyType, ObjectPool<EnemyBlob>>();
-            configs = new Dictionary<EnemyType, EnemyPoolConfig>();
+            pools         = new Dictionary<EnemyType, ObjectPool<EnemyBlob>>();
+            configs       = new Dictionary<EnemyType, EnemyPoolConfig>();
+            prewarmTargets = new Dictionary<EnemyType, int>();
             nonPooledActive = new HashSet<EnemyBlob>();
         }
         
@@ -142,8 +146,12 @@ namespace LightVsDecay.Core.Pool
         }
         
         /// <summary>
-        /// 按章节初始化对象池（由 GameManager.ApplyChapterConfig 调用）
-        /// chapterIndex=-1 的配置属于全章节通用类型，始终加载
+        /// 按章节初始化对象池结构（由 GameManager.ApplyChapterConfig 调用）。
+        /// chapterIndex=-1 的配置属于全章节通用类型，始终加载。
+        ///
+        /// ★ 性能优化：此方法只建池容器和注册配置，不做任何 Instantiate。
+        ///   实际预热由 GameManager 调用 <see cref="WarmupCoroutine"/> 分帧完成，
+        ///   避免单帧 50~80 次 Instantiate 导致进入战斗时 15fps 卡顿。
         /// </summary>
         public void InitializeForChapter(int chapterIndex)
         {
@@ -156,8 +164,9 @@ namespace LightVsDecay.Core.Pool
                 Object.Destroy(poolContainer.GetChild(i).gameObject);
             }
 
-            pools = new Dictionary<EnemyType, ObjectPool<EnemyBlob>>();
-            configs = new Dictionary<EnemyType, EnemyPoolConfig>();
+            pools          = new Dictionary<EnemyType, ObjectPool<EnemyBlob>>();
+            configs        = new Dictionary<EnemyType, EnemyPoolConfig>();
+            prewarmTargets = new Dictionary<EnemyType, int>();
             nonPooledActive = new HashSet<EnemyBlob>();
 
             int poolCount = 0;
@@ -180,7 +189,7 @@ namespace LightVsDecay.Core.Pool
 
                 if (config.usePool)
                 {
-                    // ── 普通怪：创建对象池 ──
+                    // ── 普通怪：只建空池（initialSize = 0），避免构造函数内同步 Prewarm ──
                     GameObject typeContainer = new GameObject($"Pool_{config.type}");
                     typeContainer.transform.SetParent(poolContainer);
 
@@ -188,16 +197,17 @@ namespace LightVsDecay.Core.Pool
                     var pool = new ObjectPool<EnemyBlob>(
                         config.prefab,
                         typeContainer.transform,
-                        config.prewarmCount,
+                        0,              // ← 不在构造函数内预热，由 WarmupCoroutine 分帧完成
                         maxForType,
                         allowDynamicExpand
                     );
 
-                    pools[config.type] = pool;
+                    pools[config.type]          = pool;
+                    prewarmTargets[config.type] = config.prewarmCount; // 记录目标数量
                     poolCount++;
 
                     if (showDebugInfo)
-                        GameLogger.Log($"[EnemyPoolManager] [池化] {config.type}: 预热{config.prewarmCount}, 上限{maxForType}");
+                        GameLogger.Log($"[EnemyPoolManager] [池化] {config.type}: 目标预热{config.prewarmCount}, 上限{maxForType}");
                 }
                 else
                 {
@@ -209,7 +219,37 @@ namespace LightVsDecay.Core.Pool
                 }
             }
 
-            GameLogger.Log($"[EnemyPoolManager] 章节 {chapterIndex + 1} 初始化完成 — 池化:{poolCount} 种，直接生成:{directCount} 种");
+            GameLogger.Log($"[EnemyPoolManager] 章节 {chapterIndex + 1} 结构初始化完成 — 池化:{poolCount} 种，直接生成:{directCount} 种（预热将由协程分帧执行）");
+        }
+
+        /// <summary>
+        /// 分帧预热所有对象池，避免进入战斗时单帧大量 Instantiate 造成卡顿。
+        /// 每帧最多创建 <paramref name="instancesPerFrame"/> 个实例，直到达到各池的目标预热数量。
+        /// 由 GameManager.DelayedStartGame 通过 yield return StartCoroutine 调用。
+        /// </summary>
+        public System.Collections.IEnumerator WarmupCoroutine(int instancesPerFrame = 2)
+        {
+            foreach (var kv in prewarmTargets)
+            {
+                EnemyType type  = kv.Key;
+                int       total = kv.Value;
+                if (total <= 0) continue;
+                if (!pools.TryGetValue(type, out var pool)) continue;
+
+                int remaining = total;
+                while (remaining > 0)
+                {
+                    int batch = Mathf.Min(remaining, instancesPerFrame);
+                    pool.Prewarm(batch);
+                    remaining -= batch;
+                    yield return null; // 让出帧，避免单帧卡顿
+                }
+
+                if (showDebugInfo)
+                    GameLogger.Log($"[EnemyPoolManager] [Warmup] {type} 预热完成: {total} 个");
+            }
+
+            GameLogger.Log("[EnemyPoolManager] 所有对象池预热完毕");
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
