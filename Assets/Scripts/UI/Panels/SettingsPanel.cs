@@ -10,6 +10,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
+using LightVsDecay.Logic;
 
 namespace LightVsDecay.UI
 {
@@ -74,7 +75,7 @@ namespace LightVsDecay.UI
         [SerializeField] private Button homeButton;
         
         [Tooltip("重新开始按钮")]
-        [SerializeField] private Button restartButton;
+        [SerializeField] private Button continueButton;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // UI 组件引用 - 内容区域（用于点击空白关闭判断）
@@ -157,7 +158,7 @@ namespace LightVsDecay.UI
         private void SetupButtons()
         {
             if (homeButton    != null) homeButton.onClick.AddListener(OnHomeButtonClicked);
-            if (restartButton != null) restartButton.onClick.AddListener(OnContinueButtonClicked);
+            if (continueButton != null) continueButton.onClick.AddListener(OnContinueButtonClicked);
             // ★ 新增
             if (backgroundButton != null) backgroundButton.onClick.AddListener(OnCloseClicked);
             if (closeButton      != null) closeButton.onClick.AddListener(OnCloseClicked);
