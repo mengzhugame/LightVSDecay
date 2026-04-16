@@ -1252,6 +1252,36 @@ namespace LightVsDecay.Logic.Boss
 
         public void ForceStun() => ChangeState(BossState.Stun);
 
+        /// <summary>
+        /// 死亡演出准备：立即停止所有 AI 行为，防止在死亡演出窗口（约1.8s）内继续攻击玩家。
+        /// 由 GameManager.BossDeathSequenceCoroutine() 在 T+0.00s 第一时间调用。
+        /// </summary>
+        public void PrepareForDeath()
+        {
+            // 停止所有协程（包括 stateCoroutine、EnrageTriggerRoutine 等所有子协程）
+            StopAllCoroutines();
+            stateCoroutine = null;
+
+            // 冻结物理：停止 Press 下压力、Charge 冲速等
+            if (rb != null)
+            {
+                rb.velocity = Vector2.zero;
+                rb.isKinematic = true;
+            }
+
+            // 关闭 Update / FixedUpdate，防止继续产生伤害
+            this.enabled = false;
+
+#if DOTWEEN
+            // 终止当前所有 DOTween 动画（Charge 冲刺、Press 跳跃、摇晃等）
+            transform.DOKill();
+            if (bodyTransform != null) bodyTransform.DOKill();
+#endif
+
+            if (showDebugInfo)
+                GameLogger.Log($"[{GetType().Name}] PrepareForDeath: AI 已停止，Boss 进入死亡演出状态");
+        }
+
         protected virtual void OnDestroy()
         {
             if (Current == this) Current = null;

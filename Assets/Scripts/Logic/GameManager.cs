@@ -676,6 +676,9 @@ namespace LightVsDecay.Logic
             BaseBossController boss = BaseBossController.Current;
             Vector3 bossPos = boss != null ? boss.transform.position : Vector3.zero;
 
+            // ── T+0.00s：立即停止 Boss AI（防止死亡演出期间继续攻击）────────
+            boss?.PrepareForDeath();
+
             // ── T+0.00s：轻震 + Boss 抖动缩放（正常速度感受冲击）─────────
             CameraShake.Instance?.Shake(0.4f, 0.4f);
 
