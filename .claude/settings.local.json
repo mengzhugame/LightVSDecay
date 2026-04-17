@@ -48,7 +48,9 @@
       "Bash(dir /s /b Assets\\\\Scripts\\\\*.cs)",
       "Bash(grep -n \"OnEnemyDied\\\\|TriggerEnemyDied\\\\|class WaveManager\" \"D:/Project/LightVSDecay/Assets/Scripts/Logic\"/*.cs \"D:/Project/LightVSDecay/Assets/Scripts/Logic/Enemy\"/*.cs)",
       "Bash(grep -h \"coinReward:\" \"D:\\\\Project\\\\LightVSDecay\\\\Assets\\\\Resources\\\\Data\\\\MonsterData\"/*.asset)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(python *)",
+      "Bash(C:/Users/WangYongCheng/AppData/Local/Programs/Python/Python310/python.exe *)"
     ]
   }
 }
