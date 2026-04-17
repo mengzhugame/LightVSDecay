@@ -1,0 +1,512 @@
+请查找unity打apk包，安装到红米k80手机，无应用图标显示的问题。先定位问题，找到问题后，再进行修复。应该是unity中关于安卓打包设置导致的apk的应用图标无法显示的问题。因为上一个安装包都是正常的，不知道为什么这个安装包就出现了问题？刚才测试了，其它安装包是没有问题的。
+
+格式正确。18 个图标槽全部填充完毕。
+
+  修复内容：
+
+  ProjectSettings.asset 中 Android 平台下全部 18 个图标条目（Adaptive/Kind:2 × 6、Round/Kind:1 × 6、Legacy/Kind:0 ×
+  6）之前 m_Textures: [] 全为空，现在全部填入了项目默认图标纹理：
+
+  {fileID: 2800000, guid: 2623c2dcda6a54843af20b1481f0b3f9, type: 3}
+
+  根本原因： 之前某次提交（c5491c3 优化UI屏幕适配问题）在修改 Player Settings 时把 Android
+  平台的图标配置全部清空了。Redmi K80 运行 Android 14，系统必须找到 Adaptive
+  Icon（mipmap-anydpi-v26/ic_launcher.xml），当这 6 个 Adaptive 槽全为空时，Unity 生成的 xml
+  指向不存在的资源，图标就无法显示。
+
+  下一步： 重新打 APK 包安装到手机测试图标是否正常显示。Unity Editor 重新打开项目时会自动识别 ProjectSettings.asset
+  的修改，不需要手动操作。
+
+------------------------------------------------------------------------------------------------------------------------
+
+重新打APK包，安装到手机里，手机桌面依然没有图标显示。请重新排查是什么问题或原因导致的这个问题，然后进行修复。
+
+ 结构完整。现在 Unity 需要为这些新文件生成 .meta 文件。重新打开 Unity Editor，让它扫描并自动生成这些新 PNG 和 XML
+  文件的 .meta 文件，然后再打 APK 包。
+
+  ---
+  完整的修复逻辑说明：
+
+  ┌─────────────────┬────────────────────────────────────────────────────────┬──────────────────────────────────────┐
+  │     问题层      │                        根本原因                        │                 修复                 │
+  ├─────────────────┼────────────────────────────────────────────────────────┼──────────────────────────────────────┤
+  │ 团结引擎 GUID   │ .meta 用 base64 GUID，ProjectSettings.asset 引用的 hex │ 清空 ProjectSettings.asset 中的无效  │
+  │ 不兼容          │  GUID 2623c2dcda6a54843af20b1481f0b3f9                 │ GUID 引用                            │
+  │                 │ 对应的纹理文件不存在，Unity 构建时找不到图标           │                                      │
+  ├─────────────────┼────────────────────────────────────────────────────────┼──────────────────────────────────────┤
+  │ Android 8.0+ 无 │ Redmi K80 运行 Android 14，启动器强制要求              │ 创建 ic_launcher.xml 和              │
+  │  Adaptive Icon  │ mipmap-anydpi-v26/ic_launcher.xml，缺失时图标不显示    │ ic_launcher_round.xml                │
+  ├─────────────────┼────────────────────────────────────────────────────────┼──────────────────────────────────────┤
+  │ 图标资源不在    │                                                        │ 把 LightVsDecay_Icon.png             │
+  │ APK 内          │ Unity 图标配置失效，构建时不打包任何图标资源           │ 直接放入所有 mipmap                  │
+  │                 │                                                        │ 密度文件夹，Android 打包时会直接包含 │
+  ├─────────────────┼────────────────────────────────────────────────────────┼──────────────────────────────────────┤
+  │                 │                                                        │ 在自定义 AndroidManifest.xml         │
+  │ AndroidManifest │ Unity 生成的 manifest 可能用不同的 icon 引用路径       │ 里显式声明                           │
+  │  无显式图标声明 │                                                        │ @mipmap/ic_launcher，tools:replace   │
+  │                 │                                                        │ 强制覆盖 Unity 生成的值              │
+  └─────────────────┴────────────────────────────────────────────────────────┴──────────────────────────────────────┘
+------------------------------------------------------------------------------------------------------------------------
+
+你改完后打包报错，错误日志： Exception: OBSOLETE - Providing Android resources in Assets/Plugins/Android/res was removed, please move your resources to an AAR or an Android Library. See "AAR plug-ins and Android Libraries" section of the Manual for more details.
+UnityEditor.Android.PostProcessor.Tasks.CheckUserResources.Execute (UnityEditor.Android.PostProcessor.PostProcessorContext context) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/PostProcessor/Tasks/CheckUserResources.cs:32)
+UnityEditor.Android.PostProcessor.PostProcessRunner.RunAllTasks (UnityEditor.Android.PostProcessor.PostProcessorContext context) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/PostProcessor/AndroidPostProcessor.cs:112)
+UnityEditor.Android.PostProcessAndroidPlayer.PrepareForBuild (UnityEditor.BuildPlayerOptions buildPlayerOptions) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/PostProcessAndroidPlayer.cs:58)
+UnityEditor.Android.AndroidBuildPostprocessor.PrepareForBuild (UnityEditor.BuildPlayerOptions buildOptions) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/ExtensionModule.cs:994)
+UnityEditor.PostprocessBuildPlayer.PrepareForBuild (UnityEditor.BuildPlayerOptions buildOptions) (at <110537d723c94332be1ca23bfdb9f586>:0)
+UnityEngine.GUIUtility:ProcessEvent(Int32, IntPtr, Boolean&)
+Error building Player: Exception: OBSOLETE - Providing Android resources in Assets/Plugins/Android/res was removed, please move your resources to an AAR or an Android Library. See "AAR plug-ins and Android Libraries" section of the Manual for more details.
+Build completed with a result of 'Failed' in 3 seconds (3278 ms)
+2 errors
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+ 结构已修复。重新打开 Unity Editor，让它为 GameIcons.androidlib/ 里的新文件生成 .meta 文件，然后再打包。
+
+  ---
+  修复说明：
+
+  团结引擎 1.6（Unity 2022+）已废弃 Assets/Plugins/Android/res/ 直接放资源的方式，必须改用 .androidlib Android Library
+  格式。
+
+  新结构：
+  Assets/Plugins/Android/
+  ├── AndroidManifest.xml           ← 主 manifest，声明 @mipmap/ic_launcher
+  └── GameIcons.androidlib/         ← Android Library，Unity 会自动打包进 APK
+      ├── AndroidManifest.xml       ← androidlib 必须的 manifest（仅 package 声明）
+      └── res/
+          ├── drawable/app_icon.png         ← Unity 旧版图标引用兜底
+          ├── mipmap-hdpi ~ xxxhdpi/        ← 各密度 ic_launcher.png
+          └── mipmap-anydpi-v26/            ← Android 8.0+ Adaptive Icon XML
+              ├── ic_launcher.xml
+              └── ic_launcher_round.xml
+
+------------------------------------------------------------------------------------------------------------------------
+
+又有打包报错的错误日志：GRADLE ERROR : colliding-attributes
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+> Configure project :launcher
+WARNING:The option setting 'android.aapt2FromMavenOverride=C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\build-tools\34.0.0\aapt2.exe' is experimental.
+WARNING:We recommend using a newer Android Gradle plugin to use compileSdk = 35
+
+This Android Gradle plugin (7.4.2) was tested up to compileSdk = 33
+
+This warning can be suppressed by adding
+    android.suppressUnsupportedCompileSdk=35
+to this project's gradle.properties
+
+The build will continue, but you are strongly encouraged to update your project to
+use a newer Android Gradle Plugin that has been tested with compileSdk = 35
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\build-tools\34.0.0\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-33\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-34\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-35\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\tools\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\build-tools\34.0.0\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-33\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-34\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-35\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\tools\package.xml. Probably the SDK is read-only
+
+> Task :tuanjieLibrary:preBuild UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:preBuild UP-TO-DATE
+> Task :tuanjieLibrary:preDebugBuild UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:preDebugBuild UP-TO-DATE
+> Task :tuanjieLibrary:packageDebugRenderscript NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:compileDebugAidl NO-SOURCE
+> Task :tuanjieLibrary:compileDebugAidl NO-SOURCE
+> Task :launcher:preBuild UP-TO-DATE
+> Task :launcher:preDebugBuild UP-TO-DATE
+> Task :launcher:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :launcher:compileDebugAidl NO-SOURCE
+> Task :launcher:compileDebugRenderscript NO-SOURCE
+> Task :launcher:generateDebugBuildConfig UP-TO-DATE
+> Task :tuanjieLibrary:writeDebugAarMetadata UP-TO-DATE
+> Task :tuanjieLibrary:generateDebugResValues UP-TO-DATE
+> Task :launcher:javaPreCompileDebug UP-TO-DATE
+> Task :launcher:generateDebugResValues UP-TO-DATE
+> Task :launcher:generateDebugResources UP-TO-DATE
+> Task :launcher:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :launcher:extractDeepLinksDebug UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:packageDebugRenderscript NO-SOURCE
+> Task :launcher:mergeDebugShaders UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:compileDebugRenderscript NO-SOURCE
+> Task :launcher:compileDebugShaders NO-SOURCE
+> Task :launcher:generateDebugAssets UP-TO-DATE
+> Task :launcher:processDebugJavaRes NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugResValues
+> Task :tuanjieLibrary:GameIcons.androidlib:writeDebugAarMetadata
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugResources
+> Task :tuanjieLibrary:compileDebugRenderscript NO-SOURCE
+> Task :tuanjieLibrary:generateDebugResources UP-TO-DATE
+> Task :tuanjieLibrary:packageDebugResources UP-TO-DATE
+> Task :tuanjieLibrary:extractDeepLinksDebug UP-TO-DATE
+> Task :tuanjieLibrary:compileDebugLibraryResources UP-TO-DATE
+> Task :tuanjieLibrary:parseDebugLocalResources UP-TO-DATE
+> Task :tuanjieLibrary:generateDebugBuildConfig UP-TO-DATE
+> Task :tuanjieLibrary:javaPreCompileDebug UP-TO-DATE
+> Task :launcher:checkDebugDuplicateClasses UP-TO-DATE
+> Task :tuanjieLibrary:mergeDebugShaders UP-TO-DATE
+> Task :tuanjieLibrary:compileDebugShaders NO-SOURCE
+> Task :tuanjieLibrary:generateDebugAssets UP-TO-DATE
+> Task :launcher:desugarDebugFileDependencies UP-TO-DATE
+> Task :launcher:mergeExtDexDebug UP-TO-DATE
+> Task :launcher:checkDebugAarMetadata
+> Task :launcher:mergeDebugJniLibFolders UP-TO-DATE
+> Task :launcher:validateSigningDebug UP-TO-DATE
+> Task :launcher:writeDebugAppMetadata UP-TO-DATE
+> Task :launcher:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:packageDebugResources
+> Task :tuanjieLibrary:GameIcons.androidlib:extractDeepLinksDebug
+> Task :launcher:mapDebugSourceSetPaths
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugBuildConfig
+> Task :tuanjieLibrary:GameIcons.androidlib:javaPreCompileDebug
+> Task :tuanjieLibrary:GameIcons.androidlib:mergeDebugShaders
+> Task :tuanjieLibrary:GameIcons.androidlib:compileDebugShaders NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugAssets UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:packageDebugAssets
+> Task :tuanjieLibrary:GameIcons.androidlib:processDebugJavaRes NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:bundleLibResDebug NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:mergeDebugJniLibFolders
+> Task :tuanjieLibrary:GameIcons.androidlib:mergeDebugNativeLibs NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:copyDebugJniLibsProjectOnly
+> Task :tuanjieLibrary:GameIcons.androidlib:parseDebugLocalResources
+
+> Task :tuanjieLibrary:processDebugManifest
+D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\tuanjieLibrary\src\main\AndroidManifest.xml:10:3-18:17 Warning:
+	application@android:icon was tagged at AndroidManifest.xml:10 to replace other declarations but no other declaration present
+D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\tuanjieLibrary\src\main\AndroidManifest.xml:10:3-18:17 Warning:
+	application@android:roundIcon was tagged at AndroidManifest.xml:10 to replace other declarations but no other declaration present
+
+> Task :tuanjieLibrary:GameIcons.androidlib:processDebugManifest
+package="com.DefaultCompany.LightVSDecay" found in source AndroidManifest.xml: D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\tuanjieLibrary\GameIcons.androidlib\AndroidManifest.xml.
+Setting the namespace via a source AndroidManifest.xml's package attribute is deprecated.
+Please instead set the namespace (or testNamespace) in the module's build.gradle file, as described here: https://developer.android.com/studio/build/configure-app-module#set-namespace
+This migration can be done automatically using the AGP Upgrade Assistant, please refer to https://developer.android.com/studio/build/agp-upgrade-assistant for more information.
+
+> Task :tuanjieLibrary:GameIcons.androidlib:compileDebugLibraryResources
+> Task :tuanjieLibrary:packageDebugAssets
+> Task :tuanjieLibrary:processDebugJavaRes UP-TO-DATE
+> Task :tuanjieLibrary:bundleLibResDebug UP-TO-DATE
+> Task :tuanjieLibrary:mergeDebugJniLibFolders UP-TO-DATE
+> Task :tuanjieLibrary:mergeDebugNativeLibs UP-TO-DATE
+> Task :tuanjieLibrary:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :launcher:mergeDebugResources
+> Task :launcher:mergeDebugAssets
+
+> Task :launcher:processDebugMainManifest FAILED
+D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\launcher\src\main\AndroidManifest.xml Warning:
+	Namespace 'com.DefaultCompany.LightVSDecay' used in: AndroidManifest.xml, :tuanjieLibrary:GameIcons.androidlib.
+
+See https://developer.android.com/r/studio-ui/build/manifest-merger for more information about the manifest merger.
+
+
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugRFile
+48 actionable tasks: 21 executed, 27 up-to-date
+
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\launcher\src\main\AndroidManifest.xml:3:49-80 Error:
+	Attribute application@icon value=(@mipmap/app_icon) from AndroidManifest.xml:3:49-80
+	is also present at [:tuanjieLibrary] AndroidManifest.xml:28:9-43 value=(@mipmap/ic_launcher).
+	Suggestion: add 'tools:replace="android:icon"' to <application> element at AndroidManifest.xml:3:3-83 to override.
+
+FAILURE: Build completed with 2 failures.
+
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':launcher:processDebugMainManifest'.
+> Manifest merger failed with multiple errors, see logs
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* What went wrong:
+java.lang.StackOverflowError (no error message)
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+==============================================================================
+
+* Get more help at https://help.gradle.org
+
+BUILD FAILED in 9s
+
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+CommandInvokationFailure: Gradle build failed. 
+C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK\bin\java.exe -classpath "C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\Tools\gradle\lib\gradle-launcher-7.5.1.jar" org.gradle.launcher.GradleMain "-Dorg.gradle.jvmargs=-Xmx4096m" "assembleDebug"
+
+Environment Variables:
+CUDA_PATH_V12_8 = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8
+PROCESSOR_LEVEL = 6
+USERDOMAIN = JoyeWang
+asl.log = Destination=file
+ProgramFiles = C:\Program Files
+TMP = C:\Users\WANGYO~1\AppData\Local\Temp
+EFC_10592_2775293581 = 1
+JetBrains Rider = C:\Program Files\JetBrains\JetBrains Rider 2021.3\bin;
+PATHEXT = .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+PROCESSOR_REVISION = a505
+OS = Windows_NT
+ALLUSERSPROFILE = C:\ProgramData
+PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 165 Stepping 5, GenuineIntel
+CUDA_PATH = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8
+ADSK_CLM_WPAD_PROXY_CHECK = FALSE
+IntelliJ IDEA = C:\Program Files\JetBrains\IntelliJ IDEA 2021.3.3\bin;
+USERPROFILE = C:\Users\WangYongCheng
+JAVA_HOME = C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK
+CommonProgramFiles = C:\Program Files\Common Files
+DriverData = C:\Windows\System32\Drivers\DriverData
+ComSpec = C:\WINDOWS\system32\cmd.exe
+ADSK_3DSMAX_x64_2017 = C:\Program Files\Autodesk\3ds Max 2017\
+PSModulePath = C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules
+ANDROID_NDK_ROOT = C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\NDK
+SystemRoot = C:\WINDOWS
+NUMBER_OF_PROCESSORS = 16
+ProgramW6432 = C:\Program Files
+FPS_BROWSER_APP_PROFILE_STRING = Internet Explorer
+TEMP = C:\Users\WANGYO~1\AppData\Local\Temp
+Path = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\libnvvp;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\dotnet\;C:\Program Files\Common Files\Autodesk Shared\;C:\Program Files (x86)\Autodesk\Backburner\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Git\cmd;C:\Program Files\NVIDIA Corporation\Nsight Compute 2025.1.0\;C:\Program Files\NVIDIA Corporation\NVIDIA app\NvDLISR;d:\Program Files (x86)\Tencent\微信web开发者工具\dll;C:\Program Files\nodejs\;C:\Users\WangYongCheng\AppData\Local\Programs\Python\Python310\Scripts\;C:\Users\WangYongCheng\AppData\Local\Programs\Python\Python310\;C:\Users\WangYongCheng\AppData\Local\Microsoft\WindowsApps;C:\Users\WangYongCheng\.dotnet\tools;C:\Users\WangYongCheng\AppData\Local\GitHubDesktop\bin;C:\Program Files\JetBrains\IntelliJ IDEA 2021.3.3\bin;;C:\Program Files\JetBrains\JetBrains Rider 2021.3\bin;;d:\Users\WangYongCheng\AppData\Local\Programs\Antigravity\bin;C:\Users\WangYongCheng\AppData\Roaming\npm
+USERNAME = WangYongCheng
+COMPUTERNAME = JOYEWANG
+EFC_10592_1262719628 = 1
+PROCESSOR_ARCHITECTURE = AMD64
+EFC_10592_2283032206 = 1
+SystemDrive = C:
+windir = C:\WINDOWS
+EFC_10592_1592913036 = 1
+FPS_BROWSER_USER_PROFILE_STRING = Default
+ZES_ENABLE_SYSMAN = 1
+PUBLIC = C:\Users\Public
+CommonProgramFiles(x86) = C:\Program Files (x86)\Common Files
+APPDATA = C:\Users\WangYongCheng\AppData\Roaming
+OneDrive = C:\Users\WangYongCheng\OneDrive
+EFC_10592_3789132940 = 1
+CommonProgramW6432 = C:\Program Files\Common Files
+ProgramFiles(x86) = C:\Program Files (x86)
+SESSIONNAME = Console
+LOGONSERVER = \\JOYEWANG
+LOCALAPPDATA = C:\Users\WangYongCheng\AppData\Local
+HOMEPATH = \Users\WangYongCheng
+HOMEDRIVE = C:
+USERDOMAIN_ROAMINGPROFILE = JoyeWang
+ProgramData = C:\ProgramData
+ORIGINAL_XDG_CURRENT_DESKTOP = undefined
+
+
+stderr[
+D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\launcher\src\main\AndroidManifest.xml:3:49-80 Error:
+	Attribute application@icon value=(@mipmap/app_icon) from AndroidManifest.xml:3:49-80
+	is also present at [:tuanjieLibrary] AndroidManifest.xml:28:9-43 value=(@mipmap/ic_launcher).
+	Suggestion: add 'tools:replace="android:icon"' to <application> element at AndroidManifest.xml:3:3-83 to override.
+
+FAILURE: Build completed with 2 failures.
+
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':launcher:processDebugMainManifest'.
+> Manifest merger failed with multiple errors, see logs
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* What went wrong:
+java.lang.StackOverflowError (no error message)
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+==============================================================================
+
+* Get more help at https://help.gradle.org
+
+BUILD FAILED in 9s
+]
+stdout[
+
+> Configure project :launcher
+WARNING:The option setting 'android.aapt2FromMavenOverride=C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\build-tools\34.0.0\aapt2.exe' is experimental.
+WARNING:We recommend using a newer Android Gradle plugin to use compileSdk = 35
+
+This Android Gradle plugin (7.4.2) was tested up to compileSdk = 33
+
+This warning can be suppressed by adding
+    android.suppressUnsupportedCompileSdk=35
+to this project's gradle.properties
+
+The build will continue, but you are strongly encouraged to update your project to
+use a newer Android Gradle Plugin that has been tested with compileSdk = 35
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\build-tools\34.0.0\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-33\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-34\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-35\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\tools\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\build-tools\34.0.0\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-33\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-34\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platforms\android-35\package.xml. Probably the SDK is read-only
+Exception while marshalling C:\Program Files\Tuanjie\Hub\Editor\2022.3.61t1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\tools\package.xml. Probably the SDK is read-only
+
+> Task :tuanjieLibrary:preBuild UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:preBuild UP-TO-DATE
+> Task :tuanjieLibrary:preDebugBuild UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:preDebugBuild UP-TO-DATE
+> Task :tuanjieLibrary:packageDebugRenderscript NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:compileDebugAidl NO-SOURCE
+> Task :tuanjieLibrary:compileDebugAidl NO-SOURCE
+> Task :launcher:preBuild UP-TO-DATE
+> Task :launcher:preDebugBuild UP-TO-DATE
+> Task :launcher:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :launcher:compileDebugAidl NO-SOURCE
+> Task :launcher:compileDebugRenderscript NO-SOURCE
+> Task :launcher:generateDebugBuildConfig UP-TO-DATE
+> Task :tuanjieLibrary:writeDebugAarMetadata UP-TO-DATE
+> Task :tuanjieLibrary:generateDebugResValues UP-TO-DATE
+> Task :launcher:javaPreCompileDebug UP-TO-DATE
+> Task :launcher:generateDebugResValues UP-TO-DATE
+> Task :launcher:generateDebugResources UP-TO-DATE
+> Task :launcher:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :launcher:extractDeepLinksDebug UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:packageDebugRenderscript NO-SOURCE
+> Task :launcher:mergeDebugShaders UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:compileDebugRenderscript NO-SOURCE
+> Task :launcher:compileDebugShaders NO-SOURCE
+> Task :launcher:generateDebugAssets UP-TO-DATE
+> Task :launcher:processDebugJavaRes NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugResValues
+> Task :tuanjieLibrary:GameIcons.androidlib:writeDebugAarMetadata
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugResources
+> Task :tuanjieLibrary:compileDebugRenderscript NO-SOURCE
+> Task :tuanjieLibrary:generateDebugResources UP-TO-DATE
+> Task :tuanjieLibrary:packageDebugResources UP-TO-DATE
+> Task :tuanjieLibrary:extractDeepLinksDebug UP-TO-DATE
+> Task :tuanjieLibrary:compileDebugLibraryResources UP-TO-DATE
+> Task :tuanjieLibrary:parseDebugLocalResources UP-TO-DATE
+> Task :tuanjieLibrary:generateDebugBuildConfig UP-TO-DATE
+> Task :tuanjieLibrary:javaPreCompileDebug UP-TO-DATE
+> Task :launcher:checkDebugDuplicateClasses UP-TO-DATE
+> Task :tuanjieLibrary:mergeDebugShaders UP-TO-DATE
+> Task :tuanjieLibrary:compileDebugShaders NO-SOURCE
+> Task :tuanjieLibrary:generateDebugAssets UP-TO-DATE
+> Task :launcher:desugarDebugFileDependencies UP-TO-DATE
+> Task :launcher:mergeExtDexDebug UP-TO-DATE
+> Task :launcher:checkDebugAarMetadata
+> Task :launcher:mergeDebugJniLibFolders UP-TO-DATE
+> Task :launcher:validateSigningDebug UP-TO-DATE
+> Task :launcher:writeDebugAppMetadata UP-TO-DATE
+> Task :launcher:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:packageDebugResources
+> Task :tuanjieLibrary:GameIcons.androidlib:extractDeepLinksDebug
+> Task :launcher:mapDebugSourceSetPaths
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugBuildConfig
+> Task :tuanjieLibrary:GameIcons.androidlib:javaPreCompileDebug
+> Task :tuanjieLibrary:GameIcons.androidlib:mergeDebugShaders
+> Task :tuanjieLibrary:GameIcons.androidlib:compileDebugShaders NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugAssets UP-TO-DATE
+> Task :tuanjieLibrary:GameIcons.androidlib:packageDebugAssets
+> Task :tuanjieLibrary:GameIcons.androidlib:processDebugJavaRes NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:bundleLibResDebug NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:mergeDebugJniLibFolders
+> Task :tuanjieLibrary:GameIcons.androidlib:mergeDebugNativeLibs NO-SOURCE
+> Task :tuanjieLibrary:GameIcons.androidlib:copyDebugJniLibsProjectOnly
+> Task :tuanjieLibrary:GameIcons.androidlib:parseDebugLocalResources
+
+> Task :tuanjieLibrary:processDebugManifest
+D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\tuanjieLibrary\src\main\AndroidManifest.xml:10:3-18:17 Warning:
+	application@android:icon was tagged at AndroidManifest.xml:10 to replace other declarations but no other declaration present
+D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\tuanjieLibrary\src\main\AndroidManifest.xml:10:3-18:17 Warning:
+	application@android:roundIcon was tagged at AndroidManifest.xml:10 to replace other declarations but no other declaration present
+
+> Task :tuanjieLibrary:GameIcons.androidlib:processDebugManifest
+package="com.DefaultCompany.LightVSDecay" found in source AndroidManifest.xml: D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\tuanjieLibrary\GameIcons.androidlib\AndroidManifest.xml.
+Setting the namespace via a source AndroidManifest.xml's package attribute is deprecated.
+Please instead set the namespace (or testNamespace) in the module's build.gradle file, as described here: https://developer.android.com/studio/build/configure-app-module#set-namespace
+This migration can be done automatically using the AGP Upgrade Assistant, please refer to https://developer.android.com/studio/build/agp-upgrade-assistant for more information.
+
+> Task :tuanjieLibrary:GameIcons.androidlib:compileDebugLibraryResources
+> Task :tuanjieLibrary:packageDebugAssets
+> Task :tuanjieLibrary:processDebugJavaRes UP-TO-DATE
+> Task :tuanjieLibrary:bundleLibResDebug UP-TO-DATE
+> Task :tuanjieLibrary:mergeDebugJniLibFolders UP-TO-DATE
+> Task :tuanjieLibrary:mergeDebugNativeLibs UP-TO-DATE
+> Task :tuanjieLibrary:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :launcher:mergeDebugResources
+> Task :launcher:mergeDebugAssets
+
+> Task :launcher:processDebugMainManifest FAILED
+D:\Project\LightVSDecay\Library\Bee\Android\Prj\Mono2x\Gradle\launcher\src\main\AndroidManifest.xml Warning:
+	Namespace 'com.DefaultCompany.LightVSDecay' used in: AndroidManifest.xml, :tuanjieLibrary:GameIcons.androidlib.
+
+See https://developer.android.com/r/studio-ui/build/manifest-merger for more information about the manifest merger.
+
+
+> Task :tuanjieLibrary:GameIcons.androidlib:generateDebugRFile
+48 actionable tasks: 21 executed, 27 up-to-date
+]
+exit code: 1
+UnityEditor.Android.Command.WaitForProgramToRun (UnityEditor.Utils.Program p, UnityEditor.Android.Command+WaitingForProcessToExit waitingForProcessToExit, System.String errorMsg) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/Android/Command.cs:218)
+UnityEditor.Android.Command.Run (System.Diagnostics.ProcessStartInfo psi, UnityEditor.Android.Command+WaitingForProcessToExit waitingForProcessToExit, System.String errorMsg) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/Android/Command.cs:157)
+UnityEditor.Android.Command.Run (System.String command, System.String args, System.String workingdir, UnityEditor.Android.Command+WaitingForProcessToExit waitingForProcessToExit, System.String errorMsg) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/Android/Command.cs:116)
+UnityEditor.Android.AndroidJavaTools.RunJava (System.String args, System.String workingdir, System.Action`1[T] progress, System.String error) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/Android/AndroidJavaTools.cs:113)
+UnityEditor.Android.GradleWrapper.Run (UnityEditor.Android.AndroidJavaTools javaTools, Unity.Android.Gradle.AndroidGradle androidGradle, System.String workingdir, System.String task, System.Action`1[T] progress) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/Android/Gradle.cs:226)
+Rethrow as GradleInvokationException: Gradle build failed
+UnityEditor.Android.GradleWrapper.Run (UnityEditor.Android.AndroidJavaTools javaTools, Unity.Android.Gradle.AndroidGradle androidGradle, System.String workingdir, System.String task, System.Action`1[T] progress) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/Android/Gradle.cs:231)
+UnityEditor.Android.PostProcessor.Tasks.BuildGradleProject.Execute (UnityEditor.Android.PostProcessor.PostProcessorContext context) (at /home/bokken/build/output/dev/tj/PlatformDependent/AndroidPlayer/Editor/Managed/PostProcessor/Tasks/BuildGradleProject.cs:39)
+UnityEditor.Android.PostProcessor.PostProcessRunner.RunAllT<message truncated>
+
+Build completed with a result of 'Failed' in 43 seconds (43185 ms)
+16 errors
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+
+
+结构正确。回到 Unity Editor，让它扫描新文件生成 .meta，然后重新打包。
+
+  ---
+  本次修复了哪些错误：
+
+  ┌─────────────────────────────────────────────┬─────────────────────────────────────────┬────────────────────────┐
+  │                    错误                     │                  原因                   │          修复          │
+  ├─────────────────────────────────────────────┼─────────────────────────────────────────┼────────────────────────┤
+  │ colliding-attributes: app_icon vs           │ 我用了 ic_launcher 这个名字，但 Unity   │ 把所有图标文件和 XML   │
+  │ ic_launcher                                 │ 生成的 launcher manifest 固定用         │ 重命名为 app_icon      │
+  │                                             │ @mipmap/app_icon                        │                        │
+  ├─────────────────────────────────────────────┼─────────────────────────────────────────┼────────────────────────┤
+  │ Namespace 'com.DefaultCompany.LightVSDecay' │ androidlib 的 package 与主 App 相同     │ androidlib 改用 .icons │
+  │  used in multiple places                    │                                         │  后缀 package          │
+  ├─────────────────────────────────────────────┼─────────────────────────────────────────┼────────────────────────┤
+  │ tools:replace tagged but no other           │ AndroidManifest.xml 里的 <application>  │ 还原为只有 VIBRATE     │
+  │ declaration present                         │ 声明不必要，还引发 icon 属性冲突        │ 权限的最简 manifest    │
+  └─────────────────────────────────────────────┴─────────────────────────────────────────┴────────────────────────┘
+
+  关于你的问题——要不要还原 ProjectSettings.asset？
+
+  不建议还原。你之前的 ProjectSettings.asset 里图标 GUID 2623c2dcda6a54843af20b1481f0b3f9
+  指向的纹理本来就不存在于项目中，还原后手机没有图标的问题依然存在。现在的 .androidlib 方案是正确路径，上面的 manifest
+  冲突也已修复。
+
+------------------------------------------------------------------------------------------------------------------------
+
+现在打包是正常了，重新打包后，手机上依旧没有应用图标的显示。你已经修复了4次了。是否考虑我回退还原分支，然后用分支打包，具体查找是提交的哪里的文件导致的这个问题？还是你再查找一下问题？最后再处理一下？不行了，我就回退分支去检查（但是你不要给我回退，我自己操作）。
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------

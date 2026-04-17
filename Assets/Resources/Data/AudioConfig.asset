@@ -55,10 +55,14 @@ MonoBehaviour:
   bossSummon: {fileID: 8300000, guid: b5edb39b8162ccf4b92a20d82dfa2c72, type: 3}
   bossWarning: {fileID: 8300000, guid: f3eb88bd1cdba4e42a7bb56d9d2abf3a, type: 3}
   bossAbsorb: {fileID: 8300000, guid: fa71b508e0d53db4f9c533873de88f9c, type: 3}
+  bossDeath: {fileID: 8300000, guid: 63c93958e4a33db4b99534ce2b8753c0, type: 3}
   bossDefaultVolume: 0.7
   xpOrbCollect: {fileID: 8300000, guid: e5b671c9edb921f48b3d4193eb19ec04, type: 3}
   xpOrbVolume: 0.5
   xpOrbCollectCooldown: 0.1
+  coinCollect: {fileID: 8300000, guid: 8e2e1d1a08b4e7347a73bfbfd2821ee7, type: 3}
+  coinCollectVolume: 0.25
+  coinCollectCooldown: 0.04
   droneEnter: {fileID: 8300000, guid: f3e5ff9600b3f624daad4416221ea5fa, type: 3}
   droneLand: {fileID: 0}
   droneBoxBreak: {fileID: 8300000, guid: 87395029e568b044cab0882e83356d58, type: 3}

@@ -1,1 +1,1 @@
-读取D:\Project\LightVSDecay\Docs\光与朽数据埋点需求.txt 文件，里面有我列出的问题，如果有不确定的问题，可以先询问我。
+读取D:\Project\LightVSDecay\Docs\光与朽打包错误日志.txt  错误日志文件，然后排查为什么会打包报错，如果有不确定的问题，可以先询问我。

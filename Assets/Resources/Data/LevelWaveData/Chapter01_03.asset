@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64aa65cebc317f545ac1491badeaae0a, type: 3}
   m_Name: Chapter01_03
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   totalWaves: 10
   waveInterval: 10
   globalEnemyLimit: 350
@@ -186,7 +186,7 @@ MonoBehaviour:
       pattern: 3
       customInterval: -1
       spawnZone: 3
-    - spawnTime: 42
+    - spawnTime: 32
       enemyType: 5
       count: 1
       pattern: 0

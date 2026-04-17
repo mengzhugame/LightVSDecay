@@ -176,7 +176,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -281,7 +281,7 @@ MonoBehaviour:
   shieldText: {fileID: 655415738}
   playerBufferDelay: 0.35
   playerBufferDuration: 0.6
-  settingsPanel: {fileID: 0}
+  settingsPanel: {fileID: 147723610}
   currentStageName: LEVEL 1-1
   coinDisplayLerpSpeed: 18
   coinDisplayMinStepPerSecond: 20
@@ -1418,6 +1418,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4442889324871213809, guid: 02275e710fa148a4c8aa1b2e171dd610, type: 3}
   m_PrefabInstance: {fileID: 147723607}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &147723610 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2760350407131498304, guid: 02275e710fa148a4c8aa1b2e171dd610, type: 3}
+  m_PrefabInstance: {fileID: 147723607}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 147723609}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0440c427f94ff254196a69526c1e6872, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &161095303
 GameObject:
   m_ObjectHideFlags: 0
@@ -10444,7 +10455,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.23921569}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:

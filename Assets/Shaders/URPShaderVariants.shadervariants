@@ -34,6 +34,8 @@ ShaderVariantCollection:
         passType: 0
       - keywords: PROCEDURAL_INSTANCING_ON _ALPHABLEND_ON
         passType: 8
+      - keywords: 
+        passType: 13
   - first: {fileID: 9000, guid: 0000000000000000f000000000000000, type: 0}
     second:
       variants:
@@ -111,6 +113,8 @@ ShaderVariantCollection:
   - first: {fileID: 4800000, guid: 0406db5a14f94604a8c57ccfbc9f3b46, type: 3}
     second:
       variants:
+      - keywords: 
+        passType: 0
       - keywords: PROCEDURAL_INSTANCING_ON
         passType: 0
       - keywords: _COLORADDSUBDIFF_ON _EMISSION _SURFACE_TYPE_TRANSPARENT
@@ -119,6 +123,19 @@ ShaderVariantCollection:
         passType: 0
       - keywords: _SURFACE_TYPE_TRANSPARENT
         passType: 0
+      - keywords: 
+        passType: 13
+      - keywords: PROCEDURAL_INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: b7839dad95683814aa64166edc107ae2, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: PROCEDURAL_INSTANCING_ON
+        passType: 13
+      - keywords: _ALPHAPREMULTIPLY_ON
+        passType: 13
   - first: {fileID: 4800000, guid: 0ca6dca7396eb48e5849247ffd444914, type: 3}
     second:
       variants:
@@ -155,6 +172,11 @@ ShaderVariantCollection:
       variants:
       - keywords: 
         passType: 0
+  - first: {fileID: 4800000, guid: 2ebedfad87ffb31468c453368d0b8fdf, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
   - first: {fileID: 4800000, guid: fe393ace9b354375a9cb14cdbbc28be4, type: 3}
     second:
       variants:
@@ -172,6 +194,11 @@ ShaderVariantCollection:
       variants:
       - keywords: 
         passType: 8
+  - first: {fileID: 4800000, guid: f7ada0af4f174f0694ca6a487b8f543d, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
   - first: {fileID: 4800000, guid: bd038653e37fd1f4483d679417f5a60d, type: 3}
     second:
       variants:
@@ -182,11 +209,39 @@ ShaderVariantCollection:
       variants:
       - keywords: _BLEND_ADD
         passType: 0
+      - keywords: _BLEND_NONE
+        passType: 0
+  - first: {fileID: 4800000, guid: 775e90746237753458d6409582d3f553, type: 3}
+    second:
+      variants:
+      - keywords: _BLEND_ADD _USEUVGRADIENT_ON
+        passType: 0
+      - keywords: _BLEND_NONE _USEUVGRADIENT_ON
+        passType: 0
   - first: {fileID: -6465566751694194690, guid: 7fea8d18551599d489158395a2159037, type: 3}
     second:
       variants:
       - keywords: 
         passType: 13
+  - first: {fileID: -6465566751694194690, guid: f12cc9ae6cb8f6641a2b5bf7f5c18761, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 8
+      - keywords: 
+        passType: 13
+  - first: {fileID: 4800000, guid: b68b99c2e57cef4419465c63c527201b, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: bd6af5d577c618947b73aa60db554e51, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
   - first: {fileID: 4800000, guid: 0fccd0721dd68e5439567db361d8149a, type: 3}
     second:
       variants:

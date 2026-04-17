@@ -140,7 +140,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.2, y: 1.2, z: 1}
+  m_LocalScale: {x: 5, y: 5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5962153291619272276}
@@ -317,6 +317,7 @@ MonoBehaviour:
   enemyType: 21
   bodySprite: {fileID: 4335784821728048696}
   eyesController: {fileID: 6691269152021299885}
+  extraEyes: []
   decorations:
   - {fileID: 3203237212370406469}
   hitFlashDuration: 0.15

@@ -279,6 +279,8 @@ MonoBehaviour:
   - {fileID: 6730769645221563474}
   redBodyEffect: {fileID: 8443978090768283566}
   showDebugInfo: 0
+  deathVFXPrefab: {fileID: 8311556213565529057, guid: 413d001f6a3505e4e98c8405e818e1b9, type: 3}
+  spawnVFXPrefab: {fileID: 6912483658588924419, guid: 185fcceef7e895c41a5c1e1a3e93f215, type: 3}
   summonCountPhase1: 6
   summonCountPhase2: 8
   absorptionPoint: {fileID: 2495339394388923440}
@@ -479,7 +481,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.9, y: 1.9, z: 1.9}
+  m_LocalScale: {x: 5.2, y: 5.2, z: 5.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6530855281258271766}
@@ -508,7 +510,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 58e7e55735e2710468df6c204947fa7c, type: 2}
+  - {fileID: 2100000, guid: fb21953e1abdb7f46b88a952474170a5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

@@ -1,5 +1,0 @@
-关于光与朽项目的数据埋点功能制作， 请读取D:\Project\GamePlanningDoc\20_项目\02_光与朽项目\01_策划文档\光与朽_数据埋点系统文档_V2.0.md 文档，和光与朽的unity工程代码，回答我以下需要确认的问题。
-1.微信上报桥接怎么做？我在项目里没有搜到 WXSDKManager、ReportScene、wx.reportScene 或可用的微信 C# 封装。Assets/WX-WASM-SDK-V2 当前看起来只有很少运行时资源，没有现成 C# API。你希望我：新增一个 WebGL .jslib 桥接，C# 通过 DllImport("__Internal") 调 wx.reportScene；还是你有另一个微信 SDK 封装文件/调用方式需要我按现有方式接？
-2.首局判断怎么定义？当前 MainMenuPanel.cs (line 626) 会在首次自动进战斗前把 meta.isFirstPlay = false，所以如果在 GameEvents.OnGameStart 里直接判断 isFirstPlay == true，会判断不到首局。我建议新增独立的埋点一次性标记，比如 Analytics_Done_first_battle_start，不依赖 isFirstPlay 当前值。这样重置存档后可重新统计首局。这个方向可以吗？
-3.app_launch 是每次进入主界面都报，还是每次 App 进程只报一次？文档写“游戏加载完成进入主界面”，表格写“是否一次性：否”。如果放在 MainSceneUIManager.Start()，玩家战斗结束返回主界面也会再次上报。你要的是“每次主界面加载”还是“每次打开小游戏会话一次”？
-4.广告事件列表是否按表格 6 个执行？文档后面说“5 个 ad_click_*”，但表格里实际只有 4 个点击事件，加 2 个奖励发放事件。是否暂不加金币广告、图纸广告、体力奖励发放等额外 sceneId？
