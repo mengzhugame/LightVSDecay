@@ -176,9 +176,12 @@ namespace LightVsDecay.Core.Pool
         
         private IEnumerator AutoReturnCoroutine()
         {
-            // 等待粒子播放完毕
-            yield return new WaitForSeconds(cachedDuration);
-            
+            // 使用真实时间等待（不受 Time.timeScale 影响）
+            // 原因：VFX 预制体通常设置 useUnscaledTime = true，粒子在暂停时仍继续播放；
+            // 若用 WaitForSeconds（游戏时间），暂停时协程冻结，粒子播完但实例永远留在
+            // activeInstances 中，最终耗尽池容量，导致后续死亡特效无法播放。
+            yield return new WaitForSecondsRealtime(cachedDuration);
+
             // 回收到池
             ReturnToPool();
         }

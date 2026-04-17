@@ -28,11 +28,21 @@ MonoBehaviour:
   laserMetal: {fileID: 8300000, guid: 248799ed18fd85a469197e61d26e5f8b, type: 3}
   laserLoopVolume: 0.4
   enemyExplode: {fileID: 8300000, guid: 87c606c3a26d52c4da344bf251ebf39f, type: 3}
+  enemyExplodeVolume: 0.4
+  enemyExplodeCooldown: 0.08
   enemyDeath: {fileID: 8300000, guid: 85e7d6af17c1e134e9fd94ef25f96f47, type: 3}
+  enemyDeathVolume: 0.5
+  enemyDeathCooldown: 0.03
   enemyFreeze: {fileID: 8300000, guid: e874a44ede2b89f4bbf711ccf78a2f7d, type: 3}
   enemySplit: {fileID: 8300000, guid: 22d15264cdf662a4b9e16858eb562d35, type: 3}
+  enemySplitVolume: 0.42
+  enemySplitCooldown: 0.06
   grenadeExplosion: {fileID: 8300000, guid: 87c606c3a26d52c4da344bf251ebf39f, type: 3}
+  grenadeExplosionVolume: 0.38
+  grenadeExplosionCooldown: 0.09
   projectileExplode: {fileID: 8300000, guid: 87c606c3a26d52c4da344bf251ebf39f, type: 3}
+  projectileExplodeVolume: 0.32
+  projectileExplodeCooldown: 0.05
   lavaPuddleSpawn: {fileID: 8300000, guid: bfdc721231b53f14498daa9f63436813, type: 3}
   gunnerSpit: {fileID: 8300000, guid: c832f7e2ae05328438315ba3a7c64a97, type: 3}
   fireballFlight: {fileID: 8300000, guid: ffd59e567a98986469c9ec49ba0723dd, type: 3}

@@ -90,7 +90,8 @@ namespace LightVsDecay.Core.Pool
             
             if (instance == null)
             {
-                GameLogger.LogWarning($"[VFXPool] {prefab.name} 池已满！");
+                GameLogger.LogWarning($"[VFXPool] {prefab.name} 池已满（active={activeInstances.Count}/{maxSize}）！" +
+                    " 可能原因：VFX useUnscaledTime=true 但回收协程用了 WaitForSeconds（已修复为 WaitForSecondsRealtime）。");
                 return null;
             }
             

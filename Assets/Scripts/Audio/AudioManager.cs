@@ -78,7 +78,10 @@ namespace LightVsDecay.Audio
         private int battleOverlayMuteCount = 0;
         private readonly List<AudioSource> pausedBattleSources = new List<AudioSource>();
         private float lastEnemyExplodeTime = -1f;
-        private const float EnemyExplodeDedupWindow = 0.05f;
+        private float lastEnemyDeathTime = -1f;
+        private float lastEnemySplitTime = -1f;
+        private float lastProjectileExplodeTime = -1f;
+        private float lastGrenadeExplosionTime = -1f;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 音量设置
@@ -701,16 +704,14 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void PlayEnemyExplode()
         {
-            if (config != null)
-            {
-                if (Time.unscaledTime - lastEnemyExplodeTime < EnemyExplodeDedupWindow)
-                {
-                    return;
-                }
+            if (config == null || config.enemyExplode == null)
+                return;
 
-                lastEnemyExplodeTime = Time.unscaledTime;
-                PlayBattleSFX(config.enemyExplode, config.enemyDefaultVolume);
-            }
+            if (Time.unscaledTime - lastEnemyExplodeTime < config.enemyExplodeCooldown)
+                return;
+
+            lastEnemyExplodeTime = Time.unscaledTime;
+            PlayBattleSFX(config.enemyExplode, config.enemyExplodeVolume);
         }
         
         /// <summary>
@@ -718,10 +719,14 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void PlayEnemyDeath()
         {
-            if (config != null)
-            {
-                PlayBattleSFX(config.enemyDeath, config.enemyDefaultVolume);
-            }
+            if (config == null || config.enemyDeath == null)
+                return;
+
+            if (Time.unscaledTime - lastEnemyDeathTime < config.enemyDeathCooldown)
+                return;
+
+            lastEnemyDeathTime = Time.unscaledTime;
+            PlayBattleSFX(config.enemyDeath, config.enemyDeathVolume);
         }
         
         /// <summary>
@@ -729,8 +734,14 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void PlayEnemySplit()
         {
-            if (config != null && config.enemySplit != null)
-                PlayBattleSFX(config.enemySplit, config.enemyDefaultVolume);
+            if (config == null || config.enemySplit == null)
+                return;
+
+            if (Time.unscaledTime - lastEnemySplitTime < config.enemySplitCooldown)
+                return;
+
+            lastEnemySplitTime = Time.unscaledTime;
+            PlayBattleSFX(config.enemySplit, config.enemySplitVolume);
         }
 
         /// <summary>
@@ -749,7 +760,14 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void PlayProjectileExplode()
         {
-            PlayEnemyExplode();
+            if (config == null || config.projectileExplode == null)
+                return;
+
+            if (Time.unscaledTime - lastProjectileExplodeTime < config.projectileExplodeCooldown)
+                return;
+
+            lastProjectileExplodeTime = Time.unscaledTime;
+            PlayBattleSFX(config.projectileExplode, config.projectileExplodeVolume);
         }
 
         /// <summary>
@@ -757,7 +775,14 @@ namespace LightVsDecay.Audio
         /// </summary>
         public void PlayGrenadeExplosion()
         {
-            PlayEnemyExplode();
+            if (config == null || config.grenadeExplosion == null)
+                return;
+
+            if (Time.unscaledTime - lastGrenadeExplosionTime < config.grenadeExplosionCooldown)
+                return;
+
+            lastGrenadeExplosionTime = Time.unscaledTime;
+            PlayBattleSFX(config.grenadeExplosion, config.grenadeExplosionVolume);
         }
 
         /// <summary>
@@ -1057,7 +1082,10 @@ namespace LightVsDecay.Audio
         {
             // 敌人死亡时播放死亡音效
             // 注意：自爆音效在 EnemyBlob.Explode() 中单独调用
-            if (type == EnemyType.LavaExploder || type == EnemyType.EliteLavaExploder)
+            if (type == EnemyType.LavaExploder ||
+                type == EnemyType.EliteLavaExploder ||
+                type == EnemyType.LavaSplitter ||
+                type == EnemyType.EliteLavaSplitter)
                 return;
 
             PlayEnemyDeath();

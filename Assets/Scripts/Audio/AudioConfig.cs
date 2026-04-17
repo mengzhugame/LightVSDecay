@@ -84,9 +84,19 @@ namespace LightVsDecay.Audio
         [Header("═══ 怪物音效 ═══")]
         [Tooltip("怪物自爆（撞塔）")]
         public AudioClip enemyExplode;
+
+        [Range(0f, 1f)]
+        public float enemyExplodeVolume = 0.4f;
+
+        public float enemyExplodeCooldown = 0.08f;
         
         [Tooltip("怪物死亡冒烟")]
         public AudioClip enemyDeath;
+
+        [Range(0f, 1f)]
+        public float enemyDeathVolume = 0.5f;
+
+        public float enemyDeathCooldown = 0.03f;
         
         [Tooltip("怪物冰冻")]
         public AudioClip enemyFreeze;
@@ -94,11 +104,26 @@ namespace LightVsDecay.Audio
         [Tooltip("分裂怪死亡爆开音效（可不配置）")]
         public AudioClip enemySplit;
 
+        [Range(0f, 1f)]
+        public float enemySplitVolume = 0.42f;
+
+        public float enemySplitCooldown = 0.06f;
+
         [Tooltip("炸弹怪/精英炸弹怪死亡爆炸音效（LavaExploder/EliteLavaExploder）")]
         public AudioClip grenadeExplosion;
 
+        [Range(0f, 1f)]
+        public float grenadeExplosionVolume = 0.38f;
+
+        public float grenadeExplosionCooldown = 0.09f;
+
         [Tooltip("激光击破投射物爆炸音效（通用，适用于熔岩炮弹、Boss污秽球、冰刺、陨石）")]
         public AudioClip projectileExplode;
+
+        [Range(0f, 1f)]
+        public float projectileExplodeVolume = 0.32f;
+
+        public float projectileExplodeCooldown = 0.05f;
 
         [Tooltip("熔浆液生成音效（LavaPuddle 生成时播放）")]
         public AudioClip lavaPuddleSpawn;

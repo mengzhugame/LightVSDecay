@@ -17,6 +17,7 @@ using UnityEngine.UI;
 using TMPro;
 using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Equipment
 {
@@ -105,7 +106,8 @@ namespace LightVsDecay.UI.Equipment
             // 按钮
             if (itemButton != null)
             {
-                itemButton.onClick.RemoveAllListeners();
+                UIButtonCommonHelper.Ensure(itemButton);
+                itemButton.onClick.RemoveListener(OnClicked);
                 itemButton.onClick.AddListener(OnClicked);
             }
         }

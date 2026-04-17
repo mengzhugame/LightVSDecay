@@ -42,7 +42,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _Alpha: 1
-    - _Distortion_Strength: 0.05
+    - _Distortion_Strength: 0
     - _Flow_Speed: 0
     - _HitIntensity: 0
     - _Noise_Scale: 0.32

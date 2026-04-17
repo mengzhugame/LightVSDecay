@@ -108,8 +108,40 @@ dotnet build LightVSDecay.sln --no-restore
 
 这次我没有跑 Unity 编辑器编译和逐按钮点击验证，所以还需要你在编辑器里重点点一下主菜单箭头、开始按钮、顶部资源按钮、技能重抽、装备升级、科技升级、复活和结算翻倍这些入口，确认最终观感和灰态都符合预期。
 ------------------------------------------------------------------------------------------------------------------------
+
+关于光与朽游戏音效问题，当有多个分裂怪同时死亡和旁边有小怪爆炸，感觉音效声音太大，也很刺耳。还有其他音效也有类似的问题，请查找原因，然后给出解决方案，等我确认后，再开始修改代码
+
+已经按这个方向改好了，分裂怪现在只会播放 `enemySplit`，不再叠加通用死亡音；同时把爆炸类音效拆成了独立配置，并加了各自的 cooldown 和更保守的默认音量，先把“同时死亡/同时爆炸时过大、刺耳”的问题压下去。
+
+这次主要改了 [AudioManager.cs](/D:/Project/LightVSDecay/Assets/Scripts/Audio/AudioManager.cs)、[AudioConfig.cs](/D:/Project/LightVSDecay/Assets/Scripts/Audio/AudioConfig.cs) 和 [AudioConfig.asset](/D:/Project/LightVSDecay/Assets/Resources/Data/AudioConfig.asset)。其中 `grenadeExplosion` 现在绑定到 `GrenadeExplode.wav`，`projectileExplode` 绑定到 `ProjectileExplode.wav`，不再和通用 `enemyExplode` 共用同一个素材。
+
+我还跑了 `dotnet build Assembly-CSharp.csproj`，结果是 0 error、只有项目里原本就存在的一些 warning，没有新增编译错误。你现在可以进游戏重点听这几种场景：
+分裂怪扎堆死亡、自爆怪连锁爆炸、投射物密集爆开、以及技能连锁爆炸时的整体刺耳度。如果你觉得还偏响，我下一步建议继续微调的是 `enemySplitVolume` 和 `enemyExplodeVolume`。
 ------------------------------------------------------------------------------------------------------------------------
+
+解决选择AudioConfig报错 ，日志：Could not extract GUID in text file Assets/Resources/Data/AudioConfig.asset at line 30.
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+Could not extract GUID in text file Assets/Resources/Data/AudioConfig.asset at line 40.
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+Could not extract GUID in text file Assets/Resources/Data/AudioConfig.asset at line 43.
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+Broken text PPtr. GUID 00000000000000000000000000000000 fileID 8300000 is invalid!
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+
+这个报错已经处理掉了。原因是 [AudioConfig.asset](/D:/Project/LightVSDecay/Assets/Resources/Data/AudioConfig.asset) 里我上次写进去了 Unity 不能解析的 GUID 字符串，导致 `enemyExplode`、`grenadeExplosion`、`projectileExplode` 三个 `AudioClip` 引用损坏。现在我已经把它们恢复成合法引用，`AudioConfig` 应该可以正常选中和打开了。
+
+这次修复只解决了资源引用损坏问题，没有回退我们刚做的音效逻辑优化：分裂怪仍然只会播放 `enemySplit`，并且各类爆炸/死亡音的 cooldown 和音量配置还保留着。当前 `grenadeExplosion` 和 `projectileExplode` 先临时重新指回了有效的通用爆炸音，目的是先把 Unity 资源错误消掉；如果你愿意，下一步我可以继续在编辑器可正常打开的前提下，把这两个字段重新安全地换成单独素材。
 ------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------
+
+解决玩家点击装备界面EquipmentPanel里的背包里的物品（Content节点下的物品item）点击没有点击音效的问题，需要添加点击音效。主要是这些item已经有了button组件，为什么没有音效呢？
+
+已经修好了，背包 `Content` 下这些装备 item 现在会有点击音效。
+
+原因不是 `Button` 组件坏了，而是 `Button` 本身并不会自动播声音。这个项目里的点击音效是靠额外监听实现的，比如 `ButtonSFX` 或手动 `AudioManager.Instance.PlayButtonClick()`。而背包 item 在 [EquipmentItemUI.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Equipment/EquipmentItemUI.cs:106) 里每次 `Setup()` 时都执行了 `itemButton.onClick.RemoveAllListeners()`，这会把原本挂在按钮上的音效监听也一起删掉，所以结果就变成“按钮能点开详情，但没有点击声”。
+
+我把这里改成了两点：一是在运行时给这个按钮补上统一按钮组件 `UIButtonCommonHelper.Ensure(itemButton)`，二是不再粗暴清空所有监听，而是只移除它自己的 `OnClicked` 再重新添加。这样业务点击保留，音效监听也不会被误删。
+
+我还跑了 `dotnet build Assembly-CSharp.csproj`，结果是 0 error，只有项目原本已有的 warning。  
+如果你愿意，我下一步可以顺手把 [EquipmentSlotUI.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Equipment/EquipmentSlotUI.cs:78) 里同样的 `RemoveAllListeners()` 也按同样方式修一下，避免装备槽位按钮将来出现同类问题。
 ------------------------------------------------------------------------------------------------------------------------
