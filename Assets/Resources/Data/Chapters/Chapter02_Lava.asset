@@ -35,6 +35,7 @@ MonoBehaviour:
     bossAttackMultiplier: 1
     coinDropMultiplier: 1
     expDropMultiplier: 1
+    playerLevelUpExpMultiplier: 1
     overrideWaveConfig: {fileID: 0}
   - difficultyLevel: 2
     displayName: "\u4FB5\u8680\u4E4B\u6F6E"
@@ -44,7 +45,8 @@ MonoBehaviour:
     bossHealthMultiplier: 1.4
     bossAttackMultiplier: 1.25
     coinDropMultiplier: 1.25
-    expDropMultiplier: 0.87
+    expDropMultiplier: 1
+    playerLevelUpExpMultiplier: 1.15
     overrideWaveConfig: {fileID: 0}
   - difficultyLevel: 3
     displayName: "\u7CBE\u82F1\u51B2\u51FB"
@@ -54,7 +56,8 @@ MonoBehaviour:
     bossHealthMultiplier: 1.75
     bossAttackMultiplier: 1.55
     coinDropMultiplier: 1.55
-    expDropMultiplier: 0.77
+    expDropMultiplier: 1
+    playerLevelUpExpMultiplier: 1.3
     overrideWaveConfig: {fileID: 11400000, guid: d4e5f67890123456def6789012abcdef, type: 2}
   - difficultyLevel: 4
     displayName: "\u5668\u68A6\u6DF1\u6E0A"
@@ -64,7 +67,8 @@ MonoBehaviour:
     bossHealthMultiplier: 2
     bossAttackMultiplier: 1.9
     coinDropMultiplier: 1.8
-    expDropMultiplier: 0.69
+    expDropMultiplier: 1
+    playerLevelUpExpMultiplier: 1.45
     overrideWaveConfig: {fileID: 11400000, guid: e5f6789012345678901234ef9012abcd, type: 2}
   - difficultyLevel: 5
     displayName: "\u6151\u4E71\u6E83\u89E3"
@@ -74,5 +78,6 @@ MonoBehaviour:
     bossHealthMultiplier: 2.2
     bossAttackMultiplier: 2.2
     coinDropMultiplier: 2
-    expDropMultiplier: 0.63
+    expDropMultiplier: 1
+    playerLevelUpExpMultiplier: 1.6
     overrideWaveConfig: {fileID: 11400000, guid: f6789012345678901234f0ef9012abcd, type: 2}

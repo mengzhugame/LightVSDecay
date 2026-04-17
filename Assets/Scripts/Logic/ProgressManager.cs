@@ -519,10 +519,16 @@ namespace LightVsDecay.Logic
         public void ResetSession()
         {
             session.Reset(settings);
+
+            // 初始升级门槛也需要应用难度倍率（Lv1→Lv2 起点）
+            float levelUpMult = GameManager.Instance?.CurrentDifficultySettings?.playerLevelUpExpMultiplier ?? 1f;
+            if (levelUpMult != 1f)
+                session.expToNextLevel = Mathf.RoundToInt(session.expToNextLevel * levelUpMult);
+
             BroadcastAllStatus();
 
             if (showDebugInfo)
-                GameLogger.Log("[ProgressManager] 局内进度已重置");
+                GameLogger.Log($"[ProgressManager] 局内进度已重置, 首级升级门槛: {session.expToNextLevel} XP (倍率 {levelUpMult:F2})");
         }
 
         public void AddExp(int amount)
@@ -544,11 +550,16 @@ namespace LightVsDecay.Logic
         {
             session.exp -= session.expToNextLevel;
             session.level++;
-            session.expToNextLevel = settings.CalculateExpToNextLevel(session.level);
+
+            // 基础升级所需经验，再乘以当前难度的升级门槛倍率（D2-D5 提高门槛，保证 W9=Lv17 锚点）
+            int baseExpToNext = settings.CalculateExpToNextLevel(session.level);
+            float levelUpMult = GameManager.Instance?.CurrentDifficultySettings?.playerLevelUpExpMultiplier ?? 1f;
+            session.expToNextLevel = Mathf.RoundToInt(baseExpToNext * levelUpMult);
+
             GameEvents.TriggerLevelUp(session.level);
 
             if (showDebugInfo)
-                GameLogger.Log($"[ProgressManager] 升级! Lv.{session.level}");
+                GameLogger.Log($"[ProgressManager] 升级! Lv.{session.level}, 下一级需要 {session.expToNextLevel} XP (基础{baseExpToNext} × 难度倍率{levelUpMult:F2})");
         }
 
         public void ApplySkill(Data.SO.SkillType type)

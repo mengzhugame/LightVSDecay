@@ -72,42 +72,48 @@ namespace LightVsDecay.Data.SO
         [Range(1f, 3f)]
         public float coinDropMultiplier = 1f;
 
-        [Tooltip("经验掉落倍率（D2-D5 需小于1以补偿数量增加，保持总EXP=基准，确保W9约Lv17）")]
+        [Tooltip("经验掉落倍率（已废弃，保留兼容性，值始终为1.0，升级减速改由 playerLevelUpExpMultiplier 实现）")]
         [Range(0.5f, 2f)]
         public float expDropMultiplier = 1f;
+
+        [Tooltip("升级所需经验倍率（D2-D5 提高升级门槛，替代经验压缩方案，保证W9=Lv17锚点）")]
+        [Range(0.5f, 3f)]
+        public float playerLevelUpExpMultiplier = 1.0f;
 
         [Header("波次配置覆盖")]
         [Tooltip("此难度专属波次文件（留空则使用章节默认 waveConfig）")]
         public WaveConfig overrideWaveConfig;
         
         /// <summary>
-        /// 创建默认难度配置（数值已按章节难度方案 V1.0 确认）
-        /// Boss HP 封顶 2.20×，Boss ATK 最高 2.20×，经验补偿保证 W9 约 Lv17
+        /// 创建默认难度配置（数值已按章节难度方案 V1.1 确认）
+        /// Boss HP 封顶 2.20×，Boss ATK 最高 2.20×
+        /// 升级经验门槛随难度线性提升（playerLevelUpExpMultiplier = countMultiplier），保证 W9 约 Lv17
         /// </summary>
         public static DifficultySettings CreateDefault(int level)
         {
-            // 经验补偿 = 1 / countMultiplier，确保总EXP收益在各难度下保持基准水平
-            float[] countMults  = { 1.00f, 1.15f, 1.30f, 1.45f, 1.60f };
-            float[] hpMults     = { 1.00f, 1.30f, 1.60f, 1.90f, 2.20f };
-            float[] speedMults  = { 1.00f, 1.05f, 1.10f, 1.15f, 1.20f };
-            float[] bossHpMults = { 1.00f, 1.40f, 1.75f, 2.00f, 2.20f };
-            float[] bossAtkMults= { 1.00f, 1.25f, 1.55f, 1.90f, 2.20f };
-            float[] coinMults   = { 1.00f, 1.25f, 1.55f, 1.80f, 2.00f };
+            float[] countMults       = { 1.00f, 1.15f, 1.30f, 1.45f, 1.60f };
+            float[] hpMults          = { 1.00f, 1.30f, 1.60f, 1.90f, 2.20f };
+            float[] speedMults       = { 1.00f, 1.05f, 1.10f, 1.15f, 1.20f };
+            float[] bossHpMults      = { 1.00f, 1.40f, 1.75f, 2.00f, 2.20f };
+            float[] bossAtkMults     = { 1.00f, 1.25f, 1.55f, 1.90f, 2.20f };
+            float[] coinMults        = { 1.00f, 1.25f, 1.55f, 1.80f, 2.00f };
+            // 升级门槛与怪物数量同比例提升，杀怪全额获得经验，但升级变慢，维持 W9=Lv17 锚点
+            float[] levelUpExpMults  = { 1.00f, 1.15f, 1.30f, 1.45f, 1.60f };
 
             int idx = Mathf.Clamp(level - 1, 0, 4);
-            float expComp = Mathf.Round((1f / countMults[idx]) * 100f) / 100f; // 四舍五入到小数点后2位
 
             return new DifficultySettings
             {
-                difficultyLevel      = level,
-                displayName          = GetDefaultName(level),
-                enemyHealthMultiplier = hpMults[idx],
-                enemyCountMultiplier  = countMults[idx],
-                enemySpeedMultiplier  = speedMults[idx],
-                bossHealthMultiplier  = bossHpMults[idx],
-                bossAttackMultiplier  = bossAtkMults[idx],
-                coinDropMultiplier    = coinMults[idx],
-                expDropMultiplier     = expComp            // 0.63-1.00，补偿数量增加
+                difficultyLevel           = level,
+                displayName               = GetDefaultName(level),
+                enemyHealthMultiplier     = hpMults[idx],
+                enemyCountMultiplier      = countMults[idx],
+                enemySpeedMultiplier      = speedMults[idx],
+                bossHealthMultiplier      = bossHpMults[idx],
+                bossAttackMultiplier      = bossAtkMults[idx],
+                coinDropMultiplier        = coinMults[idx],
+                expDropMultiplier         = 1.0f,               // 不再压缩经验，全额掉落
+                playerLevelUpExpMultiplier = levelUpExpMults[idx] // D2-D5 提高升级门槛
             };
         }
 
