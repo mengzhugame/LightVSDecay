@@ -232,6 +232,7 @@ namespace LightVsDecay.Data.SO
         private List<SkillData> BuildMainPool(Dictionary<SkillType, int> currentSkillLevels)
         {
             List<SkillData> pool = new List<SkillData>();
+            HashSet<SkillType> addedTypes = new HashSet<SkillType>();
             bool hasFocus = currentSkillLevels.GetValueOrDefault(SkillType.Focus, 0) > 0;
             bool hasFrost = currentSkillLevels.GetValueOrDefault(SkillType.Frost, 0) > 0;
             
@@ -274,7 +275,7 @@ namespace LightVsDecay.Data.SO
                         continue;
                     }
                 }
-                pool.Add(skill);
+                AddCanonicalSkill(pool, addedTypes, skill);
             }
             
             // 添加未满级的被动技能
@@ -308,10 +309,31 @@ namespace LightVsDecay.Data.SO
                     }
                 }
 
-                pool.Add(skill);
+                AddCanonicalSkill(pool, addedTypes, skill);
             }
             
             return pool;
+        }
+
+        private void AddCanonicalSkill(List<SkillData> pool, HashSet<SkillType> addedTypes, SkillData skill)
+        {
+            if (skill == null)
+            {
+                return;
+            }
+
+            SkillData canonicalSkill = GetData(skill.type) ?? skill;
+
+            if (!addedTypes.Add(canonicalSkill.type))
+            {
+                if (showDebugInfo)
+                {
+                    GameLogger.LogWarning($"[SkillDatabase] 妫€娴嬪埌閲嶅鎶€鑳界被鍨嬶紝宸茶烦杩? {canonicalSkill.type}");
+                }
+                return;
+            }
+
+            pool.Add(canonicalSkill);
         }
         
         /// <summary>

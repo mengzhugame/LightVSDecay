@@ -362,8 +362,14 @@ namespace LightVsDecay.UI.Panels
                 case TopBarResourceType.Energy:
                     AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickEnergy);
                     if (adManager.TryConsumeRewardOpportunity(AdType.EnergyTopUp))
+                    {
                         pm.GrantAdEnergyReward();
-                    RefreshAll();
+                        Hide();
+                    }
+                    else
+                    {
+                        RefreshAll();
+                    }
                     break;
                 case TopBarResourceType.Gold:
                     AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickGold);

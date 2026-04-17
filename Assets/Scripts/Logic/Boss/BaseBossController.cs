@@ -324,7 +324,8 @@ namespace LightVsDecay.Logic.Boss
 
         public void AddFrostExposureTime(float deltaTime)
         {
-            if (isUnstoppable || currentState == BossState.Frozen || currentState == BossState.Press) return;
+            // Spawn 动画期间不接受控制效果，否则会打断入场协程（吼叫+黑线特效无法触发）
+            if (isUnstoppable || currentState == BossState.Spawn || currentState == BossState.Frozen || currentState == BossState.Press) return;
 
             frostExposureTime += deltaTime;
             frostExposureResetTimer = FROST_EXPOSURE_RESET_DELAY;
@@ -344,7 +345,8 @@ namespace LightVsDecay.Logic.Boss
         public bool TryApplyFreeze(float baseDuration)
         {
             if (isUnstoppable) { ShowStatusText(BossStatusTextType.Unstoppable); return false; }
-            if (currentState == BossState.Press || currentState == BossState.Frozen) return false;
+            // Spawn 期间不可被冻结，避免打断入场演出协程
+            if (currentState == BossState.Spawn || currentState == BossState.Press || currentState == BossState.Frozen) return false;
 
             float actualDuration = CalculateControlDuration(baseDuration);
             if (actualDuration <= 0f) { EnterUnstoppable(); return false; }
@@ -356,6 +358,8 @@ namespace LightVsDecay.Logic.Boss
         public bool TryApplyStun(float baseDuration)
         {
             if (isUnstoppable) { ShowStatusText(BossStatusTextType.Unstoppable); return false; }
+            // Spawn 期间不可被眩晕，避免打断入场演出协程
+            if (currentState == BossState.Spawn) return false;
 
             float actualDuration = CalculateControlDuration(baseDuration);
             if (actualDuration <= 0f) { EnterUnstoppable(); return false; }
@@ -630,15 +634,17 @@ namespace LightVsDecay.Logic.Boss
 
 #if DOTWEEN
             bool moveComplete = false;
+            // SetUpdate(true) = 使用 Unscaled Time，保证技能选择面板暂停期间入场动画仍然运行
             moveTweener = transform.DOMove(battleAnchorPosition, duration)
-                .SetEase(Ease.OutQuad).OnComplete(() => moveComplete = true);
+                .SetEase(Ease.OutQuad).SetUpdate(true).OnComplete(() => moveComplete = true);
             while (!moveComplete) yield return null;
 #else
             float elapsed = 0f;
             Vector3 startPos = transform.position;
             while (elapsed < duration)
             {
-                elapsed += Time.deltaTime;
+                // 使用 unscaledDeltaTime，保证暂停时入场动画仍然运行
+                elapsed += Time.unscaledDeltaTime;
                 float t = 1f - Mathf.Pow(1f - elapsed / duration, 2f);
                 transform.position = Vector3.Lerp(startPos, battleAnchorPosition, t);
                 yield return null;
@@ -653,63 +659,38 @@ namespace LightVsDecay.Logic.Boss
             if (spawnVFXPrefab == null)
                 spawnVFXPrefab = Resources.Load<GameObject>("Effects/Boss/VFX_BlackLine");
 
-            // ── DEBUG LOG（排查 VFX 不可见）──
-            GameLogger.Log($"[VFX_DEBUG] SpawnVFXPrefab 是否为 null：{spawnVFXPrefab == null}，prefab 名称：{spawnVFXPrefab?.name}");
-            GameLogger.Log($"[VFX_DEBUG] 生成位置（世界坐标）：{transform.position}，Boss localPosition：{transform.localPosition}");
-
             if (spawnVFXPrefab != null)
             {
                 GameObject vfxInstance = Object.Instantiate(spawnVFXPrefab, transform.position, Quaternion.identity);
 
-                GameLogger.Log($"[VFX_DEBUG] 已 Instantiate：{vfxInstance.name}，activeSelf={vfxInstance.activeSelf}，activeInHierarchy={vfxInstance.activeInHierarchy}");
-
-                // 检查粒子系统状态
+                // 自动销毁：读取粒子系统时长；若无粒子系统，兜底 5 秒后销毁
+                float vfxLifetime = 5f;
                 ParticleSystem ps = vfxInstance.GetComponent<ParticleSystem>();
                 if (ps == null) ps = vfxInstance.GetComponentInChildren<ParticleSystem>(true);
-
                 if (ps != null)
                 {
                     var main = ps.main;
                     float maxLifetime = main.startLifetime.mode == ParticleSystemCurveMode.Constant
                         ? main.startLifetime.constant
                         : main.startLifetime.constantMax;
-                    float vfxLifetime = main.duration + maxLifetime;
-
-                    GameLogger.Log($"[VFX_DEBUG] ParticleSystem 找到：{ps.name}，isPlaying={ps.isPlaying}，isEmitting={ps.isEmitting}，duration={main.duration}，maxLifetime={maxLifetime}，计算总时长={vfxLifetime}s");
-                    GameLogger.Log($"[VFX_DEBUG] PS 位置={ps.transform.position}，useUnscaledTime={main.simulationSpace}，Time.timeScale={Time.timeScale}");
-
-                    // 检查渲染器
-                    var renderer = ps.GetComponent<ParticleSystemRenderer>();
-                    if (renderer != null)
-                    {
-                        GameLogger.Log($"[VFX_DEBUG] Renderer：enabled={renderer.enabled}，sortingLayer={renderer.sortingLayerName}，sortingOrder={renderer.sortingOrder}，material={renderer.material?.name}");
-                    }
-                    else
-                    {
-                        GameLogger.LogWarning("[VFX_DEBUG] ParticleSystemRenderer 为 null！");
-                    }
-
-                    Object.Destroy(vfxInstance, vfxLifetime);
+                    vfxLifetime = main.duration + maxLifetime;
                 }
-                else
-                {
-                    GameLogger.LogWarning($"[VFX_DEBUG] 未找到 ParticleSystem（包括子节点），vfxInstance 层级：{vfxInstance.transform.childCount} 个子节点");
-                    Object.Destroy(vfxInstance, 5f);
-                }
+                Object.Destroy(vfxInstance, vfxLifetime);
 
                 if (showDebugInfo)
                     GameLogger.Log($"[{GetType().Name}] 入场特效已生成：{vfxInstance.name} @ {transform.position}");
             }
             else
             {
-                GameLogger.LogWarning($"[{GetType().Name}] Resources.Load 也未找到 VFX_BlackLine，入场特效无法播放！");
+                GameLogger.LogWarning($"[{GetType().Name}] SpawnVFXPrefab 未配置且 Resources 也未找到 VFX_BlackLine，入场特效无法播放！");
             }
 
             float shakeIntensity = config != null ? config.spawnShakeIntensity : 0.5f;
             float shakeDuration = config != null ? config.spawnShakeDuration : 0.5f;
             CameraShake.Instance?.Shake(shakeIntensity, shakeDuration);
             HapticFeedback.Instance?.Trigger(HapticType.Critical);
-            yield return new WaitForSeconds(shakeDuration);
+            // 使用真实时间等待，确保技能选择面板开着时震动和特效仍然能完整播出
+            yield return new WaitForSecondsRealtime(shakeDuration);
             ChangeState(BossState.Idle);
         }
 

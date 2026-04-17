@@ -166,7 +166,15 @@ namespace LightVsDecay.UI.Equipment
 
         private void OnEquipClicked()
         {
-            EquipmentManager.Instance?.Equip(_stack.equipmentId, _stack.rarity);
+            EquipResult result = EquipmentManager.Instance != null
+                ? EquipmentManager.Instance.Equip(_stack.equipmentId, _stack.rarity)
+                : EquipResult.DataNotFound;
+
+            if (result != EquipResult.Success)
+            {
+                return;
+            }
+
             Equipped?.Invoke(_stack);
             Close();
         }

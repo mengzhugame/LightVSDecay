@@ -1,9 +1,10 @@
-// ============================================================
+﻿// ============================================================
 // SkillChooseOnePanel.cs
 // 文件位置: Assets/Scripts/UI/Panels/SkillChooseOnePanel.cs
 // 用途：升级时的技能三选一面板控制器
 // ============================================================
 
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -42,6 +43,7 @@ namespace LightVsDecay.UI.Panels
         [Header("Upgrade 菱形")]
         public GameObject upgradeObj;
         public Image[] diamondImages = new Image[3];
+        [System.NonSerialized] public Vector3 defaultScale = Vector3.one;
     }
     
     /// <summary>
@@ -106,6 +108,7 @@ namespace LightVsDecay.UI.Panels
         private int retryCountRemaining;
         private List<SkillData> currentChoices = new List<SkillData>();
         private Color retryTextNormalColor = Color.white;
+        private bool isSelectionInProgress;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -114,6 +117,7 @@ namespace LightVsDecay.UI.Panels
         private void Awake()
         {
             CacheRetryIcon();
+            CacheCardDefaultScales();
             SetupButtons();
             UIButtonCommonHelper.Ensure(retryButton);
         }
@@ -141,6 +145,7 @@ namespace LightVsDecay.UI.Panels
                 if (cards[i]?.cardButton != null)
                 {
                     int index = i; // 捕获局部变量
+                    UIButtonCommonHelper.Ensure(cards[i].cardButton);
                     cards[i].cardButton.onClick.AddListener(() => OnCardSelected(index));
                 }
             }
@@ -150,6 +155,38 @@ namespace LightVsDecay.UI.Panels
             {
                 retryButton.onClick.AddListener(OnRetryClicked);
             }
+        }
+
+        private void CacheCardDefaultScales()
+        {
+            for (int i = 0; i < cards.Length; i++)
+            {
+                RectTransform rect = cards[i]?.cardButton != null
+                    ? cards[i].cardButton.transform as RectTransform
+                    : null;
+                cards[i].defaultScale = rect != null ? rect.localScale : Vector3.one;
+            }
+        }
+
+        private void ResetCardVisualState()
+        {
+            for (int i = 0; i < cards.Length; i++)
+            {
+                if (cards[i]?.cardButton == null)
+                {
+                    continue;
+                }
+
+                RectTransform rect = cards[i].cardButton.transform as RectTransform;
+                if (rect != null)
+                {
+                    rect.localScale = cards[i].defaultScale;
+                }
+
+                UIButtonCommonHelper.SetInteractable(cards[i].cardButton, true);
+            }
+
+            UpdateRetryButton();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -163,6 +200,8 @@ namespace LightVsDecay.UI.Panels
         {
             currentLevel = level;
             retryCountRemaining = maxRetryCount;
+            isSelectionInProgress = false;
+            ResetCardVisualState();
             
             // 更新标题
             if (titleText != null)
@@ -194,6 +233,7 @@ namespace LightVsDecay.UI.Panels
         /// </summary>
         public void Hide()
         {
+            ResetCardVisualState();
             gameObject.SetActive(false);
         }
         
@@ -206,7 +246,7 @@ namespace LightVsDecay.UI.Panels
             // 检查数据库
             if (skillDatabase == null)
             {
-                GameLogger.LogError("[SkillChooseOnePanel] ❌ SkillDatabase 未设置！请在 Inspector 中配置");
+                GameLogger.LogError("[SkillChooseOnePanel] SkillDatabase is not assigned.");
                 return;
             }
             
@@ -229,7 +269,7 @@ namespace LightVsDecay.UI.Panels
             // 如果没有生成选项，显示警告
             if (currentChoices.Count == 0)
             {
-                GameLogger.LogError("[SkillChooseOnePanel] ❌ 没有可选技能！检查 SkillDatabase 中是否已添加技能");
+                GameLogger.LogError("[SkillChooseOnePanel] No available skill choices were generated.");
                 return;
             }
             
@@ -327,7 +367,7 @@ namespace LightVsDecay.UI.Panels
             
             if (showDebugInfo)
             {
-                GameLogger.Log($"[SkillChooseOnePanel] 卡片{index}: {skill.displayName} (Lv.{currentLv}→{nextLv}, Max={isMaxLevel})");
+                GameLogger.Log($"[SkillChooseOnePanel] Card {index}: {skill.displayName} (Lv.{currentLv}->{nextLv}, Max={isMaxLevel})");
             }
         }
         
@@ -610,27 +650,48 @@ namespace LightVsDecay.UI.Panels
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 选择回调
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        
         private void OnCardSelected(int index)
         {
+            if (isSelectionInProgress)
+            {
+                return;
+            }
             if (index < 0 || index >= currentChoices.Count)
             {
                 GameLogger.LogError($"[SkillChooseOnePanel] 无效的选项索引: {index}");
                 return;
             }
             // 【新增】播放技能选择音效
+            SkillData selectedSkill = currentChoices[index];
+            isSelectionInProgress = true;
+            SetButtonsInteractable(false);
+            StartCoroutine(FinishCardSelection(index, selectedSkill));
+            return;
+        }
+
+
+        private IEnumerator FinishCardSelection(int index, SkillData selectedSkill)
+        {
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlaySkillCardSelect();
             }
-            SkillData selectedSkill = currentChoices[index];
-            
+
             if (showDebugInfo)
             {
-                GameLogger.Log($"[SkillChooseOnePanel] 选择了: {selectedSkill.displayName}");
+                GameLogger.Log($"[SkillChooseOnePanel] Selected skill: {selectedSkill.displayName}");
             }
-            
-            // 应用技能（更新 SessionData.skillLevels）
+
+            RectTransform rect = cards[index]?.cardButton != null
+                ? cards[index].cardButton.transform as RectTransform
+                : null;
+
+            if (rect != null)
+            {
+                yield return UIAnimationHelper.PlayScalePunch(rect, 1.08f, 0.18f, true);
+                rect.localScale = cards[index].defaultScale;
+            }
+
             if (ProgressManager.Instance != null)
             {
                 ProgressManager.Instance.ApplySkill(selectedSkill.type);
@@ -640,22 +701,37 @@ namespace LightVsDecay.UI.Panels
                     ProgressManager.Instance.Meta.Save();
                 }
             }
-            
-            // 隐藏面板
-            Hide();
 
-            // 恢复游戏
+            Hide();
             Time.timeScale = 1f;
-            // 关闭三选一后恢复战斗音效
+
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.ResumeBattleAudioForOverlay();
             }
-            // 触发升级选择完成事件
+
             GameEvents.TriggerLevelUpChoiceComplete();
+
             if (showDebugInfo)
             {
-                GameLogger.Log("[SkillChooseOnePanel] 选择完成，游戏恢复");
+                GameLogger.Log("[SkillChooseOnePanel] Skill selection completed");
+            }
+        }
+
+        private void SetButtonsInteractable(bool interactable)
+        {
+            for (int i = 0; i < cards.Length; i++)
+            {
+                if (cards[i]?.cardButton != null)
+                {
+                    UIButtonCommonHelper.SetInteractable(cards[i].cardButton, interactable);
+                }
+            }
+
+            if (retryButton != null)
+            {
+                bool canRetry = interactable && (retryCountRemaining > 0 || AdManager.Instance.CanWatchAd(AdType.SkillReroll));
+                UIButtonCommonHelper.SetInteractable(retryButton, canRetry);
             }
         }
     }

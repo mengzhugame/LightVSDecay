@@ -28,6 +28,7 @@ namespace LightVsDecay.UI
         private Coroutine _popCoroutine;
         private bool _disabledApplied;
         private bool _targetsDirty;
+        private Vector3 _baseScale = Vector3.one;
 
         public bool EnablePopAnimation
         {
@@ -49,6 +50,10 @@ namespace LightVsDecay.UI
         {
             _button = GetComponent<Button>();
             _rectTransform = transform as RectTransform;
+            if (_rectTransform != null)
+            {
+                _baseScale = _rectTransform.localScale;
+            }
             RebuildTargets();
             CaptureEnabledColors();
             SyncVisualState();
@@ -56,7 +61,19 @@ namespace LightVsDecay.UI
 
         private void OnEnable()
         {
+            ResetScale();
             SyncVisualState();
+        }
+
+        private void OnDisable()
+        {
+            if (_popCoroutine != null)
+            {
+                StopCoroutine(_popCoroutine);
+                _popCoroutine = null;
+            }
+
+            ResetScale();
         }
 
         private void LateUpdate()
@@ -174,6 +191,14 @@ namespace LightVsDecay.UI
         {
             yield return UIAnimationHelper.PlayScalePunch(_rectTransform, popScale, popDuration, useUnscaledTime);
             _popCoroutine = null;
+        }
+
+        private void ResetScale()
+        {
+            if (_rectTransform != null)
+            {
+                _rectTransform.localScale = _baseScale;
+            }
         }
 
         private void RebuildTargets()

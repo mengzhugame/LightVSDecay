@@ -139,8 +139,8 @@ MonoBehaviour:
   popDuration: 0.1
   popScale: 1.2
   bounceDuration: 0.1
-  holdDuration: 1
-  floatDuration: 3
+  holdDuration: 0.8
+  floatDuration: 2.5
   floatDistance: 50
   fadeStartDelay: 0.4
   fadeDuration: 0.2

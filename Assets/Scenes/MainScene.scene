@@ -10065,7 +10065,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c02a72efd03f685498e0dbd9622e98f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maskColor: {r: 0, g: 0, b: 0, a: 0.3137255}
+  maskColor: {r: 0, g: 0, b: 0, a: 0.5882353}
   cornerRadius: 30
   holePadding: {x: 24, y: 24}
   ringRect: {fileID: 0}

@@ -31,7 +31,7 @@ MonoBehaviour:
   enemyExplodeVolume: 0.4
   enemyExplodeCooldown: 0.08
   enemyDeath: {fileID: 8300000, guid: 85e7d6af17c1e134e9fd94ef25f96f47, type: 3}
-  enemyDeathVolume: 0.5
+  enemyDeathVolume: 0.8
   enemyDeathCooldown: 0.03
   enemyFreeze: {fileID: 8300000, guid: e874a44ede2b89f4bbf711ccf78a2f7d, type: 3}
   enemySplit: {fileID: 8300000, guid: 22d15264cdf662a4b9e16858eb562d35, type: 3}

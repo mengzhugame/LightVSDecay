@@ -18,5 +18,7 @@ MonoBehaviour:
   localPosition: {x: 0, y: 0, z: 0}
   localScale: {x: 1, y: 1, z: 1}
   useSpotlightOverlay: 1
-  holePadding: {x: 48, y: 48}
+  holeShape: 0
+  holePadding: {x: 24, y: 24}
+  cornerRadius: 20
   overlayMessage: 

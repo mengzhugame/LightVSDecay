@@ -52,7 +52,8 @@
       "Bash(python *)",
       "Bash(C:/Users/WangYongCheng/AppData/Local/Programs/Python/Python310/python.exe *)",
       "Bash(xargs -I{} echo \"{}\")",
-      "Bash(grep -l \"HapticFeedback\" \"D:/Project/LightVSDecay/Assets/Scenes/\"*.scene)"
+      "Bash(grep -l \"HapticFeedback\" \"D:/Project/LightVSDecay/Assets/Scenes/\"*.scene)",
+      "Bash(grep *)"
     ]
   }
 }

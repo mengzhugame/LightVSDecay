@@ -220,3 +220,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 16
   maxLifetime: 10
+  defaultHP: 300
