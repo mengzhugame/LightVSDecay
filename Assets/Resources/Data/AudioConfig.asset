@@ -60,8 +60,8 @@ MonoBehaviour:
   xpOrbCollect: {fileID: 8300000, guid: e5b671c9edb921f48b3d4193eb19ec04, type: 3}
   xpOrbVolume: 0.5
   xpOrbCollectCooldown: 0.1
-  coinCollect: {fileID: 8300000, guid: 8e2e1d1a08b4e7347a73bfbfd2821ee7, type: 3}
-  coinCollectVolume: 0.25
+  coinCollect: {fileID: 8300000, guid: 3aeffce7ae1217743af0224b66578ac2, type: 3}
+  coinCollectVolume: 0.8
   coinCollectCooldown: 0.04
   droneEnter: {fileID: 8300000, guid: f3e5ff9600b3f624daad4416221ea5fa, type: 3}
   droneLand: {fileID: 0}

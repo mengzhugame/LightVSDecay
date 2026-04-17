@@ -50,7 +50,9 @@
       "Bash(grep -h \"coinReward:\" \"D:\\\\Project\\\\LightVSDecay\\\\Assets\\\\Resources\\\\Data\\\\MonsterData\"/*.asset)",
       "Bash(python -c ' *)",
       "Bash(python *)",
-      "Bash(C:/Users/WangYongCheng/AppData/Local/Programs/Python/Python310/python.exe *)"
+      "Bash(C:/Users/WangYongCheng/AppData/Local/Programs/Python/Python310/python.exe *)",
+      "Bash(xargs -I{} echo \"{}\")",
+      "Bash(grep -l \"HapticFeedback\" \"D:/Project/LightVSDecay/Assets/Scenes/\"*.scene)"
     ]
   }
 }

@@ -27,7 +27,7 @@ namespace LightVsDecay.Core
     /// 手机触感反馈单例
     /// 内置节流机制，防止同一事件短时间内重复震动
     /// </summary>
-    public class HapticFeedback : Singleton<HapticFeedback>
+    public class HapticFeedback : AutoSingleton<HapticFeedback>
     {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Inspector 配置
