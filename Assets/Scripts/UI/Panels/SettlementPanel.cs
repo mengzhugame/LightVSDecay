@@ -23,6 +23,7 @@ using LightVsDecay.Logic.Equipment;
 using LightVsDecay.Data.SO;
 using LightVsDecay.VFX.PostProcess;
 using LightVsDecay.Core;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -116,6 +117,9 @@ namespace LightVsDecay.UI.Panels
             canvasGroup = GetComponent<CanvasGroup>();
             if (canvasGroup == null)
                 canvasGroup = gameObject.AddComponent<CanvasGroup>();
+
+            UIButtonCommonHelper.Ensure(doubleReceivedButton);
+            UIButtonCommonHelper.Ensure(returnButton);
         }
 
         private void OnEnable()
@@ -422,7 +426,7 @@ namespace LightVsDecay.UI.Panels
             }
 
             bool canUseDoubleReward = isVictory && !_rewardsApplied && AdManager.Instance.CanWatchAd(AdType.SettlementDouble);
-            doubleReceivedButton.interactable = canUseDoubleReward;
+            UIButtonCommonHelper.SetInteractable(doubleReceivedButton, canUseDoubleReward);
         }
 
         private void ReturnToMainMenu()

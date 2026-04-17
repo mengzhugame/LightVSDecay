@@ -276,10 +276,12 @@ MonoBehaviour:
   popDuration: 0.1
   popScale: 1.2
   bounceDuration: 0.1
-  floatDuration: 1
+  holdDuration: 1
+  floatDuration: 3
   floatDistance: 50
   fadeStartDelay: 0.4
   fadeDuration: 0.2
+  floatEndScale: 0.72
 --- !u!225 &4041005335859023617
 CanvasGroup:
   m_ObjectHideFlags: 0

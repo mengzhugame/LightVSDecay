@@ -36,8 +36,8 @@ MonoBehaviour:
   knockbackMinDuration: 0.3
   drifterMaxSpeed: 12
   knockbackSpeedThreshold: 4
-  drifterReturnRushDuration: 0.75
-  drifterReturnRushSpeedMultiplier: 3.5
+  drifterLaserHitSpeedMultiplier: 3.5
+  drifterLaserHitBounceMultiplier: 1.75
   minScale: 0.3
   deathFadeDuration: 1
   normalFlowSpeed: 0.3

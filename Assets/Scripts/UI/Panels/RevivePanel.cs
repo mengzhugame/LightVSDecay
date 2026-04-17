@@ -6,6 +6,7 @@ using LightVsDecay.Core;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Enemy;
 using LightVsDecay.Logic.Player;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -40,6 +41,9 @@ namespace LightVsDecay.UI.Panels
                 reviveButton.onClick.RemoveAllListeners();
                 reviveButton.onClick.AddListener(OnReviveClicked);
             }
+
+            UIButtonCommonHelper.Ensure(quitButton);
+            UIButtonCommonHelper.Ensure(reviveButton);
         }
 
         private void OnEnable()
@@ -60,10 +64,7 @@ namespace LightVsDecay.UI.Panels
             }
 
             bool canRevive = AdManager.Instance.CanOfferRevive(GetCurrentWave());
-            if (reviveButton != null)
-            {
-                reviveButton.interactable = canRevive;
-            }
+            UIButtonCommonHelper.SetInteractable(reviveButton, canRevive);
 
             if (reviveButtonText != null)
             {

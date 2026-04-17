@@ -278,7 +278,7 @@ MonoBehaviour:
   - {fileID: 585836121024178123}
   - {fileID: 6730769645221563474}
   redBodyEffect: {fileID: 8443978090768283566}
-  showDebugInfo: 0
+  showDebugInfo: 1
   deathVFXPrefab: {fileID: 8311556213565529057, guid: 413d001f6a3505e4e98c8405e818e1b9, type: 3}
   spawnVFXPrefab: {fileID: 6912483658588924419, guid: 185fcceef7e895c41a5c1e1a3e93f215, type: 3}
   summonCountPhase1: 6

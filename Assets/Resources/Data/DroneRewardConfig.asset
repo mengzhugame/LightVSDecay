@@ -19,22 +19,22 @@ MonoBehaviour:
   supplyRewards:
   - type: 0
     value: 150
-    displayText: "\u751F\u547D\u503C+150"
+    displayText: "\u8840\u91CF+150"
     weight: 30
     isJackpot: 0
   - type: 0
     value: 250
-    displayText: "\u751F\u547D\u503C+250"
+    displayText: "\u8840\u91CF+250"
     weight: 15
     isJackpot: 0
   - type: 1
     value: 100
-    displayText: "\u62A4\u76FE\u503C+100"
+    displayText: "\u8840\u91CF+100"
     weight: 25
     isJackpot: 0
   - type: 1
     value: 200
-    displayText: "\u62A4\u76FE\u503C+200"
+    displayText: "\u62A4\u76FE+200"
     weight: 10
     isJackpot: 0
   - type: 2
@@ -76,22 +76,22 @@ MonoBehaviour:
       isJackpot: 0
     - type: 11
       value: 0.05
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B-5%"
+      displayText: "\u653B\u51FB\u529B-5%"
       weight: 8
       isJackpot: 0
     - type: 12
       value: 0.02
-      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387-4%"
+      displayText: "\u66B4\u51FB\u7387-4%"
       weight: 8
       isJackpot: 0
     - type: 13
       value: 0.03
-      displayText: "\u6FC0\u5149\u5BBD\u5EA6-3%"
+      displayText: "\u5BBD\u5EA6-3%"
       weight: 5
       isJackpot: 0
     - type: 14
       value: 0.05
-      displayText: "\u6FC0\u5149\u957F\u5EA6-5%"
+      displayText: "\u957F\u5EA6-5%"
       weight: 4
       isJackpot: 0
   - resultType: 2
@@ -99,27 +99,27 @@ MonoBehaviour:
     rewardPool:
     - type: 3
       value: 0.1
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+10%"
+      displayText: "\u653B\u51FB\u529B+10%"
       weight: 20
       isJackpot: 0
     - type: 4
       value: 150
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+150"
+      displayText: "\u653B\u51FB\u529B+150"
       weight: 20
       isJackpot: 0
     - type: 5
       value: 0.03
-      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387+3%"
+      displayText: "\u66B4\u51FB\u7387+3%"
       weight: 20
       isJackpot: 0
     - type: 6
       value: 0.05
-      displayText: "\u6FC0\u5149\u5BBD\u5EA6+10%"
+      displayText: "\u5BBD\u5EA6+10%"
       weight: 20
       isJackpot: 0
     - type: 7
       value: 0.03
-      displayText: "\u6FC0\u5149\u957F\u5EA6+3%"
+      displayText: "\u957F\u5EA6+3%"
       weight: 20
       isJackpot: 0
   - resultType: 3
@@ -127,17 +127,17 @@ MonoBehaviour:
     rewardPool:
     - type: 3
       value: 0.25
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+25%"
+      displayText: "\u653B\u51FB\u529B+25%"
       weight: 20
       isJackpot: 1
     - type: 4
       value: 500
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+500"
+      displayText: "\u653B\u51FB\u529B+500"
       weight: 15
       isJackpot: 1
     - type: 5
       value: 0.08
-      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387+16%"
+      displayText: "\u66B4\u51FB\u7387+16%"
       weight: 20
       isJackpot: 1
     - type: 6
@@ -155,13 +155,13 @@ MonoBehaviour:
     cost:
       type: 9
       value: 80
-      displayText: "\u751F\u547D\u503C-80"
+      displayText: "\u8840\u91CF-80"
       weight: 1
       isJackpot: 0
     gain:
       type: 3
       value: 0.12
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+12%"
+      displayText: "\u653B\u51FB\u529B+12%"
       weight: 1
       isJackpot: 0
     weight: 15
@@ -169,13 +169,13 @@ MonoBehaviour:
     cost:
       type: 9
       value: 80
-      displayText: "\u751F\u547D\u503C-80"
+      displayText: "\u8840\u91CF-80"
       weight: 1
       isJackpot: 0
     gain:
       type: 5
       value: 0.04
-      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387+4%"
+      displayText: "\u66B4\u51FB\u7387+4%"
       weight: 1
       isJackpot: 0
     weight: 15
@@ -183,7 +183,7 @@ MonoBehaviour:
     cost:
       type: 9
       value: 80
-      displayText: "\u751F\u547D\u503C-80"
+      displayText: "\u8840\u91CF-80"
       weight: 1
       isJackpot: 0
     gain:
@@ -197,13 +197,13 @@ MonoBehaviour:
     cost:
       type: 9
       value: 150
-      displayText: "\u751F\u547D\u503C-150"
+      displayText: "\u8840\u91CF-150"
       weight: 1
       isJackpot: 0
     gain:
       type: 3
       value: 0.18
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+18%"
+      displayText: "\u653B\u51FB\u529B+18%"
       weight: 1
       isJackpot: 0
     weight: 12
@@ -211,7 +211,7 @@ MonoBehaviour:
     cost:
       type: 9
       value: 150
-      displayText: "\u751F\u547D\u503C-150"
+      displayText: "\u8840\u91CF-150"
       weight: 0
       isJackpot: 0
     gain:
@@ -225,13 +225,13 @@ MonoBehaviour:
     cost:
       type: 9
       value: 150
-      displayText: "\u751F\u547D\u503C-150"
+      displayText: "\u8840\u91CF-150"
       weight: 0
       isJackpot: 0
     gain:
       type: 4
       value: 300
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+300"
+      displayText: "\u653B\u51FB\u529B+300"
       weight: 0
       isJackpot: 0
     weight: 12
@@ -239,13 +239,13 @@ MonoBehaviour:
     cost:
       type: 10
       value: 100
-      displayText: "\u62A4\u76FE\u503C-100"
+      displayText: "\u62A4\u76FE-100"
       weight: 0
       isJackpot: 0
     gain:
       type: 3
       value: 0.15
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+15%"
+      displayText: "\u653B\u51FB\u529B+15%"
       weight: 0
       isJackpot: 0
     weight: 10
@@ -253,13 +253,13 @@ MonoBehaviour:
     cost:
       type: 10
       value: 100
-      displayText: "\u62A4\u76FE\u503C-100"
+      displayText: "\u62A4\u76FE-100"
       weight: 0
       isJackpot: 0
     gain:
       type: 5
       value: 0.05
-      displayText: "\u6FC0\u5149\u66B4\u51FB\u7387+5%"
+      displayText: "\u66B4\u51FB\u7387+5%"
       weight: 0
       isJackpot: 0
     weight: 8
@@ -267,13 +267,13 @@ MonoBehaviour:
     cost:
       type: 9
       value: 250
-      displayText: "\u751F\u547D\u503C-250"
+      displayText: "\u8840\u91CF-250"
       weight: 0
       isJackpot: 0
     gain:
       type: 3
       value: 0.28
-      displayText: "\u6FC0\u5149\u653B\u51FB\u529B+28%"
+      displayText: "\u653B\u51FB\u529B+28%"
       weight: 0
       isJackpot: 0
     weight: 3

@@ -33,6 +33,7 @@ using LightVsDecay.Ads;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Equipment;
 using LightVsDecay.Core;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -137,6 +138,10 @@ namespace LightVsDecay.UI.Panels
             if (closeButton      != null) closeButton.onClick.AddListener(Hide);
             if (backgroundButton != null) backgroundButton.onClick.AddListener(Hide);
             if (adButton         != null) adButton.onClick.AddListener(OnAdButtonClicked);
+            UIButtonCommonHelper.Ensure(adButton);
+
+            if (adCountText == adButtonText)
+                adCountText = null;
 
             if (closeHintText    != null) closeHintText.text = closeHint;
         }
@@ -216,10 +221,10 @@ namespace LightVsDecay.UI.Panels
             SetAdIcon(energyIcon);
 
             bool isFull   = pm == null || pm.IsEnergyFull;
-            bool canWatch = pm != null && adManager.CanWatchAd(AdType.EnergyTopUp);
+            bool canWatch = pm != null && adManager != null && adManager.CanWatchAd(AdType.EnergyTopUp);
 
             // 倒计时：满载或次数耗尽时隐藏
-            SetCountdownGroupVisible(!isFull && canWatch);
+            SetCountdownGroupVisible(!isFull);
 
             // InfoMainText：满载 / 可看 / 已耗尽 三种状态
             if (infoMainText != null)
@@ -231,10 +236,11 @@ namespace LightVsDecay.UI.Panels
                 // 耗尽时由 SetAdButton 覆写
             }
 
+            ClearInfoText();
             RefreshCountdown();
 
-            SetAdButton(canWatch, $"+{pm?.AdEnergyReward ?? 2}", adExhaustedInfo);
-            SetAdCount(adManager.GetDailyCount(AdType.EnergyTopUp), adManager.GetDailyLimit(AdType.EnergyTopUp));
+            SetAdButton(canWatch, $"+{pm?.AdEnergyReward ?? 2}");
+            SetAdCount(adManager?.GetDailyCount(AdType.EnergyTopUp) ?? 0, adManager?.GetDailyLimit(AdType.EnergyTopUp) ?? 0);
         }
 
         private void RefreshCountdown()
@@ -264,13 +270,12 @@ namespace LightVsDecay.UI.Panels
             SetAdIcon(goldIcon);
             SetCountdownGroupVisible(false);
 
-            bool canWatch = pm != null && adManager.CanWatchAd(AdType.GoldTopUp);
+            bool canWatch = pm != null && adManager != null && adManager.CanWatchAd(AdType.GoldTopUp);
 
-            if (infoMainText != null && canWatch)
-                infoMainText.text = goldInfo;
+            ClearInfoText();
 
-            SetAdButton(canWatch, $"+{pm?.AdGoldReward ?? 500}", adExhaustedInfo);
-            SetAdCount(adManager.GetDailyCount(AdType.GoldTopUp), adManager.GetDailyLimit(AdType.GoldTopUp));
+            SetAdButton(canWatch, $"+{pm?.AdGoldReward ?? 500}");
+            SetAdCount(adManager?.GetDailyCount(AdType.GoldTopUp) ?? 0, adManager?.GetDailyLimit(AdType.GoldTopUp) ?? 0);
         }
 
         // ── 图纸模式 ──────────────────────────────────────────
@@ -284,13 +289,12 @@ namespace LightVsDecay.UI.Panels
             SetAdIcon(blueprintIcon);
             SetCountdownGroupVisible(false);
 
-            bool canWatch = pm != null && adManager.CanWatchAd(AdType.BlueprintTopUp);
+            bool canWatch = pm != null && adManager != null && adManager.CanWatchAd(AdType.BlueprintTopUp);
 
-            if (infoMainText != null && canWatch)
-                infoMainText.text = blueprintInfo;
+            ClearInfoText();
 
-            SetAdButton(canWatch, $"+{pm?.AdBlueprintReward ?? 3}", adExhaustedInfo);
-            SetAdCount(adManager.GetDailyCount(AdType.BlueprintTopUp), adManager.GetDailyLimit(AdType.BlueprintTopUp));
+            SetAdButton(canWatch, $"+{pm?.AdBlueprintReward ?? 3}");
+            SetAdCount(adManager?.GetDailyCount(AdType.BlueprintTopUp) ?? 0, adManager?.GetDailyLimit(AdType.BlueprintTopUp) ?? 0);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -314,20 +318,23 @@ namespace LightVsDecay.UI.Panels
                 countdownText.gameObject.SetActive(visible);
         }
 
+        private void ClearInfoText()
+        {
+            if (infoMainText != null)
+                infoMainText.text = string.Empty;
+        }
+
         private void SetAdButton(bool interactable, string buttonAmountText, string exhaustedInfoText = "")
         {
             // 按钮可交互状态
-            if (adButton != null) adButton.interactable = interactable;
+            UIButtonCommonHelper.SetInteractable(adButton, interactable);
 
             // 按钮内文字（仅显示数量，如 "+2"）
             if (adButtonText != null)
-                adButtonText.text = interactable ? buttonAmountText : "";
+                adButtonText.text = buttonAmountText;
 
             // 按钮内图标和文字颜色置灰
-            Color iconColor = interactable ? adNormalColor : adDisabledColor;
-            if (adVideoIcon    != null) adVideoIcon.color    = iconColor;
-            if (adResourceIcon != null) adResourceIcon.color = iconColor;
-            if (adButtonText   != null) adButtonText.color   = iconColor;
+            UIButtonCommonHelper.Sync(adButton);
 
             // 次数耗尽时，InfoMainText 切换为提示文案
             if (!interactable && infoMainText != null && !string.IsNullOrEmpty(exhaustedInfoText))
@@ -347,39 +354,28 @@ namespace LightVsDecay.UI.Panels
         private void OnAdButtonClicked()
         {
             var pm = ProgressManager.Instance;
-            if (pm == null) return;
+            var adManager = AdManager.Instance;
+            if (pm == null || adManager == null) return;
 
             switch (_currentMode)
             {
                 case TopBarResourceType.Energy:
                     AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickEnergy);
-                    AdManager.Instance.ShowRewardedAd(AdType.EnergyTopUp,
-                        onSuccess: () =>
-                        {
-                            pm.GrantAdEnergyReward();
-                            Hide();
-                        },
-                        onFail: RefreshAll);
+                    if (adManager.TryConsumeRewardOpportunity(AdType.EnergyTopUp))
+                        pm.GrantAdEnergyReward();
+                    RefreshAll();
                     break;
                 case TopBarResourceType.Gold:
                     AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickGold);
-                    AdManager.Instance.ShowRewardedAd(AdType.GoldTopUp,
-                        onSuccess: () =>
-                        {
-                            pm.GrantAdGoldReward();
-                            Hide();
-                        },
-                        onFail: RefreshAll);
+                    if (adManager.TryConsumeRewardOpportunity(AdType.GoldTopUp))
+                        pm.GrantAdGoldReward();
+                    RefreshAll();
                     break;
                 case TopBarResourceType.Blueprint:
                     AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickBlueprint);
-                    AdManager.Instance.ShowRewardedAd(AdType.BlueprintTopUp,
-                        onSuccess: () =>
-                        {
-                            pm.GrantAdBlueprintReward();
-                            Hide();
-                        },
-                        onFail: RefreshAll);
+                    if (adManager.TryConsumeRewardOpportunity(AdType.BlueprintTopUp))
+                        pm.GrantAdBlueprintReward();
+                    RefreshAll();
                     break;
             }
         }

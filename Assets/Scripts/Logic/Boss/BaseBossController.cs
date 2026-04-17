@@ -647,29 +647,62 @@ namespace LightVsDecay.Logic.Boss
 #endif
             AudioManager.Instance?.PlayBossRoar();
 
-            // 播放入场专属特效（黑线冲击特效，由子类通过 SpawnVFXPrefab 配置）
+            // 播放入场专属特效（黑线冲击特效）
+            // 优先使用子类 Inspector 配置的 SpawnVFXPrefab；未配置时从 Resources 加载默认黑线特效
             GameObject spawnVFXPrefab = SpawnVFXPrefab;
+            if (spawnVFXPrefab == null)
+                spawnVFXPrefab = Resources.Load<GameObject>("Effects/Boss/VFX_BlackLine");
+
+            // ── DEBUG LOG（排查 VFX 不可见）──
+            GameLogger.Log($"[VFX_DEBUG] SpawnVFXPrefab 是否为 null：{spawnVFXPrefab == null}，prefab 名称：{spawnVFXPrefab?.name}");
+            GameLogger.Log($"[VFX_DEBUG] 生成位置（世界坐标）：{transform.position}，Boss localPosition：{transform.localPosition}");
+
             if (spawnVFXPrefab != null)
             {
                 GameObject vfxInstance = Object.Instantiate(spawnVFXPrefab, transform.position, Quaternion.identity);
 
-                // 自动销毁：读取粒子系统时长；若无粒子系统，兜底 5 秒后销毁
-                float vfxLifetime = 5f;
+                GameLogger.Log($"[VFX_DEBUG] 已 Instantiate：{vfxInstance.name}，activeSelf={vfxInstance.activeSelf}，activeInHierarchy={vfxInstance.activeInHierarchy}");
+
+                // 检查粒子系统状态
                 ParticleSystem ps = vfxInstance.GetComponent<ParticleSystem>();
                 if (ps == null) ps = vfxInstance.GetComponentInChildren<ParticleSystem>(true);
+
                 if (ps != null)
                 {
                     var main = ps.main;
                     float maxLifetime = main.startLifetime.mode == ParticleSystemCurveMode.Constant
                         ? main.startLifetime.constant
                         : main.startLifetime.constantMax;
-                    vfxLifetime = main.duration + maxLifetime;
+                    float vfxLifetime = main.duration + maxLifetime;
+
+                    GameLogger.Log($"[VFX_DEBUG] ParticleSystem 找到：{ps.name}，isPlaying={ps.isPlaying}，isEmitting={ps.isEmitting}，duration={main.duration}，maxLifetime={maxLifetime}，计算总时长={vfxLifetime}s");
+                    GameLogger.Log($"[VFX_DEBUG] PS 位置={ps.transform.position}，useUnscaledTime={main.simulationSpace}，Time.timeScale={Time.timeScale}");
+
+                    // 检查渲染器
+                    var renderer = ps.GetComponent<ParticleSystemRenderer>();
+                    if (renderer != null)
+                    {
+                        GameLogger.Log($"[VFX_DEBUG] Renderer：enabled={renderer.enabled}，sortingLayer={renderer.sortingLayerName}，sortingOrder={renderer.sortingOrder}，material={renderer.material?.name}");
+                    }
+                    else
+                    {
+                        GameLogger.LogWarning("[VFX_DEBUG] ParticleSystemRenderer 为 null！");
+                    }
+
+                    Object.Destroy(vfxInstance, vfxLifetime);
                 }
-                Object.Destroy(vfxInstance, vfxLifetime);
+                else
+                {
+                    GameLogger.LogWarning($"[VFX_DEBUG] 未找到 ParticleSystem（包括子节点），vfxInstance 层级：{vfxInstance.transform.childCount} 个子节点");
+                    Object.Destroy(vfxInstance, 5f);
+                }
+
+                if (showDebugInfo)
+                    GameLogger.Log($"[{GetType().Name}] 入场特效已生成：{vfxInstance.name} @ {transform.position}");
             }
             else
             {
-                GameLogger.LogWarning($"[{GetType().Name}] SpawnVFXPrefab 未配置，入场黑线特效不会播放！请在 Inspector 的「入场演出」区块拖入预制体。");
+                GameLogger.LogWarning($"[{GetType().Name}] Resources.Load 也未找到 VFX_BlackLine，入场特效无法播放！");
             }
 
             float shakeIntensity = config != null ? config.spawnShakeIntensity : 0.5f;

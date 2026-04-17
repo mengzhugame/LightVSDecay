@@ -58,6 +58,7 @@ namespace LightVsDecay.Logic.Player
         
         [Tooltip("宽度倍率")]
         [SerializeField] private float widthMultiplier = 2f;
+        [SerializeField] private float lengthBonus = 5f;
         
         [Header("自动瞄准设置")]
         [Tooltip("自动瞄准转向速度（度/秒）")]
@@ -626,7 +627,7 @@ namespace LightVsDecay.Logic.Player
             // 通知 LaserController 应用大招倍率
             if (laserController != null)
             {
-                laserController.SetOverloadActive(true, damageMultiplier, widthMultiplier);
+                laserController.SetOverloadActive(true, damageMultiplier, widthMultiplier, lengthBonus);
             }
             
             // 触发激活事件
@@ -654,7 +655,7 @@ namespace LightVsDecay.Logic.Player
             // 通知 LaserController 移除大招倍率
             if (laserController != null)
             {
-                laserController.SetOverloadActive(false, 1f, 1f);
+                laserController.SetOverloadActive(false, 1f, 1f, 0f);
             }
             
             // 触发结束事件
@@ -820,7 +821,7 @@ namespace LightVsDecay.Logic.Player
 
             if (laserController != null)
             {
-                laserController.SetOverloadActive(false, 1f, 1f);
+                laserController.SetOverloadActive(false, 1f, 1f, 0f);
             }
 
             HideReadyVFX();
@@ -867,7 +868,7 @@ namespace LightVsDecay.Logic.Player
 
             if (laserController != null)
             {
-                laserController.SetOverloadActive(false, 1f, 1f);
+                laserController.SetOverloadActive(false, 1f, 1f, 0f);
             }
 
             RefreshReadyVFXVisibility();

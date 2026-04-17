@@ -19,6 +19,7 @@ using UnityEngine.UI;
 using TMPro;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Data.Runtime;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Equipment
 {
@@ -88,12 +89,12 @@ namespace LightVsDecay.UI.Equipment
             if (isEmpty)
             {
                 ShowEmpty();
-                if (_button != null) _button.interactable = false;
+                UIButtonCommonHelper.SetInteractable(_button, false);
             }
             else
             {
                 ShowEquipped(slotData, data);
-                if (_button != null) _button.interactable = true;
+                UIButtonCommonHelper.SetInteractable(_button, true);
             }
         }
 

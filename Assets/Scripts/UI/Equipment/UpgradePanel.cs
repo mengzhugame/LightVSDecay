@@ -13,6 +13,7 @@ using LightVsDecay.Data.Runtime;
 using LightVsDecay.Logic;
 using LightVsDecay.Logic.Equipment;
 using LightVsDecay.Core;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Equipment
 {
@@ -86,11 +87,13 @@ namespace LightVsDecay.UI.Equipment
         {
             if (closeButton      != null) closeButton.onClick.AddListener(Close);
             if (backgroundButton != null) backgroundButton.onClick.AddListener(Close);
+            UIButtonCommonHelper.Ensure(closeButton);
 
             if (upgradeButton != null)
             {
                 // 缓存按钮背景 Image
                 _buttonImage = upgradeButton.GetComponent<Image>();
+                UIButtonCommonHelper.Ensure(upgradeButton);
 
                 // 长按支持
                 var et = upgradeButton.gameObject.GetComponent<EventTrigger>()
@@ -195,13 +198,11 @@ namespace LightVsDecay.UI.Equipment
             bool canUpgrade = notMax && hasGold && hasBp;
 
             // 1. 按钮交互 + 背景色
-            upgradeButton.interactable = canUpgrade;
-            if (_buttonImage != null)
-                _buttonImage.color = canUpgrade ? buttonNormalColor : buttonDisabledColor;
+            UIButtonCommonHelper.SetInteractable(upgradeButton, canUpgrade);
 
             // 2. "升级" 标签文字：可升级=白，否则=灰
             if (upgradeLabelText != null)
-                upgradeLabelText.color = canUpgrade ? costNormalColor : Color.gray;
+                upgradeLabelText.color = costNormalColor;
 
             // 3. 金币数字颜色规则：
             //    自身不足 → 红；对方不足（自身足够）→ 灰；都足够 → 白
@@ -217,10 +218,12 @@ namespace LightVsDecay.UI.Equipment
             // 5. 图标颜色：可升级=白，否则统一灰
             Color iconColor = canUpgrade ? Color.white : Color.gray;
 
-            if (goldCostText       != null) goldCostText.color       = goldColor;
-            if (blueprintCostText  != null) blueprintCostText.color  = bpColor;
-            if (goldIconImage      != null) goldIconImage.color      = iconColor;
-            if (blueprintIconImage != null) blueprintIconImage.color = iconColor;
+            if (goldCostText       != null) goldCostText.color       = costNormalColor;
+            if (blueprintCostText  != null) blueprintCostText.color  = costNormalColor;
+            if (goldIconImage      != null) goldIconImage.color      = Color.white;
+            if (blueprintIconImage != null) blueprintIconImage.color = Color.white;
+
+            UIButtonCommonHelper.Sync(upgradeButton);
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 资源判断

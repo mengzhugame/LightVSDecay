@@ -13,6 +13,7 @@ using LightVsDecay.Core;
 using LightVsDecay.Logic;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Audio;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -114,6 +115,7 @@ namespace LightVsDecay.UI.Panels
         {
             CacheRetryIcon();
             SetupButtons();
+            UIButtonCommonHelper.Ensure(retryButton);
         }
         
         private void OnEnable()
@@ -546,9 +548,10 @@ namespace LightVsDecay.UI.Panels
             {
                 bool hasFreeRetry = retryCountRemaining > 0;
                 bool canWatchAd = AdManager.Instance.CanWatchAd(AdType.SkillReroll);
-                retryButton.interactable = hasFreeRetry || canWatchAd;
+                UIButtonCommonHelper.SetInteractable(retryButton, hasFreeRetry || canWatchAd);
 
                 UpdateRetryIcon(hasFreeRetry, canWatchAd);
+                UIButtonCommonHelper.Sync(retryButton);
             }
         }
 
@@ -596,11 +599,11 @@ namespace LightVsDecay.UI.Panels
                 retryIconImage.sprite = targetSprite;
             }
 
-            retryIconImage.color = (hasFreeRetry || canWatchAd) ? retryIconNormalColor : retryIconDisabledColor;
+            retryIconImage.color = retryIconNormalColor;
 
             if (retryButtonText != null)
             {
-                retryButtonText.color = (hasFreeRetry || canWatchAd) ? retryTextNormalColor : retryIconDisabledColor;
+                retryButtonText.color = retryTextNormalColor;
             }
         }
         

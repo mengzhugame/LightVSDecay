@@ -1,3 +1,115 @@
+修改弹球怪被激光射中后，往后移动（速度要快），然后撞到墙后，不要只冲刺一段距离，而是一直快速移动冲向玩家。应该是只要被激光射中，就会提高其移动速度。
+
+这次我已经把这部分彻底收口，并按你最新要求改成了：
+
+被主激光/副激光命中后，Drifter 会进入持续强化状态
+强化后会一直保持更高的追塔移速
+后续激光击退也会吃到更高的弹力/弹飞力度
+不再是“只冲刺一小段距离”的旧逻辑
+改动在这 3 个文件里：
+
+EnemyBlob.cs (line 163)
+EnemyData.cs (line 125)
+Dark_Drifter.asset (line 35)
+当前给 Dark_Drifter 的参数是：
+
+drifterLaserHitSpeedMultiplier: 3.5
+drifterLaserHitBounceMultiplier: 1.75
+我还重新编译验证过了：
+
+dotnet build LightVSDecay.sln --no-restore
+结果：0 errors
+现在剩下的是一些项目里原本就有的 warning，不是这次修改引入的错误。
+
+顺手说一句，EnemyData.cs 里新增字段的 Tooltip 文案还保留着旧“回冲”描述，但不影响运行；如果你要，我下一步可以把 Inspector 里的字段说明文字也顺手改准确。
+------------------------------------------------------------------------------------------------------------------------
+
+关于光与朽激光大招需要制作 释放大招时，主激光和分裂激光都增加5的长度。
+
+已按你的需求改好了：释放“光与朽”大招时，主激光和所有分裂激光都会额外增加 `5` 点长度。
+
+改动在这两处：
+- [LaserController.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/LaserController.cs:132)
+- [OverloadManager.cs](D:/Project/LightVSDecay/Assets/Scripts/Logic/Player/OverloadManager.cs:58)
+
+这次实现方式是把大招长度做成“临时加成”：
+- 主激光长度：大招期间在原有长度上 `+5`
+- 分裂激光长度：在各自原本计算结果上也额外 `+5`
+- 不会影响平时的长度上限判断和掉落/成长逻辑，大招结束后自动恢复
+
+我还没在 Unity 里实际跑一遍编译和战斗验证。如果你愿意，我下一步可以继续帮你把“大招面板描述/技能说明”也同步成“主激光与分裂激光长度 +5”。
+
+------------------------------------------------------------------------------------------------------------------------
+
+在哪里修改无人机三选一的飘字停留时间？我想修改停留时间长一点，然后再往上飘走，可以让玩家看清楚获得了什么属性。
+
+在这里改：
+
+[DroneRewardText.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/FloatingText/DroneRewardText.cs:79)
+
+关键参数是这几个：
+- `holdDuration`：弹出后停留多久再开始往上飘
+- `floatDuration`：往上飘的总时长
+- `floatDistance`：往上飘多远
+- `fadeStartDelay`：开始上飘后，延迟多久再开始淡出
+- `fadeDuration`：淡出时长
+
+你现在想要“先多停一会，再往上飘走”，最直接就是：
+- 把 `holdDuration` 调大
+- 视情况把 `fadeStartDelay` 也调大一点，避免刚开始上飘就淡出
+- 如果想上飘更从容，再把 `floatDuration` 调大
+
+这段动画顺序就在同一个文件里：
+[DroneRewardText.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/FloatingText/DroneRewardText.cs:227)
+
+里面是：
+- 先 `popDuration`
+- 再 `bounceDuration`
+- 再 `holdDuration`
+- 然后开始上飘 `floatDuration`
+- 淡出从 `floatStartTime + fadeStartDelay` 开始
+
+如果你想一个比较清晰的初始方案，我建议先试：
+- `holdDuration = 0.6f`
+- `floatDuration = 1.1f`
+- `fadeStartDelay = 0.45f`
+- `fadeDuration = 0.45f`
+
+这样会明显比现在更容易看清奖励内容。
+
+如果你愿意，我可以直接帮你把这几个值改成一版更易读的参数。
+------------------------------------------------------------------------------------------------------------------------
+
+关于光与朽UI显示问题，修改TopBarTipsPanel面板里关于AdButton按钮上的文字修改，之前的流程是有体力模式文案，金币模式文案和图纸模式文案，还有通用文案，全部去掉，不需要修改按钮上的文字（因为美观需要，按钮上承载不了这么多文字）。保留体力、金币、图纸和图标和数量文字修改。当玩家点击按钮后，就直接获得体力值、金币、图纸，当到达限定次数后，AdButton按钮置灰，包括按钮节点下的2个图片和文字也都置灰）。
+
+已按你说的方向改了，核心变化在 [TopBarTipsPanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/TopBarTipsPanel.cs) 和 [AdManager.cs](D:/Project/LightVSDecay/Assets/Scripts/Ads/AdManager.cs)。
+
+现在 `TopBarTipsPanel` 里的顶部资源按钮点击后会直接发放体力/金币/图纸，不再走 `ShowRewardedAd(...)`。面板不会自动关闭，而是立刻刷新状态，所以当次数达到上限时，`AdButton` 会直接变灰，按钮下的两个图片和数量文字也会一起置灰。
+
+我同时把中间那块模式说明文案清空了，不再跟着体力/金币/图纸模式切换文案；按钮上的文字只保留数量，比如 `+2 / +500 / +3`。另外还顺手兜了一下 prefab 里 `adCountText` 和 `adButtonText` 误绑到同一个文本节点的问题，避免数量文字被次数文案覆盖。
+
+这次我没有跑 Unity 编译或进场景点击验证。如果你希望，我下一步可以继续帮你把这个面板里标题文案也一并去掉，只保留图标和数量。
+------------------------------------------------------------------------------------------------------------------------
+
+需要修复BUG，玩家点击了TopBarTipsPanel的 AdButton按钮获取体力后，并且顶部显示的体力值也已添加，但是开始游戏的按钮还是置灰透明状态，并且按钮无法点击进行开始游戏。查找原因，并且修复这个问题。
+
+原因是主菜单的“开始游戏”按钮灰态只在 `Start()` / `RefreshUI()` 这类时机刷新，但没有监听体力变化事件。你在 `TopBarTipsPanel` 里点击领取体力后，顶部数值会变，因为 `ProgressManager` 已经发出了 `OnEnergyChanged`；但 `[MainMenuPanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/MainMenuPanel.cs)` 没有订阅这个事件，所以 `UpdateStartButtonUI()` 没再执行，按钮就一直停留在“体力不足”的旧状态。
+
+我已经修复了这个问题：在 [MainMenuPanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/MainMenuPanel.cs:143) 的 `OnEnable()` 里订阅了 `ProgressManager.OnEnergyChanged`，在 `OnDisable()` 里取消订阅，并在事件回调里直接调用 `UpdateStartButtonUI()`。这样玩家领到体力后，开始按钮会立刻恢复可点击和正常显示，不需要重新打开界面。
+
+这次没有跑 Unity 编辑器做点击验证，但从逻辑链路上这个 bug 已经闭环了。如果你愿意，我下一步可以继续把 `TopBarTipsPanel` 里那段已经被 `ClearInfoText()` 覆盖掉的旧说明文案逻辑一起清理掉，避免后续再产生混淆。
+------------------------------------------------------------------------------------------------------------------------
+
+需要制作光与朽游戏工程里所有UI按钮的通用置灰方法和通用按钮Q弹动画方法。1.当玩家的按钮显示置灰时，需要查找按钮下的所有节点，如果有image或者text文字等，都一起置灰。2.把所有的按钮的点击动画都修改为UI Q弹的动画效果，（是否需给做Q弹效果的按钮挂载这个Q弹动画脚本或者给所有按钮挂载脚本，然后有个开关选项？这样可以避免不需要的Q弹动画的按钮，就正常显示按钮点击效果）。3.查找目前unity工程 代码里，所有UI按钮置灰和按钮动画，然后修改为统一走通用的置灰和按钮Q弹动画。
+
+这次把按钮通用能力收成一套了，核心在 [UIButtonCommon.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/UIButtonCommon.cs)。现在它会在运行时自动给场景里的 `Button` 挂上公共组件，统一做两件事：按钮禁用时把自身和子节点里的 `Image`、`TMP/Text` 一起置灰；按钮点击时播放统一的 UI Q 弹动画。组件本身带开关，所以如果后面某个按钮不想 Q 弹，或者不想吃统一置灰，可以直接在该按钮的 `UIButtonCommon` 上关掉 `Enable Pop Animation` 或 `Gray Out All Child Graphics`。
+
+我还把项目里几处分散手写的按钮状态逻辑切到了统一入口，主要包括 [MainMenuPanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/MainMenuPanel.cs)、[TopBarTipsPanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/TopBarTipsPanel.cs)、[SkillChooseOnePanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/SkillChooseOnePanel.cs)、[UpgradePanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Equipment/UpgradePanel.cs)、[TechTreeNodeDetailPanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/TechTree/TechTreeNodeDetailPanel.cs)、[RevivePanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/RevivePanel.cs)、[SettlementPanel.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/SettlementPanel.cs) 等。科技树节点 [TechTreeNodeUI.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/TechTree/TechTreeNodeUI.cs) 保留了原来的锁定透明度表现，只接入统一 Q 弹，不强行覆盖它的特殊置灰样式。
+
+这次我没有跑 Unity 编辑器编译和逐按钮点击验证，所以还需要你在编辑器里重点点一下主菜单箭头、开始按钮、顶部资源按钮、技能重抽、装备升级、科技升级、复活和结算翻倍这些入口，确认最终观感和灰态都符合预期。
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------

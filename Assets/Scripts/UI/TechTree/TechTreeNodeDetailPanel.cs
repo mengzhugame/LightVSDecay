@@ -34,6 +34,7 @@ using LightVsDecay.Logic.TechTree;
 using LightVsDecay.Audio;
 using LightVsDecay.Core;
 using System;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.TechTree
 {
@@ -111,10 +112,12 @@ namespace LightVsDecay.UI.TechTree
         {
             if (closeButton      != null) closeButton.onClick.AddListener(Close);
             if (backgroundButton != null) backgroundButton.onClick.AddListener(Close);
+            UIButtonCommonHelper.Ensure(closeButton);
 
             if (upgradeButton != null)
             {
                 _buttonImage = upgradeButton.GetComponent<Image>();
+                UIButtonCommonHelper.Ensure(upgradeButton);
 
                 var et = upgradeButton.gameObject.GetComponent<UnityEngine.EventSystems.EventTrigger>()
                          ?? upgradeButton.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
@@ -286,13 +289,11 @@ namespace LightVsDecay.UI.TechTree
             bool canUpgrade = prereqOk && canAfford;
 
             // 按钮交互 + 背景色
-            upgradeButton.interactable = canUpgrade;
-            if (_buttonImage != null)
-                _buttonImage.color = canUpgrade ? buttonNormalColor : buttonDisabledColor;
+            UIButtonCommonHelper.SetInteractable(upgradeButton, canUpgrade);
 
             // "升级" 标签文字：可升级=白，否则=灰
             if (upgradeLabelText != null)
-                upgradeLabelText.color = canUpgrade ? costNormalColor : Color.gray;
+                upgradeLabelText.color = costNormalColor;
 
             // 金币数字：首次免费=绿色"免费"，前置不满足=灰，金币不足=红，正常=白
             if (upgradeButtonText != null)
@@ -316,8 +317,9 @@ namespace LightVsDecay.UI.TechTree
 
             // 金币图标：首次免费时隐藏（不需要金币），否则正常显示
             if (goldIconImage != null)
-                goldIconImage.color = (isFreeUpgrade && prereqOk) ? new Color(0, 0, 0, 0)
-                                                                   : (canUpgrade ? Color.white : Color.gray);
+                goldIconImage.color = (isFreeUpgrade && prereqOk) ? new Color(0, 0, 0, 0) : Color.white;
+
+            UIButtonCommonHelper.Sync(upgradeButton);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

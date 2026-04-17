@@ -22,6 +22,7 @@ using UnityEngine.UI;
 using TMPro;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.TechTree;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.TechTree
 {
@@ -57,7 +58,10 @@ namespace LightVsDecay.UI.TechTree
         private void Awake()
         {
             if (button != null)
+            {
+                UIButtonCommonHelper.Configure(button, grayOutAllChildGraphics: false, enablePopAnimation: true);
                 button.onClick.AddListener(OnClicked);
+            }
         }
 
         /// <summary>
@@ -106,7 +110,7 @@ namespace LightVsDecay.UI.TechTree
             }
 
             // 按钮：锁定时禁用（前置未满足），其余可点击
-            if (button != null) button.interactable = !buttonDisabled;
+            UIButtonCommonHelper.SetInteractable(button, !buttonDisabled);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

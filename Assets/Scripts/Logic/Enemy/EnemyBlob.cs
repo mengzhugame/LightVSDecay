@@ -164,10 +164,9 @@ namespace LightVsDecay.Logic.Enemy
         private float knockbackSpeedThreshold = 2.0f; // 速度低于此值视为弹飞结束
         private bool hasFullyEnteredScreen = false;
         private float drifterMaxSpeed = 15f;
-        private float drifterReturnRushDuration = 0f;
-        private float drifterReturnRushSpeedMultiplier = 1f;
-        private bool isDrifterReturnRushing = false;
-        private float drifterReturnRushEndTime = 0f;
+        private float drifterLaserHitSpeedMultiplier = 1f;
+        private float drifterLaserHitBounceMultiplier = 1f;
+        private bool isDrifterLaserEmpowered = false;
 // 僵直时的 Shader 参数缓存
         private float cachedFlowSpeed = 0f;
         private float cachedNoiseScale = 0f;    
@@ -435,8 +434,8 @@ namespace LightVsDecay.Logic.Enemy
                 knockbackMinDuration = data.knockbackMinDuration;
                 knockbackSpeedThreshold = data.knockbackSpeedThreshold;
                 drifterMaxSpeed = data.drifterMaxSpeed;
-                drifterReturnRushDuration = data.drifterReturnRushDuration;
-                drifterReturnRushSpeedMultiplier = data.drifterReturnRushSpeedMultiplier;
+                drifterLaserHitSpeedMultiplier = data.drifterLaserHitSpeedMultiplier;
+                drifterLaserHitBounceMultiplier = data.drifterLaserHitBounceMultiplier;
                 // 视觉
                 minScale = data.minScale;
                 deathFadeDuration = data.deathFadeDuration;
@@ -599,8 +598,7 @@ namespace LightVsDecay.Logic.Enemy
             isBeingKnockedBack = false;
             knockbackStartTime = 0f;
             hasFullyEnteredScreen = false;
-            isDrifterReturnRushing = false;
-            drifterReturnRushEndTime = 0f;
+            isDrifterLaserEmpowered = false;
             // 【新增】弹跳怪入境签证：出生时使用 Enemy Layer
             hasEnteredScreen = false;
             if (isBouncing)
@@ -841,17 +839,9 @@ namespace LightVsDecay.Logic.Enemy
             Vector2 direction = (chaseTarget.position - transform.position).normalized;
 
             float currentMoveSpeed = baseMoveSpeed * speedMultiplier * frostSpeedMultiplier * berserkSpeedMultiplier;
-            if (enemyType == EnemyType.Drifter && isDrifterReturnRushing)
+            if (enemyType == EnemyType.Drifter && isDrifterLaserEmpowered)
             {
-                if (Time.time < drifterReturnRushEndTime)
-                {
-                    currentMoveSpeed *= drifterReturnRushSpeedMultiplier;
-                }
-                else
-                {
-                    isDrifterReturnRushing = false;
-                    drifterReturnRushEndTime = 0f;
-                }
+                currentMoveSpeed *= drifterLaserHitSpeedMultiplier;
             }
             float moveForce = currentMoveSpeed * 10f;
 
@@ -986,6 +976,12 @@ namespace LightVsDecay.Logic.Enemy
             }
             currentHealth -= damage;
             lastHitTime = Time.time;
+
+            if (enemyType == EnemyType.Drifter &&
+                (actualSource == DamageSource.MainLaser || actualSource == DamageSource.SubLaser))
+            {
+                isDrifterLaserEmpowered = true;
+            }
             
             // 根据敌人类型和配置处理击退
             if (canBeKnockedBack)
@@ -1066,7 +1062,8 @@ namespace LightVsDecay.Logic.Enemy
                     knockbackForce.x * sin + knockbackForce.y * cos
                 );
     
-                finalForce = deflectedForce * massScale * knockbackMultiplier * drifterKnockbackMultiplier;
+                float drifterBounceMultiplier = isDrifterLaserEmpowered ? drifterLaserHitBounceMultiplier : 1f;
+                finalForce = deflectedForce * massScale * knockbackMultiplier * drifterKnockbackMultiplier * drifterBounceMultiplier;
     
                 // 使用 Impulse 产生瞬间弹飞
                 rb.AddForce(finalForce, ForceMode2D.Impulse);
@@ -1103,8 +1100,6 @@ namespace LightVsDecay.Logic.Enemy
     
             isBeingKnockedBack = true;
             knockbackStartTime = Time.time;
-            isDrifterReturnRushing = false;
-            drifterReturnRushEndTime = 0f;
     
             // 设置 drag = 0，保持动量
             rb.drag = 0f;
@@ -1122,7 +1117,6 @@ namespace LightVsDecay.Logic.Enemy
         private void ExitKnockbackState()
         {
             isBeingKnockedBack = false;
-            StartDrifterReturnRush();
 #if UNITY_EDITOR
             if(showDebugInfo)
                 GameLogger.Log($"[EnemyBlob] Drifter 弹飞结束，恢复移动");
@@ -1132,15 +1126,6 @@ namespace LightVsDecay.Logic.Enemy
         /// <summary>
         /// 启动 Drifter 弹飞结束后的回冲状态
         /// </summary>
-        private void StartDrifterReturnRush()
-        {
-            if (enemyType != EnemyType.Drifter) return;
-            if (drifterReturnRushDuration <= 0f || drifterReturnRushSpeedMultiplier <= 1f) return;
-
-            isDrifterReturnRushing = true;
-            drifterReturnRushEndTime = Time.time + drifterReturnRushDuration;
-        }
-
         /// <summary>
         /// 检查弹飞是否结束
         /// </summary>

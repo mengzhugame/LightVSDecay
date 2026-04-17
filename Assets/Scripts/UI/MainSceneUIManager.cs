@@ -199,9 +199,7 @@ namespace LightVsDecay.UI
 
         private void SetButtonLockVisual(Button btn, TextMeshProUGUI label, Image icon, bool unlocked)
         {
-            if (btn   != null) btn.interactable  = unlocked;
-            if (label != null) label.color       = unlocked ? unlockedTextColor : lockedTextColor;
-            if (icon  != null) icon.color        = unlocked ? unlockedIconColor : lockedIconColor;
+            UIButtonCommonHelper.SetInteractable(btn, unlocked);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

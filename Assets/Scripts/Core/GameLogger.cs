@@ -18,7 +18,7 @@ namespace LightVsDecay.Core
     public static class GameLogger
     {
         // ==================== 🔧 日志开关（打包时改为 false） ====================
-        private const bool ENABLE_LOG = false;  // ← 开发时 true，打包时 false
+        private const bool ENABLE_LOG = true;  // ← 开发时 true，打包时 false
         // ==========================================================================
 
         // ==================== 普通日志 ====================

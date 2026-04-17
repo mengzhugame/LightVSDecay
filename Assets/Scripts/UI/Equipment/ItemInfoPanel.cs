@@ -29,6 +29,7 @@ using LightVsDecay.Data.Runtime;
 using LightVsDecay.Data.SO;
 using LightVsDecay.Logic.Equipment;
 using System;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Equipment
 {
@@ -96,6 +97,8 @@ namespace LightVsDecay.UI.Equipment
             if (closeButton      != null) closeButton.onClick.AddListener(Close);
             if (backgroundButton != null) backgroundButton.onClick.AddListener(Close);
             if (equipButton      != null) equipButton.onClick.AddListener(OnEquipClicked);
+            UIButtonCommonHelper.Ensure(closeButton);
+            UIButtonCommonHelper.Ensure(equipButton);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -154,8 +157,7 @@ namespace LightVsDecay.UI.Equipment
             bool alreadyBest = hasEquipped
                                && slotData.equipmentId == _stack.equipmentId
                                && slotData.rarity      >= _stack.rarity;
-            if (equipButton != null)
-                equipButton.interactable = !alreadyBest;
+            UIButtonCommonHelper.SetInteractable(equipButton, !alreadyBest);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

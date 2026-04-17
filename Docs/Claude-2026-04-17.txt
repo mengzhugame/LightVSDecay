@@ -672,8 +672,67 @@ UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
   Android Vibrator 的初始化。之后每次调用都复用这个实例，不会重复创建。
 ------------------------------------------------------------------------------------------------------------------------
 
+需要修改光与朽设置面板里，震动选项是默认打开的，玩家可以通过设置面板手动关闭震动设置。
+
+代码已经具备所有必要逻辑，只需要确认一个细节——RefreshToggleStates 里读取震动状态的方式：
+
+  // 第 190 行
+  bool shockOn = HapticFeedback.Instance != null && HapticFeedback.Instance.IsEnabled;
+
+  之前的问题：HapticFeedback 是 Singleton<T>，场景里没有 GameObject，Instance == null，所以 shockOn 永远是 false，Toggle
+   永远显示关闭。
+
+  现在：改为 AutoSingleton<T> 后，HapticFeedback.Instance 会自动创建实例并执行 Awake()，其中：
+
+  // HapticFeedback.cs 第 67 行
+  hapticEnabled = PlayerPrefs.GetInt(PREF_HAPTIC_ENABLED, 1) == 1;  // 默认值 1 = 开启
+
+  首次安装时 PlayerPrefs 里没有记录，默认值是 1，所以 IsEnabled = true，Toggle 正确显示为开启。玩家手动关闭后写入
+  PlayerPrefs，下次打开面板时读取到关闭状态。
+
+  无需修改 SettingsPanel.cs，之前那一行继承声明的改动已经覆盖了全部需求：
+
+  - 默认开启 ✓（PlayerPrefs 默认值 1）
+  - Toggle 正确反映状态 ✓（AutoSingleton 保证 Instance 不为 null）
+  - 玩家关闭后持久化 ✓（SetEnabled 写入 PlayerPrefs）
+
+  重新打包真机测试即可。
 ------------------------------------------------------------------------------------------------------------------------
 
+请检查BOSS入场动画+吼叫音效同时（播放黑线特效 D:\Project\LightVSDecay\Assets\Resources\Effects\Boss\VFX_BlackLine.prefab），我运行游戏测试，没有看到黑线特效，检查是什么原因？预制体加载后没播放特效？还是因为播放时间较短？还是播放时间问题？再播放boss吼叫音效同时播放特效，保证同步。先查找原因，如果流程和代码没有问题，告诉我在那个脚本里加入日志再继续排查。如果查找问题了，请进行修复。
+
+
+● 完成。
+
+  ---
+  问题总结：
+
+  VFX_BlackLine.prefab 的代码架构是对的，但 Inspector 字段 spawnVFXPrefab 从未在场景的 Boss GameObject
+  上被赋值。SpawnVFXPrefab 返回 null，警告打出来，特效直接跳过。
+
+  修复逻辑：
+
+  SpawnRoutine() 触发时
+    ↓
+  先取 SpawnVFXPrefab（Inspector 配置）
+    ↓ 为 null（未配置）
+  Resources.Load("Effects/Boss/VFX_BlackLine")  ← 新增兜底
+    ↓ 加载成功
+  Instantiate → 播放特效 → 自动销毁
+
+  预制体本来就在 Assets/Resources/Effects/Boss/ 下，Resources.Load 可以直接找到，不需要手动改 Inspector。如果将来某个
+  Boss 章节想用专属特效，在 Inspector 里拖入预制体即可自动覆盖默认值。
 ------------------------------------------------------------------------------------------------------------------------
 
+我的boss预制体 D:\Project\LightVSDecay\Assets\Resources\Prefab\Monster\ 文件夹下 Dark_Boss Frost_Boss Lava_Boss 3个BOSS的预制体上都有VFX_BlackLine.prefab 黑线特效预制体。所以你查找的原因和问题是否方向不正确？是否有其它地方导致的问题？或者需要我加一些日志，再继续排查寻找方向吗？如果需要，请添加相关日志。然后等我把日志发给你。
+
+日志已添加。请打一个 Development Build（勾选 Development Build + Script Debugging）或直接运行 Editor，进入 Boss
+  战，然后把 Logcat / Console 里 [VFX_DEBUG] 开头的所有行发给我。
+
+  重点关注以下几项：
+  1. SpawnVFXPrefab 是否为 null — 确认运行时 prefab 是否真的绑上了
+  2. 生成位置 — z 轴是否是 0 或异常大的值（2D 游戏 z 偏大会被剪裁）
+  3. isPlaying / isEmitting — 粒子系统是否真的在播放
+  4. sortingLayer / sortingOrder — 是否被其他 UI 或背景遮盖
+  5. material — 材质是否为 null（材质丢失会导致粒子完全不可见）
 ------------------------------------------------------------------------------------------------------------------------

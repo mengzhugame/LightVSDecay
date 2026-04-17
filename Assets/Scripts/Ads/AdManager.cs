@@ -161,6 +161,18 @@ namespace LightVsDecay.Ads
             onSuccess?.Invoke();
         }
 
+        public bool TryConsumeRewardOpportunity(AdType adType)
+        {
+            if (!CanWatchAd(adType))
+            {
+                Log($"TopBar reward limit reached: {adType}");
+                return false;
+            }
+
+            GrantWatchCount(adType);
+            return true;
+        }
+
         public void PreloadRewardedAd(AdType adType)
         {
             Log($"预加载广告: {adType}");

@@ -15,6 +15,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using LightVsDecay.Core;
+using LightVsDecay.UI;
 
 namespace LightVsDecay.UI.Panels
 {
@@ -108,8 +109,6 @@ namespace LightVsDecay.UI.Panels
         
         // 缓存
         private ChapterDatabase chapterDatabase;
-        private Image startButtonImage;
-        private Color startButtonOriginalColor;
         private bool hasTriggeredFirstPlayAutoStart = false;
         private bool hasAutoShownEnergyPanel = false;
         
@@ -122,11 +121,9 @@ namespace LightVsDecay.UI.Panels
             // 缓存按钮图片组件
             if (startButton != null)
             {
-                startButtonImage = startButton.GetComponent<Image>();
-                if (startButtonImage != null)
-                {
-                    startButtonOriginalColor = startButtonImage.color;
-                }
+                UIButtonCommonHelper.Ensure(startButton);
+                UIButtonCommonHelper.Ensure(leftArrowButton);
+                UIButtonCommonHelper.Ensure(rightArrowButton);
             }
         }
         
@@ -143,11 +140,14 @@ namespace LightVsDecay.UI.Panels
         private void OnEnable()
         {
             hasAutoShownEnergyPanel = false;
+            ProgressManager.OnEnergyChanged += OnEnergyChanged;
             AdManager.Instance.ShowBanner("MainMenu");
+            UpdateStartButtonUI();
         }
 
         private void OnDisable()
         {
+            ProgressManager.OnEnergyChanged -= OnEnergyChanged;
             if (AdManager.HasInstance)
             {
                 AdManager.Instance.HideBanner("MainMenu");
@@ -316,15 +316,7 @@ namespace LightVsDecay.UI.Panels
         /// </summary>
         private void UpdateArrowState(Button button, Image image, bool isEnabled)
         {
-            if (button != null)
-            {
-                button.interactable = isEnabled;
-            }
-            
-            if (image != null)
-            {
-                image.color = isEnabled ? arrowNormalColor : arrowDisabledColor;
-            }
+            UIButtonCommonHelper.SetInteractable(button, isEnabled);
         }
         
         /// <summary>
@@ -405,12 +397,7 @@ namespace LightVsDecay.UI.Panels
             // 能量不足时按钮变灰（但仍可见）
             if (startButton != null && isUnlocked)
             {
-                startButton.interactable = hasEnergy;
-                
-                if (startButtonImage != null)
-                {
-                    startButtonImage.color = hasEnergy ? startButtonOriginalColor : buttonDisabledColor;
-                }
+                UIButtonCommonHelper.SetInteractable(startButton, hasEnergy);
             }
         }
         
@@ -708,6 +695,11 @@ namespace LightVsDecay.UI.Panels
 
             hasAutoShownEnergyPanel = true;
             topBarTipsPanel.Show(TopBarResourceType.Energy);
+        }
+
+        private void OnEnergyChanged(int current, int max)
+        {
+            UpdateStartButtonUI();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

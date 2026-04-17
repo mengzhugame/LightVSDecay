@@ -126,11 +126,11 @@ namespace LightVsDecay.Data.SO
         [Range(0.5f, 10f)]
         public float knockbackSpeedThreshold = 2.0f;
         [Tooltip("Drifter 弹飞结束后的回冲持续时间")]
-        [Range(0f, 2f)]
-        public float drifterReturnRushDuration = 0f;
-        [Tooltip("Drifter 回冲期间的移动速度倍率")]
         [Range(1f, 8f)]
-        public float drifterReturnRushSpeedMultiplier = 1f;
+        public float drifterLaserHitSpeedMultiplier = 1f;
+        [Tooltip("Drifter 回冲期间的移动速度倍率")]
+        [Range(1f, 4f)]
+        public float drifterLaserHitBounceMultiplier = 1f;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 视觉设置
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -132,6 +132,7 @@ namespace LightVsDecay.Logic.Player
         // 大招倍率（由 OverloadManager 控制）
         private bool isOverloadActive = false;
         private float overloadWidthMultiplier = 1f;
+        private float overloadLengthBonus = 0f;
         
         // 副激光管理
         private List<SubLaserData> subLasers = new List<SubLaserData>();
@@ -189,9 +190,10 @@ namespace LightVsDecay.Logic.Player
         public float CurrentCritRate => critSystem.CurrentCritRate;
         public float CritMultiplier => critSystem.TotalCritMultiplier;
         public int SubLaserCount => subLasers.Count;
-        public float CurrentLaserLength => maxLaserLength * skillLengthMultiplier;
+        private float BaseCurrentLaserLength => maxLaserLength * skillLengthMultiplier;
+        public float CurrentLaserLength => BaseCurrentLaserLength + overloadLengthBonus;
         public float CurrentDamagePerTick => damageCalculator.CurrentDamagePerTick;
-        public bool IsMainLaserAtLengthCap => CurrentLaserLength >= MAIN_LASER_LENGTH_CAP - 0.01f;
+        public bool IsMainLaserAtLengthCap => BaseCurrentLaserLength >= MAIN_LASER_LENGTH_CAP - 0.01f;
         public bool HasReflexLengthBonus => reflexLengthBonusApplied > 0f;
         public float CurrentPanelDPS => damageCalculator.CurrentPanelDPS;
         public bool IsOverloadActive => isOverloadActive;
@@ -1258,7 +1260,8 @@ namespace LightVsDecay.Logic.Player
 
         private float GetSubLaserLength(float lengthMultiplier)
         {
-            return Mathf.Min(CurrentLaserLength * lengthMultiplier, SUB_LASER_LENGTH_CAP);
+            float baseSubLaserLength = Mathf.Min(BaseCurrentLaserLength * lengthMultiplier, SUB_LASER_LENGTH_CAP);
+            return baseSubLaserLength + overloadLengthBonus;
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1427,13 +1430,15 @@ namespace LightVsDecay.Logic.Player
             }
         }
         
-        public void SetOverloadActive(bool active, float damageMultiplier, float widthMultiplier)
+        public void SetOverloadActive(bool active, float damageMultiplier, float widthMultiplier, float lengthBonus)
         {
             isOverloadActive = active;
             overloadWidthMultiplier = active ? widthMultiplier : 1f;
+            overloadLengthBonus = active ? Mathf.Max(0f, lengthBonus) : 0f;
             damageCalculator.SetOverloadActive(active, damageMultiplier);
     
             UpdateAllLaserWidths();
+            RefreshAllLaserLengths();
     
             if (showDebugInfo)
             {
