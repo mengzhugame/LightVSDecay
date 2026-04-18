@@ -65,6 +65,8 @@ namespace LightVsDecay.Logic.TacticalDrop
         private bool canBeDamaged = false; // 落地后才能受伤
         private Vector3 originalPosition;
         private Tween shakeTween;
+        private Tween vanishTween;
+        private Tween fadeTween;
         private Material spriteMaterial;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -94,7 +96,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         
         private void OnDestroy()
         {
-            shakeTween?.Kill();
+            KillActiveTweens();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -250,6 +252,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         {
             if (isDead) return;
             isDead = true;
+            KillScaleTweens();
             
             if (showDebugInfo)
             {
@@ -285,7 +288,8 @@ namespace LightVsDecay.Logic.TacticalDrop
             // 隐藏宝箱
             if (spriteRenderer != null)
             {
-                spriteRenderer.DOFade(0f, 0.2f);
+                fadeTween?.Kill();
+                fadeTween = spriteRenderer.DOFade(0f, 0.2f);
             }
             
             // 延迟销毁
@@ -299,6 +303,7 @@ namespace LightVsDecay.Logic.TacticalDrop
         {
             if (isDead) return;
             isDead = true;
+            KillScaleTweens();
             
             if (showDebugInfo)
             {
@@ -318,9 +323,33 @@ namespace LightVsDecay.Logic.TacticalDrop
             }
 
             // 缩小消失动画
-            transform.DOScale(Vector3.zero, 0.3f)
+            vanishTween = transform.DOScale(Vector3.zero, 0.3f)
                 .SetEase(Ease.InBack)
                 .OnComplete(() => Destroy(gameObject));
+        }
+
+        private void KillScaleTweens()
+        {
+            shakeTween?.Kill();
+            shakeTween = null;
+
+            vanishTween?.Kill();
+            vanishTween = null;
+
+            transform.DOKill();
+        }
+
+        private void KillActiveTweens()
+        {
+            KillScaleTweens();
+
+            fadeTween?.Kill();
+            fadeTween = null;
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.DOKill();
+            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

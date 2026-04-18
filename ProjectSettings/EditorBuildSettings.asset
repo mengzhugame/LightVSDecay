@@ -13,9 +13,9 @@ EditorBuildSettings:
     guid: c1e2bc5217f7efe499ab1c30b37df189
   m_BuildProfiles:
   - enabled: 1
-    packaged: 0
+    packaged: 1
     path: Assets/Settings/Build Profiles/New WeChat Profile.asset
-    guid: 9a710e0abb05fcd43bc5b11241a02dfe
+    guid: 951bafa3d8843674fb12f13ed9462add
   m_configObjects: {}
   m_SlimFeaturesWeixinMiniGame:
     AllocateOverhead: 1

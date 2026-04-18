@@ -1,21 +1,20 @@
 {
   "dependencies": {
-    "cn.tuanjie.wx-uploader": {
-      "version": "0.1.4",
+    "cn.tuanjie.minihost": {
+      "version": "1.0.14",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.nuget.mono-cecil": "1.10.1",
         "com.unity.nuget.newtonsoft-json": "3.2.1"
       },
       "url": "https://packages.tuanjie.cn"
     },
     "com.qq.weixin.minigame": {
-      "version": "https://gitee.com/wechat-minigame/minigame-tuanjie-transform-sdk.git#v0.1.18",
+      "version": "https://github.com/wechat-miniprogram/minigame-tuanjie-transform-sdk.git",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "4443e5a9bcf800118f7c3e10a7750e804ed3121b"
+      "hash": "f67e7851c345f514e9079819cae16273ff05b33c"
     },
     "com.unity.2d.animation": {
       "version": "9.2.0",
@@ -124,7 +123,7 @@
       "url": "https://packages.tuanjie.cn"
     },
     "com.unity.collab-proxy": {
-      "version": "2.10.2",
+      "version": "2.8.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -139,23 +138,6 @@
         "com.unity.modules.unityanalytics": "1.0.0",
         "com.unity.nuget.mono-cecil": "1.11.4"
       },
-      "url": "https://packages.tuanjie.cn"
-    },
-    "com.unity.connect.share": {
-      "version": "4.2.4",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.editorcoroutines": "1.0.0",
-        "com.unity.settings-manager": "1.0.2"
-      },
-      "url": "https://packages.tuanjie.cn"
-    },
-    "com.unity.editorcoroutines": {
-      "version": "1.0.0",
-      "depth": 1,
-      "source": "registry",
-      "dependencies": {},
       "url": "https://packages.tuanjie.cn"
     },
     "com.unity.ext.nunit": {
@@ -207,7 +189,7 @@
     },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.4",
-      "depth": 1,
+      "depth": 3,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.tuanjie.cn"
@@ -260,13 +242,6 @@
       "dependencies": {},
       "url": "https://packages.tuanjie.cn"
     },
-    "com.unity.settings-manager": {
-      "version": "2.0.1",
-      "depth": 1,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.tuanjie.cn"
-    },
     "com.unity.shadergraph": {
       "version": "14.1.0",
       "depth": 1,
@@ -288,7 +263,7 @@
       "url": "https://packages.tuanjie.cn"
     },
     "com.unity.textmeshpro": {
-      "version": "3.0.6",
+      "version": "3.0.7",
       "depth": 0,
       "source": "registry",
       "dependencies": {

@@ -69,6 +69,7 @@ namespace LightVsDecay.UI.TacticalDrop
         private float lastUpdateTime = 0f;
         private Tween fadeTween;
         private Tween pulseTween;
+        private Tween scaleTween;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -112,8 +113,7 @@ namespace LightVsDecay.UI.TacticalDrop
         
         private void OnDestroy()
         {
-            fadeTween?.Kill();
-            pulseTween?.Kill();
+            KillActiveTweens();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -183,6 +183,11 @@ namespace LightVsDecay.UI.TacticalDrop
     
             fadeTween?.Kill();
             pulseTween?.Kill();
+            pulseTween = null;
+            scaleTween?.Kill();
+            pulseTween = null;
+            scaleTween?.Kill();
+            scaleTween = null;
     
             if (canvasGroup != null)
             {
@@ -208,6 +213,9 @@ namespace LightVsDecay.UI.TacticalDrop
     
             fadeTween?.Kill();
             pulseTween?.Kill();
+            pulseTween = null;
+            scaleTween?.Kill();
+            scaleTween = null;
     
             if (canvasGroup != null)
             {
@@ -238,11 +246,12 @@ namespace LightVsDecay.UI.TacticalDrop
             pulseTween?.Kill();
             
             // 放大后消失
-            transform.DOScale(Vector3.one * 1.5f, 0.3f).SetEase(Ease.OutBack);
+            scaleTween = transform.DOScale(Vector3.one * 1.5f, 0.3f).SetEase(Ease.OutBack);
             
             if (canvasGroup != null)
             {
-                canvasGroup.DOFade(0f, 0.3f).SetDelay(0.1f);
+                fadeTween?.Kill();
+                fadeTween = canvasGroup.DOFade(0f, 0.3f).SetDelay(0.1f);
             }
         }
         
@@ -275,11 +284,27 @@ namespace LightVsDecay.UI.TacticalDrop
         private void StartPulseAnimation()
         {
             pulseTween?.Kill();
+            scaleTween?.Kill();
+            scaleTween = null;
             
             transform.localScale = Vector3.one;
             pulseTween = transform.DOScale(Vector3.one * pulseScale, 0.5f)
                 .SetEase(Ease.InOutSine)
                 .SetLoops(-1, LoopType.Yoyo);
+        }
+
+        private void KillActiveTweens()
+        {
+            fadeTween?.Kill();
+            fadeTween = null;
+
+            pulseTween?.Kill();
+            pulseTween = null;
+
+            scaleTween?.Kill();
+            scaleTween = null;
+
+            transform.DOKill();
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

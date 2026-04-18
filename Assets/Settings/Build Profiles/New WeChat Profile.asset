@@ -15,16 +15,16 @@ MonoBehaviour:
   m_BuildTarget: 47
   m_Subtarget: 0
   m_ModuleName: WeixinMiniGame
-  m_BuildPath: D:/Wechat/LightVsDecay/Development
+  m_BuildPath: D:/Wechat
   m_PlatformSettings:
-    rid: 3354070650192920586
+    rid: 8058052030103814148
   m_MiniGameSettings:
-    rid: -2
+    rid: 8058052030103814146
   m_PlayerSettingsYaml:
     m_Settings:
     - line: '| m_ObjectHideFlags: 0'
     - line: '| serializedVersion: 26'
-    - line: '| productGUID: 1696bfb2bfff0654aa28ac52d5ce738b'
+    - line: '| productGUID: d2a87c48de7b3624788aa32bc5ac0059'
     - line: '| AndroidProfiler: 0'
     - line: '| hmiUseInternalProfiler: 0'
     - line: '| AndroidFilterTouchesWhenObscured: 0'
@@ -33,8 +33,8 @@ MonoBehaviour:
     - line: '| targetDevice: 2'
     - line: '| useOnDemandResources: 0'
     - line: '| accelerometerFrequency: 60'
-    - line: '| companyName: DefaultCompany'
-    - line: '| productName: LightVSDecay'
+    - line: '| companyName: MengZhu'
+    - line: '| productName: MeiZhuangDieDieLe'
     - line: '| defaultCursor: {instanceID: 0}'
     - line: '| cursorHotspot: {x: 0, y: 0}'
     - line: '| m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902,
@@ -63,7 +63,7 @@ MonoBehaviour:
     - line: '|   height: 1'
     - line: '| m_SplashScreenLogos: []'
     - line: '| m_VirtualRealitySplashScreen: {instanceID: 0}'
-    - line: '| expectedBundleIdentifier: com.DefaultCompany.LightVSDecay'
+    - line: '| expectedBundleIdentifier: com.MengZhu.MeiZhuangDieDieLe'
     - line: '| integrityHash: '
     - line: '| m_HolographicTrackingLossScreen: {instanceID: 0}'
     - line: '| defaultScreenWidth: 1920'
@@ -212,7 +212,7 @@ MonoBehaviour:
     - line: '| androidSupportedAspectRatio: 1'
     - line: '| androidMaxAspectRatio: 2.1'
     - line: '| applicationIdentifier:'
-    - line: '|   Standalone: com.DefaultCompany.LightVSDecay'
+    - line: '|   Android: com.DefaultCompany.URP2D'
     - line: '| buildNumber:'
     - line: '|   Standalone: 0'
     - line: '|   VisionOS: 0'
@@ -345,7 +345,7 @@ MonoBehaviour:
     - line: '| - m_BuildTarget: '
     - line: '|   m_Icons:'
     - line: '|   - serializedVersion: 2'
-    - line: '|     m_Icon: {instanceID: 682}'
+    - line: '|     m_Icon: {instanceID: 652}'
     - line: '|     m_Width: 128'
     - line: '|     m_Height: 128'
     - line: '|     m_Kind: 0'
@@ -447,8 +447,11 @@ MonoBehaviour:
     - line: '| m_BuildTargetGraphicsJobs: []'
     - line: '| m_BuildTargetGraphicsJobMode: []'
     - line: '| m_BuildTargetGraphicsAPIs:'
-    - line: '| - m_BuildTarget: WeixinMiniGameSupport'
+    - line: '| - m_BuildTarget: WebGLSupport'
     - line: '|   m_APIs: 08000000'
+    - line: '|   m_Automatic: 0'
+    - line: '| - m_BuildTarget: WeixinMiniGameSupport'
+    - line: '|   m_APIs: 0b000000'
     - line: '|   m_Automatic: 0'
     - line: '| m_BuildTargetVRSettings: []'
     - line: '| m_DefaultShaderChunkSizeInMB: 16'
@@ -700,7 +703,7 @@ MonoBehaviour:
     - line: '| ps4IncludedModules: []'
     - line: '| ps4attribVROutputEnabled: 0'
     - line: '| monoEnv: '
-    - line: '| splashScreenBackgroundSourceLandscape: {instanceID: 0}'
+    - line: '| splashScreenBackgroundSourceLandscape: {instanceID: 654}'
     - line: '| splashScreenBackgroundSourcePortrait: {instanceID: 0}'
     - line: '| blurSplashScreenBackground: 1'
     - line: '| spritePackerPolicy: '
@@ -710,7 +713,9 @@ MonoBehaviour:
     - line: '| webGLShowDiagnostics: 0'
     - line: '| webGLDataCaching: 1'
     - line: '| webGLDebugSymbols: 0'
-    - line: '| webGLEmscriptenArgs: '
+    - line: '| webGLEmscriptenArgs: '' -s EXPORTED_FUNCTIONS=_sbrk,_emscripten_stack_get_base,_emscripten_stack_get_end'
+    - line: '|   -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s TOTAL_MEMORY=256MB -s EXPORTED_RUNTIME_METHODS=''''["ccall","cwrap","stackTrace","addRunDependency","removeRunDependency","FS_createPath","FS_createDataFile","stackTrace","writeStackCookie","checkStackCookie","lengthBytesUTF8","stringToUTF8"]'''''
+    - line: '|   --profiling-funcs '''
     - line: '| webGLModulesDirectory: '
     - line: '| webGLTemplate: APPLICATION:Default'
     - line: '| webGLAnalyzeBuildSize: 0'
@@ -755,6 +760,7 @@ MonoBehaviour:
     - line: '| scriptingBackend: {}'
     - line: '| il2cppCompilerConfiguration: {}'
     - line: '| il2cppCodeGeneration:'
+    - line: '|   WebGL: 1'
     - line: '|   WeixinMiniGame: 1'
     - line: '| managedStrippingLevel:'
     - line: '|   ArmLinux: 1'
@@ -770,7 +776,7 @@ MonoBehaviour:
     - line: '|   Stadia: 1'
     - line: '|   VisionOS: 1'
     - line: '|   WebGL: 1'
-    - line: '|   WeixinMiniGame: 1'
+    - line: '|   WeixinMiniGame: 3'
     - line: '|   Windows Store Apps: 1'
     - line: '|   XboxOne: 1'
     - line: '|   iPhone: 1'
@@ -788,14 +794,14 @@ MonoBehaviour:
     - line: '| apiCompatibilityLevelPerPlatform: {}'
     - line: '| m_RenderingPath: 1'
     - line: '| m_MobileRenderingPath: 1'
-    - line: '| metroPackageName: LightVSDecay'
+    - line: '| metroPackageName: URP2D'
     - line: '| metroPackageVersion: '
     - line: '| metroCertificatePath: '
     - line: '| metroCertificatePassword: '
     - line: '| metroCertificateSubject: '
     - line: '| metroCertificateIssuer: '
     - line: '| metroCertificateNotAfter: 0000000000000000'
-    - line: '| metroApplicationDescription: LightVSDecay'
+    - line: '| metroApplicationDescription: URP2D'
     - line: '| wsaImages: {}'
     - line: '| metroTileShortName: '
     - line: '| metroTileShowName: 0'
@@ -891,7 +897,7 @@ MonoBehaviour:
     - line: '| OpenHarmonyUseCustomTuanjiePlayerAbility: 0'
     - line: '| apiCompatibilityLevel: 6'
     - line: '| weixinMiniGameMemorySize: 32'
-    - line: '| weixinMiniGameExceptionSupport: 1'
+    - line: '| weixinMiniGameExceptionSupport: 0'
     - line: '| weixinMiniGameExceptionOnlyEnableForUserCodes: 0'
     - line: '| weixinMiniGameNameFilesAsHashes: 0'
     - line: '| weixinMiniGameShowDiagnostics: 0'
@@ -908,7 +914,7 @@ MonoBehaviour:
     - line: '| weixinMiniGameWasmArithmeticExceptions: 0'
     - line: '| weixinMiniGameLinkerTarget: 1'
     - line: '| weixinMiniGameThreadsSupport: 0'
-    - line: '| weixinMiniGameDecompressionFallback: 0'
+    - line: '| weixinMiniGameDecompressionFallback: 1'
     - line: '| weixinMiniGameInitialMemorySize: 32'
     - line: '| weixinMiniGameMaximumMemorySize: 2048'
     - line: '| weixinMiniGameMemoryGrowthMode: 2'
@@ -945,9 +951,101 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
-    - rid: 3354070650192920586
+    - rid: 8058052030103814146
+      type: {class: DefaultWeChatMiniGameSettings, ns: UnityEditor.ExternalMiniGame, asm: UnityEditor.CoreModule}
+      data:
+        m_HostName: WeChat
+        m_Editor:
+          rid: 8058052030103814147
+        ProjectConf:
+          projectName: "\u7F8E\u5986\u53E0\u53E0\u4E50"
+          Appid: wx6fcde927f3e825ca
+          CDN: https://cloud1-8gibhdfidc86ea6e-1385471466.tcloudbaseapp.com/webgl/
+          assetLoadType: 0
+          compressDataPackage: 1
+          VideoUrl: 
+          DST: D:/Wechat
+          StreamCDN: 
+          bundleHashLength: 32
+          bundlePathIdentifier: StreamingAssets;
+          bundleExcludeExtensions: json;
+          AssetsUrl: 
+          MemorySize: 256
+          HideAfterCallMain: 1
+          preloadFiles: 
+          Orientation: 0
+          bgImageSrc: Assets/Art_Resource/Textures/Background.png
+          dataFileSubPrefix: 
+          maxStorage: 200
+          defaultReleaseSize: 31457280
+          texturesHashLength: 8
+          texturesPath: Assets/Textures
+          needCacheTextures: 1
+          loadingBarWidth: 240
+          needCheckUpdate: 0
+          disableHighPerformanceFallback: 0
+          IOSDevicePixelRatio: 0
+        SDKOptions:
+          UseFriendRelation: 0
+          UseCompressedTexture: 0
+          UseMiniGameChat: 0
+          PreloadWXFont: 0
+        CompileOptions:
+          DevelopBuild: 0
+          AutoProfile: 0
+          ScriptOnly: 0
+          Il2CppOptimizeSize: 1
+          profilingFuncs: 1
+          Webgl2: 0
+          fbslim: 0
+          DeleteStreamingAssets: 1
+          ProfilingMemory: 0
+          CleanBuild: 0
+          CustomNodePath: 
+          autoAdaptScreen: 1
+          showMonitorSuggestModal: 1
+          enableProfileStats: 0
+          enableRenderAnalysis: 0
+          iOSAutoGCInterval: 10000
+          enableIOSPerformancePlus: 0
+          brotliMT: 1
+        CompressTexture:
+          halfSize: 0
+          useDXT5: 0
+          bundleSuffix: bundle
+          parallelWithBundle: 0
+          bundleDir: 
+          dstMinDir: 
+          debugMode: 0
+          force: 0
+        PlayerPrefsKeys: []
+        FontOptions:
+          CJK_Unified_Ideographs: 1
+          C0_Controls_and_Basic_Latin: 1
+          CJK_Symbols_and_Punctuation: 1
+          General_Punctuation: 1
+          Enclosed_CJK_Letters_and_Months: 1
+          Vertical_Forms: 1
+          CJK_Compatibility_Forms: 1
+          Miscellaneous_Symbols: 1
+          CJK_Compatibility: 1
+          Halfwidth_and_Fullwidth_Forms: 1
+          Dingbats: 1
+          Letterlike_Symbols: 1
+          Enclosed_Alphanumerics: 1
+          Number_Forms: 1
+          Currency_Symbols: 1
+          Arrows: 1
+          Geometric_Shapes: 1
+          Mathematical_Operators: 1
+          CustomUnicode: 
+        m_AutomaticFillInstantGame: 1
+    - rid: 8058052030103814147
+      type: {class: DefaultWeChatMiniGameSettingsEditor, ns: UnityEditor.ExternalMiniGame, asm: UnityEditor.CoreModule}
+      data:
+        m_HostName: WeChat
+        tex: {fileID: 2800000, guid: ded32c00b5d7cc44490a87b7ed87c96f, type: 3}
+    - rid: 8058052030103814148
       type: {class: MiniGamePlatformSettings, ns: UnityEditor.WeixinMiniGame, asm: UnityEditor.WeixinMiniGame.Extensions}
       data:
         m_Development: 0
