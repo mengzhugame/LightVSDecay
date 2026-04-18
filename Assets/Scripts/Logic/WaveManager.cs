@@ -110,7 +110,17 @@ namespace LightVsDecay.Logic
         public bool IsBossWave => currentWaveData?.isBossWave ?? false;
         public string ConfigName => waveConfig != null ? waveConfig.name : "Unknown";
         public float WaveProgress => totalEnemiesInWave > 0 ? (float)enemiesKilled / totalEnemiesInWave : 0f;
-        
+
+        /// <summary>
+        /// 向当前波次追加额外击杀目标数（教学引导专用）。
+        /// 仅在 Spawning/Battle 状态下生效；其他状态额外击杀不计入波次，无需调整。
+        /// </summary>
+        public void AddBonusEnemyCount(int count)
+        {
+            if (currentState != WaveState.Spawning && currentState != WaveState.Battle) return;
+            totalEnemiesInWave += count;
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
