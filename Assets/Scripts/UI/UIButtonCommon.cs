@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using LightVsDecay.Audio;
 
 namespace LightVsDecay.UI
 {
@@ -20,6 +21,9 @@ namespace LightVsDecay.UI
         [SerializeField] private float popScale = 1.08f;
         [SerializeField] private float popDuration = 0.18f;
         [SerializeField] private bool useUnscaledTime = true;
+
+        [Header("Click Sound")]
+        [SerializeField] private bool enableClickSfx = true;
 
         private Button _button;
         private RectTransform _rectTransform;
@@ -61,12 +65,15 @@ namespace LightVsDecay.UI
 
         private void OnEnable()
         {
+            RegisterButtonSound();
             ResetScale();
             SyncVisualState();
         }
 
         private void OnDisable()
         {
+            UnregisterButtonSound();
+
             if (_popCoroutine != null)
             {
                 StopCoroutine(_popCoroutine);
@@ -199,6 +206,42 @@ namespace LightVsDecay.UI
             {
                 _rectTransform.localScale = _baseScale;
             }
+        }
+
+        private void RegisterButtonSound()
+        {
+            if (_button == null)
+            {
+                _button = GetComponent<Button>();
+            }
+
+            if (_button == null)
+            {
+                return;
+            }
+
+            _button.onClick.RemoveListener(PlayClickSound);
+            _button.onClick.AddListener(PlayClickSound);
+        }
+
+        private void UnregisterButtonSound()
+        {
+            if (_button == null)
+            {
+                return;
+            }
+
+            _button.onClick.RemoveListener(PlayClickSound);
+        }
+
+        private void PlayClickSound()
+        {
+            if (!enableClickSfx || _button == null || !_button.interactable)
+            {
+                return;
+            }
+
+            AudioManager.Instance?.PlayButtonClick();
         }
 
         private void RebuildTargets()

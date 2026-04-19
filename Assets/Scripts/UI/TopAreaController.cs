@@ -170,8 +170,6 @@ namespace LightVsDecay.UI
 
         private void OnSettingClicked()
         {
-            PlayButtonSound();
-
             if (settingsPanel != null)
                 settingsPanel.Show(false);   // false = 主界面，不显示重启按钮
             else
@@ -183,8 +181,6 @@ namespace LightVsDecay.UI
 
         private void OnBackClicked()
         {
-            PlayButtonSound();
-
             MainSceneUIManager.Instance?.BackToMain();
             BackClicked?.Invoke();
 
@@ -262,18 +258,11 @@ namespace LightVsDecay.UI
             if (showDebugInfo)
                 GameLogger.Log($"[TopAreaController] 金币更新: {newAmount}");
         }
-        private void PlayButtonSound()
-        {
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.PlayButtonClick();
-        }
-
         /// <summary>静态便捷刷新（无单例引用时调用）</summary>
         public static void RefreshIfExists() => Instance?.Refresh();
         
         private void OnEnergyClicked()
         {
-            PlayButtonSound();
             topBarTipsPanel?.Show();
 
             if (showDebugInfo)
@@ -281,12 +270,10 @@ namespace LightVsDecay.UI
         }
         private void OnGoldClicked()
         {
-            PlayButtonSound();
             topBarTipsPanel?.Show(TopBarResourceType.Gold);
         }
         private void OnBlueprintClicked()
         {
-            PlayButtonSound();
             topBarTipsPanel?.Show(TopBarResourceType.Blueprint);
         }
         private void OnEnergyChanged(int current, int max)

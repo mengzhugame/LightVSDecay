@@ -116,6 +116,9 @@ namespace LightVsDecay.UI.Equipment
         // 私有
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private void OnClicked() => _onClickCallback?.Invoke(_stack);
+        private void OnClicked()
+        {
+            _onClickCallback?.Invoke(_stack);
+        }
     }
 }

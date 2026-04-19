@@ -208,9 +208,6 @@ namespace LightVsDecay.UI
             UpdateCheckmarkPosition(musicCheckmark, isOn);
             UpdateFillImage(musicFillImage, isOn);
             
-            // 播放按钮音效
-            PlayButtonSound();
-            
             if (showDebugInfo)
             {
                 GameLogger.Log($"[SettingsPanel] 音乐开关: {isOn}");
@@ -226,8 +223,6 @@ namespace LightVsDecay.UI
             UpdateCheckmarkPosition(soundCheckmark, isOn);
             UpdateFillImage(soundFillImage, isOn);
 
-            PlayButtonSound();
-
             if (showDebugInfo)
             {
                 GameLogger.Log($"[SettingsPanel] 音效开关: {isOn}");
@@ -242,8 +237,6 @@ namespace LightVsDecay.UI
             }
             UpdateCheckmarkPosition(shockCheckmark, isOn);
             UpdateFillImage(shockFillImage, isOn);
-
-            PlayButtonSound();
 
             if (showDebugInfo)
             {
@@ -276,8 +269,6 @@ namespace LightVsDecay.UI
         
         private void OnHomeButtonClicked()
         {
-            PlayButtonSound();
-            
             if (showDebugInfo)
             {
                 GameLogger.Log("[SettingsPanel] 点击返回主页");
@@ -295,8 +286,6 @@ namespace LightVsDecay.UI
         
         private void OnContinueButtonClicked()
         {
-            PlayButtonSound();
-
             if (showDebugInfo)
             {
                 GameLogger.Log("[SettingsPanel] 点击继续游戏");
@@ -311,7 +300,6 @@ namespace LightVsDecay.UI
         
         private void OnCloseClicked()
         {
-            PlayButtonSound();
             Hide();
 
             if (showDebugInfo)
@@ -379,12 +367,5 @@ namespace LightVsDecay.UI
         // 辅助方法
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        private void PlayButtonSound()
-        {
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayButtonClick();
-            }
-        }
     }
 }

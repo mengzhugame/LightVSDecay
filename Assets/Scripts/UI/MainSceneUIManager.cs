@@ -250,21 +250,18 @@ namespace LightVsDecay.UI
 
         private void OnKeJiButtonClicked()
         {
-            PlayButtonSound();
             SwitchToState(MainSceneState.KeJi);
             if (showDebugInfo) GameLogger.Log("[MainSceneUIManager] → 科技树界面");
         }
 
         private void OnZhuangBeiButtonClicked()
         {
-            PlayButtonSound();
             SwitchToState(MainSceneState.ZhuangBei);
             if (showDebugInfo) GameLogger.Log("[MainSceneUIManager] → 装备界面");
         }
 
         private void OnBackButtonClicked()
         {
-            PlayButtonSound();
             SwitchToState(MainSceneState.Main);
             if (showDebugInfo) GameLogger.Log("[MainSceneUIManager] → 主界面");
         }
@@ -332,10 +329,5 @@ namespace LightVsDecay.UI
             if (obj != null) obj.SetActive(active);
         }
 
-        private void PlayButtonSound()
-        {
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.PlayButtonClick();
-        }
     }
 }

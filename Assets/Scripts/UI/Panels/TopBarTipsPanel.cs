@@ -227,19 +227,16 @@ namespace LightVsDecay.UI.Panels
             SetCountdownGroupVisible(!isFull);
 
             // InfoMainText：满载 / 可看 / 已耗尽 三种状态
-            if (infoMainText != null)
-            {
-                if (isFull)
-                    infoMainText.text = energyInfoFull;
-                else if (canWatch)
-                    infoMainText.text = energyInfoRecover;
-                // 耗尽时由 SetAdButton 覆写
-            }
+            if (isFull)
+                SetInfoText(energyInfoFull);
+            else if (canWatch)
+                SetInfoText(energyInfoRecover);
+            else
+                SetInfoText(adExhaustedInfo);
 
-            ClearInfoText();
             RefreshCountdown();
 
-            SetAdButton(canWatch, $"+{pm?.AdEnergyReward ?? 2}");
+            SetAdButton(canWatch, $"+{pm?.AdEnergyReward ?? 2}", adExhaustedInfo);
             SetAdCount(adManager?.GetDailyCount(AdType.EnergyTopUp) ?? 0, adManager?.GetDailyLimit(AdType.EnergyTopUp) ?? 0);
         }
 
@@ -271,10 +268,8 @@ namespace LightVsDecay.UI.Panels
             SetCountdownGroupVisible(false);
 
             bool canWatch = pm != null && adManager != null && adManager.CanWatchAd(AdType.GoldTopUp);
-
-            ClearInfoText();
-
-            SetAdButton(canWatch, $"+{pm?.AdGoldReward ?? 500}");
+            SetInfoText(canWatch ? goldInfo : adExhaustedInfo);
+            SetAdButton(canWatch, $"+{pm?.AdGoldReward ?? 500}", adExhaustedInfo);
             SetAdCount(adManager?.GetDailyCount(AdType.GoldTopUp) ?? 0, adManager?.GetDailyLimit(AdType.GoldTopUp) ?? 0);
         }
 
@@ -290,10 +285,8 @@ namespace LightVsDecay.UI.Panels
             SetCountdownGroupVisible(false);
 
             bool canWatch = pm != null && adManager != null && adManager.CanWatchAd(AdType.BlueprintTopUp);
-
-            ClearInfoText();
-
-            SetAdButton(canWatch, $"+{pm?.AdBlueprintReward ?? 3}");
+            SetInfoText(canWatch ? blueprintInfo : adExhaustedInfo);
+            SetAdButton(canWatch, $"+{pm?.AdBlueprintReward ?? 3}", adExhaustedInfo);
             SetAdCount(adManager?.GetDailyCount(AdType.BlueprintTopUp) ?? 0, adManager?.GetDailyLimit(AdType.BlueprintTopUp) ?? 0);
         }
 
@@ -318,10 +311,10 @@ namespace LightVsDecay.UI.Panels
                 countdownText.gameObject.SetActive(visible);
         }
 
-        private void ClearInfoText()
+        private void SetInfoText(string text)
         {
             if (infoMainText != null)
-                infoMainText.text = string.Empty;
+                infoMainText.text = string.IsNullOrEmpty(text) ? string.Empty : text;
         }
 
         private void SetAdButton(bool interactable, string buttonAmountText, string exhaustedInfoText = "")

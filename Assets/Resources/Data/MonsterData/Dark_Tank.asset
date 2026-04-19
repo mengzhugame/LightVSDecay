@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "\u5766\u514B"
   description: "\u57FA\u7840\u654C\u4EBA\u5355\u4F4D\uFF0C\u8089\u76FE\u602A\uFF0C\u8840\u9AD8\uFF0C\u8D28\u91CF\u5927\uFF0C\u6FC0\u5149\u63A8\u4E0D\u52A8"
   maxHealth: 8000
-  moveSpeed: 1.2
+  moveSpeed: 1.35
   mass: 8
   contactDamage: 80
   attackInterval: 1
@@ -36,6 +36,8 @@ MonoBehaviour:
   knockbackMinDuration: 0.5
   drifterMaxSpeed: 15
   knockbackSpeedThreshold: 2
+  drifterLaserHitSpeedMultiplier: 1
+  drifterLaserHitBounceMultiplier: 1
   minScale: 0.3
   deathFadeDuration: 1
   normalFlowSpeed: 0.1
@@ -50,6 +52,42 @@ MonoBehaviour:
   deathCoinBurst: 0
   lowLevelBonusXP: 0
   lowLevelThreshold: 12
+  splitOnDeath: 0
+  splitEnemyType: 0
+  splitCount: 2
+  splitImpulseSpeed: 4
+  spawnPuddleOnDeath: 0
+  puddleEnemyType: 13
+  puddleSizeMultiplier: 1
+  explosionAoeDamage: 0
+  explosionAoeRadius: 3
+  disableHitFlash: 0
+  disableKnockback: 0
+  gunnerStopYPercent: 0.6
+  gunnerMaxDistFromTower: 6.5
+  gunnerShootInterval: 8
+  gunnerRepositionRange: 2
+  gunnerProjectilePrefab: {fileID: 0}
+  gunnerProjectileSpeed: 5
+  gunnerProjectileDamage: 40
+  gunnerProjectileHP: 20
+  gunnerProjectileLifetime: 8
+  autoDestroyTime: 0
+  iceWallHatchInterval: 0
+  iceWallHatchType: 0
+  isCatalyst: 0
+  catalystBurstRadius: 5
+  catalystBurstDuration: 5
+  catalystSpeedMultiplier: 2
+  catalystDamageTakenMultiplier: 1.5
+  catalystIceWallHatchSpeedMult: 2
+  frostcasterIceWallCount: 1
+  frostcasterRandomWallCount: 0
+  frostcasterIceWallType: 20
+  frostcasterChargeCount: 3
+  frostcasterRushSpeedMultiplier: 1.5
+  hasIceShield: 0
+  iceShieldMaxHP: 15000
   collisionBehavior: 0
   isBouncing: 0
   bounceForce: 300

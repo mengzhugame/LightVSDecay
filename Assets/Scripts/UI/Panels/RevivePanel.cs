@@ -32,13 +32,13 @@ namespace LightVsDecay.UI.Panels
         {
             if (quitButton != null)
             {
-                quitButton.onClick.RemoveAllListeners();
+                quitButton.onClick.RemoveListener(OnQuitClicked);
                 quitButton.onClick.AddListener(OnQuitClicked);
             }
 
             if (reviveButton != null)
             {
-                reviveButton.onClick.RemoveAllListeners();
+                reviveButton.onClick.RemoveListener(OnReviveClicked);
                 reviveButton.onClick.AddListener(OnReviveClicked);
             }
 

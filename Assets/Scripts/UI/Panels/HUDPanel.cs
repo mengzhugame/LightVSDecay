@@ -1120,12 +1120,6 @@ namespace LightVsDecay.UI.Panels
         {
             GameLogger.Log("[HUDPanel] 点击暂停按钮");
     
-            // 播放按钮音效
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayButtonClick();
-            }
-    
             // 打开设置面板（显示底部按钮区域）
             if (settingsPanel != null)
             {

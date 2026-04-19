@@ -17,7 +17,7 @@ namespace LightVsDecay.Debugging
         private GUIStyle labelStyle;
         private GUIStyle backgroundStyle;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
             if (instance != null)

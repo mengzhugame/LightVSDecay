@@ -454,8 +454,6 @@ namespace LightVsDecay.UI.Panels
         {
             if (currentViewIndex <= 0) return;
             
-            PlayButtonSound();
-            
             currentViewIndex--;
             SaveCurrentViewIndex();
             
@@ -476,8 +474,6 @@ namespace LightVsDecay.UI.Panels
         private void OnRightArrowClicked()
         {
             if (currentViewIndex >= totalChapters - 1) return;
-            
-            PlayButtonSound();
             
             currentViewIndex++;
             SaveCurrentViewIndex();
@@ -531,8 +527,6 @@ namespace LightVsDecay.UI.Panels
                 return;
             }
             
-            PlayButtonSound();
-            
             // 获取要挑战的难度
             int difficulty = GetChapterNextDifficulty(currentViewIndex);
             
@@ -565,17 +559,6 @@ namespace LightVsDecay.UI.Panels
             {
                 // 降级方案：直接加载场景
                 UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
-            }
-        }
-
-        /// <summary>
-        /// 播放按钮音效
-        /// </summary>
-        private void PlayButtonSound()
-        {
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayButtonClick();
             }
         }
 

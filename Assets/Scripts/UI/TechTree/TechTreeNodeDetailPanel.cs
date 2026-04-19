@@ -400,9 +400,6 @@ namespace LightVsDecay.UI.TechTree
 
             if (result == TechUpgradeResult.Success)
             {
-                if (AudioManager.Instance != null)
-                    AudioManager.Instance.PlayButtonClick();
-
                 int newLevel = TechTreeManager.Instance.GetNodeLevel(_data.nodeId);
                 Refresh();
                 _parent?.RefreshAll();

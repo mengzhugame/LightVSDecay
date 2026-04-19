@@ -392,30 +392,34 @@ namespace LightVsDecay.UI.Panels
         {
             if (doubleReceivedButton != null)
             {
-                doubleReceivedButton.onClick.RemoveAllListeners();
-                doubleReceivedButton.onClick.AddListener(() =>
-                {
-                    AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickDouble);
-                    AdManager.Instance.ShowRewardedAd(AdType.SettlementDouble,
-                        onSuccess: () =>
-                        {
-                            ApplyRewardsToManagers(true);
-                            ReturnToMainMenu();
-                        },
-                        onFail: RefreshDoubleButtonState);
-                });
+                doubleReceivedButton.onClick.RemoveListener(OnDoubleReceivedClicked);
+                doubleReceivedButton.onClick.AddListener(OnDoubleReceivedClicked);
             }
             if (returnButton != null)
             {
-                returnButton.onClick.RemoveAllListeners();
-                returnButton.onClick.AddListener(() =>
-                {
-                    ApplyRewardsToManagers(false);
-                    ReturnToMainMenu();
-                });
+                returnButton.onClick.RemoveListener(OnReturnClicked);
+                returnButton.onClick.AddListener(OnReturnClicked);
             }
 
             RefreshDoubleButtonState();
+        }
+
+        private void OnDoubleReceivedClicked()
+        {
+            AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickDouble);
+            AdManager.Instance.ShowRewardedAd(AdType.SettlementDouble,
+                onSuccess: () =>
+                {
+                    ApplyRewardsToManagers(true);
+                    ReturnToMainMenu();
+                },
+                onFail: RefreshDoubleButtonState);
+        }
+
+        private void OnReturnClicked()
+        {
+            ApplyRewardsToManagers(false);
+            ReturnToMainMenu();
         }
 
         private void RefreshDoubleButtonState()

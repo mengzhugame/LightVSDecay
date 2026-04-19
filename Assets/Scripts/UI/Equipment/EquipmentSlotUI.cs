@@ -75,7 +75,8 @@ namespace LightVsDecay.UI.Equipment
                 _button = GetComponent<Button>();
                 if (_button != null)
                 {
-                    _button.onClick.RemoveAllListeners();
+                    UIButtonCommonHelper.Ensure(_button);
+                    _button.onClick.RemoveListener(OnClicked);
                     _button.onClick.AddListener(OnClicked);
                 }
             }
