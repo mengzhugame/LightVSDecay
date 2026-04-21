@@ -34,7 +34,7 @@ MonoBehaviour:
     bossHealthMultiplier: 1
     bossAttackMultiplier: 1
     coinDropMultiplier: 1
-    expDropMultiplier: 1
+    expDropMultiplier: 1.6
     playerLevelUpExpMultiplier: 1
     overrideWaveConfig: {fileID: 0}
   - difficultyLevel: 2
