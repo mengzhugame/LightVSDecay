@@ -697,7 +697,9 @@ namespace LightVsDecay.Logic
         private void OnXPOrbCollected(int xp)
         {
             if (xp <= 0) return;
-            AddExp(xp);
+            float expMult = GameManager.Instance?.CurrentDifficultySettings?.expDropMultiplier ?? 1f;
+            int finalXp = expMult != 1f ? Mathf.RoundToInt(xp * expMult) : xp;
+            AddExp(finalXp);
         }
 
         private void OnEnemyDied(EnemyType type, Vector3 pos, int xp, int coin)

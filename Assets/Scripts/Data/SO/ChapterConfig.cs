@@ -72,8 +72,8 @@ namespace LightVsDecay.Data.SO
         [Range(1f, 3f)]
         public float coinDropMultiplier = 1f;
 
-        [Tooltip("经验掉落倍率（已废弃，保留兼容性，值始终为1.0，升级减速改由 playerLevelUpExpMultiplier 实现）")]
-        [Range(0.5f, 2f)]
+        [Tooltip("经验掉落倍率（D1 短关模式设为2.0，让6波内达到Lv17；D2-D5保持1.0，通过playerLevelUpExpMultiplier控制升级速度）")]
+        [Range(0.5f, 3f)]
         public float expDropMultiplier = 1f;
 
         [Tooltip("升级所需经验倍率（D2-D5 提高升级门槛，替代经验压缩方案，保证W9=Lv17锚点）")]
