@@ -659,11 +659,11 @@ namespace LightVsDecay.Logic
                 extraDamageMult = buff.damageMultiplier;
             }
     
-            // 计算最终难度修正（考虑空投增强）
+            // 计算最终难度修正（波次倍率 × 章节难度倍率 × 空投增强）
             DifficultyModifiers modifiers = new DifficultyModifiers
             {
-                hpMultiplier = waveDifficulty * extraHealthMult,
-                speedMultiplier = Mathf.Min(waveDifficulty  * extraSpeedMult, 2.5f),
+                hpMultiplier = waveDifficulty * chapterHealthMult * extraHealthMult,
+                speedMultiplier = Mathf.Min(waveDifficulty * chapterSpeedMult * extraSpeedMult, 2.5f),
                 massMultiplier = 1f + (waveDifficulty - 1f) * 0.3f,
                 damageMultiplier = waveDifficulty * extraDamageMult
             };
