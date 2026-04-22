@@ -5,6 +5,7 @@
 // ============================================================
 
 using UnityEngine;
+using TMPro;
 using DG.Tweening;
 using LightVsDecay.Audio;
 using LightVsDecay.Data.SO;
@@ -37,6 +38,9 @@ namespace LightVsDecay.Logic.TacticalDrop
         
         [Tooltip("圆环进度条UI（子物体）")]
         [SerializeField] private CrateProgressUI progressUI;
+
+        [Tooltip("头顶标题标签")]
+        [SerializeField] private TextMeshProUGUI titleLabel;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 配置
@@ -120,6 +124,26 @@ namespace LightVsDecay.Logic.TacticalDrop
             if (progressUI != null)
             {
                 progressUI.ResetProgress();
+            }
+
+            // 设置标题标签
+            if (titleLabel != null)
+            {
+                switch (type)
+                {
+                    case CrateType.Supply:
+                        titleLabel.text = "生命补给";
+                        titleLabel.color = new Color(0.4f, 0.898f, 1f); // #66E5FF 蓝绿
+                        break;
+                    case CrateType.Gacha:
+                        titleLabel.text = "命运空投";
+                        titleLabel.color = new Color(1f, 0.843f, 0f); // #FFD700 金色
+                        break;
+                    case CrateType.Deal:
+                        titleLabel.text = "等价交换";
+                        titleLabel.color = new Color(1f, 0.302f, 0.302f); // #FF4D4D 红色
+                        break;
+                }
             }
             
             if (showDebugInfo)
