@@ -468,6 +468,26 @@ namespace LightVsDecay.Logic.Player
         /// 获取当前最大长度
         /// </summary>
         public float GetMaxLength() => maxLength;
+
+        public Color GetCurrentColor()
+        {
+            if (hasRequestedBaseColor)
+            {
+                return requestedBaseColor;
+            }
+
+            if (hasOriginalColor)
+            {
+                return originalBaseColor;
+            }
+
+            if (lineRenderer != null && lineRenderer.sharedMaterial != null && lineRenderer.sharedMaterial.HasProperty(BaseColorID))
+            {
+                return lineRenderer.sharedMaterial.GetColor(BaseColorID);
+            }
+
+            return Color.white;
+        }
         
         /// <summary>
         /// 获取所有激光段数据（供伤害检测使用）

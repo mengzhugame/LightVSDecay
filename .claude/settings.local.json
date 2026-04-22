@@ -53,7 +53,9 @@
       "Bash(C:/Users/WangYongCheng/AppData/Local/Programs/Python/Python310/python.exe *)",
       "Bash(xargs -I{} echo \"{}\")",
       "Bash(grep -l \"HapticFeedback\" \"D:/Project/LightVSDecay/Assets/Scenes/\"*.scene)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(awk '{print $NF, $6, $7, $8}')",
+      "WebFetch(domain:mp.weixin.qq.com)"
     ]
   }
 }

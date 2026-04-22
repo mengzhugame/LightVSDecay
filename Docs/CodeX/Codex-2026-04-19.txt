@@ -1,4 +1,34 @@
 需要解决装备界面点击背包的物品，没有点击音效（EquipmentItem），然后点击体力界面的AdButton 按钮点击也没有音效的问题，需要你排查并解决按钮点击音效问题。然后TopBarTipsPanel提示界面的InfoText信息框，需要显示相关的文本信息，也就是把TopBarTipsPanel脚本里的体力模式文案，金币模式文案，图纸模式文案，通用文案等文案信息显示到 InfoMainText 信息组件里。
+
+已经把这三个问题一起处理好了。
+
+[EquipmentItemUI.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Equipment/EquipmentItemUI.cs) 现在在背包物品点击时会主动调用 `AudioManager.Instance?.PlayButtonClick()`，所以 `EquipmentItem` 点击有音效了。这里的根因是：项目里的 `Button` 组件本身不会自动播点击声，之前只绑定了业务回调，没有声音逻辑。
+
+[TopBarTipsPanel.cs](/D:/Project/LightVSDecay/Assets/Scripts/UI/Panels/TopBarTipsPanel.cs) 里我也给 `AdButton` 的点击补上了 `PlayButtonClick()`，所以体力界面的广告按钮现在也会有点击音效。它之前虽然有 `Button` 和 `UIButtonCommon`，但 `UIButtonCommon` 只负责动效/置灰，不负责音效。
+
+另外 `TopBarTipsPanel` 的 `InfoMainText` 显示问题也修了。之前 `RefreshEnergyMode/RefreshGoldMode/RefreshBlueprintMode` 里刚写入文案，后面又被 `ClearInfoText()` 清空，所以看起来像“文案没生效”。现在改成了：
+体力模式显示 `energyInfoFull` / `energyInfoRecover` / `adExhaustedInfo`，
+金币模式显示 `goldInfo` 或 `adExhaustedInfo`，
+图纸模式显示 `blueprintInfo` 或 `adExhaustedInfo`。
+
+我跑了 `dotnet build Assembly-CSharp.csproj`，结果是 0 error，只有项目原本已有的一些 warning。你现在可以重点回归这几处：
+装备面板背包 item 点击，
+TopBar 里的体力广告按钮点击，
+TopBarTipsPanel 在体力 / 金币 / 图纸三种模式下 `InfoMainText` 是否正确切换文案。
 ------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------
+
+还有装备界面的一键合成，一键装备按钮，还有科技树界面的TechTreeNode，玩家点击这些节点的按钮，还有点击装备或者升级按钮，关闭按钮等等，需要你制作只要有button组件，就需要播放点击按钮的音效。做一个通用的调用接口，以后只要是关于按钮点击就直接播放通用的点击音效。
+
+已完成通用按钮点击音效方案。
+
+现在按钮点击音效统一接入到 [UIButtonCommon.cs](D:/Project/LightVSDecay/Assets/Scripts/UI/UIButtonCommon.cs:1)：只要按钮挂上或被自动补上 `UIButtonCommon`，点击时就会调用 `AudioManager.Instance.PlayButtonClick()`。项目里已有的 `UIButtonCommonAutoInstaller` 会在场景加载后和运行中定期扫描所有 `Button`，所以装备界面的一键合成、一键装备、科技树 `TechTreeNode`、装备/升级/关闭按钮、体力界面的 `AdButton` 等都会被覆盖。
+
+同时我处理了几个会导致“按钮有 Button 但没音效”的根因：
+
+- 修复了多处 `RemoveAllListeners()`，避免把通用点击音效监听一起清掉。
+- `EquipmentItemUI`、`EquipmentSlotUI` 这类动态绑定按钮会显式调用 `UIButtonCommonHelper.Ensure(...)`。
+- 移除了旧的手动 `PlayButtonClick()` 调用，避免部分按钮未来出现双重点击音效。
+- 保留 `ButtonSFX.cs` 作为旧脚本，但目前没发现 prefab/scene 在用它；以后统一推荐用 `UIButtonCommon` 或 `UIButtonCommonHelper.Ensure(button)`。
+
+验证结果：已运行 `dotnet build Assembly-CSharp.csproj -nologo`，构建通过，`0` 个错误，只有项目已有的警告。
 ------------------------------------------------------------------------------------------------------------------------

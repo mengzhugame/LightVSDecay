@@ -4880,7 +4880,7 @@ GameObject:
   - component: {fileID: 3777014977116893666}
   m_Layer: 0
   m_HasEditorInfo: 1
-  m_Name: EndVFX (1)
+  m_Name: StartVFX
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9843,6 +9843,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spriteRenderer: {fileID: 7976080757613646689}
+  particleSystems:
+  - {fileID: 4552695394931663303}
+  - {fileID: 2305697063575742965}
+  - {fileID: 2094259168008964487}
+  - {fileID: 1433565363377420253}
+  particleRenderers: []
   baseWidth: 0.5
   baseColor: {r: 1, g: 1, b: 1, a: 1}
   enableJitter: 1
@@ -9877,7 +9883,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3777014977116893666}
@@ -14712,7 +14718,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7123097536600420824}

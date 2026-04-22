@@ -2577,7 +2577,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &265641513
 Transform:
   m_ObjectHideFlags: 0
@@ -3233,7 +3233,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31a4c72d773660343b18340989ce02ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chainLightningPrefab: {fileID: 4899465964056212147, guid: 4ccf5357f6ebdb04e93e06fb1c24902e, type: 3}
+  chainLightningPrefab: {fileID: 6281695177116715518, guid: f94108b90b18e594a86937c4e37fecdb, type: 3}
   poolPrewarmCount: 10
   poolMaxCount: 20
   showDebugInfo: 0
@@ -9056,6 +9056,9 @@ MonoBehaviour:
   swipeThreshold: 8
   overloadConfig: {fileID: 11400000, guid: 0fedc661f726a42409a70ee630adfc9f, type: 2}
   overloadButtonRect: {fileID: 960533965}
+  preUltimateSpawnThreshold: 0.83
+  preUltimateSpawnCount: 15
+  spawnInterval: 0.05
 --- !u!1 &1245219309
 GameObject:
   m_ObjectHideFlags: 0

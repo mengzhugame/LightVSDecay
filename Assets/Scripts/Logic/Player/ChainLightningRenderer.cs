@@ -22,12 +22,15 @@ namespace LightVsDecay.Logic.Player
         
         [Header("组件")]
         [SerializeField] private SpriteRenderer spriteRenderer;
+        [SerializeField] private ParticleSystem[] particleSystems;
+        [SerializeField] private ParticleSystemRenderer[] particleRenderers;
         
         [Header("视觉设置")]
         [Tooltip("基础宽度（Y轴缩放）")]
         [SerializeField] private float baseWidth = 0.2f;
         
         [Tooltip("基础颜色（乘以材质颜色）")]
+        [ColorUsage(true, true)]
         [SerializeField] private Color baseColor = Color.white;
         
         [Header("闪电抖动")]
@@ -53,6 +56,12 @@ namespace LightVsDecay.Logic.Player
         
         // 原始sprite尺寸（用于计算拉伸比例）
         private float originalSpriteWidth = 1f;
+        private MaterialPropertyBlock particlePropertyBlock;
+
+        private static readonly int EmissionColorID = Shader.PropertyToID("_EmissionColor");
+        private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorID = Shader.PropertyToID("_Color");
+        private static readonly int TintColorID = Shader.PropertyToID("_TintColor");
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 属性
@@ -74,12 +83,17 @@ namespace LightVsDecay.Logic.Player
         private void Awake()
         {
             cachedTransform = transform;
+            particlePropertyBlock = new MaterialPropertyBlock();
             
             // 自动获取 SpriteRenderer
             if (spriteRenderer == null)
             {
                 spriteRenderer = GetComponent<SpriteRenderer>();
             }
+
+            CacheParticleSystems();
+            CacheParticleRenderers();
+            ConfigureParticlesForPooling();
             
             // 缓存原始sprite宽度
             if (spriteRenderer != null && spriteRenderer.sprite != null)
@@ -99,6 +113,7 @@ namespace LightVsDecay.Logic.Player
             
             // 初始隐藏
             SetVisible(false);
+            StopParticles();
         }
         
         private void Update()
@@ -140,6 +155,7 @@ namespace LightVsDecay.Logic.Player
             // 更新视觉
             UpdateVisual();
             SetVisible(true);
+            PlayParticles();
             isActive = true;
         }
         
@@ -162,6 +178,7 @@ namespace LightVsDecay.Logic.Player
         {
             isActive = false;
             SetVisible(false);
+            StopParticles();
         }
         
         /// <summary>
@@ -171,6 +188,7 @@ namespace LightVsDecay.Logic.Player
         {
             baseColor = color;
             UpdateVisual();
+            ApplyParticleColor(color);
         }
         
         /// <summary>
@@ -220,6 +238,7 @@ namespace LightVsDecay.Logic.Player
             Color finalColor = baseColor;
             finalColor.a = currentAlpha;
             spriteRenderer.color = finalColor;
+            ApplyRendererMaterialColor(spriteRenderer, finalColor);
         }
         
         /// <summary>
@@ -248,6 +267,110 @@ namespace LightVsDecay.Logic.Player
             {
                 spriteRenderer.enabled = visible;
             }
+        }
+
+        private void CacheParticleSystems()
+        {
+            if (particleSystems == null || particleSystems.Length == 0)
+            {
+                particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+            }
+        }
+
+        private void CacheParticleRenderers()
+        {
+            if (particleRenderers == null || particleRenderers.Length == 0)
+            {
+                particleRenderers = GetComponentsInChildren<ParticleSystemRenderer>(true);
+            }
+        }
+
+        private void ConfigureParticlesForPooling()
+        {
+            if (particleSystems == null) return;
+
+            foreach (var ps in particleSystems)
+            {
+                if (ps == null) continue;
+
+                var main = ps.main;
+                main.playOnAwake = false;
+            }
+        }
+
+        private void PlayParticles()
+        {
+            if (particleSystems == null) return;
+
+            ApplyParticleColor(baseColor);
+
+            foreach (var ps in particleSystems)
+            {
+                if (ps == null) continue;
+
+                ps.Clear(true);
+                ps.Play(true);
+            }
+        }
+
+        private void StopParticles()
+        {
+            if (particleSystems == null) return;
+
+            foreach (var ps in particleSystems)
+            {
+                if (ps == null) continue;
+
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
+
+        private void ApplyParticleColor(Color color)
+        {
+            ApplyColorToParticleSystems(color);
+            ApplyColorToParticleRenderers(color);
+        }
+
+        private void ApplyColorToParticleSystems(Color color)
+        {
+            if (particleSystems == null) return;
+
+            foreach (var ps in particleSystems)
+            {
+                if (ps == null) continue;
+
+                var main = ps.main;
+                main.startColor = color;
+            }
+        }
+
+        private void ApplyColorToParticleRenderers(Color color)
+        {
+            if (particleRenderers == null) return;
+
+            foreach (var renderer in particleRenderers)
+            {
+                if (renderer == null) continue;
+
+                ApplyRendererMaterialColor(renderer, color);
+            }
+        }
+
+        private void ApplyRendererMaterialColor(Renderer renderer, Color color)
+        {
+            if (renderer == null) return;
+
+            if (particlePropertyBlock == null)
+            {
+                particlePropertyBlock = new MaterialPropertyBlock();
+            }
+
+            renderer.GetPropertyBlock(particlePropertyBlock);
+            particlePropertyBlock.SetColor(EmissionColorID, color);
+            particlePropertyBlock.SetColor(BaseColorID, color);
+            particlePropertyBlock.SetColor(ColorID, color);
+            particlePropertyBlock.SetColor(TintColorID, color);
+            renderer.SetPropertyBlock(particlePropertyBlock);
         }
         
         /// <summary>

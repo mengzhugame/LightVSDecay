@@ -100,7 +100,6 @@ namespace LightVsDecay.Logic.Player
         private Dictionary<int, LaserHitData> frameHitEnemies = new Dictionary<int, LaserHitData>();
         
         private Color chainColor = Color.white;
-        private bool hasCustomChainColor = false;
         /// <summary>激光命中数据</summary>
         private struct LaserHitData
         {
@@ -276,7 +275,6 @@ namespace LightVsDecay.Logic.Player
         public void SetChainColor(Color color)
         {
             chainColor = color;
-            hasCustomChainColor = true;
             // 更新所有当前活跃的传导线
             foreach (var r in activeRenderers)
                 if (r != null && r.IsActive) r.SetColor(color);
@@ -285,10 +283,8 @@ namespace LightVsDecay.Logic.Player
         /// <summary>重置传导线颜色为默认</summary>
         public void ResetChainColor()
         {
-            hasCustomChainColor = false;
-            chainColor = Color.white;
             foreach (var r in activeRenderers)
-                if (r != null && r.IsActive) r.SetColor(Color.white);
+                if (r != null && r.IsActive) r.SetColor(chainColor);
         }
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 私有方法 - 初始化
@@ -500,14 +496,14 @@ namespace LightVsDecay.Logic.Player
             var renderer = GetRenderer();
             if (renderer != null)
             {
+                renderer.SetColor(chainColor);
+
                 renderer.Initialize(
                     source.transform.position,
                     target.transform.position,
                     bounceIndex,
                     group.isMainLaser
                 );
-                if (hasCustomChainColor)
-                    renderer.SetColor(chainColor);
             }
             
             var link = new ChainLink

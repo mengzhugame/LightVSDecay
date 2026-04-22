@@ -197,6 +197,7 @@ namespace LightVsDecay.Logic.Player
         public bool HasReflexLengthBonus => reflexLengthBonusApplied > 0f;
         public float CurrentPanelDPS => damageCalculator.CurrentPanelDPS;
         public bool IsOverloadActive => isOverloadActive;
+        public Color CurrentLaserColor => mainLaserColor;
         /// <summary>获取面板 DPS（供 SkillEffectManager 计算爆炸伤害用）</summary>
         public float GetPanelDPS() => damageCalculator.CurrentPanelDPS;
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -207,6 +208,7 @@ namespace LightVsDecay.Logic.Player
         {
             InitializeFromSettings();
             CacheComponents();
+            SyncChainColorWithCurrentLaser();
             audioHandler.StartLaserAudio();
         }
         
@@ -1111,7 +1113,23 @@ namespace LightVsDecay.Logic.Player
                     subLaser.beam.ResetColor();
                 }
             }
-            ChainLightningManager.Instance?.ResetChainColor();
+            SyncChainColorWithCurrentLaser();
+        }
+
+        private void SyncChainColorWithCurrentLaser()
+        {
+            mainLaserColor = GetCurrentMainLaserColor();
+            ChainLightningManager.Instance?.SetChainColor(mainLaserColor);
+        }
+
+        private Color GetCurrentMainLaserColor()
+        {
+            if (mainLaserBeam != null)
+            {
+                return mainLaserBeam.GetCurrentColor();
+            }
+
+            return mainLaserColor;
         }
         
         public void ResetVFXColor()
