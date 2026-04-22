@@ -28,7 +28,7 @@ MonoBehaviour:
   difficulties:
   - difficultyLevel: 1
     displayName: "\u865A\u7A7A\u4E4B\u89E6"
-    enemyHealthMultiplier: 1
+    enemyHealthMultiplier: 0.6
     enemyCountMultiplier: 1
     enemySpeedMultiplier: 1
     bossHealthMultiplier: 1
