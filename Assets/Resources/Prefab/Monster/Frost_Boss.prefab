@@ -5657,7 +5657,7 @@ MonoBehaviour:
   absoluteZeroSummonCount: 15
   absoluteZeroCooldownPhase12: 30
   absoluteZeroCooldownPhase3: 12
-  absoluteZeroWarningEffect: {fileID: 6912483658588924419, guid: 185fcceef7e895c41a5c1e1a3e93f215, type: 3}
+  absoluteZeroWarningEffect: {fileID: 8591164676255997689, guid: f11a50dc5a6002542888eb091656a984, type: 3}
   bingCiTransforms:
   - {fileID: 6051209882962071039}
   - {fileID: 7588614840702755016}

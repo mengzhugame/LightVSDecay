@@ -550,7 +550,7 @@ namespace LightVsDecay.Logic.Player
 
             float safeBaseWidth = Mathf.Max(0.01f, baseWidth);
             float widthRatio = Mathf.Max(1f, laserWidth / safeBaseWidth);
-            float brightnessScale = Mathf.Clamp(1f / Mathf.Sqrt(widthRatio), 0.35f, 1f);
+            float brightnessScale = Mathf.Clamp(1f / Mathf.Sqrt(widthRatio), 0.55f, 1f);
             Color compensatedColor = requestedBaseColor * brightnessScale;
             compensatedColor.a = requestedBaseColor.a;
 
