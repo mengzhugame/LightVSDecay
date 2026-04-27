@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using LightVsDecay.Core;
 
@@ -65,6 +66,17 @@ namespace LightVsDecay.Ads
             }
             instance = this;
             DontDestroyOnLoad(gameObject);
+        }
+
+        private void Start()
+        {
+            // 延迟一帧：确保团结引擎的 JS 桥接和微信运行时就绪后再初始化广告
+            StartCoroutine(PreloadAllAdsDelayed());
+        }
+
+        private IEnumerator PreloadAllAdsDelayed()
+        {
+            yield return null;
             PreloadAllAds();
         }
 
