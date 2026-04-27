@@ -141,17 +141,12 @@ namespace LightVsDecay.UI.Panels
         {
             hasAutoShownEnergyPanel = false;
             ProgressManager.OnEnergyChanged += OnEnergyChanged;
-            AdManager.Instance.ShowBanner("MainMenu");
             UpdateStartButtonUI();
         }
 
         private void OnDisable()
         {
             ProgressManager.OnEnergyChanged -= OnEnergyChanged;
-            if (AdManager.HasInstance)
-            {
-                AdManager.Instance.HideBanner("MainMenu");
-            }
         }
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

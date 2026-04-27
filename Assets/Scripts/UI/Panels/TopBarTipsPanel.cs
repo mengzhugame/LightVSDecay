@@ -350,31 +350,28 @@ namespace LightVsDecay.UI.Panels
             var adManager = AdManager.Instance;
             if (pm == null || adManager == null) return;
 
+            // 播放期间禁用按钮，防止重复点击
+            UIButtonCommonHelper.SetInteractable(adButton, false);
+
             switch (_currentMode)
             {
                 case TopBarResourceType.Energy:
                     AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickEnergy);
-                    if (adManager.TryConsumeRewardOpportunity(AdType.EnergyTopUp))
-                    {
-                        pm.GrantAdEnergyReward();
-                        Hide();
-                    }
-                    else
-                    {
-                        RefreshAll();
-                    }
+                    adManager.ShowRewardedAd(AdType.EnergyTopUp,
+                        onSuccess: () => { pm.GrantAdEnergyReward(); Hide(); },
+                        onFail: RefreshAll);
                     break;
                 case TopBarResourceType.Gold:
                     AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickGold);
-                    if (adManager.TryConsumeRewardOpportunity(AdType.GoldTopUp))
-                        pm.GrantAdGoldReward();
-                    RefreshAll();
+                    adManager.ShowRewardedAd(AdType.GoldTopUp,
+                        onSuccess: () => { pm.GrantAdGoldReward(); RefreshAll(); },
+                        onFail: RefreshAll);
                     break;
                 case TopBarResourceType.Blueprint:
                     AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickBlueprint);
-                    if (adManager.TryConsumeRewardOpportunity(AdType.BlueprintTopUp))
-                        pm.GrantAdBlueprintReward();
-                    RefreshAll();
+                    adManager.ShowRewardedAd(AdType.BlueprintTopUp,
+                        onSuccess: () => { pm.GrantAdBlueprintReward(); RefreshAll(); },
+                        onFail: RefreshAll);
                     break;
             }
         }

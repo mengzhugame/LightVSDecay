@@ -7,46 +7,38 @@ namespace LightVsDecay.Ads
     public sealed class AdManager : MonoBehaviour
     {
         private const string SharedDailyTotalKey = "ad_shared_total_{0}";
-        private const string DailyCountKey = "ad_daily_count_{0}_{1}";
+        private const string DailyCountKey       = "ad_daily_count_{0}_{1}";
 
         private static AdManager instance;
 
         [Header("Debug")]
+        [Tooltip("true=编辑器占位模式（不调用真实广告）；发布微信前务必设为 false")]
         [SerializeField] private bool usePlaceholderAds = true;
         [SerializeField] private bool showDebugInfo = false;
 
         [Header("Rewarded Video AdUnitId")]
-        [SerializeField] private string skillRerollAdUnitId = string.Empty;
+        [SerializeField] private string skillRerollAdUnitId      = string.Empty;
         [SerializeField] private string settlementDoubleAdUnitId = string.Empty;
-        [SerializeField] private string reviveAdUnitId = string.Empty;
-        [SerializeField] private string energyTopUpAdUnitId = string.Empty;
-        [SerializeField] private string goldTopUpAdUnitId = string.Empty;
-        [SerializeField] private string blueprintTopUpAdUnitId = string.Empty;
-
-        [Header("Banner AdUnitId")]
-        [SerializeField] private string mainMenuBannerAdUnitId = string.Empty;
-        [SerializeField] private string settlementBannerAdUnitId = string.Empty;
+        [SerializeField] private string reviveAdUnitId           = string.Empty;
+        [SerializeField] private string energyTopUpAdUnitId      = string.Empty;
+        [SerializeField] private string goldTopUpAdUnitId        = string.Empty;
+        [SerializeField] private string blueprintTopUpAdUnitId   = string.Empty;
 
         private bool hasRevivedThisGame;
         private bool hasSettlementDoubleThisGame;
         private bool hasSkillRerollThisLevel;
-        private string currentBannerPlacement = string.Empty;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 单例
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         public static AdManager Instance
         {
             get
             {
-                if (instance != null)
-                {
-                    return instance;
-                }
-
+                if (instance != null) return instance;
                 instance = FindObjectOfType<AdManager>();
-                if (instance != null)
-                {
-                    return instance;
-                }
-
+                if (instance != null) return instance;
                 var go = new GameObject("[AdManager]");
                 instance = go.AddComponent<AdManager>();
                 DontDestroyOnLoad(go);
@@ -60,6 +52,10 @@ namespace LightVsDecay.Ads
 
         public bool HasRevivedThisGame() => hasRevivedThisGame;
 
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 生命周期
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
         private void Awake()
         {
             if (instance != null && instance != this)
@@ -67,46 +63,43 @@ namespace LightVsDecay.Ads
                 Destroy(gameObject);
                 return;
             }
-
             instance = this;
             DontDestroyOnLoad(gameObject);
+            PreloadAllAds();
         }
 
         private void OnEnable()
         {
-            GameEvents.OnGameStart += ResetRunState;
-            GameEvents.OnLevelUp += OnLevelUp;
+            GameEvents.OnGameStart             += ResetRunState;
+            GameEvents.OnLevelUp               += OnLevelUp;
             GameEvents.OnLevelUpChoiceComplete += OnLevelUpChoiceComplete;
         }
 
         private void OnDisable()
         {
-            GameEvents.OnGameStart -= ResetRunState;
-            GameEvents.OnLevelUp -= OnLevelUp;
+            GameEvents.OnGameStart             -= ResetRunState;
+            GameEvents.OnLevelUp               -= OnLevelUp;
             GameEvents.OnLevelUpChoiceComplete -= OnLevelUpChoiceComplete;
         }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 公共查询
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         public bool CanWatchAd(AdType adType)
         {
             if (IsSharedRewardedType(adType) && GetSharedRewardedDailyCount() >= SharedRewardedDailyLimit)
-            {
                 return false;
-            }
 
             switch (adType)
             {
-                case AdType.SkillReroll:
-                    return !hasSkillRerollThisLevel;
-                case AdType.SettlementDouble:
-                    return !hasSettlementDoubleThisGame;
-                case AdType.Revive:
-                    return !hasRevivedThisGame;
+                case AdType.SkillReroll:      return !hasSkillRerollThisLevel;
+                case AdType.SettlementDouble: return !hasSettlementDoubleThisGame;
+                case AdType.Revive:           return !hasRevivedThisGame;
                 case AdType.EnergyTopUp:
                 case AdType.GoldTopUp:
-                case AdType.BlueprintTopUp:
-                    return GetDailyCount(adType) < GetDailyLimit(adType);
-                default:
-                    return false;
+                case AdType.BlueprintTopUp:   return GetDailyCount(adType) < GetDailyLimit(adType);
+                default:                      return false;
             }
         }
 
@@ -128,18 +121,23 @@ namespace LightVsDecay.Ads
             {
                 case AdType.SkillReroll:
                 case AdType.SettlementDouble:
-                case AdType.Revive:
-                    return SharedRewardedDailyLimit;
-                case AdType.EnergyTopUp:
-                    return 5;
+                case AdType.Revive:           return SharedRewardedDailyLimit;
+                case AdType.EnergyTopUp:      return 5;
                 case AdType.GoldTopUp:
-                case AdType.BlueprintTopUp:
-                    return 3;
-                default:
-                    return 0;
+                case AdType.BlueprintTopUp:   return 3;
+                default:                      return 0;
             }
         }
 
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 展示激励广告
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 展示激励视频广告。
+        /// usePlaceholderAds=true 时直接成功（Editor 调试用）；
+        /// 否则调用真实微信广告 SDK，完整观看后 onSuccess，跳过/失败则 onFail。
+        /// </summary>
         public void ShowRewardedAd(AdType adType, Action onSuccess, Action onFail = null)
         {
             if (!CanWatchAd(adType))
@@ -149,62 +147,53 @@ namespace LightVsDecay.Ads
                 return;
             }
 
-            if (ShouldUsePlaceholderFlow(adType))
+            string adUnitId = GetAdUnitId(adType);
+
+            if (usePlaceholderAds || string.IsNullOrWhiteSpace(adUnitId))
             {
                 GrantWatchCount(adType);
                 onSuccess?.Invoke();
                 return;
             }
 
-            Log($"真实广告流程尚未启用，暂走占位成功: {adType}");
-            GrantWatchCount(adType);
-            onSuccess?.Invoke();
-        }
-
-        public bool TryConsumeRewardOpportunity(AdType adType)
-        {
-            if (!CanWatchAd(adType))
-            {
-                Log($"TopBar reward limit reached: {adType}");
-                return false;
-            }
-
-            GrantWatchCount(adType);
-            return true;
+            WeChatAdsPlugin.Instance.ShowAd(adUnitId,
+                onSuccess: () =>
+                {
+                    GrantWatchCount(adType);
+                    onSuccess?.Invoke();
+                },
+                onFail: () => onFail?.Invoke());
         }
 
         public void PreloadRewardedAd(AdType adType)
         {
-            Log($"预加载广告: {adType}");
+            if (usePlaceholderAds) return;
+            string adUnitId = GetAdUnitId(adType);
+            if (!string.IsNullOrWhiteSpace(adUnitId))
+                WeChatAdsPlugin.Instance.PreloadAd(adUnitId);
         }
 
-        public void ShowBanner(string placement)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 私有实现
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        private void PreloadAllAds()
         {
-            currentBannerPlacement = placement;
-            Log($"显示 Banner: {placement}");
-        }
-
-        public void HideBanner(string placement)
-        {
-            if (!string.IsNullOrEmpty(placement) && currentBannerPlacement != placement)
-            {
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(currentBannerPlacement))
-            {
-                Log($"隐藏 Banner: {currentBannerPlacement}");
-            }
-
-            currentBannerPlacement = string.Empty;
+            if (usePlaceholderAds) return;
+            var plugin = WeChatAdsPlugin.Instance;
+            plugin.PreloadAd(skillRerollAdUnitId);
+            plugin.PreloadAd(settlementDoubleAdUnitId);
+            plugin.PreloadAd(reviveAdUnitId);
+            plugin.PreloadAd(energyTopUpAdUnitId);
+            plugin.PreloadAd(goldTopUpAdUnitId);
+            plugin.PreloadAd(blueprintTopUpAdUnitId);
         }
 
         private void ResetRunState()
         {
-            hasRevivedThisGame = false;
-            hasSettlementDoubleThisGame = false;
-            hasSkillRerollThisLevel = false;
-            HideBanner(string.Empty);
+            hasRevivedThisGame           = false;
+            hasSettlementDoubleThisGame  = false;
+            hasSkillRerollThisLevel      = false;
         }
 
         private void OnLevelUp(int level)
@@ -221,8 +210,7 @@ namespace LightVsDecay.Ads
         {
             if (IsSharedRewardedType(adType))
             {
-                int current = GetSharedRewardedDailyCount();
-                PlayerPrefs.SetInt(GetSharedRewardedDailyKey(), current + 1);
+                PlayerPrefs.SetInt(GetSharedRewardedDailyKey(), GetSharedRewardedDailyCount() + 1);
             }
             else
             {
@@ -232,15 +220,9 @@ namespace LightVsDecay.Ads
 
             switch (adType)
             {
-                case AdType.Revive:
-                    hasRevivedThisGame = true;
-                    break;
-                case AdType.SettlementDouble:
-                    hasSettlementDoubleThisGame = true;
-                    break;
-                case AdType.SkillReroll:
-                    hasSkillRerollThisLevel = true;
-                    break;
+                case AdType.Revive:           hasRevivedThisGame          = true; break;
+                case AdType.SettlementDouble: hasSettlementDoubleThisGame = true; break;
+                case AdType.SkillReroll:      hasSkillRerollThisLevel     = true; break;
             }
 
             PlayerPrefs.Save();
@@ -249,14 +231,9 @@ namespace LightVsDecay.Ads
 
         private bool IsSharedRewardedType(AdType adType)
         {
-            return adType == AdType.SkillReroll ||
+            return adType == AdType.SkillReroll  ||
                    adType == AdType.SettlementDouble ||
                    adType == AdType.Revive;
-        }
-
-        private bool ShouldUsePlaceholderFlow(AdType adType)
-        {
-            return usePlaceholderAds || string.IsNullOrWhiteSpace(GetAdUnitId(adType));
         }
 
         private int GetSharedRewardedDailyCount()
@@ -278,29 +255,20 @@ namespace LightVsDecay.Ads
         {
             switch (adType)
             {
-                case AdType.SkillReroll:
-                    return skillRerollAdUnitId;
-                case AdType.SettlementDouble:
-                    return settlementDoubleAdUnitId;
-                case AdType.Revive:
-                    return reviveAdUnitId;
-                case AdType.EnergyTopUp:
-                    return energyTopUpAdUnitId;
-                case AdType.GoldTopUp:
-                    return goldTopUpAdUnitId;
-                case AdType.BlueprintTopUp:
-                    return blueprintTopUpAdUnitId;
-                default:
-                    return string.Empty;
+                case AdType.SkillReroll:      return skillRerollAdUnitId;
+                case AdType.SettlementDouble: return settlementDoubleAdUnitId;
+                case AdType.Revive:           return reviveAdUnitId;
+                case AdType.EnergyTopUp:      return energyTopUpAdUnitId;
+                case AdType.GoldTopUp:        return goldTopUpAdUnitId;
+                case AdType.BlueprintTopUp:   return blueprintTopUpAdUnitId;
+                default:                      return string.Empty;
             }
         }
 
         private void Log(string message)
         {
             if (showDebugInfo)
-            {
                 GameLogger.Log($"[AdManager] {message}");
-            }
         }
     }
 }

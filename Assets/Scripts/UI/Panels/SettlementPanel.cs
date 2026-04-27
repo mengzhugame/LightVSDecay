@@ -127,16 +127,10 @@ namespace LightVsDecay.UI.Panels
             Time.timeScale = 0f;
             if (ScreenEffectController.Instance != null)
                 ScreenEffectController.Instance.StopAllEffects();
-
-            AdManager.Instance.ShowBanner("Settlement");
         }
 
         private void OnDisable()
         {
-            if (AdManager.HasInstance)
-            {
-                AdManager.Instance.HideBanner("Settlement");
-            }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
