@@ -1,32 +1,29 @@
 using System;
-using System.Runtime.InteropServices;
 using UnityEngine;
 using LightVsDecay.Core;
+#if !UNITY_EDITOR && UNITY_WEBGL
+using WeChatWASM;
+#endif
 
 namespace LightVsDecay.Ads
 {
     /// <summary>
-    /// 微信小游戏激励视频广告 C# 桥接层。
-    /// C# → JS 只传 int（AdType 枚举值），避免字符串指针在团结引擎中引发 ReferenceError。
-    /// JS → Unity 回调通过 SendMessage("[WeChatAdsPlugin]", ...) 触发。
+    /// 微信小游戏激励视频广告桥接层。
+    /// 使用 WeChatWASM SDK（WX.CreateRewardedVideoAd），无需自定义 jslib。
     /// </summary>
     public class WeChatAdsPlugin : MonoBehaviour
     {
         private static WeChatAdsPlugin instance;
 
-        private Action pendingOnSuccess;
-        private Action pendingOnFail;
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-        [DllImport("__Internal")]
-        private static extern void WXAds_PreloadAll();
-
-        [DllImport("__Internal")]
-        private static extern void WXAds_ShowRewardedAd(int adTypeIndex);
-#else
-        private static void WXAds_PreloadAll() { }
-        private static void WXAds_ShowRewardedAd(int adTypeIndex) { }
-#endif
+        private static readonly string[] AdUnitIds =
+        {
+            "adunit-56499238b85e3417",  // 0: SkillReroll
+            "adunit-94a01d74e70d5aac",  // 1: SettlementDouble
+            "adunit-b3a26c96dd754c35",  // 2: Revive
+            "adunit-5f870c74e9f253e6",  // 3: EnergyTopUp
+            "adunit-c1439995ee6715f5",  // 4: GoldTopUp
+            "adunit-701888590bd10662"   // 5: BlueprintTopUp
+        };
 
         public static WeChatAdsPlugin Instance
         {
@@ -51,45 +48,47 @@ namespace LightVsDecay.Ads
             DontDestroyOnLoad(gameObject);
         }
 
-        /// <summary>游戏启动后预加载全部广告位。</summary>
         public void PreloadAll()
         {
-            WXAds_PreloadAll();
+            // WeChatWASM SDK 在 Show() 时自动处理加载，无需单独预加载
         }
 
-        /// <summary>
-        /// 展示激励视频广告。
-        /// adTypeIndex = (int)AdType 枚举值，与 jslib 中 _wxAdUnitIds 数组下标对应。
-        /// </summary>
         public void ShowAd(int adTypeIndex, Action onSuccess, Action onFail)
         {
-            pendingOnSuccess = onSuccess;
-            pendingOnFail    = onFail;
-            WXAds_ShowRewardedAd(adTypeIndex);
-        }
+            if (adTypeIndex < 0 || adTypeIndex >= AdUnitIds.Length)
+            {
+                GameLogger.LogWarning($"[WeChatAdsPlugin] 无效广告类型 idx={adTypeIndex}");
+                onFail?.Invoke();
+                return;
+            }
 
-        // ── JS → Unity 回调 ────────────────────────────────────
+#if !UNITY_EDITOR && UNITY_WEBGL
+            string adUnitId = AdUnitIds[adTypeIndex];
+            var ad = WX.CreateRewardedVideoAd(new WXCreateRewardedVideoAdParam { adUnitId = adUnitId });
 
-        // 消息格式: "adTypeIndex|1"（完整看完）或 "adTypeIndex|0"（中途跳过）
-        private void OnAdClosed(string message)
-        {
-            string[] parts = message.Split('|');
-            bool completed = parts.Length > 1 && parts[1] == "1";
-            if (completed)
-                pendingOnSuccess?.Invoke();
-            else
-                pendingOnFail?.Invoke();
-            pendingOnSuccess = null;
-            pendingOnFail    = null;
-        }
+            ad.OnClose((res) =>
+            {
+                ad.OffClose(null);
+                ad.OffError(null);
+                if (res.isEnded)
+                    onSuccess?.Invoke();
+                else
+                    onFail?.Invoke();
+            });
 
-        // adTypeIndex（字符串形式）
-        private void OnAdFailed(string adTypeIndexStr)
-        {
-            GameLogger.LogWarning("[WeChatAdsPlugin] 广告失败 adTypeIndex=" + adTypeIndexStr);
-            pendingOnFail?.Invoke();
-            pendingOnSuccess = null;
-            pendingOnFail    = null;
+            ad.OnError((res) =>
+            {
+                GameLogger.LogWarning($"[WeChatAdsPlugin] 广告失败 idx={adTypeIndex}: {res.errMsg}");
+                ad.OffClose(null);
+                ad.OffError(null);
+                onFail?.Invoke();
+            });
+
+            ad.Show();
+#else
+            GameLogger.Log($"[WeChatAdsPlugin] Editor 模拟：广告成功 idx={adTypeIndex}");
+            onSuccess?.Invoke();
+#endif
         }
     }
 }
