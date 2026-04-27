@@ -9,6 +9,7 @@ namespace LightVsDecay.Ads
     {
         private const string SharedDailyTotalKey = "ad_shared_total_{0}";
         private const string DailyCountKey       = "ad_daily_count_{0}_{1}";
+        private const string PREFAB_PATH         = "Prefab/AdManager";
 
         private static AdManager instance;
 
@@ -40,9 +41,22 @@ namespace LightVsDecay.Ads
                 if (instance != null) return instance;
                 instance = FindObjectOfType<AdManager>();
                 if (instance != null) return instance;
-                var go = new GameObject("[AdManager]");
-                instance = go.AddComponent<AdManager>();
-                DontDestroyOnLoad(go);
+
+                // 从 Resources/Prefab/AdManager.prefab 加载，保留 Inspector 配置的广告位 ID
+                var prefab = Resources.Load<GameObject>(PREFAB_PATH);
+                if (prefab != null)
+                {
+                    // Instantiate 会立即触发 Awake()，Awake() 内已完成 instance 赋值和 DontDestroyOnLoad
+                    Instantiate(prefab).name = "[AdManager]";
+                }
+                else
+                {
+                    GameLogger.LogWarning("[AdManager] Prefab 未找到: Resources/" + PREFAB_PATH + "，广告位 ID 将为空。");
+                    var go = new GameObject("[AdManager]");
+                    instance = go.AddComponent<AdManager>();
+                    DontDestroyOnLoad(go);
+                }
+
                 return instance;
             }
         }
