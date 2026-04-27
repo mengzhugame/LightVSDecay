@@ -14,17 +14,9 @@ namespace LightVsDecay.Ads
         private static AdManager instance;
 
         [Header("Debug")]
-        [Tooltip("true=编辑器占位模式（不调用真实广告）；发布微信前务必设为 false")]
+        [Tooltip("true=编辑器占位模式（直接成功，不调用真实广告）；发布微信前设为 false")]
         [SerializeField] private bool usePlaceholderAds = true;
         [SerializeField] private bool showDebugInfo = false;
-
-        [Header("Rewarded Video AdUnitId")]
-        [SerializeField] private string skillRerollAdUnitId      = string.Empty;
-        [SerializeField] private string settlementDoubleAdUnitId = string.Empty;
-        [SerializeField] private string reviveAdUnitId           = string.Empty;
-        [SerializeField] private string energyTopUpAdUnitId      = string.Empty;
-        [SerializeField] private string goldTopUpAdUnitId        = string.Empty;
-        [SerializeField] private string blueprintTopUpAdUnitId   = string.Empty;
 
         private bool hasRevivedThisGame;
         private bool hasSettlementDoubleThisGame;
@@ -42,21 +34,18 @@ namespace LightVsDecay.Ads
                 instance = FindObjectOfType<AdManager>();
                 if (instance != null) return instance;
 
-                // 从 Resources/Prefab/AdManager.prefab 加载，保留 Inspector 配置的广告位 ID
                 var prefab = Resources.Load<GameObject>(PREFAB_PATH);
                 if (prefab != null)
                 {
-                    // Instantiate 会立即触发 Awake()，Awake() 内已完成 instance 赋值和 DontDestroyOnLoad
                     Instantiate(prefab).name = "[AdManager]";
                 }
                 else
                 {
-                    GameLogger.LogWarning("[AdManager] Prefab 未找到: Resources/" + PREFAB_PATH + "，广告位 ID 将为空。");
+                    GameLogger.LogWarning("[AdManager] Prefab 未找到: Resources/" + PREFAB_PATH);
                     var go = new GameObject("[AdManager]");
                     instance = go.AddComponent<AdManager>();
                     DontDestroyOnLoad(go);
                 }
-
                 return instance;
             }
         }
@@ -84,13 +73,12 @@ namespace LightVsDecay.Ads
 
         private void Start()
         {
-            // 延迟一帧：确保团结引擎的 JS 桥接和微信运行时就绪后再初始化广告
             StartCoroutine(PreloadAllAdsDelayed());
         }
 
         private IEnumerator PreloadAllAdsDelayed()
         {
-            yield return null;
+            yield return null;  // 等一帧，确保团结引擎 JS 桥接就绪
             PreloadAllAds();
         }
 
@@ -161,8 +149,8 @@ namespace LightVsDecay.Ads
 
         /// <summary>
         /// 展示激励视频广告。
-        /// usePlaceholderAds=true 时直接成功（Editor 调试用）；
-        /// 否则调用真实微信广告 SDK，完整观看后 onSuccess，跳过/失败则 onFail。
+        /// usePlaceholderAds=true 时直接触发成功（Editor 调试）；
+        /// 否则通过 WeChatAdsPlugin 调用真实微信广告 SDK。
         /// </summary>
         public void ShowRewardedAd(AdType adType, Action onSuccess, Action onFail = null)
         {
@@ -173,16 +161,14 @@ namespace LightVsDecay.Ads
                 return;
             }
 
-            string adUnitId = GetAdUnitId(adType);
-
-            if (usePlaceholderAds || string.IsNullOrWhiteSpace(adUnitId))
+            if (usePlaceholderAds)
             {
                 GrantWatchCount(adType);
                 onSuccess?.Invoke();
                 return;
             }
 
-            WeChatAdsPlugin.Instance.ShowAd(adUnitId,
+            WeChatAdsPlugin.Instance.ShowAd((int)adType,
                 onSuccess: () =>
                 {
                     GrantWatchCount(adType);
@@ -193,10 +179,7 @@ namespace LightVsDecay.Ads
 
         public void PreloadRewardedAd(AdType adType)
         {
-            if (usePlaceholderAds) return;
-            string adUnitId = GetAdUnitId(adType);
-            if (!string.IsNullOrWhiteSpace(adUnitId))
-                WeChatAdsPlugin.Instance.PreloadAd(adUnitId);
+            // 广告位 ID 已统一在 jslib 中管理，单独预加载已无必要
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -206,31 +189,18 @@ namespace LightVsDecay.Ads
         private void PreloadAllAds()
         {
             if (usePlaceholderAds) return;
-            var plugin = WeChatAdsPlugin.Instance;
-            plugin.PreloadAd(skillRerollAdUnitId);
-            plugin.PreloadAd(settlementDoubleAdUnitId);
-            plugin.PreloadAd(reviveAdUnitId);
-            plugin.PreloadAd(energyTopUpAdUnitId);
-            plugin.PreloadAd(goldTopUpAdUnitId);
-            plugin.PreloadAd(blueprintTopUpAdUnitId);
+            WeChatAdsPlugin.Instance.PreloadAll();
         }
 
         private void ResetRunState()
         {
-            hasRevivedThisGame           = false;
-            hasSettlementDoubleThisGame  = false;
-            hasSkillRerollThisLevel      = false;
+            hasRevivedThisGame          = false;
+            hasSettlementDoubleThisGame = false;
+            hasSkillRerollThisLevel     = false;
         }
 
-        private void OnLevelUp(int level)
-        {
-            hasSkillRerollThisLevel = false;
-        }
-
-        private void OnLevelUpChoiceComplete()
-        {
-            hasSkillRerollThisLevel = false;
-        }
+        private void OnLevelUp(int level)       => hasSkillRerollThisLevel = false;
+        private void OnLevelUpChoiceComplete()  => hasSkillRerollThisLevel = false;
 
         private void GrantWatchCount(AdType adType)
         {
@@ -240,8 +210,8 @@ namespace LightVsDecay.Ads
             }
             else
             {
-                int current = PlayerPrefs.GetInt(GetDailyCountKey(adType), 0);
-                PlayerPrefs.SetInt(GetDailyCountKey(adType), current + 1);
+                int cur = PlayerPrefs.GetInt(GetDailyCountKey(adType), 0);
+                PlayerPrefs.SetInt(GetDailyCountKey(adType), cur + 1);
             }
 
             switch (adType)
@@ -257,39 +227,19 @@ namespace LightVsDecay.Ads
 
         private bool IsSharedRewardedType(AdType adType)
         {
-            return adType == AdType.SkillReroll  ||
+            return adType == AdType.SkillReroll ||
                    adType == AdType.SettlementDouble ||
                    adType == AdType.Revive;
         }
 
         private int GetSharedRewardedDailyCount()
-        {
-            return PlayerPrefs.GetInt(GetSharedRewardedDailyKey(), 0);
-        }
+            => PlayerPrefs.GetInt(GetSharedRewardedDailyKey(), 0);
 
         private string GetSharedRewardedDailyKey()
-        {
-            return string.Format(SharedDailyTotalKey, DateTime.Now.ToString("yyyyMMdd"));
-        }
+            => string.Format(SharedDailyTotalKey, DateTime.Now.ToString("yyyyMMdd"));
 
         private string GetDailyCountKey(AdType adType)
-        {
-            return string.Format(DailyCountKey, DateTime.Now.ToString("yyyyMMdd"), adType);
-        }
-
-        private string GetAdUnitId(AdType adType)
-        {
-            switch (adType)
-            {
-                case AdType.SkillReroll:      return skillRerollAdUnitId;
-                case AdType.SettlementDouble: return settlementDoubleAdUnitId;
-                case AdType.Revive:           return reviveAdUnitId;
-                case AdType.EnergyTopUp:      return energyTopUpAdUnitId;
-                case AdType.GoldTopUp:        return goldTopUpAdUnitId;
-                case AdType.BlueprintTopUp:   return blueprintTopUpAdUnitId;
-                default:                      return string.Empty;
-            }
-        }
+            => string.Format(DailyCountKey, DateTime.Now.ToString("yyyyMMdd"), adType);
 
         private void Log(string message)
         {

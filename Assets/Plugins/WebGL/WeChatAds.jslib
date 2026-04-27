@@ -1,101 +1,109 @@
-// WeChatAds.jslib  —— 微信小游戏激励视频广告 JS Bridge
-// 注意：wx.createRewardedVideoAd 在微信开发者工具【模拟器】中不可用，
-//       必须使用【真机调试】或【体验版】才能看到真实广告。
+// WeChatAds.jslib — 微信小游戏激励视频广告 JS Bridge
+//
+// ★ 关键设计：C# 侧只传 int（AdType 枚举值），不传任何字符串指针。
+//   原因：团结引擎的 WebGL 模块中 UTF8ToString 不是全局函数，
+//         在 jslib 里直接调用会抛 ReferenceError。
+//
+// 广告位 ID 数组下标 = AdType 枚举值（顺序与 AdType.cs 严格对应）
+//   0: SkillReroll      1: SettlementDouble  2: Revive
+//   3: EnergyTopUp      4: GoldTopUp         5: BlueprintTopUp
+var _wxAdUnitIds = [
+    'adunit-56499238b85e3417',
+    'adunit-94a01d74e70d5aac',
+    'adunit-b3a26c96dd754c35',
+    'adunit-5f870c74e9f253e6',
+    'adunit-c1439995ee6715f5',
+    'adunit-701888590bd10662'
+];
 
-var _wxAdCallbackObject = '';
-var _wxRewardedAds = {};
+// 与 WeChatAdsPlugin.cs 中 new GameObject("[WeChatAdsPlugin]") 名称一致
+var _wxCallbackObj = '[WeChatAdsPlugin]';
+var _wxAds = {};  // adTypeIndex -> ad 实例
 
-// 内部辅助：创建广告实例并绑定回调，成功返回 ad 对象，失败返回 null
-function _wxCreateAd(adUnitId) {
-    if (typeof wx === 'undefined' || typeof wx.createRewardedVideoAd !== 'function') {
-        console.warn('[WeChatAds] wx.createRewardedVideoAd 不可用（可能是模拟器环境）');
+// 内部：创建并缓存指定类型的广告实例
+function _wxGetOrCreateAd(adTypeIndex) {
+    if (_wxAds[adTypeIndex]) return _wxAds[adTypeIndex];
+
+    var adUnitId = _wxAdUnitIds[adTypeIndex];
+    if (!adUnitId) {
+        console.error('[WeChatAds] 无效广告类型 index=' + adTypeIndex);
         return null;
     }
+    if (typeof wx === 'undefined' || typeof wx.createRewardedVideoAd !== 'function') {
+        console.warn('[WeChatAds] wx.createRewardedVideoAd 不可用（模拟器不支持广告，请用真机调试）');
+        return null;
+    }
+
     try {
         var ad = wx.createRewardedVideoAd({ adUnitId: adUnitId });
-        var id = adUnitId; // 闭包捕获
+        var idx = adTypeIndex;  // 闭包捕获
+
         ad.onClose(function (res) {
+            var isEnded = (res && res.isEnded) ? '1' : '0';
             try {
-                var isEnded = (res && res.isEnded) ? '1' : '0';
-                if (_wxAdCallbackObject && typeof SendMessage !== 'undefined') {
-                    SendMessage(_wxAdCallbackObject, 'OnAdClosed', id + '|' + isEnded);
-                }
-            } catch (e) { console.error('[WeChatAds] onClose 回调异常:', e); }
+                SendMessage(_wxCallbackObj, 'OnAdClosed', idx + '|' + isEnded);
+            } catch (e) {
+                console.error('[WeChatAds] onClose SendMessage 异常:', e);
+            }
         });
+
         ad.onError(function (err) {
+            var msg = err ? (err.errMsg || err.errCode || JSON.stringify(err)) : 'unknown';
+            console.warn('[WeChatAds] 广告错误 [idx=' + idx + '] ' + msg);
             try {
-                var msg = err ? (err.errMsg || err.errCode || JSON.stringify(err)) : 'unknown';
-                console.warn('[WeChatAds] 广告错误 [' + id + ']:', msg);
-                if (_wxAdCallbackObject && typeof SendMessage !== 'undefined') {
-                    SendMessage(_wxAdCallbackObject, 'OnAdFailed', id);
-                }
-            } catch (e) { console.error('[WeChatAds] onError 回调异常:', e); }
+                SendMessage(_wxCallbackObj, 'OnAdFailed', '' + idx);
+            } catch (e) {
+                console.error('[WeChatAds] onError SendMessage 异常:', e);
+            }
         });
-        _wxRewardedAds[adUnitId] = ad;
+
+        _wxAds[adTypeIndex] = ad;
+        console.log('[WeChatAds] 广告实例创建成功 idx=' + adTypeIndex + ' id=' + adUnitId);
         return ad;
     } catch (e) {
-        var errMsg = e ? (e.errMsg || e.message || String(e)) : 'unknown error';
-        console.error('[WeChatAds] createRewardedVideoAd 失败 [' + adUnitId + ']:', errMsg);
+        var msg = e ? (e.errMsg || e.message || String(e)) : 'unknown';
+        console.error('[WeChatAds] createRewardedVideoAd 失败 idx=' + adTypeIndex + ' : ' + msg);
         return null;
     }
 }
 
 var WeChatAdsLib = {
 
-    WXAds_Init: function (callbackObjectPtr) {
+    // 预加载全部 6 个广告位（无参数，无字符串指针）
+    WXAds_PreloadAll: function () {
         try {
-            _wxAdCallbackObject = UTF8ToString(callbackObjectPtr);
-            console.log('[WeChatAds] 初始化完成，回调对象:', _wxAdCallbackObject);
-        } catch (e) { console.error('[WeChatAds] Init 异常:', e); }
+            for (var i = 0; i < _wxAdUnitIds.length; i++) {
+                _wxGetOrCreateAd(i);
+            }
+        } catch (e) {
+            console.error('[WeChatAds] PreloadAll 异常:', e ? (e.message || String(e)) : '');
+        }
     },
 
-    // 预加载广告（游戏启动后延迟调用），失败不影响后续 Show 时的重试
-    WXAds_PreloadAd: function (adUnitIdPtr) {
+    // 展示广告，adTypeIndex 与 AdType 枚举值对应（int，无字符串指针）
+    WXAds_ShowRewardedAd: function (adTypeIndex) {
         try {
-            var adUnitId = UTF8ToString(adUnitIdPtr);
-            if (!adUnitId || _wxRewardedAds[adUnitId]) return;
-            var ad = _wxCreateAd(adUnitId);
-            if (ad) {
-                console.log('[WeChatAds] 预加载成功:', adUnitId);
-            }
-        } catch (e) { console.error('[WeChatAds] PreloadAd 异常:', e); }
-    },
-
-    // 展示广告：若预加载失败会尝试即时创建，之后 load + show
-    WXAds_ShowRewardedAd: function (adUnitIdPtr) {
-        try {
-            if (typeof wx === 'undefined') {
-                console.warn('[WeChatAds] wx 未定义，无法展示广告');
-                return;
-            }
-            var adUnitId = UTF8ToString(adUnitIdPtr);
-
-            // 取缓存实例，若预加载时失败则即时创建
-            var ad = _wxRewardedAds[adUnitId] || _wxCreateAd(adUnitId);
+            var ad = _wxGetOrCreateAd(adTypeIndex);
             if (!ad) {
-                console.warn('[WeChatAds] 无法获取广告实例:', adUnitId);
-                if (_wxAdCallbackObject && typeof SendMessage !== 'undefined') {
-                    SendMessage(_wxAdCallbackObject, 'OnAdFailed', adUnitId);
-                }
+                try { SendMessage(_wxCallbackObj, 'OnAdFailed', '' + adTypeIndex); } catch (e2) {}
                 return;
             }
 
-            // show → 失败时 reload 再 show
+            // 官方推荐写法：show → 失败则 load 再 show
             ad.show().catch(function () {
-                console.log('[WeChatAds] 首次 show 失败，尝试 reload:', adUnitId);
+                console.log('[WeChatAds] show 失败，尝试 reload idx=' + adTypeIndex);
                 ad.load()
                     .then(function () { return ad.show(); })
                     .catch(function (err) {
                         var msg = err ? (err.errMsg || err.errCode || String(err)) : 'unknown';
-                        console.error('[WeChatAds] reload 后 show 仍失败 [' + adUnitId + ']:', msg);
-                        try {
-                            if (_wxAdCallbackObject && typeof SendMessage !== 'undefined') {
-                                SendMessage(_wxAdCallbackObject, 'OnAdFailed', adUnitId);
-                            }
-                        } catch (e2) { console.error('[WeChatAds] SendMessage 异常:', e2); }
+                        console.error('[WeChatAds] reload 后仍失败 idx=' + adTypeIndex + ' : ' + msg);
+                        try { SendMessage(_wxCallbackObj, 'OnAdFailed', '' + adTypeIndex); } catch (e2) {}
                     });
             });
-        } catch (e) { console.error('[WeChatAds] ShowRewardedAd 异常:', e); }
+        } catch (e) {
+            var msg = e ? (e.message || String(e)) : 'unknown';
+            console.error('[WeChatAds] ShowRewardedAd 异常 idx=' + adTypeIndex + ' : ' + msg);
+        }
     }
 };
 

@@ -7,9 +7,8 @@ namespace LightVsDecay.Ads
 {
     /// <summary>
     /// 微信小游戏激励视频广告 C# 桥接层。
-    /// 在 WebGL 构建时调用 WeChatAds.jslib 中的函数；
-    /// 在 Editor / 非 WebGL 平台时所有调用为空操作（由 AdManager 的 usePlaceholderAds 控制）。
-    /// JS 回调通过 SendMessage(gameObject.name, ...) 返回此组件。
+    /// C# → JS 只传 int（AdType 枚举值），避免字符串指针在团结引擎中引发 ReferenceError。
+    /// JS → Unity 回调通过 SendMessage("[WeChatAdsPlugin]", ...) 触发。
     /// </summary>
     public class WeChatAdsPlugin : MonoBehaviour
     {
@@ -20,17 +19,13 @@ namespace LightVsDecay.Ads
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
-        private static extern void WXAds_Init(string callbackObject);
+        private static extern void WXAds_PreloadAll();
 
         [DllImport("__Internal")]
-        private static extern void WXAds_PreloadAd(string adUnitId);
-
-        [DllImport("__Internal")]
-        private static extern void WXAds_ShowRewardedAd(string adUnitId);
+        private static extern void WXAds_ShowRewardedAd(int adTypeIndex);
 #else
-        private static void WXAds_Init(string callbackObject) { }
-        private static void WXAds_PreloadAd(string adUnitId) { }
-        private static void WXAds_ShowRewardedAd(string adUnitId) { }
+        private static void WXAds_PreloadAll() { }
+        private static void WXAds_ShowRewardedAd(int adTypeIndex) { }
 #endif
 
         public static WeChatAdsPlugin Instance
@@ -54,36 +49,28 @@ namespace LightVsDecay.Ads
             }
             instance = this;
             DontDestroyOnLoad(gameObject);
-            WXAds_Init(gameObject.name);
+        }
+
+        /// <summary>游戏启动后预加载全部广告位。</summary>
+        public void PreloadAll()
+        {
+            WXAds_PreloadAll();
         }
 
         /// <summary>
-        /// 预加载广告实例（游戏启动时批量调用，确保首次展示流畅）。
+        /// 展示激励视频广告。
+        /// adTypeIndex = (int)AdType 枚举值，与 jslib 中 _wxAdUnitIds 数组下标对应。
         /// </summary>
-        public void PreloadAd(string adUnitId)
+        public void ShowAd(int adTypeIndex, Action onSuccess, Action onFail)
         {
-            if (string.IsNullOrWhiteSpace(adUnitId)) return;
-            WXAds_PreloadAd(adUnitId);
-        }
-
-        /// <summary>
-        /// 展示激励视频广告，完整观看后回调 onSuccess，中途跳过或失败回调 onFail。
-        /// </summary>
-        public void ShowAd(string adUnitId, Action onSuccess, Action onFail)
-        {
-            if (string.IsNullOrWhiteSpace(adUnitId))
-            {
-                onFail?.Invoke();
-                return;
-            }
             pendingOnSuccess = onSuccess;
-            pendingOnFail = onFail;
-            WXAds_ShowRewardedAd(adUnitId);
+            pendingOnFail    = onFail;
+            WXAds_ShowRewardedAd(adTypeIndex);
         }
 
-        // ── JS → Unity 回调（由 SendMessage 触发）──────────────
+        // ── JS → Unity 回调 ────────────────────────────────────
 
-        // 消息格式: "adUnitId|1" (1=完整观看) 或 "adUnitId|0" (中途跳过)
+        // 消息格式: "adTypeIndex|1"（完整看完）或 "adTypeIndex|0"（中途跳过）
         private void OnAdClosed(string message)
         {
             string[] parts = message.Split('|');
@@ -92,18 +79,17 @@ namespace LightVsDecay.Ads
                 pendingOnSuccess?.Invoke();
             else
                 pendingOnFail?.Invoke();
-
             pendingOnSuccess = null;
-            pendingOnFail = null;
+            pendingOnFail    = null;
         }
 
-        // adUnitId 加载或展示出错
-        private void OnAdFailed(string adUnitId)
+        // adTypeIndex（字符串形式）
+        private void OnAdFailed(string adTypeIndexStr)
         {
-            GameLogger.LogWarning($"[WeChatAdsPlugin] 广告加载/展示失败: {adUnitId}");
+            GameLogger.LogWarning("[WeChatAdsPlugin] 广告失败 adTypeIndex=" + adTypeIndexStr);
             pendingOnFail?.Invoke();
             pendingOnSuccess = null;
-            pendingOnFail = null;
+            pendingOnFail    = null;
         }
     }
 }
