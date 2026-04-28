@@ -20,7 +20,6 @@ namespace LightVsDecay.Ads
 
         private bool hasRevivedThisGame;
         private bool hasSettlementDoubleThisGame;
-        private bool hasSkillRerollThisLevel;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 单例
@@ -85,15 +84,11 @@ namespace LightVsDecay.Ads
         private void OnEnable()
         {
             GameEvents.OnGameStart             += ResetRunState;
-            GameEvents.OnLevelUp               += OnLevelUp;
-            GameEvents.OnLevelUpChoiceComplete += OnLevelUpChoiceComplete;
         }
 
         private void OnDisable()
         {
             GameEvents.OnGameStart             -= ResetRunState;
-            GameEvents.OnLevelUp               -= OnLevelUp;
-            GameEvents.OnLevelUpChoiceComplete -= OnLevelUpChoiceComplete;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -102,12 +97,14 @@ namespace LightVsDecay.Ads
 
         public bool CanWatchAd(AdType adType)
         {
+            if (adType == AdType.SkillReroll)
+                return true;
+
             if (IsSharedRewardedType(adType) && GetSharedRewardedDailyCount() >= SharedRewardedDailyLimit)
                 return false;
 
             switch (adType)
             {
-                case AdType.SkillReroll:      return !hasSkillRerollThisLevel;
                 case AdType.SettlementDouble: return !hasSettlementDoubleThisGame;
                 case AdType.Revive:           return !hasRevivedThisGame;
                 case AdType.EnergyTopUp:
@@ -133,7 +130,7 @@ namespace LightVsDecay.Ads
         {
             switch (adType)
             {
-                case AdType.SkillReroll:
+                case AdType.SkillReroll:      return int.MaxValue;
                 case AdType.SettlementDouble:
                 case AdType.Revive:           return SharedRewardedDailyLimit;
                 case AdType.EnergyTopUp:      return 5;
@@ -196,11 +193,7 @@ namespace LightVsDecay.Ads
         {
             hasRevivedThisGame          = false;
             hasSettlementDoubleThisGame = false;
-            hasSkillRerollThisLevel     = false;
         }
-
-        private void OnLevelUp(int level)       => hasSkillRerollThisLevel = false;
-        private void OnLevelUpChoiceComplete()  => hasSkillRerollThisLevel = false;
 
         private void GrantWatchCount(AdType adType)
         {
@@ -218,7 +211,6 @@ namespace LightVsDecay.Ads
             {
                 case AdType.Revive:           hasRevivedThisGame          = true; break;
                 case AdType.SettlementDouble: hasSettlementDoubleThisGame = true; break;
-                case AdType.SkillReroll:      hasSkillRerollThisLevel     = true; break;
             }
 
             PlayerPrefs.Save();
@@ -227,8 +219,7 @@ namespace LightVsDecay.Ads
 
         private bool IsSharedRewardedType(AdType adType)
         {
-            return adType == AdType.SkillReroll ||
-                   adType == AdType.SettlementDouble ||
+            return adType == AdType.SettlementDouble ||
                    adType == AdType.Revive;
         }
 

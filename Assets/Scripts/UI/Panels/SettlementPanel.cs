@@ -105,6 +105,7 @@ namespace LightVsDecay.UI.Panels
 
         private BattleRewardResult  _pendingReward;
         private bool                _rewardsApplied = false;
+        private bool                _isDoubleAdInProgress = false;
 
         private readonly List<SettlementRewardItemUI> _rewardCards = new List<SettlementRewardItemUI>();
 
@@ -141,6 +142,7 @@ namespace LightVsDecay.UI.Panels
         {
             isVictory       = victory;
             _rewardsApplied = false;
+            _isDoubleAdInProgress = false;
 
             // ★ 关键修复：传入 victory，不再从 GameManager.CurrentState 推断
             settlementData = ProgressManager.Instance != null
@@ -400,14 +402,26 @@ namespace LightVsDecay.UI.Panels
 
         private void OnDoubleReceivedClicked()
         {
+            if (_isDoubleAdInProgress)
+            {
+                return;
+            }
+
             AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickDouble);
+            _isDoubleAdInProgress = true;
+            UIButtonCommonHelper.SetInteractable(doubleReceivedButton, false);
             AdManager.Instance.ShowRewardedAd(AdType.SettlementDouble,
                 onSuccess: () =>
                 {
+                    _isDoubleAdInProgress = false;
                     ApplyRewardsToManagers(true);
                     ReturnToMainMenu();
                 },
-                onFail: RefreshDoubleButtonState);
+                onFail: () =>
+                {
+                    _isDoubleAdInProgress = false;
+                    RefreshDoubleButtonState();
+                });
         }
 
         private void OnReturnClicked()
@@ -423,7 +437,11 @@ namespace LightVsDecay.UI.Panels
                 return;
             }
 
-            bool canUseDoubleReward = isVictory && !_rewardsApplied && AdManager.Instance.CanWatchAd(AdType.SettlementDouble);
+            bool canUseDoubleReward = isVictory
+                && !_rewardsApplied
+                && !_isDoubleAdInProgress
+                && AdManager.Instance != null
+                && AdManager.Instance.CanWatchAd(AdType.SettlementDouble);
             UIButtonCommonHelper.SetInteractable(doubleReceivedButton, canUseDoubleReward);
         }
 

@@ -109,6 +109,7 @@ namespace LightVsDecay.UI.Panels
         private List<SkillData> currentChoices = new List<SkillData>();
         private Color retryTextNormalColor = Color.white;
         private bool isSelectionInProgress;
+        private bool isRetryAdInProgress;
         
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Unity 生命周期
@@ -201,6 +202,7 @@ namespace LightVsDecay.UI.Panels
             currentLevel = level;
             retryCountRemaining = maxRetryCount;
             isSelectionInProgress = false;
+            isRetryAdInProgress = false;
             ResetCardVisualState();
             
             // 更新标题
@@ -480,14 +482,26 @@ namespace LightVsDecay.UI.Panels
                 return;
             }
 
+            if (isRetryAdInProgress)
+            {
+                return;
+            }
+
             AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickReroll);
+            isRetryAdInProgress = true;
+            UIButtonCommonHelper.SetInteractable(retryButton, false);
             AdManager.Instance.ShowRewardedAd(AdType.SkillReroll,
                 onSuccess: () =>
                 {
+                    isRetryAdInProgress = false;
                     GenerateAndDisplayChoices();
                     UpdateRetryButton();
                 },
-                onFail: UpdateRetryButton);
+                onFail: () =>
+                {
+                    isRetryAdInProgress = false;
+                    UpdateRetryButton();
+                });
         }
 
         private void SetupLaneDecor(SkillCardUI card, SkillData skill, Dictionary<SkillType, int> currentLevels)
@@ -587,11 +601,11 @@ namespace LightVsDecay.UI.Panels
             if (retryButton != null)
             {
                 bool hasFreeRetry = retryCountRemaining > 0;
-                bool canWatchAd = AdManager.Instance.CanWatchAd(AdType.SkillReroll);
-                UIButtonCommonHelper.SetInteractable(retryButton, hasFreeRetry || canWatchAd);
+                bool canWatchAd = AdManager.Instance != null && AdManager.Instance.CanWatchAd(AdType.SkillReroll);
+                UIButtonCommonHelper.SetInteractable(retryButton, !isRetryAdInProgress && (hasFreeRetry || canWatchAd));
 
                 UpdateRetryIcon(hasFreeRetry, canWatchAd);
-                UIButtonCommonHelper.Sync(retryButton);
+                UIButtonCommonHelper.ResetVisualState(retryButton);
             }
         }
 
@@ -730,7 +744,8 @@ namespace LightVsDecay.UI.Panels
 
             if (retryButton != null)
             {
-                bool canRetry = interactable && (retryCountRemaining > 0 || AdManager.Instance.CanWatchAd(AdType.SkillReroll));
+                bool canWatchAd = AdManager.Instance != null && AdManager.Instance.CanWatchAd(AdType.SkillReroll);
+                bool canRetry = interactable && !isRetryAdInProgress && (retryCountRemaining > 0 || canWatchAd);
                 UIButtonCommonHelper.SetInteractable(retryButton, canRetry);
             }
         }

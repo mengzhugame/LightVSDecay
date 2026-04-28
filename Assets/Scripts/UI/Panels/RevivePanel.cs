@@ -28,6 +28,8 @@ namespace LightVsDecay.UI.Panels
         [Header("Debug")]
         [SerializeField] private bool showDebugInfo = false;
 
+        private bool isReviveAdInProgress;
+
         private void Awake()
         {
             if (quitButton != null)
@@ -48,6 +50,7 @@ namespace LightVsDecay.UI.Panels
 
         private void OnEnable()
         {
+            isReviveAdInProgress = false;
             RefreshView();
         }
 
@@ -63,7 +66,9 @@ namespace LightVsDecay.UI.Panels
                 infoText.text = BuildInfoText();
             }
 
-            bool canRevive = AdManager.Instance.CanOfferRevive(GetCurrentWave());
+            bool canRevive = !isReviveAdInProgress
+                && AdManager.Instance != null
+                && AdManager.Instance.CanOfferRevive(GetCurrentWave());
             UIButtonCommonHelper.SetInteractable(reviveButton, canRevive);
 
             if (reviveButtonText != null)
@@ -109,8 +114,26 @@ namespace LightVsDecay.UI.Panels
 
         private void OnReviveClicked()
         {
+            if (isReviveAdInProgress)
+            {
+                return;
+            }
+
             AnalyticsManager.LogScene(AnalyticsSceneIds.AdClickRevive);
-            AdManager.Instance.ShowRewardedAd(AdType.Revive, RevivePlayer, RefreshView);
+            isReviveAdInProgress = true;
+            UIButtonCommonHelper.SetInteractable(reviveButton, false);
+            AdManager.Instance.ShowRewardedAd(
+                AdType.Revive,
+                onSuccess: () =>
+                {
+                    isReviveAdInProgress = false;
+                    RevivePlayer();
+                },
+                onFail: () =>
+                {
+                    isReviveAdInProgress = false;
+                    RefreshView();
+                });
         }
 
         private void RevivePlayer()

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using LightVsDecay.Core;
 #if !UNITY_EDITOR && UNITY_WEBGL
@@ -13,6 +14,7 @@ namespace LightVsDecay.Ads
     /// </summary>
     public class WeChatAdsPlugin : MonoBehaviour
     {
+        private const float ShowTimeoutSeconds = 180f;
         private static WeChatAdsPlugin instance;
 
         private static readonly string[] AdUnitIds =
@@ -24,6 +26,14 @@ namespace LightVsDecay.Ads
             "adunit-c1439995ee6715f5",  // 4: GoldTopUp
             "adunit-701888590bd10662"   // 5: BlueprintTopUp
         };
+
+#if !UNITY_EDITOR && UNITY_WEBGL
+        private readonly WXRewardedVideoAd[] rewardedAds = new WXRewardedVideoAd[AdUnitIds.Length];
+        private readonly Action[] pendingSuccessCallbacks = new Action[AdUnitIds.Length];
+        private readonly Action[] pendingFailCallbacks = new Action[AdUnitIds.Length];
+        private readonly bool[] isShowing = new bool[AdUnitIds.Length];
+        private readonly Coroutine[] showTimeoutCoroutines = new Coroutine[AdUnitIds.Length];
+#endif
 
         public static WeChatAdsPlugin Instance
         {
@@ -50,7 +60,18 @@ namespace LightVsDecay.Ads
 
         public void PreloadAll()
         {
-            // WeChatWASM SDK 在 Show() 时自动处理加载，无需单独预加载
+#if !UNITY_EDITOR && UNITY_WEBGL
+            for (int i = 0; i < AdUnitIds.Length; i++)
+            {
+                int index = i;
+                var ad = GetOrCreateAd(index);
+                if (ad == null) continue;
+
+                ad.Load(
+                    success: _ => GameLogger.LogWarning($"[WeChatAdsPlugin] 预加载成功 idx={index}"),
+                    failed: res => GameLogger.LogWarning($"[WeChatAdsPlugin] 预加载失败 idx={index}: {FormatAdError(res)}"));
+            }
+#endif
         }
 
         public void ShowAd(int adTypeIndex, Action onSuccess, Action onFail)
@@ -63,32 +84,181 @@ namespace LightVsDecay.Ads
             }
 
 #if !UNITY_EDITOR && UNITY_WEBGL
-            string adUnitId = AdUnitIds[adTypeIndex];
-            var ad = WX.CreateRewardedVideoAd(new WXCreateRewardedVideoAdParam { adUnitId = adUnitId });
-
-            ad.OnClose((res) =>
+            if (isShowing[adTypeIndex])
             {
-                ad.OffClose(null);
-                ad.OffError(null);
-                if (res.isEnded)
-                    onSuccess?.Invoke();
-                else
-                    onFail?.Invoke();
-            });
-
-            ad.OnError((res) =>
-            {
-                GameLogger.LogWarning($"[WeChatAdsPlugin] 广告失败 idx={adTypeIndex}: {res.errMsg}");
-                ad.OffClose(null);
-                ad.OffError(null);
+                GameLogger.LogWarning($"[WeChatAdsPlugin] 广告正在播放或加载中，忽略重复点击 idx={adTypeIndex}");
                 onFail?.Invoke();
-            });
+                return;
+            }
 
-            ad.Show();
+            var ad = GetOrCreateAd(adTypeIndex);
+            if (ad == null)
+            {
+                onFail?.Invoke();
+                return;
+            }
+
+            pendingSuccessCallbacks[adTypeIndex] = onSuccess;
+            pendingFailCallbacks[adTypeIndex] = onFail;
+            isShowing[adTypeIndex] = true;
+            StartShowTimeout(adTypeIndex);
+
+            ShowAdInternal(adTypeIndex, allowReloadRetry: true);
 #else
             GameLogger.Log($"[WeChatAdsPlugin] Editor 模拟：广告成功 idx={adTypeIndex}");
             onSuccess?.Invoke();
 #endif
         }
+
+#if !UNITY_EDITOR && UNITY_WEBGL
+        private WXRewardedVideoAd GetOrCreateAd(int adTypeIndex)
+        {
+            if (rewardedAds[adTypeIndex] != null)
+                return rewardedAds[adTypeIndex];
+
+            string adUnitId = AdUnitIds[adTypeIndex];
+
+            try
+            {
+                var ad = WX.CreateRewardedVideoAd(new WXCreateRewardedVideoAdParam
+                {
+                    adUnitId = adUnitId,
+                    multiton = true
+                });
+                int index = adTypeIndex;
+
+                ad.OnClose(res =>
+                {
+                    if (res == null || res.isEnded)
+                        CompleteSuccess(index);
+                    else
+                        CompleteFail(index, "用户未完整观看广告");
+                });
+
+                ad.OnError(res =>
+                {
+                    string error = FormatAdError(res);
+                    GameLogger.LogWarning($"[WeChatAdsPlugin] 广告组件错误 idx={index}: {error}");
+                    if (isShowing[index])
+                    {
+                        CompleteFail(index, error);
+                    }
+                });
+
+                rewardedAds[adTypeIndex] = ad;
+                GameLogger.LogWarning($"[WeChatAdsPlugin] 广告实例创建成功 idx={adTypeIndex} id={adUnitId}");
+                return ad;
+            }
+            catch (Exception e)
+            {
+                GameLogger.LogError($"[WeChatAdsPlugin] 创建广告实例异常 idx={adTypeIndex} id={adUnitId}: {e.Message}");
+                return null;
+            }
+        }
+
+        private void ShowAdInternal(int adTypeIndex, bool allowReloadRetry)
+        {
+            var ad = rewardedAds[adTypeIndex];
+            if (ad == null)
+            {
+                CompleteFail(adTypeIndex, "广告实例为空");
+                return;
+            }
+
+            ad.Show(
+                success: _ => GameLogger.LogWarning($"[WeChatAdsPlugin] 广告开始展示 idx={adTypeIndex}"),
+                failed: res =>
+                {
+                    GameLogger.LogWarning($"[WeChatAdsPlugin] Show 失败 idx={adTypeIndex}: {FormatTextError(res)}");
+
+                    if (!allowReloadRetry)
+                    {
+                        CompleteFail(adTypeIndex, "Show 重试失败");
+                        return;
+                    }
+
+                    ad.Load(
+                        success: _ =>
+                        {
+                            GameLogger.LogWarning($"[WeChatAdsPlugin] Load 成功，重试 Show idx={adTypeIndex}");
+                            ShowAdInternal(adTypeIndex, allowReloadRetry: false);
+                        },
+                        failed: loadRes =>
+                        {
+                            GameLogger.LogWarning($"[WeChatAdsPlugin] Load 失败 idx={adTypeIndex}: {FormatAdError(loadRes)}");
+                            CompleteFail(adTypeIndex, "Load 失败");
+                        });
+                });
+        }
+
+        private void CompleteSuccess(int adTypeIndex)
+        {
+            if (!isShowing[adTypeIndex])
+                return;
+
+            var callback = pendingSuccessCallbacks[adTypeIndex];
+            ClearPending(adTypeIndex);
+            callback?.Invoke();
+        }
+
+        private void CompleteFail(int adTypeIndex, string reason)
+        {
+            if (!isShowing[adTypeIndex])
+                return;
+
+            GameLogger.LogWarning($"[WeChatAdsPlugin] 广告未完成 idx={adTypeIndex}: {reason}");
+            var callback = pendingFailCallbacks[adTypeIndex];
+            ClearPending(adTypeIndex);
+            callback?.Invoke();
+        }
+
+        private void ClearPending(int adTypeIndex)
+        {
+            StopShowTimeout(adTypeIndex);
+            isShowing[adTypeIndex] = false;
+            pendingSuccessCallbacks[adTypeIndex] = null;
+            pendingFailCallbacks[adTypeIndex] = null;
+        }
+
+        private void StartShowTimeout(int adTypeIndex)
+        {
+            StopShowTimeout(adTypeIndex);
+            showTimeoutCoroutines[adTypeIndex] = StartCoroutine(ShowTimeoutRoutine(adTypeIndex));
+        }
+
+        private void StopShowTimeout(int adTypeIndex)
+        {
+            Coroutine routine = showTimeoutCoroutines[adTypeIndex];
+            if (routine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(routine);
+            showTimeoutCoroutines[adTypeIndex] = null;
+        }
+
+        private IEnumerator ShowTimeoutRoutine(int adTypeIndex)
+        {
+            yield return new WaitForSecondsRealtime(ShowTimeoutSeconds);
+
+            if (isShowing[adTypeIndex])
+            {
+                CompleteFail(adTypeIndex, "广告关闭回调超时");
+            }
+        }
+
+        private static string FormatTextError(WXTextResponse res)
+        {
+            return res == null ? "unknown" : string.IsNullOrEmpty(res.errMsg) ? "unknown" : res.errMsg;
+        }
+
+        private static string FormatAdError(WXADErrorResponse res)
+        {
+            if (res == null) return "unknown";
+            string errMsg = string.IsNullOrEmpty(res.errMsg) ? "unknown" : res.errMsg;
+            return res.errCode == 0 ? errMsg : $"{errMsg} ({res.errCode})";
+        }
+#endif
     }
 }

@@ -169,6 +169,8 @@ namespace LightVsDecay.UI
             }
             else
             {
+                StopPopAnimation();
+                ResetScale();
                 ApplyDisabledColors();
             }
         }
@@ -179,6 +181,13 @@ namespace LightVsDecay.UI
             SyncVisualState();
         }
 
+        public void ResetVisualState()
+        {
+            StopPopAnimation();
+            ResetScale();
+            SyncVisualState();
+        }
+
         private void PlayPopIfNeeded()
         {
             if (!enablePopAnimation || _button == null || !_button.interactable || _rectTransform == null)
@@ -186,10 +195,8 @@ namespace LightVsDecay.UI
                 return;
             }
 
-            if (_popCoroutine != null)
-            {
-                StopCoroutine(_popCoroutine);
-            }
+            StopPopAnimation();
+            ResetScale();
 
             _popCoroutine = StartCoroutine(PlayPopRoutine());
         }
@@ -206,6 +213,17 @@ namespace LightVsDecay.UI
             {
                 _rectTransform.localScale = _baseScale;
             }
+        }
+
+        private void StopPopAnimation()
+        {
+            if (_popCoroutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(_popCoroutine);
+            _popCoroutine = null;
         }
 
         private void RegisterButtonSound()
@@ -369,6 +387,11 @@ namespace LightVsDecay.UI
         public static void Sync(Button button)
         {
             Ensure(button)?.SyncVisualState();
+        }
+
+        public static void ResetVisualState(Button button)
+        {
+            Ensure(button)?.ResetVisualState();
         }
 
         public static void Configure(Button button, bool? grayOutAllChildGraphics = null, bool? enablePopAnimation = null)
